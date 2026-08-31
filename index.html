@@ -30,6 +30,7 @@ h1,h2,h3,.brand{font-family:'Fredoka',sans-serif;font-weight:500;margin:0}
 .wrap{max-width:520px;margin:0 auto;padding:0 16px}
 .hidden{display:none!important}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
 /* header */
 .top{display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
 .mascot{width:42px;height:42px;border-radius:50%;background:var(--ruff);
@@ -37,9 +38,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   border:2px solid var(--fawn)}
 .top .brand{font-size:20px;color:var(--fawn-deep);letter-spacing:.2px}
 .top .sub{font-size:12px;color:var(--hint);margin-top:-2px}
+
 /* views */
 .view{padding-top:4px;animation:pop .22s ease}
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
 /* hero */
 .hero{background:var(--fawn);color:#fff;border-radius:22px;padding:18px 18px 16px;position:relative;overflow:hidden}
 .hero:before{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;background:rgba(255,255,255,.12);border-radius:50%}
@@ -49,7 +52,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .stat{flex:1;background:rgba(255,255,255,.18);border-radius:14px;padding:10px 12px}
 .stat .n{font-family:'Fredoka';font-size:20px;font-weight:600}
 .stat .l{font-size:11px;opacity:.9}
+
 .section-t{font-family:'Fredoka';font-size:15px;color:var(--fawn-deep);margin:20px 4px 10px}
+
 /* feature rows */
 .feat{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--radius);
   padding:13px 14px;margin-bottom:10px;border:1px solid var(--line);width:100%;text-align:left}
@@ -58,6 +63,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .feat h3{font-size:15px;font-weight:600;font-family:'Nunito'}
 .feat p{margin:1px 0 0;font-size:12.5px;color:var(--hint)}
 .feat .chev{margin-left:auto;color:var(--hint)}
+
 /* store */
 .tools{display:flex;gap:8px;margin:12px 0 6px}
 .search{flex:1;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
@@ -85,6 +91,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .add:disabled{background:var(--line);color:#fff}
 .soldout{position:absolute;inset:0;background:rgba(74,53,36,.55);color:#fff;display:flex;
   align-items:center;justify-content:center;font-family:'Fredoka';font-weight:600;font-size:15px}
+
 /* orders */
 .order{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
 .order .hd{display:flex;justify-content:space-between;align-items:center}
@@ -103,6 +110,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .oitems{border-top:1px dashed var(--line);margin-top:10px;padding-top:10px}
 .oitem{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0;color:var(--hint)}
 .trackn{font-size:11.5px;color:var(--link);margin-top:8px;display:inline-block}
+
 /* buyback */
 .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
 .field{margin-bottom:12px}
@@ -121,6 +129,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   font-size:16px;padding:14px;border-radius:14px;margin-top:4px}
 .cta:disabled{opacity:.5}
 .note{font-size:12px;color:var(--hint);text-align:center;margin-top:10px;line-height:1.5}
+
 /* bottom nav */
 .nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);
   display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:20;max-width:520px;margin:0 auto}
@@ -130,6 +139,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cart-dot{position:absolute;top:2px;right:calc(50% - 20px);background:var(--berry);color:#fff;
   font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;display:flex;
   align-items:center;justify-content:center;padding:0 4px}
+
 /* cart sheet */
 .scrim{position:fixed;inset:0;background:rgba(74,53,36,.4);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
 .scrim.show{opacity:1;pointer-events:auto}
@@ -154,6 +164,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .switch.on:after{left:21px}
 .sh-ft{padding:14px 18px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 .tot{display:flex;justify-content:space-between;font-family:'Fredoka';font-size:18px;font-weight:600;margin-bottom:10px}
+
+.pics{background:none;border:1px dashed var(--line);color:var(--hint);font-size:11px;font-weight:700;
+  padding:4px 8px;border-radius:8px;margin-top:6px;width:100%}
+.addr{margin:12px 0 4px}
+.totline{display:flex;justify-content:space-between;font-size:13px;color:var(--hint);font-weight:700;padding:1px 0}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
 .empty p{font-size:13px}
@@ -163,6 +178,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 </style>
 </head>
 <body>
+
 <div class="top">
   <div class="mascot">🦊</div>
   <div>
@@ -170,7 +186,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="sub" id="greeting">Pokémon TCG · Singapore</div>
   </div>
 </div>
+
 <div class="wrap">
+
   <!-- OVERVIEW -->
   <div class="view" id="v-overview">
     <div class="hero">
@@ -191,11 +209,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('buyback')">
-      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>82.5% cash · 87.5% store credit</p></div>
+      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>80% cash · 85% store credit</p></div>
       <span class="chev">›</span>
     </button>
-    <p class="note" style="margin-top:16px">Tip: bundle 5+ cards in one order for the best shipping value 🐾</p>
+    <div id="ov-policies" style="margin-top:14px"></div>
+    <p class="note" style="margin-top:12px">Tip: bundle 5+ cards in one order for free shipping 🐾</p>
   </div>
+
   <!-- STORE -->
   <div class="view hidden" id="v-store">
     <div class="tools">
@@ -204,11 +224,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="chips" id="chips"></div>
     <div class="grid" id="storeGrid"></div>
   </div>
+
   <!-- ORDERS -->
   <div class="view hidden" id="v-orders">
     <div class="section-t">Your orders</div>
     <div id="ordersList"></div>
   </div>
+
   <!-- BUYBACK -->
   <div class="view hidden" id="v-buyback">
     <div class="section-t">Sell a card to us</div>
@@ -227,17 +249,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <div class="section-t" style="margin:4px 4px 8px">Your offer</div>
       <div class="quote">
         <button class="qbox sel" id="q-credit" onclick="pickPayout('credit')">
-          <div class="qt">STORE CREDIT</div><div class="qv" id="qv-credit">$0.00</div><div class="qr">87.5% · best value</div>
+          <div class="qt">STORE CREDIT</div><div class="qv" id="qv-credit">$0.00</div><div class="qr">85% · best value</div>
         </button>
         <button class="qbox" id="q-cash" onclick="pickPayout('cash')">
-          <div class="qt">CASH</div><div class="qv" id="qv-cash">$0.00</div><div class="qr">82.5%</div>
+          <div class="qt">CASH</div><div class="qv" id="qv-cash">$0.00</div><div class="qr">80%</div>
         </button>
       </div>
       <button class="cta" id="bb-submit" onclick="submitBuyback()" disabled>Enter a value to continue</button>
       <p class="note">We'll review against live comps and confirm your offer in chat before anything's final.</p>
     </div>
   </div>
+
 </div>
+
 <!-- NAV -->
 <div class="nav" id="nav">
   <button class="on" data-t="overview" onclick="go('overview')"><span class="ni">🏠</span>Home</button>
@@ -246,6 +270,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <button data-t="cart" onclick="openCart()"><span class="ni">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
   <button data-t="buyback" onclick="go('buyback')"><span class="ni">💰</span>Sell</button>
 </div>
+
 <!-- CART -->
 <div class="scrim" id="scrim" onclick="closeCart()"></div>
 <div class="sheet" id="cartSheet">
@@ -253,15 +278,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="body" id="cartBody"></div>
   <div class="sh-ft" id="cartFoot"></div>
 </div>
+
 <script>
 /* ============ CONFIG ============ */
 // Paste your deployed Apps Script Web App URL here. Leave blank to preview with demo data.
 const API_URL = "https://script.google.com/macros/s/AKfycbwAuuCc5YFTfibeNwHMTeNMe-AEHq4FZLW_88-eaQQklKNIJdweJkDss7zFDpxjKC3BBg/exec";
 /* ================================ */
+
 const tg = window.Telegram && window.Telegram.WebApp;
-let STATE = { config:{cashRate:.825,creditRate:.875,freeShip:5}, cart:[], inventory:[], orders:[], credit:0, tier:'All', payout:'credit', useCredit:false, user:null };
+let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''} };
+
 const TIERS = ['All','AR','SIR','EX','Holo','Double Rare','Slab','Merch'];
 const EMOJI = {AR:'🎨',SIR:'✨',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Merch:'🎁'};
+
 /* demo data so the app is previewable before the backend is wired */
 const DEMO_INV = [
   {id:'1',name:'Umbreon VMAX (Alt Art)',set:'Evolving Skies',number:'215/203',tier:'SIR',price:520,qty:1,condition:'NM'},
@@ -278,6 +307,7 @@ const DEMO_ORDERS = [
   {id:'EF7QP9',status:'Delivered',tracking:'SP987654321SG',total:34,created:'2026-08-14T09:00:00Z',lastUpdate:'Delivered',items:[{name:'Pikachu with Grey Felt Hat',tier:'AR',price:34}]},
 ];
 const STEPS = ['Ordered','Packed','Shipped','In Transit','Delivered'];
+
 /* ============ API ============ */
 async function api(action, payload={}){
   if(!API_URL){ return mock(action,payload); }
@@ -289,14 +319,17 @@ async function api(action, payload={}){
   return res.json();
 }
 function mock(action,p){
-  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.825,creditRate:.875,freeShipThreshold:5};
+  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,shipFlat:3,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards'};
   if(action==='inventory') return {ok:true,items:DEMO_INV};
   if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
   if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
   if(action==='submitOrder'){ return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),total:p.cart.reduce((s,c)=>s+c.price,0)}; }
-  if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase()};
+  if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review — we\'ll confirm your offer in chat shortly.'};
+  if(action==='requestPictures') return {ok:true,requestId:'PR'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Photo request sent! (demo)'};
+  if(action==='storeInfo') return {ok:true,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards'};
   return {ok:false};
 }
+
 /* ============ NAV ============ */
 function go(tab){
   ['overview','store','orders','buyback'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
@@ -306,16 +339,22 @@ function go(tab){
   if(tab==='orders') loadOrders();
   window.scrollTo(0,0);
 }
+
 /* ============ OVERVIEW ============ */
 async function loadOverview(){
   const r = await api('overview');
   if(!r.ok) return;
-  STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold};
+  STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,shipFlat:r.shipFlat!=null?r.shipFlat:3};
   STATE.credit = r.credit||0;
   document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
   document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
+  if(r.holdPolicy||r.shippingPolicy){
+    const el=document.getElementById('ov-policies');
+    if(el) el.innerHTML = `<div class="feat" style="cursor:default"><div class="ic">🚚</div><div><h3>Store info</h3><p>${r.shippingPolicy||''}${r.holdPolicy?'<br>'+r.holdPolicy:''}</p></div></div>`;
+  }
   if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
 }
+
 /* ============ STORE ============ */
 function renderChips(){
   document.getElementById('chips').innerHTML = TIERS.map(t=>
@@ -346,7 +385,8 @@ function renderStore(){
         ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
       <div class="body">
         <div class="nm">${c.name}</div>
-        <div class="meta">${c.set}${c.number?' · '+c.number:''} · ${c.condition}</div>
+        <div class="meta">${c.set}${c.number?' · '+c.number:''} · ${c.grade?('Grade '+c.grade):c.condition}</div>
+        ${!c.image?`<button class="pics" onclick="askPics('${c.id}')">📷 request photos</button>`:''}
         <div class="prow">
           <span class="price">$${c.price.toFixed(2)}</span>
           <button class="add" ${soldOut?'disabled':''} onclick="addToCart('${c.id}')">+</button>
@@ -354,6 +394,14 @@ function renderStore(){
       </div></div>`;
   }).join('');
 }
+
+async function askPics(id){
+  const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
+  const r = await api('requestPictures',{cardId:c.id,cardName:c.name,set:c.set});
+  const msg = r.ok ? (r.message||'Photo request sent!') : 'Couldn\'t send request, try again.';
+  tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+}
+
 /* ============ CART ============ */
 function addToCart(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
@@ -377,39 +425,55 @@ function renderCart(){
     foot.innerHTML=''; return;
   }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
+  const shipping = STATE.cart.length>=STATE.config.freeShip ? 0 : (STATE.config.shipFlat||3);
   const need=STATE.config.freeShip-STATE.cart.length;
   const nudge = need>0
-    ? `<div class="nudge">🐾 Add ${need} more card${need>1?'s':''} to hit the ${STATE.config.freeShip}-card flat-shipping sweet spot</div>`
-    : `<div class="nudge">🎉 Nice bundle — you're at the best shipping value</div>`;
+    ? `<div class="nudge">🐾 Add ${need} more card${need>1?'s':''} for FREE shipping (saves $${(STATE.config.shipFlat||3).toFixed(2)})</div>`
+    : `<div class="nudge">🎉 Free shipping unlocked — nice bundle!</div>`;
   body.innerHTML = STATE.cart.map((c,i)=>
     `<div class="crow"><div class="ci">${EMOJI[c.tier]||'🃏'}</div>
       <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.tier}</div></div>
       <span class="cp">$${c.price.toFixed(2)}</span>
       <button class="rm" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
+    `<div class="addr">
+      <div class="field"><label>Name for delivery</label><input id="ship-name" value="${STATE.ship.name}" oninput="STATE.ship.name=this.value" placeholder="Full name"></div>
+      <div class="field"><label>Mailing address</label><input id="ship-addr" value="${STATE.ship.address}" oninput="STATE.ship.address=this.value" placeholder="Block, street, unit, postal code"></div>
+      <div class="field"><label>Phone (optional)</label><input id="ship-phone" value="${STATE.ship.phone}" oninput="STATE.ship.phone=this.value" placeholder="For delivery issues"></div>
+    </div>` +
     (STATE.credit>0?`<div class="creditrow"><span>Use store credit ($${STATE.credit.toFixed(2)})</span>
       <button class="switch ${STATE.useCredit?'on':''}" onclick="toggleCredit()"></button></div>`:'');
-  const creditApplied = STATE.useCredit ? Math.min(STATE.credit,subtotal) : 0;
-  const total = subtotal - creditApplied;
-  foot.innerHTML = `<div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
-    ${creditApplied>0?`<div style="font-size:12px;color:var(--mint);font-weight:700;text-align:right;margin-top:-6px;margin-bottom:8px">−$${creditApplied.toFixed(2)} credit applied</div>`:''}
+  const creditApplied = STATE.useCredit ? Math.min(STATE.credit,subtotal+shipping) : 0;
+  const total = subtotal + shipping - creditApplied;
+  foot.innerHTML = `<div class="totline"><span>Subtotal</span><span>$${subtotal.toFixed(2)}</span></div>
+    <div class="totline"><span>Shipping</span><span>${shipping===0?'FREE':'$'+shipping.toFixed(2)}</span></div>
+    ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
+    <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
     <button class="cta" onclick="checkout()">Place order · $${total.toFixed(2)}</button>`;
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 async function checkout(){
+  if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){
+    (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and mailing address first.');
+    return;
+  }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
-  const useCredit = STATE.useCredit? Math.min(STATE.credit,subtotal):0;
-  const r = await api('submitOrder',{cart:STATE.cart,useCredit});
+  const shipping = STATE.cart.length>=STATE.config.freeShip ? 0 : (STATE.config.shipFlat||3);
+  const useCredit = STATE.useCredit? Math.min(STATE.credit,subtotal+shipping):0;
+  const r = await api('submitOrder',{cart:STATE.cart,useCredit,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone});
   if(r.ok){
     STATE.cart=[]; STATE.useCredit=false; updateCartDot(); closeCart();
-    const msg='Order '+r.orderId+' placed! 🎉 We\'ll message you the SingPost tracking once it ships.';
+    const msg='Order '+r.orderId+' placed! 🎉 We\'ll message you tracking once it ships.';
     tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
     loadOverview();
+  } else if(r.error==='address_required'){
+    (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and address.');
   } else if(r.error==='unavailable'){
     const msg='Ah — one of those cards was just claimed by someone else. Cart updated.';
     tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
     loadStore();
   } else { (tg&&tg.showAlert?tg.showAlert:alert)('Something went wrong. Try again in a sec.'); }
 }
+
 /* ============ ORDERS ============ */
 async function loadOrders(){
   const list=document.getElementById('ordersList');
@@ -432,6 +496,7 @@ async function loadOrders(){
     </div>`;
   }).join('');
 }
+
 /* ============ BUYBACK ============ */
 function pickPayout(p){ STATE.payout=p;
   document.getElementById('q-credit').classList.toggle('sel',p==='credit');
@@ -441,6 +506,9 @@ function quote(){
   const val=parseFloat(document.getElementById('bb-val').value)||0;
   document.getElementById('qv-cash').textContent='$'+(val*STATE.config.cashRate).toFixed(2);
   document.getElementById('qv-credit').textContent='$'+(val*STATE.config.creditRate).toFixed(2);
+  const cr=document.querySelector('#q-credit .qr'), ca=document.querySelector('#q-cash .qr');
+  if(cr) cr.textContent=Math.round(STATE.config.creditRate*100)+'% · best value';
+  if(ca) ca.textContent=Math.round(STATE.config.cashRate*100)+'%';
   const name=document.getElementById('bb-name').value.trim();
   const btn=document.getElementById('bb-submit');
   const ok=name&&val>0;
@@ -461,6 +529,7 @@ async function submitBuyback(){
     quote();
   }
 }
+
 /* ============ INIT ============ */
 (function init(){
   if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#C98B5E');
