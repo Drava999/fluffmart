@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Fluffmart TCG</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fawn:#C98B5E; --fawn-deep:#9C6135; --cream:#FBF3E7; --ruff:#F4E4C9;
+  --berry:#E0648B; --berry-deep:#B23E64; --mint:#3FB68B; --ink:#4A3524;
+  --bg: var(--tg-theme-bg-color, #FBF3E7);
+  --card: var(--tg-theme-secondary-bg-color, #ffffff);
+  --text: var(--tg-theme-text-color, #4A3524);
+  --hint: var(--tg-theme-hint-color, #9a8a76);
+  --link: var(--tg-theme-link-color, #B23E64);
+  --line: rgba(154,138,118,.22);
+  --radius:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  padding-bottom:88px;line-height:1.55;overflow-x:hidden;
+}
+h1,h2,h3,.brand{font-family:'Fredoka',sans-serif;font-weight:500;margin:0}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+/* header */
+.top{display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
+.mascot{width:42px;height:42px;border-radius:50%;background:var(--ruff);
+  display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
+  border:2px solid var(--fawn)}
+.top .brand{font-size:20px;color:var(--fawn-deep);letter-spacing:.2px}
+.top .sub{font-size:12px;color:var(--hint);margin-top:-2px}
+/* views */
+.view{padding-top:4px;animation:pop .22s ease}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* hero */
+.hero{background:var(--fawn);color:#fff;border-radius:22px;padding:18px 18px 16px;position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;background:rgba(255,255,255,.12);border-radius:50%}
+.hero h2{font-size:22px;font-weight:600}
+.hero p{margin:4px 0 0;font-size:13px;opacity:.92;max-width:80%}
+.stats{display:flex;gap:10px;margin-top:14px}
+.stat{flex:1;background:rgba(255,255,255,.18);border-radius:14px;padding:10px 12px}
+.stat .n{font-family:'Fredoka';font-size:20px;font-weight:600}
+.stat .l{font-size:11px;opacity:.9}
+.section-t{font-family:'Fredoka';font-size:15px;color:var(--fawn-deep);margin:20px 4px 10px}
+/* feature rows */
+.feat{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--radius);
+  padding:13px 14px;margin-bottom:10px;border:1px solid var(--line);width:100%;text-align:left}
+.feat .ic{width:38px;height:38px;border-radius:12px;background:var(--ruff);color:var(--fawn-deep);
+  display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.feat h3{font-size:15px;font-weight:600;font-family:'Nunito'}
+.feat p{margin:1px 0 0;font-size:12.5px;color:var(--hint)}
+.feat .chev{margin-left:auto;color:var(--hint)}
+/* store */
+.tools{display:flex;gap:8px;margin:12px 0 6px}
+.search{flex:1;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:9px 12px}
+.search input{border:none;background:none;outline:none;flex:1;font-size:14px;color:var(--text);font-family:inherit}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;font-size:12.5px;font-weight:700;padding:6px 13px;border-radius:20px;
+  background:var(--card);border:1px solid var(--line);color:var(--hint)}
+.chip.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;position:relative}
+.pcard .img{aspect-ratio:3/4;background:linear-gradient(135deg,var(--ruff),#e9d3ad);
+  display:flex;align-items:center;justify-content:center;font-size:34px}
+.pcard .img img{width:100%;height:100%;object-fit:cover}
+.pcard .body{padding:9px 10px 11px}
+.pcard .nm{font-size:13px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px}
+.pcard .meta{font-size:11px;color:var(--hint);margin-top:2px}
+.tier{position:absolute;top:8px;left:8px;font-size:10px;font-weight:800;letter-spacing:.4px;
+  padding:3px 7px;border-radius:8px;background:#fff;color:var(--berry-deep);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.prow{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.price{font-family:'Fredoka';font-size:16px;font-weight:600;color:var(--fawn-deep)}
+.add{width:30px;height:30px;border-radius:10px;background:var(--fawn);color:#fff;font-size:19px;
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.add:disabled{background:var(--line);color:#fff}
+.soldout{position:absolute;inset:0;background:rgba(74,53,36,.55);color:#fff;display:flex;
+  align-items:center;justify-content:center;font-family:'Fredoka';font-weight:600;font-size:15px}
+/* orders */
+.order{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.order .hd{display:flex;justify-content:space-between;align-items:center}
+.oid{font-family:'Fredoka';font-weight:600;font-size:14px}
+.badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px}
+.b-ordered{background:#fdeede;color:#a56a13}.b-packed{background:#e7eefb;color:#2a5aa5}
+.b-shipped{background:#e7eefb;color:#2a5aa5}.b-transit{background:#fce9f0;color:var(--berry-deep)}
+.b-delivered{background:#e2f5ec;color:#1c7a52}.b-cancelled{background:#f0e6e6;color:#7a2f2f}
+.track{display:flex;gap:6px;margin:14px 0 6px}
+.step{flex:1;text-align:center}
+.dot{width:16px;height:16px;border-radius:50%;background:var(--line);margin:0 auto 5px;position:relative}
+.step.done .dot{background:var(--mint)}
+.step.done .dot:after{content:"✓";color:#fff;font-size:10px;position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.step .lbl{font-size:10px;color:var(--hint)}
+.step.done .lbl{color:var(--text);font-weight:700}
+.oitems{border-top:1px dashed var(--line);margin-top:10px;padding-top:10px}
+.oitem{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0;color:var(--hint)}
+.trackn{font-size:11.5px;color:var(--link);margin-top:8px;display:inline-block}
+/* buyback */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--hint);margin-bottom:5px}
+.field input,.field select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;
+  font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;outline:none}
+.field input:focus,.field select:focus{border-color:var(--fawn)}
+.two{display:flex;gap:10px}.two>*{flex:1}
+.quote{display:flex;gap:10px;margin:6px 0 14px}
+.qbox{flex:1;border-radius:14px;padding:12px;text-align:center;border:2px solid var(--line)}
+.qbox.sel{border-color:var(--berry)}
+.qbox .qt{font-size:11px;font-weight:800;color:var(--hint)}
+.qbox .qv{font-family:'Fredoka';font-size:21px;font-weight:600;color:var(--fawn-deep);margin-top:2px}
+.qbox .qr{font-size:10.5px;color:var(--hint)}
+.cta{width:100%;background:var(--berry);color:#fff;font-family:'Fredoka';font-weight:600;
+  font-size:16px;padding:14px;border-radius:14px;margin-top:4px}
+.cta:disabled{opacity:.5}
+.note{font-size:12px;color:var(--hint);text-align:center;margin-top:10px;line-height:1.5}
+/* bottom nav */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);
+  display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:20;max-width:520px;margin:0 auto}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:var(--hint);font-size:10px;font-weight:700}
+.nav button .ni{font-size:21px}
+.nav button.on{color:var(--fawn-deep)}
+.cart-dot{position:absolute;top:2px;right:calc(50% - 20px);background:var(--berry);color:#fff;
+  font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;display:flex;
+  align-items:center;justify-content:center;padding:0 4px}
+/* cart sheet */
+.scrim{position:fixed;inset:0;background:rgba(74,53,36,.4);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-radius:22px 22px 0 0;
+  z-index:31;transform:translateY(100%);transition:transform .26s cubic-bezier(.3,.8,.4,1);
+  max-width:520px;margin:0 auto;max-height:82vh;display:flex;flex-direction:column}
+.sheet.show{transform:none}
+.sheet .sh-hd{padding:16px 18px 8px;display:flex;justify-content:space-between;align-items:center}
+.sheet .sh-hd h2{font-size:18px;color:var(--fawn-deep)}
+.sheet .body{overflow-y:auto;padding:0 18px}
+.crow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.crow .ci{width:34px;height:44px;border-radius:8px;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.crow .cn{font-size:13px;font-weight:700;flex:1;line-height:1.2}
+.crow .cp{font-family:'Fredoka';font-weight:600;color:var(--fawn-deep)}
+.crow .rm{color:var(--hint);font-size:20px;padding:4px}
+.nudge{background:var(--ruff);color:var(--fawn-deep);border-radius:12px;padding:10px 12px;
+  font-size:12.5px;font-weight:700;margin:12px 0;display:flex;gap:8px;align-items:center}
+.creditrow{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line);font-size:13px;font-weight:700}
+.switch{width:44px;height:26px;border-radius:20px;background:var(--line);position:relative;transition:.2s}
+.switch.on{background:var(--mint)}
+.switch:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on:after{left:21px}
+.sh-ft{padding:14px 18px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.tot{display:flex;justify-content:space-between;font-family:'Fredoka';font-size:18px;font-weight:600;margin-bottom:10px}
+.empty{text-align:center;padding:40px 20px;color:var(--hint)}
+.empty .e-ic{font-size:44px;margin-bottom:10px}
+.empty p{font-size:13px}
+.skel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);height:210px;
+  animation:blink 1.2s ease infinite}
+@keyframes blink{50%{opacity:.5}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="mascot">🦊</div>
+  <div>
+    <div class="brand">Fluffmart TCG</div>
+    <div class="sub" id="greeting">Pokémon TCG · Singapore</div>
+  </div>
+</div>
+<div class="wrap">
+  <!-- OVERVIEW -->
+  <div class="view" id="v-overview">
+    <div class="hero">
+      <h2>Welcome back! 🌟</h2>
+      <p>Claim singles, track parcels, and turn spare cards into store credit.</p>
+      <div class="stats">
+        <div class="stat"><div class="n" id="ov-credit">$0.00</div><div class="l">Store credit</div></div>
+        <div class="stat"><div class="n" id="ov-transit">0</div><div class="l">In transit</div></div>
+      </div>
+    </div>
+    <div class="section-t">What you can do</div>
+    <button class="feat" onclick="go('store')">
+      <div class="ic">🛍️</div><div><h3>Browse the store</h3><p>Cards available to claim right now</p></div>
+      <span class="chev">›</span>
+    </button>
+    <button class="feat" onclick="go('orders')">
+      <div class="ic">📦</div><div><h3>Track your orders</h3><p>Live SingPost status &amp; past orders</p></div>
+      <span class="chev">›</span>
+    </button>
+    <button class="feat" onclick="go('buyback')">
+      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>82.5% cash · 87.5% store credit</p></div>
+      <span class="chev">›</span>
+    </button>
+    <p class="note" style="margin-top:16px">Tip: bundle 5+ cards in one order for the best shipping value 🐾</p>
+  </div>
+  <!-- STORE -->
+  <div class="view hidden" id="v-store">
+    <div class="tools">
+      <div class="search">🔎<input id="q" placeholder="Search cards or sets…" oninput="renderStore()"></div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="grid" id="storeGrid"></div>
+  </div>
+  <!-- ORDERS -->
+  <div class="view hidden" id="v-orders">
+    <div class="section-t">Your orders</div>
+    <div id="ordersList"></div>
+  </div>
+  <!-- BUYBACK -->
+  <div class="view hidden" id="v-buyback">
+    <div class="section-t">Sell a card to us</div>
+    <div class="panel">
+      <div class="field"><label>Card name</label><input id="bb-name" placeholder="e.g. Umbreon VMAX" oninput="quote()"></div>
+      <div class="two">
+        <div class="field"><label>Set</label><input id="bb-set" placeholder="e.g. Evolving Skies"></div>
+        <div class="field"><label>Card no.</label><input id="bb-num" placeholder="215/203"></div>
+      </div>
+      <div class="two">
+        <div class="field"><label>Condition</label>
+          <select id="bb-cond"><option>Near Mint</option><option>Lightly Played</option><option>Moderately Played</option><option>Damaged</option></select>
+        </div>
+        <div class="field"><label>Market value (S$)</label><input id="bb-val" type="number" inputmode="decimal" placeholder="0.00" oninput="quote()"></div>
+      </div>
+      <div class="section-t" style="margin:4px 4px 8px">Your offer</div>
+      <div class="quote">
+        <button class="qbox sel" id="q-credit" onclick="pickPayout('credit')">
+          <div class="qt">STORE CREDIT</div><div class="qv" id="qv-credit">$0.00</div><div class="qr">87.5% · best value</div>
+        </button>
+        <button class="qbox" id="q-cash" onclick="pickPayout('cash')">
+          <div class="qt">CASH</div><div class="qv" id="qv-cash">$0.00</div><div class="qr">82.5%</div>
+        </button>
+      </div>
+      <button class="cta" id="bb-submit" onclick="submitBuyback()" disabled>Enter a value to continue</button>
+      <p class="note">We'll review against live comps and confirm your offer in chat before anything's final.</p>
+    </div>
+  </div>
+</div>
+<!-- NAV -->
+<div class="nav" id="nav">
+  <button class="on" data-t="overview" onclick="go('overview')"><span class="ni">🏠</span>Home</button>
+  <button data-t="orders" onclick="go('orders')"><span class="ni">📦</span>Orders</button>
+  <button data-t="store" onclick="go('store')"><span class="ni">🛍️</span>Store</button>
+  <button data-t="cart" onclick="openCart()"><span class="ni">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
+  <button data-t="buyback" onclick="go('buyback')"><span class="ni">💰</span>Sell</button>
+</div>
+<!-- CART -->
+<div class="scrim" id="scrim" onclick="closeCart()"></div>
+<div class="sheet" id="cartSheet">
+  <div class="sh-hd"><h2>Your cart</h2><button class="rm" onclick="closeCart()">✕</button></div>
+  <div class="body" id="cartBody"></div>
+  <div class="sh-ft" id="cartFoot"></div>
+</div>
+<script>
+/* ============ CONFIG ============ */
+// Paste your deployed Apps Script Web App URL here. Leave blank to preview with demo data.
+const API_URL = "https://script.google.com/macros/s/AKfycbwAuuCc5YFTfibeNwHMTeNMe-AEHq4FZLW_88-eaQQklKNIJdweJkDss7zFDpxjKC3BBg/exec";
+/* ================================ */
+const tg = window.Telegram && window.Telegram.WebApp;
+let STATE = { config:{cashRate:.825,creditRate:.875,freeShip:5}, cart:[], inventory:[], orders:[], credit:0, tier:'All', payout:'credit', useCredit:false, user:null };
+const TIERS = ['All','AR','SIR','EX','Holo','Double Rare','Slab','Merch'];
+const EMOJI = {AR:'🎨',SIR:'✨',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Merch:'🎁'};
+/* demo data so the app is previewable before the backend is wired */
+const DEMO_INV = [
+  {id:'1',name:'Umbreon VMAX (Alt Art)',set:'Evolving Skies',number:'215/203',tier:'SIR',price:520,qty:1,condition:'NM'},
+  {id:'2',name:'Charizard ex',set:'Obsidian Flames',number:'223/197',tier:'SIR',price:98,qty:1,condition:'NM'},
+  {id:'3',name:'Pikachu with Grey Felt Hat',set:'Celebrations',number:'',tier:'AR',price:34,qty:1,condition:'NM'},
+  {id:'4',name:'Mimikyu ex',set:'Paldea Evolved',number:'',tier:'AR',price:12,qty:2,condition:'NM'},
+  {id:'5',name:'Gardevoir ex',set:'Scarlet & Violet',number:'',tier:'Double Rare',price:8,qty:1,condition:'NM'},
+  {id:'6',name:'Snorlax',set:'Vivid Voltage',number:'',tier:'Holo',price:5,qty:3,condition:'LP'},
+  {id:'7',name:'Sylveon ex',set:'Prismatic',number:'',tier:'EX',price:6,qty:1,condition:'NM'},
+  {id:'8',name:'Fluffmart Playmat',set:'Merch',number:'',tier:'Merch',price:18,qty:5,condition:'New'},
+];
+const DEMO_ORDERS = [
+  {id:'EF8XK2',status:'In Transit',tracking:'SP123456789SG',total:46,created:'2026-08-28T09:00:00Z',lastUpdate:'Departed Singapore Regional eCommerce Hub',items:[{name:'Mimikyu ex',tier:'AR',price:12},{name:'Snorlax',tier:'Holo',price:5},{name:'Sylveon ex',tier:'EX',price:6}]},
+  {id:'EF7QP9',status:'Delivered',tracking:'SP987654321SG',total:34,created:'2026-08-14T09:00:00Z',lastUpdate:'Delivered',items:[{name:'Pikachu with Grey Felt Hat',tier:'AR',price:34}]},
+];
+const STEPS = ['Ordered','Packed','Shipped','In Transit','Delivered'];
+/* ============ API ============ */
+async function api(action, payload={}){
+  if(!API_URL){ return mock(action,payload); }
+  const initData = tg ? tg.initData : '';
+  const res = await fetch(API_URL, {
+    method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action, initData, ...payload})
+  });
+  return res.json();
+}
+function mock(action,p){
+  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.825,creditRate:.875,freeShipThreshold:5};
+  if(action==='inventory') return {ok:true,items:DEMO_INV};
+  if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
+  if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
+  if(action==='submitOrder'){ return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),total:p.cart.reduce((s,c)=>s+c.price,0)}; }
+  if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase()};
+  return {ok:false};
+}
+/* ============ NAV ============ */
+function go(tab){
+  ['overview','store','orders','buyback'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+  if(tab==='store'&&!STATE.inventory.length) loadStore();
+  if(tab==='orders') loadOrders();
+  window.scrollTo(0,0);
+}
+/* ============ OVERVIEW ============ */
+async function loadOverview(){
+  const r = await api('overview');
+  if(!r.ok) return;
+  STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold};
+  STATE.credit = r.credit||0;
+  document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
+  document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
+  if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
+}
+/* ============ STORE ============ */
+function renderChips(){
+  document.getElementById('chips').innerHTML = TIERS.map(t=>
+    `<button class="chip ${t===STATE.tier?'on':''}" onclick="setTier('${t}')">${t}</button>`).join('');
+}
+function setTier(t){ STATE.tier=t; renderChips(); renderStore(); }
+async function loadStore(){
+  document.getElementById('storeGrid').innerHTML = Array(4).fill('<div class="skel"></div>').join('');
+  const r = await api('inventory');
+  STATE.inventory = r.items||[];
+  renderChips(); renderStore();
+}
+function renderStore(){
+  const q = (document.getElementById('q').value||'').toLowerCase();
+  let list = STATE.inventory.filter(c=>{
+    const okTier = STATE.tier==='All'||c.tier===STATE.tier;
+    const okQ = !q || (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().includes(q);
+    return okTier && okQ;
+  });
+  const grid = document.getElementById('storeGrid');
+  if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔍</div><p>No cards match. Try another tier or search.</p></div>`; return; }
+  grid.innerHTML = list.map(c=>{
+    const inCart = STATE.cart.filter(x=>x.id===c.id).length;
+    const soldOut = (c.qty - inCart) <= 0;
+    return `<div class="pcard">
+      <div class="tier">${EMOJI[c.tier]||''} ${c.tier}</div>
+      <div class="img">${c.image?`<img src="${c.image}" alt="">`:(EMOJI[c.tier]||'🃏')}
+        ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
+      <div class="body">
+        <div class="nm">${c.name}</div>
+        <div class="meta">${c.set}${c.number?' · '+c.number:''} · ${c.condition}</div>
+        <div class="prow">
+          <span class="price">$${c.price.toFixed(2)}</span>
+          <button class="add" ${soldOut?'disabled':''} onclick="addToCart('${c.id}')">+</button>
+        </div>
+      </div></div>`;
+  }).join('');
+}
+/* ============ CART ============ */
+function addToCart(id){
+  const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
+  const inCart = STATE.cart.filter(x=>x.id===id).length;
+  if(inCart>=c.qty) return;
+  STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price});
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  updateCartDot(); renderStore();
+}
+function removeFromCart(idx){ STATE.cart.splice(idx,1); updateCartDot(); renderCart(); renderStore(); }
+function updateCartDot(){
+  const d=document.getElementById('cartDot'); d.textContent=STATE.cart.length;
+  d.classList.toggle('hidden',!STATE.cart.length);
+}
+function openCart(){ renderCart(); document.getElementById('scrim').classList.add('show'); document.getElementById('cartSheet').classList.add('show'); }
+function closeCart(){ document.getElementById('scrim').classList.remove('show'); document.getElementById('cartSheet').classList.remove('show'); }
+function renderCart(){
+  const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
+  if(!STATE.cart.length){
+    body.innerHTML=`<div class="empty"><div class="e-ic">🛒</div><p>Your cart's empty. Go claim some cards!</p></div>`;
+    foot.innerHTML=''; return;
+  }
+  const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
+  const need=STATE.config.freeShip-STATE.cart.length;
+  const nudge = need>0
+    ? `<div class="nudge">🐾 Add ${need} more card${need>1?'s':''} to hit the ${STATE.config.freeShip}-card flat-shipping sweet spot</div>`
+    : `<div class="nudge">🎉 Nice bundle — you're at the best shipping value</div>`;
+  body.innerHTML = STATE.cart.map((c,i)=>
+    `<div class="crow"><div class="ci">${EMOJI[c.tier]||'🃏'}</div>
+      <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.tier}</div></div>
+      <span class="cp">$${c.price.toFixed(2)}</span>
+      <button class="rm" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
+    (STATE.credit>0?`<div class="creditrow"><span>Use store credit ($${STATE.credit.toFixed(2)})</span>
+      <button class="switch ${STATE.useCredit?'on':''}" onclick="toggleCredit()"></button></div>`:'');
+  const creditApplied = STATE.useCredit ? Math.min(STATE.credit,subtotal) : 0;
+  const total = subtotal - creditApplied;
+  foot.innerHTML = `<div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
+    ${creditApplied>0?`<div style="font-size:12px;color:var(--mint);font-weight:700;text-align:right;margin-top:-6px;margin-bottom:8px">−$${creditApplied.toFixed(2)} credit applied</div>`:''}
+    <button class="cta" onclick="checkout()">Place order · $${total.toFixed(2)}</button>`;
+}
+function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
+async function checkout(){
+  const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
+  const useCredit = STATE.useCredit? Math.min(STATE.credit,subtotal):0;
+  const r = await api('submitOrder',{cart:STATE.cart,useCredit});
+  if(r.ok){
+    STATE.cart=[]; STATE.useCredit=false; updateCartDot(); closeCart();
+    const msg='Order '+r.orderId+' placed! 🎉 We\'ll message you the SingPost tracking once it ships.';
+    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    loadOverview();
+  } else if(r.error==='unavailable'){
+    const msg='Ah — one of those cards was just claimed by someone else. Cart updated.';
+    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    loadStore();
+  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Something went wrong. Try again in a sec.'); }
+}
+/* ============ ORDERS ============ */
+async function loadOrders(){
+  const list=document.getElementById('ordersList');
+  list.innerHTML='<div class="skel" style="height:150px"></div>';
+  const r=await api('orders');
+  STATE.orders=r.orders||[];
+  if(!STATE.orders.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet. Your claims will show up here with live tracking.</p></div>`; return; }
+  list.innerHTML=STATE.orders.map(o=>{
+    const si=STEPS.indexOf(o.status);
+    const bcls={'Ordered':'b-ordered','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered','Cancelled':'b-cancelled'}[o.status]||'b-ordered';
+    const track = o.status==='Cancelled' ? '' :
+      `<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
+    return `<div class="order">
+      <div class="hd"><span class="oid">#${o.id}</span><span class="badge ${bcls}">${o.status}</span></div>
+      ${track}
+      ${o.lastUpdate?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
+      ${o.tracking?`<a class="trackn" href="https://www.singpost.com/track-items?trackingNumber=${o.tracking}" target="_blank">Track ${o.tracking} ↗</a>`:''}
+      <div class="oitems">${o.items.map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
+        <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>Total</span><span>$${o.total.toFixed(2)}</span></div></div>
+    </div>`;
+  }).join('');
+}
+/* ============ BUYBACK ============ */
+function pickPayout(p){ STATE.payout=p;
+  document.getElementById('q-credit').classList.toggle('sel',p==='credit');
+  document.getElementById('q-cash').classList.toggle('sel',p==='cash');
+}
+function quote(){
+  const val=parseFloat(document.getElementById('bb-val').value)||0;
+  document.getElementById('qv-cash').textContent='$'+(val*STATE.config.cashRate).toFixed(2);
+  document.getElementById('qv-credit').textContent='$'+(val*STATE.config.creditRate).toFixed(2);
+  const name=document.getElementById('bb-name').value.trim();
+  const btn=document.getElementById('bb-submit');
+  const ok=name&&val>0;
+  btn.disabled=!ok;
+  btn.textContent = ok ? `Submit for review · $${(val*(STATE.payout==='credit'?STATE.config.creditRate:STATE.config.cashRate)).toFixed(2)} ${STATE.payout}` : 'Enter a value to continue';
+}
+async function submitBuyback(){
+  const val=parseFloat(document.getElementById('bb-val').value)||0;
+  const name=document.getElementById('bb-name').value.trim();
+  if(!name||val<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('Add a card name and value first.'); return; }
+  const r=await api('submitBuyback',{cardName:name,set:document.getElementById('bb-set').value,
+    number:document.getElementById('bb-num').value,condition:document.getElementById('bb-cond').value,
+    marketValue:val,payout:STATE.payout});
+  if(r.ok){
+    const msg='Buyback '+r.buybackId+' submitted! We\'ll review comps and confirm your offer in chat.';
+    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    ['bb-name','bb-set','bb-num','bb-val'].forEach(id=>document.getElementById(id).value='');
+    quote();
+  }
+}
+/* ============ INIT ============ */
+(function init(){
+  if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#C98B5E');
+    const u=tg.initDataUnsafe&&tg.initDataUnsafe.user;
+    if(u){ STATE.user={id:String(u.id),name:[u.first_name,u.last_name].filter(Boolean).join(' '),username:u.username||''}; }
+  }
+  renderChips();
+  loadOverview();
+})();
+</script>
+</body>
+</html>
