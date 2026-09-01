@@ -225,6 +225,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cv-hint{font-size:12px;opacity:.75;margin-top:10px}
 .cv-price{font-family:'Fredoka';font-weight:600;font-size:22px;margin:12px 0 10px}
 .cardview .cta{max-width:320px}
+.cta-alt{max-width:320px;width:100%;background:transparent;border:1.5px solid #fff;color:#fff;
+  font-family:'Fredoka';font-weight:500;font-size:15px;padding:11px;border-radius:14px;margin-top:8px}
 .asell{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
   border-radius:12px;padding:8px 10px;margin-bottom:8px}
 .asell .ci{width:34px;height:44px;border-radius:8px;background:var(--ruff);display:flex;align-items:center;
@@ -425,6 +427,7 @@ function mock(action,p){
   if(action==='submitPayment') return {ok:true};
   if(action==='adminList') return {ok:true,items:DEMO_INV.map(c=>({id:c.id,name:c.name,set:c.set,number:c.number,tier:c.tier,price:c.price,image:''}))};
   if(action==='adminSell') return {ok:true,message:'✅ Sold (demo).'};
+  if(action==='makeOffer') return {ok:true,message:'Offer sent! (demo)'};
   if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review — we\'ll confirm your offer in chat shortly.'};
   if(action==='requestPictures') return {ok:true,requestId:'PR'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Photo request sent! (demo)'};
   if(action==='storeInfo') return {ok:true,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards'};
@@ -537,11 +540,24 @@ function openCardView(id){
       ${hasBack?'<div class="cv-hint">tap card to flip ⤾</div>':`<button class="pics" style="max-width:220px;margin:8px auto 0" onclick="askPics('${c.id}');closeCardView()">📷 Request more photos</button>`}
       <div class="cv-price">$${c.price.toFixed(2)}</div>
       <button class="cta" ${(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">Add to cart</button>
+      <button class="cta-alt" onclick="makeOffer('${c.id}','${(c.name||'').replace(/'/g,'')}',${c.price})">💬 Make an offer</button>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
 }
 function closeCardView(){ document.getElementById('cardViewScrim').classList.remove('show'); document.getElementById('cardView').classList.remove('show'); }
+async function makeOffer(id,name,listed){
+  let val;
+  if(tg&&tg.showPopup){ /* Telegram has no numeric prompt; use showScanQr? no. fall back to prompt */ }
+  val = prompt(`Your offer for "${name}" (listed $${listed.toFixed(2)}):\nEnter amount in S$`);
+  if(val===null) return;
+  const offer = parseFloat(val);
+  if(!offer||offer<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('Enter a valid amount.'); return; }
+  const r = await api('makeOffer',{cardId:id,offer});
+  const msg = r.ok ? (r.message||'Offer sent!') : 'Couldn\'t send offer, try again.';
+  tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+  closeCardView();
+}
 
 /* ============ CART ============ */
 function addToCart(id){
