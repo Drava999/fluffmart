@@ -26,6 +26,18 @@ body{
   font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--text);
   padding-bottom:88px;line-height:1.55;overflow-x:hidden;
 }
+/* On desktop, present the app as a centered phone-width column with a backdrop,
+   and align all fixed overlays (nav, sheets, card view) to that same column. */
+@media (min-width:600px){
+  body{background:#e8dcc6;padding-bottom:0;display:flex;justify-content:center}
+  #app{width:460px;min-height:100vh;background:var(--bg);box-shadow:0 0 40px rgba(74,53,36,.18);
+    position:relative;padding-bottom:88px;overflow:hidden}
+  .top{max-width:460px}
+  .nav{left:50%!important;right:auto!important;transform:translateX(-50%);width:460px}
+  .sheet{left:50%!important;right:auto!important;transform:translateX(-50%) translateY(100%);width:460px;margin:0}
+  .sheet.show{transform:translateX(-50%) translateY(0)}
+  .cardview{left:50%;right:auto;transform:translateX(-50%);width:460px;margin:0}
+}
 h1,h2,h3,.brand{font-family:'Fredoka',sans-serif;font-weight:500;margin:0}
 .wrap{max-width:520px;margin:0 auto;padding:0 16px}
 .hidden{display:none!important}
@@ -236,6 +248,16 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .asell .an{font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .asell .as{font-size:11px;color:var(--hint)}
 .asellbtn{background:var(--berry);color:#fff;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;flex-shrink:0}
+.rates{display:flex;gap:12px;margin:4px 0 4px}
+.rate{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 12px;text-align:center;position:relative}
+.rate:first-child{border-color:var(--berry)}
+.rate-cap{font-size:11px;font-weight:700;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:-2px}
+.rate-n{font-family:'Fredoka';font-weight:600;font-size:30px;color:var(--fawn-deep)}
+.rate-l{font-size:12px;color:var(--hint);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.rate-b{font-size:10px;font-weight:800;color:#fff;background:var(--berry);border-radius:10px;padding:2px 8px;display:inline-block;margin-top:6px}
+.field textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font-size:14px;
+  background:var(--bg);color:var(--text);font-family:inherit;outline:none;resize:vertical;line-height:1.5}
+.field textarea:focus{border-color:var(--fawn)}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
 .empty p{font-size:13px}
@@ -246,6 +268,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 </head>
 <body>
 
+<div id="app">
 <div class="top">
   <div class="mascot">🦊</div>
   <div>
@@ -276,7 +299,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('buyback')">
-      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>80% cash · 85% store credit</p></div>
+      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>up to 80% cash · up to 85% store credit</p></div>
       <span class="chev">›</span>
     </button>
     <div id="ov-policies" style="margin-top:14px"></div>
@@ -307,43 +330,27 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
   <!-- BUYBACK -->
   <div class="view hidden" id="v-buyback">
-    <div class="section-t">Sell a card to us</div>
+    <div class="section-t">Sell your cards to us</div>
+    <div class="rates">
+      <div class="rate"><div class="rate-cap">up to</div><div class="rate-n" id="rate-credit">85%</div><div class="rate-l">store credit</div><div class="rate-b">best value</div></div>
+      <div class="rate"><div class="rate-cap">up to</div><div class="rate-n" id="rate-cash">80%</div><div class="rate-l">cash</div></div>
+    </div>
+    <p class="note" style="text-align:left;margin:2px 4px 14px">These are our <b>maximum</b> rates — the final offer depends on the card's condition and current market value. Tell us what you've got below and we'll message you back to confirm an offer.</p>
     <div class="panel">
-      <div class="field"><label>Card name</label><input id="bb-name" placeholder="e.g. Umbreon VMAX" oninput="quote()"></div>
-      <div class="two">
-        <div class="field"><label>Set</label><input id="bb-set" placeholder="e.g. Evolving Skies"></div>
-        <div class="field"><label>Card no.</label><input id="bb-num" placeholder="215/203"></div>
+      <div class="field">
+        <label>What are you selling?</label>
+        <textarea id="bb-msg" rows="5" placeholder="Tell us what you have or what you're after — e.g. 'Umbreon VMAX alt art 215/203, Near Mint, looking to sell for store credit' or 'a stack of ~30 SV holos, want a bulk cash offer'. The more detail, the faster we can quote you."></textarea>
       </div>
-      <div class="two">
-        <div class="field"><label>Condition</label>
-          <select id="bb-cond"><option>Near Mint</option><option>Lightly Played</option><option>Moderately Played</option><option>Damaged</option></select>
-        </div>
-        <div class="field"><label>Market value (S$)</label><input id="bb-val" type="number" inputmode="decimal" placeholder="0.00" oninput="quote()"></div>
-      </div>
-      <div class="section-t" style="margin:4px 4px 8px">Your offer</div>
-      <div class="quote">
-        <button class="qbox sel" id="q-credit" onclick="pickPayout('credit')">
-          <div class="qt">STORE CREDIT</div><div class="qv" id="qv-credit">$0.00</div><div class="qr">85% · best value</div>
-        </button>
-        <button class="qbox" id="q-cash" onclick="pickPayout('cash')">
-          <div class="qt">CASH</div><div class="qv" id="qv-cash">$0.00</div><div class="qr">80%</div>
-        </button>
-      </div>
-      <button class="cta" id="bb-submit" onclick="submitBuyback()" disabled>Enter a value to continue</button>
-      <p class="note">We'll review against live comps and confirm your offer in chat before anything's final.</p>
+      <button class="cta" id="bb-submit" onclick="submitBuyback()">Send &amp; talk to us</button>
+      <p class="note">This starts a chat — no commitment. We'll reply in Telegram to sort out a price.</p>
     </div>
   </div>
 
   <!-- ADMIN -->
-  <div class="view hidden" id="v-admin">
-    <div class="section-t">🛠️ Quick Sell — mark cards sold on any channel</div>
-    <div class="tools"><div class="search">🔎<input id="adminQ" placeholder="Search by name, set or number…" oninput="renderAdmin()"></div></div>
-    <div class="chips" id="chanChips"></div>
-    <div id="adminList"></div>
-    <p class="note">Marks the card sold instantly and logs it to the Transactions tab with the channel you pick above.</p>
-  </div>
 
 </div>
+
+</div><!-- /#app -->
 
 <!-- NAV -->
 <div class="nav" id="nav">
@@ -352,7 +359,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <button data-t="store" onclick="go('store')"><span class="ni">🛍️</span>Store</button>
   <button data-t="cart" onclick="openCart()"><span class="ni">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
   <button data-t="buyback" onclick="go('buyback')"><span class="ni">💰</span>Sell</button>
-  <button data-t="admin" id="nav-admin" class="hidden" onclick="go('admin')"><span class="ni">🛠️</span>Admin</button>
 </div>
 
 <!-- CART -->
@@ -375,6 +381,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <div class="cardview" id="cardView">
   <button class="cv-close" onclick="closeCardView()">✕</button>
   <div id="cardViewBody"></div>
+</div>
+
+<!-- OFFER -->
+<div class="scrim" id="offerScrim" onclick="closeOffer()"></div>
+<div class="sheet" id="offerSheet">
+  <div class="sh-hd"><h2 id="offerTitle">Make an offer</h2><button class="rm" onclick="closeOffer()">✕</button></div>
+  <div class="body" style="padding-bottom:20px">
+    <p class="note" id="offerSub" style="text-align:left;margin:0 0 12px"></p>
+    <div class="field"><label>Your offer (S$)</label>
+      <input id="offerInput" type="number" inputmode="decimal" placeholder="0.00"></div>
+    <button class="cta" id="offerSend" onclick="sendOffer()">Send offer</button>
+    <p class="note">We'll get your offer and message you back to discuss. No payment yet — just a chat.</p>
+  </div>
 </div>
 
 <script>
@@ -425,8 +444,6 @@ function mock(action,p){
   if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
   if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); const sh=p.cart.length>=5?0:3; return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:sh,creditUsed:0,total:sub+sh,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowNumber:'PLACEHOLDER-PAYNOW',paynowName:'Fluffmart TCG',paynowQr:''}; }
   if(action==='submitPayment') return {ok:true};
-  if(action==='adminList') return {ok:true,items:DEMO_INV.map(c=>({id:c.id,name:c.name,set:c.set,number:c.number,tier:c.tier,price:c.price,image:''}))};
-  if(action==='adminSell') return {ok:true,message:'✅ Sold (demo).'};
   if(action==='makeOffer') return {ok:true,message:'Offer sent! (demo)'};
   if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review — we\'ll confirm your offer in chat shortly.'};
   if(action==='requestPictures') return {ok:true,requestId:'PR'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Photo request sent! (demo)'};
@@ -436,12 +453,11 @@ function mock(action,p){
 
 /* ============ NAV ============ */
 function go(tab){
-  ['overview','store','orders','buyback','admin'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
+  ['overview','store','orders','buyback'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
   if(tab==='store'&&!STATE.inventory.length) loadStore();
   if(tab==='orders') loadOrders();
-  if(tab==='admin') loadAdmin();
   window.scrollTo(0,0);
 }
 
@@ -452,7 +468,7 @@ async function loadOverview(){
   STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,shipFlat:r.shipFlat!=null?r.shipFlat:3};
   STATE.credit = r.credit||0;
   STATE.isAdmin = !!r.isAdmin;
-  if(r.isAdmin){ const ab=document.getElementById('nav-admin'); if(ab) ab.classList.remove('hidden'); }
+  updateRateLabels();
   document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
   document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
   if(r.holdPolicy||r.shippingPolicy){
@@ -546,17 +562,27 @@ function openCardView(id){
   document.getElementById('cardView').classList.add('show');
 }
 function closeCardView(){ document.getElementById('cardViewScrim').classList.remove('show'); document.getElementById('cardView').classList.remove('show'); }
-async function makeOffer(id,name,listed){
-  let val;
-  if(tg&&tg.showPopup){ /* Telegram has no numeric prompt; use showScanQr? no. fall back to prompt */ }
-  val = prompt(`Your offer for "${name}" (listed $${listed.toFixed(2)}):\nEnter amount in S$`);
-  if(val===null) return;
-  const offer = parseFloat(val);
+let OFFER_CARD=null;
+function makeOffer(id,name,listed){
+  OFFER_CARD={id,name,listed};
+  document.getElementById('offerTitle').textContent='Offer for '+name;
+  document.getElementById('offerSub').textContent='Listed at $'+listed.toFixed(2);
+  document.getElementById('offerInput').value='';
+  document.getElementById('offerScrim').classList.add('show');
+  document.getElementById('offerSheet').classList.add('show');
+  setTimeout(()=>document.getElementById('offerInput').focus(),100);
+}
+function closeOffer(){ document.getElementById('offerScrim').classList.remove('show'); document.getElementById('offerSheet').classList.remove('show'); }
+async function sendOffer(){
+  if(!OFFER_CARD) return;
+  const offer=parseFloat(document.getElementById('offerInput').value);
   if(!offer||offer<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('Enter a valid amount.'); return; }
-  const r = await api('makeOffer',{cardId:id,offer});
-  const msg = r.ok ? (r.message||'Offer sent!') : 'Couldn\'t send offer, try again.';
+  const btn=document.getElementById('offerSend'); btn.disabled=true; btn.textContent='Sending…';
+  const r=await api('makeOffer',{cardId:OFFER_CARD.id,offer});
+  btn.disabled=false; btn.textContent='Send offer';
+  closeOffer(); closeCardView();
+  const msg=r.ok?(r.message||'Offer sent!'):'Couldn\'t send offer, try again.';
   tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
-  closeCardView();
 }
 
 /* ============ CART ============ */
@@ -700,81 +726,23 @@ async function loadOrders(){
   }).join('');
 }
 
-/* ============ BUYBACK ============ */
-function pickPayout(p){ STATE.payout=p;
-  document.getElementById('q-credit').classList.toggle('sel',p==='credit');
-  document.getElementById('q-cash').classList.toggle('sel',p==='cash');
-}
-function quote(){
-  const val=parseFloat(document.getElementById('bb-val').value)||0;
-  document.getElementById('qv-cash').textContent='$'+(val*STATE.config.cashRate).toFixed(2);
-  document.getElementById('qv-credit').textContent='$'+(val*STATE.config.creditRate).toFixed(2);
-  const cr=document.querySelector('#q-credit .qr'), ca=document.querySelector('#q-cash .qr');
-  if(cr) cr.textContent=Math.round(STATE.config.creditRate*100)+'% · best value';
-  if(ca) ca.textContent=Math.round(STATE.config.cashRate*100)+'%';
-  const name=document.getElementById('bb-name').value.trim();
-  const btn=document.getElementById('bb-submit');
-  const ok=name&&val>0;
-  btn.disabled=!ok;
-  btn.textContent = ok ? `Submit for review · $${(val*(STATE.payout==='credit'?STATE.config.creditRate:STATE.config.cashRate)).toFixed(2)} ${STATE.payout}` : 'Enter a value to continue';
+/* ============ BUYBACK / SELL REQUEST ============ */
+function updateRateLabels(){
+  const rc=document.getElementById('rate-credit'), rk=document.getElementById('rate-cash');
+  if(rc) rc.textContent=Math.round(STATE.config.creditRate*100)+'%';
+  if(rk) rk.textContent=Math.round(STATE.config.cashRate*100)+'%';
 }
 async function submitBuyback(){
-  const val=parseFloat(document.getElementById('bb-val').value)||0;
-  const name=document.getElementById('bb-name').value.trim();
-  if(!name||val<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('Add a card name and value first.'); return; }
-  const r=await api('submitBuyback',{cardName:name,set:document.getElementById('bb-set').value,
-    number:document.getElementById('bb-num').value,condition:document.getElementById('bb-cond').value,
-    marketValue:val,payout:STATE.payout});
+  const msg=document.getElementById('bb-msg').value.trim();
+  if(!msg){ (tg&&tg.showAlert?tg.showAlert:alert)('Tell us what you\'d like to sell first.'); return; }
+  const btn=document.getElementById('bb-submit'); btn.disabled=true; btn.textContent='Sending\u2026';
+  const r=await api('submitBuyback',{message:msg});
+  btn.disabled=false; btn.textContent='Send & talk to us';
   if(r.ok){
-    const msg='Buyback '+r.buybackId+' submitted! We\'ll review comps and confirm your offer in chat.';
-    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
-    ['bb-name','bb-set','bb-num','bb-val'].forEach(id=>document.getElementById(id).value='');
-    quote();
-  }
-}
-
-/* ============ ADMIN QUICK SELL ============ */
-const CHANNELS = ['tiktok','carousell','instagram','in-person','other'];
-let ADMIN_CHAN = 'tiktok', ADMIN_ITEMS = [];
-function renderChanChips(){
-  document.getElementById('chanChips').innerHTML = CHANNELS.map(ch=>
-    `<button class="chip ${ch===ADMIN_CHAN?'on':''}" onclick="ADMIN_CHAN='${ch}';renderChanChips();">${ch}</button>`).join('');
-}
-async function loadAdmin(){
-  renderChanChips();
-  document.getElementById('adminList').innerHTML='<div class="skel" style="height:60px"></div>';
-  const r = await api('adminList',{q:document.getElementById('adminQ').value||''});
-  ADMIN_ITEMS = r.items||[];
-  renderAdmin();
-}
-let adminSearchT=null;
-function renderAdmin(){
-  clearTimeout(adminSearchT);
-  adminSearchT=setTimeout(async()=>{
-    const r = await api('adminList',{q:document.getElementById('adminQ').value||''});
-    ADMIN_ITEMS = r.items||[];
-    paintAdmin();
-  },250);
-}
-function paintAdmin(){
-  const el=document.getElementById('adminList');
-  if(!ADMIN_ITEMS.length){ el.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No available cards match.</p></div>`; return; }
-  el.innerHTML = ADMIN_ITEMS.map(c=>
-    `<div class="asell">
-      <div class="ci">${c.image?`<img src="${c.image}">`:(EMOJI[c.tier]||'🃏')}</div>
-      <div class="ainfo"><div class="an">${c.name}</div><div class="as">${c.set}${c.number?' · '+c.number:''} · $${c.price.toFixed(2)}</div></div>
-      <button class="asellbtn" onclick="doSell('${c.id}','${(c.name||'').replace(/'/g,'')}')">Sold</button>
-    </div>`).join('');
-}
-async function doSell(id,name){
-  const ok = tg&&tg.showConfirm
-    ? await new Promise(res=>tg.showConfirm(`Mark "${name}" sold on ${ADMIN_CHAN}?`,res))
-    : confirm(`Mark "${name}" sold on ${ADMIN_CHAN}?`);
-  if(!ok) return;
-  const r = await api('adminSell',{cardId:id,channel:ADMIN_CHAN});
-  const msg = r.ok ? (r.message||'Sold.') : (r.message||'Could not sell (maybe already sold).');
-  tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
-  loadAdmin();
+    document.getElementById('bb-msg').value='';
+    const m=r.message||'Sent! We\'ll message you back shortly.';
+    tg&&tg.showAlert?tg.showAlert(m):alert(m);
+  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Couldn\'t send, try again.'); }
 }
 
 /* ============ INIT ============ */
