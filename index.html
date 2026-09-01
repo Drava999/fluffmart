@@ -30,12 +30,16 @@ body{
    and align all fixed overlays (nav, sheets, card view) to that same column. */
 @media (min-width:600px){
   body{background:#e3d5bd;padding-bottom:0}
-  #app{width:460px;margin:0 auto;min-height:100vh;background:var(--bg);
-    box-shadow:0 0 60px rgba(74,53,36,.22);position:relative;padding-bottom:96px}
-  .nav{left:50%;right:auto;transform:translateX(-50%);width:460px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
-  .sheet{left:50%;right:auto;transform:translateX(-50%) translateY(100%);width:460px;margin:0}
+  #app{width:520px;margin:0 auto;min-height:100vh;background:var(--bg);
+    box-shadow:0 0 60px rgba(74,53,36,.22);position:relative;padding-bottom:100px}
+  .wrap{max-width:100%;padding:0 20px}
+  .top{padding-left:20px;padding-right:20px}
+  .nav{left:50%;right:auto;transform:translateX(-50%);width:520px;
+    border-left:1px solid var(--line);border-right:1px solid var(--line)}
+  .sheet{left:50%;right:auto;transform:translateX(-50%) translateY(100%);width:520px;margin:0}
   .sheet.show{transform:translateX(-50%) translateY(0)}
-  .cardview{left:50%;right:auto;transform:translateX(-50%);width:460px;margin:0}
+  .cardview{left:50%;right:auto;transform:translateX(-50%);width:520px;margin:0}
+  .grid{grid-template-columns:1fr 1fr 1fr}
 }
 h1,h2,h3,.brand{font-family:'Fredoka',sans-serif;font-weight:500;margin:0}
 .wrap{max-width:520px;margin:0 auto;padding:0 16px}
@@ -217,12 +221,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 /* card view */
 .cv-scrim{position:fixed;inset:0;background:rgba(74,53,36,.75);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
 .cv-scrim.show{opacity:1;pointer-events:auto}
-.cardview{position:fixed;inset:0;z-index:41;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:24px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:520px;margin:0 auto}
+.cardview{position:fixed;inset:0;z-index:41;display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;padding:56px 24px 32px;opacity:0;pointer-events:none;transition:opacity .2s;
+  max-width:520px;margin:0 auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .cardview.show{opacity:1;pointer-events:auto}
 .cv-close{position:absolute;top:16px;right:16px;color:#fff;font-size:26px;z-index:42;background:rgba(0,0,0,.3);
   width:40px;height:40px;border-radius:50%}
-.cv-card{width:min(78vw,300px);aspect-ratio:3/4;perspective:1200px;cursor:pointer}
+.cv-card{width:min(64vw,240px);aspect-ratio:3/4;perspective:1200px;cursor:pointer;flex-shrink:0}
 .cv-card.noflip{cursor:default}
 .cv-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,.8,.4,1)}
 .cv-card.flipped .cv-inner{transform:rotateY(180deg)}
@@ -261,6 +266,23 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .field textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font-size:14px;
   background:var(--bg);color:var(--text);font-family:inherit;outline:none;resize:vertical;line-height:1.5}
 .field textarea:focus{border-color:var(--fawn)}
+/* custom in-app dropdown */
+.dd{position:relative;flex-shrink:0}
+.dd-btn{display:flex;align-items:center;gap:6px;height:40px;padding:0 12px;border:1px solid var(--line);
+  background:var(--card);border-radius:12px;font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap}
+.dd-chev{color:var(--hint);font-size:14px;line-height:1;transition:transform .2s}
+.dd.open .dd-chev{transform:rotate(180deg)}
+.dd-menu{position:absolute;top:46px;right:0;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;box-shadow:0 8px 28px rgba(74,53,36,.18);padding:6px;min-width:180px;z-index:25;
+  opacity:0;pointer-events:none;transform:translateY(-6px);transition:.16s}
+.dd.open .dd-menu{opacity:1;pointer-events:auto;transform:none}
+.dd-item{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-size:13px;
+  font-weight:600;color:var(--text)}
+.dd-item:hover{background:var(--bg)}
+.dd-item.on{background:var(--ruff);color:var(--fawn-deep);font-weight:800}
+/* card view tags */
+.cv-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
+.cv-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
 .empty p{font-size:13px}
@@ -313,13 +335,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="view hidden" id="v-store">
     <div class="tools">
       <div class="search">🔎<input id="q" placeholder="Search cards or sets…" oninput="renderStore()"></div>
-      <select id="sort" class="sortsel" onchange="STATE.sort=this.value;renderStore()">
-        <option value="rarity">Rarity</option>
-        <option value="price-desc">Price ↓ high</option>
-        <option value="price-asc">Price ↑ low</option>
-        <option value="set">Set A–Z</option>
-        <option value="name">Name A–Z</option>
-      </select>
+      <div class="dd" id="sortDD">
+        <button class="dd-btn" onclick="toggleSort(event)"><span id="sortLabel">Rarity</span><span class="dd-chev">⌄</span></button>
+        <div class="dd-menu" id="sortMenu"></div>
+      </div>
     </div>
     <div class="chips" id="chips"></div>
     <div class="grid" id="storeGrid"></div>
@@ -411,6 +430,7 @@ let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[
 const TIERS = ['All','AR','SIR','SR','EX','Double Rare','Holo','Slab','Merch'];
 const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Merch:'🎁'};
 const RARITY_RANK = {SIR:0,SR:1,AR:2,'Double Rare':3,EX:4,Slab:5,Holo:6,Merch:7};
+const TIER_NAME = {AR:'Art Rare',SIR:'Special Illustration Rare',SR:'Super Rare',EX:'EX / V',Holo:'Holo Rare','Double Rare':'Double Rare',Slab:'Graded Slab',Merch:'Merch',All:'All cards'};
 
 /* demo data so the app is previewable before the backend is wired */
 const DEMO_INV = [
@@ -484,9 +504,24 @@ async function loadOverview(){
 /* ============ STORE ============ */
 function renderChips(){
   document.getElementById('chips').innerHTML = TIERS.map(t=>
-    `<button class="chip ${t===STATE.tier?'on':''}" onclick="setTier('${t}')">${t}</button>`).join('');
+    `<button class="chip ${t===STATE.tier?'on':''}" onclick="setTier('${t}')">${t==='All'?'All':(EMOJI[t]||'')+' '+(TIER_NAME[t]||t)}</button>`).join('');
 }
 function setTier(t){ STATE.tier=t; renderChips(); renderStore(); }
+const SORTS=[{v:'rarity',l:'Rarity'},{v:'price-desc',l:'Price: high to low'},{v:'price-asc',l:'Price: low to high'},{v:'set',l:'Set A–Z'},{v:'name',l:'Name A–Z'}];
+function toggleSort(e){
+  e.stopPropagation();
+  const dd=document.getElementById('sortDD'), menu=document.getElementById('sortMenu');
+  if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
+  menu.innerHTML=SORTS.map(s=>`<button class="dd-item ${s.v===STATE.sort?'on':''}" onclick="pickSort('${s.v}','${s.l}')">${s.l}</button>`).join('');
+  dd.classList.add('open');
+}
+function pickSort(v,l){
+  STATE.sort=v;
+  document.getElementById('sortLabel').textContent=l;
+  document.getElementById('sortDD').classList.remove('open');
+  renderStore();
+}
+document.addEventListener('click',()=>{const d=document.getElementById('sortDD'); if(d) d.classList.remove('open');});
 async function loadStore(){
   document.getElementById('storeGrid').innerHTML = Array(4).fill('<div class="skel"></div>').join('');
   const r = await api('inventory');
@@ -524,9 +559,9 @@ function renderStore(){
         ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
       <div class="body">
         <div class="nm">${c.name}</div>
-        <div class="meta">${c.set}${c.number?' · '+c.number:''} · ${c.grade?('Grade '+c.grade):c.condition}</div>
-        ${c.description?`<div class="desc">${c.description}</div>`:''}
-        ${(!c.image||c.imageType==='stock')?`<button class="pics" onclick="event.stopPropagation();askPics('${c.id}')">📷 Request more photos</button>`:''}
+        <div class="meta">${c.set}${c.number?' · '+c.number:''}</div>
+        <div class="desc">${TIER_NAME[c.tier]||c.tier}${c.variance?' · '+c.variance:''} · ${c.grade?('Graded '+c.grade):(c.condition||'NM')}</div>
+        ${(!c.image||c.imageType==='stock')?`<button class="pics" onclick="event.stopPropagation();askPics('${c.id}')">📷 Ask us for photos</button>`:''}
         <div class="prow">
           <span class="price">$${c.price.toFixed(2)}</span>
           <button class="add" ${soldOut?'disabled':''} onclick="addToCart('${c.id}')">+</button>
@@ -554,9 +589,13 @@ function openCardView(id){
     </div>
     <div class="cv-meta">
       <div class="cv-name">${c.name}</div>
-      <div class="cv-sub">${c.set}${c.number?' · '+c.number:''} · ${c.grade?('Grade '+c.grade):c.condition}</div>
-      ${c.description?`<div class="cv-desc">${c.description}</div>`:''}
-      ${hasBack?'<div class="cv-hint">tap card to flip ⤾</div>':`<button class="pics" style="max-width:220px;margin:8px auto 0" onclick="askPics('${c.id}');closeCardView()">📷 Request more photos</button>`}
+      <div class="cv-sub">${c.set}${c.number?' · '+c.number:''}</div>
+      <div class="cv-tags">
+        <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
+        ${c.variance?`<span class="cv-tag">${c.variance}</span>`:''}
+        <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
+      </div>
+      ${hasBack?'<div class="cv-hint">tap card to flip ⤾</div>':`<button class="pics" style="max-width:220px;margin:8px auto 0" onclick="askPics('${c.id}');closeCardView()">📷 Ask us for photos</button>`}
       <div class="cv-price">$${c.price.toFixed(2)}</div>
       <button class="cta" ${(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">Add to cart</button>
       <button class="cta-alt" onclick="makeOffer('${c.id}','${(c.name||'').replace(/'/g,'')}',${c.price})">💬 Make an offer</button>
