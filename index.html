@@ -77,8 +77,16 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
 .pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;position:relative}
 .pcard .img{aspect-ratio:3/4;background:linear-gradient(135deg,var(--ruff),#e9d3ad);
-  display:flex;align-items:center;justify-content:center;font-size:34px}
+  display:flex;align-items:center;justify-content:center;font-size:34px;position:relative;perspective:900px}
 .pcard .img img{width:100%;height:100%;object-fit:cover}
+.flippable{cursor:pointer}
+.flip-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.3,.8,.4,1)}
+.img.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:34px}
+.flip-back{transform:rotateY(180deg);background:linear-gradient(135deg,#d9c4a0,#c9ae82)}
+.flip-hint{position:absolute;bottom:6px;right:6px;background:rgba(74,53,36,.6);color:#fff;font-size:10px;
+  font-weight:800;padding:2px 7px;border-radius:8px;z-index:2;pointer-events:none}
 .pcard .body{padding:9px 10px 11px}
 .pcard .nm{font-size:13px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px}
 .pcard .meta{font-size:11px;color:var(--hint);margin-top:2px}
@@ -165,10 +173,67 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .sh-ft{padding:14px 18px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 .tot{display:flex;justify-content:space-between;font-family:'Fredoka';font-size:18px;font-weight:600;margin-bottom:10px}
 
+.sortsel{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:12px;
+  padding:0 10px;font-size:12.5px;font-weight:700;font-family:inherit;outline:none;max-width:120px}
+.stockflag{position:absolute;bottom:6px;left:6px;font-size:9px;font-weight:800;letter-spacing:.3px;
+  padding:2px 6px;border-radius:6px;background:rgba(74,53,36,.72);color:#fff;text-transform:uppercase}
+.desc{font-size:11px;color:var(--hint);margin-top:3px;line-height:1.35}
 .pics{background:none;border:1px dashed var(--line);color:var(--hint);font-size:11px;font-weight:700;
   padding:4px 8px;border-radius:8px;margin-top:6px;width:100%}
 .addr{margin:12px 0 4px}
 .totline{display:flex;justify-content:space-between;font-size:13px;color:var(--hint);font-weight:700;padding:1px 0}
+/* invoice */
+.inv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.inv-oid{font-family:'Fredoka';font-weight:600;font-size:16px;color:var(--fawn-deep)}
+.inv-badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;background:#fdeede;color:#a56a13}
+.inv-items{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.inv-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--text)}
+.inv-total{font-family:'Fredoka';font-weight:600;font-size:16px;border-top:1px dashed var(--line);margin-top:6px;padding-top:8px}
+.paynow{background:var(--ruff);border-radius:14px;padding:14px;text-align:center;margin-bottom:12px}
+.pn-title{font-family:'Fredoka';font-weight:600;color:var(--fawn-deep);margin-bottom:8px}
+.pn-qr{width:150px;height:150px;object-fit:contain;margin:0 auto 8px;border-radius:8px;background:#fff;display:block}
+.pn-qr-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--hint);font-weight:700;font-size:13px}
+.pn-qr-ph span{font-size:11px;font-weight:600}
+.pn-num{font-size:13px;color:var(--text);line-height:1.5}.pn-num b{font-size:15px}
+.pn-note{font-size:11.5px;color:var(--fawn-deep);margin-top:8px}
+.upl{display:block;text-align:center;border:2px dashed var(--fawn);color:var(--fawn-deep);border-radius:12px;
+  padding:12px;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:10px}
+.proof-img{width:100%;max-height:200px;object-fit:contain;border-radius:10px;margin-bottom:10px;border:1px solid var(--line)}
+/* card view */
+.cv-scrim{position:fixed;inset:0;background:rgba(74,53,36,.75);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.cv-scrim.show{opacity:1;pointer-events:auto}
+.cardview{position:fixed;inset:0;z-index:41;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:520px;margin:0 auto}
+.cardview.show{opacity:1;pointer-events:auto}
+.cv-close{position:absolute;top:16px;right:16px;color:#fff;font-size:26px;z-index:42;background:rgba(0,0,0,.3);
+  width:40px;height:40px;border-radius:50%}
+.cv-card{width:min(78vw,300px);aspect-ratio:3/4;perspective:1200px;cursor:pointer}
+.cv-card.noflip{cursor:default}
+.cv-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,.8,.4,1)}
+.cv-card.flipped .cv-inner{transform:rotateY(180deg)}
+.cv-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;overflow:hidden;
+  box-shadow:0 12px 40px rgba(0,0,0,.4);background:#fff}
+.cv-face img{width:100%;height:100%;object-fit:cover}
+.cv-back{transform:rotateY(180deg)}
+.cv-noimg{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:64px;background:linear-gradient(135deg,var(--ruff),#e9d3ad);color:var(--fawn-deep)}
+.cv-noimg span{font-size:13px;font-weight:700;margin-top:8px}
+.cv-meta{text-align:center;color:#fff;margin-top:18px;max-width:320px}
+.cv-name{font-family:'Fredoka';font-weight:600;font-size:19px}
+.cv-sub{font-size:13px;opacity:.85;margin-top:2px}
+.cv-desc{font-size:12px;opacity:.8;margin-top:6px}
+.cv-hint{font-size:12px;opacity:.75;margin-top:10px}
+.cv-price{font-family:'Fredoka';font-weight:600;font-size:22px;margin:12px 0 10px}
+.cardview .cta{max-width:320px}
+.asell{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.asell .ci{width:34px;height:44px;border-radius:8px;background:var(--ruff);display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden}
+.asell .ci img{width:100%;height:100%;object-fit:cover}
+.asell .ainfo{flex:1;min-width:0}
+.asell .an{font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asell .as{font-size:11px;color:var(--hint)}
+.asellbtn{background:var(--berry);color:#fff;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;flex-shrink:0}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
 .empty p{font-size:13px}
@@ -220,6 +285,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="view hidden" id="v-store">
     <div class="tools">
       <div class="search">🔎<input id="q" placeholder="Search cards or sets…" oninput="renderStore()"></div>
+      <select id="sort" class="sortsel" onchange="STATE.sort=this.value;renderStore()">
+        <option value="rarity">Rarity</option>
+        <option value="price-desc">Price ↓ high</option>
+        <option value="price-asc">Price ↑ low</option>
+        <option value="set">Set A–Z</option>
+        <option value="name">Name A–Z</option>
+      </select>
     </div>
     <div class="chips" id="chips"></div>
     <div class="grid" id="storeGrid"></div>
@@ -260,6 +332,15 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     </div>
   </div>
 
+  <!-- ADMIN -->
+  <div class="view hidden" id="v-admin">
+    <div class="section-t">🛠️ Quick Sell — mark cards sold on any channel</div>
+    <div class="tools"><div class="search">🔎<input id="adminQ" placeholder="Search by name, set or number…" oninput="renderAdmin()"></div></div>
+    <div class="chips" id="chanChips"></div>
+    <div id="adminList"></div>
+    <p class="note">Marks the card sold instantly and logs it to the Transactions tab with the channel you pick above.</p>
+  </div>
+
 </div>
 
 <!-- NAV -->
@@ -269,6 +350,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <button data-t="store" onclick="go('store')"><span class="ni">🛍️</span>Store</button>
   <button data-t="cart" onclick="openCart()"><span class="ni">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
   <button data-t="buyback" onclick="go('buyback')"><span class="ni">💰</span>Sell</button>
+  <button data-t="admin" id="nav-admin" class="hidden" onclick="go('admin')"><span class="ni">🛠️</span>Admin</button>
 </div>
 
 <!-- CART -->
@@ -279,17 +361,32 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="sh-ft" id="cartFoot"></div>
 </div>
 
+<!-- INVOICE -->
+<div class="scrim" id="invScrim" onclick="closeInvoice()"></div>
+<div class="sheet" id="invSheet">
+  <div class="sh-hd"><h2>Checkout</h2><button class="rm" onclick="closeInvoice()">✕</button></div>
+  <div class="body" id="invBody" style="padding-bottom:20px"></div>
+</div>
+
+<!-- CARD VIEW -->
+<div class="cv-scrim" id="cardViewScrim" onclick="closeCardView()"></div>
+<div class="cardview" id="cardView">
+  <button class="cv-close" onclick="closeCardView()">✕</button>
+  <div id="cardViewBody"></div>
+</div>
+
 <script>
 /* ============ CONFIG ============ */
 // Paste your deployed Apps Script Web App URL here. Leave blank to preview with demo data.
-const API_URL = "https://script.google.com/macros/s/AKfycbwAuuCc5YFTfibeNwHMTeNMe-AEHq4FZLW_88-eaQQklKNIJdweJkDss7zFDpxjKC3BBg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyp1Uof8tbcuYsacQuJU42XXOoI0Weh1jCDS2SFlG2Gi1b7pQIz1cSdBKB-tt31Q8drNQ/exec";
 /* ================================ */
 
 const tg = window.Telegram && window.Telegram.WebApp;
-let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''} };
+let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''} };
 
-const TIERS = ['All','AR','SIR','EX','Holo','Double Rare','Slab','Merch'];
-const EMOJI = {AR:'🎨',SIR:'✨',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Merch:'🎁'};
+const TIERS = ['All','AR','SIR','SR','EX','Double Rare','Holo','Slab','Merch'];
+const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Merch:'🎁'};
+const RARITY_RANK = {SIR:0,SR:1,AR:2,'Double Rare':3,EX:4,Slab:5,Holo:6,Merch:7};
 
 /* demo data so the app is previewable before the backend is wired */
 const DEMO_INV = [
@@ -306,7 +403,8 @@ const DEMO_ORDERS = [
   {id:'EF8XK2',status:'In Transit',tracking:'SP123456789SG',total:46,created:'2026-08-28T09:00:00Z',lastUpdate:'Departed Singapore Regional eCommerce Hub',items:[{name:'Mimikyu ex',tier:'AR',price:12},{name:'Snorlax',tier:'Holo',price:5},{name:'Sylveon ex',tier:'EX',price:6}]},
   {id:'EF7QP9',status:'Delivered',tracking:'SP987654321SG',total:34,created:'2026-08-14T09:00:00Z',lastUpdate:'Delivered',items:[{name:'Pikachu with Grey Felt Hat',tier:'AR',price:34}]},
 ];
-const STEPS = ['Ordered','Packed','Shipped','In Transit','Delivered'];
+const STEPS = ['Ordered','Paid','Packed','Shipped','Delivered'];
+const STATUS_STEP = {'Awaiting Payment':0,'Payment Claimed':0,'Paid':1,'Packed':2,'Shipped':3,'In Transit':3,'Delivered':4,'Cancelled':-1};
 
 /* ============ API ============ */
 async function api(action, payload={}){
@@ -323,7 +421,10 @@ function mock(action,p){
   if(action==='inventory') return {ok:true,items:DEMO_INV};
   if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
   if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
-  if(action==='submitOrder'){ return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),total:p.cart.reduce((s,c)=>s+c.price,0)}; }
+  if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); const sh=p.cart.length>=5?0:3; return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:sh,creditUsed:0,total:sub+sh,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowNumber:'PLACEHOLDER-PAYNOW',paynowName:'Fluffmart TCG',paynowQr:''}; }
+  if(action==='submitPayment') return {ok:true};
+  if(action==='adminList') return {ok:true,items:DEMO_INV.map(c=>({id:c.id,name:c.name,set:c.set,number:c.number,tier:c.tier,price:c.price,image:''}))};
+  if(action==='adminSell') return {ok:true,message:'✅ Sold (demo).'};
   if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review — we\'ll confirm your offer in chat shortly.'};
   if(action==='requestPictures') return {ok:true,requestId:'PR'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Photo request sent! (demo)'};
   if(action==='storeInfo') return {ok:true,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards'};
@@ -332,11 +433,12 @@ function mock(action,p){
 
 /* ============ NAV ============ */
 function go(tab){
-  ['overview','store','orders','buyback'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
+  ['overview','store','orders','buyback','admin'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
   if(tab==='store'&&!STATE.inventory.length) loadStore();
   if(tab==='orders') loadOrders();
+  if(tab==='admin') loadAdmin();
   window.scrollTo(0,0);
 }
 
@@ -346,6 +448,8 @@ async function loadOverview(){
   if(!r.ok) return;
   STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,shipFlat:r.shipFlat!=null?r.shipFlat:3};
   STATE.credit = r.credit||0;
+  STATE.isAdmin = !!r.isAdmin;
+  if(r.isAdmin){ const ab=document.getElementById('nav-admin'); if(ab) ab.classList.remove('hidden'); }
   document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
   document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
   if(r.holdPolicy||r.shippingPolicy){
@@ -374,19 +478,33 @@ function renderStore(){
     const okQ = !q || (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().includes(q);
     return okTier && okQ;
   });
+  const s = STATE.sort;
+  list.sort((a,b)=>{
+    if(s==='price-asc') return a.price-b.price;
+    if(s==='price-desc') return b.price-a.price;
+    if(s==='set') return (a.set||'').localeCompare(b.set||'')||a.name.localeCompare(b.name);
+    if(s==='name') return a.name.localeCompare(b.name);
+    // rarity: rarest first, then price high
+    const ra=RARITY_RANK[a.tier]??99, rb=RARITY_RANK[b.tier]??99;
+    return ra-rb || b.price-a.price;
+  });
   const grid = document.getElementById('storeGrid');
   if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔍</div><p>No cards match. Try another tier or search.</p></div>`; return; }
   grid.innerHTML = list.map(c=>{
     const inCart = STATE.cart.filter(x=>x.id===c.id).length;
     const soldOut = (c.qty - inCart) <= 0;
+    const front = c.image?`<img src="${c.image}" alt="">`:(EMOJI[c.tier]||'🃏');
     return `<div class="pcard">
       <div class="tier">${EMOJI[c.tier]||''} ${c.tier}</div>
-      <div class="img">${c.image?`<img src="${c.image}" alt="">`:(EMOJI[c.tier]||'🃏')}
+      <div class="img" onclick="openCardView('${c.id}')">${front}
+        ${c.imageBack?'<div class="flip-hint">⤾ flip</div>':''}
+        ${c.imageType==='stock'?'<div class="stockflag">stock image</div>':''}
         ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
       <div class="body">
         <div class="nm">${c.name}</div>
         <div class="meta">${c.set}${c.number?' · '+c.number:''} · ${c.grade?('Grade '+c.grade):c.condition}</div>
-        ${!c.image?`<button class="pics" onclick="askPics('${c.id}')">📷 request photos</button>`:''}
+        ${c.description?`<div class="desc">${c.description}</div>`:''}
+        ${(!c.image||c.imageType==='stock')?`<button class="pics" onclick="event.stopPropagation();askPics('${c.id}')">📷 Request more photos</button>`:''}
         <div class="prow">
           <span class="price">$${c.price.toFixed(2)}</span>
           <button class="add" ${soldOut?'disabled':''} onclick="addToCart('${c.id}')">+</button>
@@ -401,6 +519,29 @@ async function askPics(id){
   const msg = r.ok ? (r.message||'Photo request sent!') : 'Couldn\'t send request, try again.';
   tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
 }
+function openCardView(id){
+  const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
+  const front = c.image?`<img src="${c.image}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo yet</span></div>`;
+  const hasBack = !!c.imageBack;
+  document.getElementById('cardViewBody').innerHTML = `
+    <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="this.classList.toggle('flipped')"`:''}>
+      <div class="cv-inner">
+        <div class="cv-face cv-front">${front}</div>
+        ${hasBack?`<div class="cv-face cv-back"><img src="${c.imageBack}" alt="back"></div>`:''}
+      </div>
+    </div>
+    <div class="cv-meta">
+      <div class="cv-name">${c.name}</div>
+      <div class="cv-sub">${c.set}${c.number?' · '+c.number:''} · ${c.grade?('Grade '+c.grade):c.condition}</div>
+      ${c.description?`<div class="cv-desc">${c.description}</div>`:''}
+      ${hasBack?'<div class="cv-hint">tap card to flip ⤾</div>':`<button class="pics" style="max-width:220px;margin:8px auto 0" onclick="askPics('${c.id}');closeCardView()">📷 Request more photos</button>`}
+      <div class="cv-price">$${c.price.toFixed(2)}</div>
+      <button class="cta" ${(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">Add to cart</button>
+    </div>`;
+  document.getElementById('cardViewScrim').classList.add('show');
+  document.getElementById('cardView').classList.add('show');
+}
+function closeCardView(){ document.getElementById('cardViewScrim').classList.remove('show'); document.getElementById('cardView').classList.remove('show'); }
 
 /* ============ CART ============ */
 function addToCart(id){
@@ -456,14 +597,10 @@ async function checkout(){
     (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and mailing address first.');
     return;
   }
-  const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
-  const shipping = STATE.cart.length>=STATE.config.freeShip ? 0 : (STATE.config.shipFlat||3);
-  const useCredit = STATE.useCredit? Math.min(STATE.credit,subtotal+shipping):0;
-  const r = await api('submitOrder',{cart:STATE.cart,useCredit,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone});
+  const r = await api('submitOrder',{cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, STATE.cart.reduce((s,c)=>s+c.price,0)+(STATE.cart.length>=STATE.config.freeShip?0:(STATE.config.shipFlat||3))):0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone});
   if(r.ok){
     STATE.cart=[]; STATE.useCredit=false; updateCartDot(); closeCart();
-    const msg='Order '+r.orderId+' placed! 🎉 We\'ll message you tracking once it ships.';
-    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    showInvoice(r);
     loadOverview();
   } else if(r.error==='address_required'){
     (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and address.');
@@ -474,6 +611,56 @@ async function checkout(){
   } else { (tg&&tg.showAlert?tg.showAlert:alert)('Something went wrong. Try again in a sec.'); }
 }
 
+let INVOICE=null, PAYPROOF=null;
+function showInvoice(inv){
+  INVOICE=inv; PAYPROOF=null;
+  const b=document.getElementById('invBody');
+  b.innerHTML=`
+    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge">Awaiting payment</div></div>
+    <div class="inv-items">
+      ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
+      <div class="inv-row"><span>Shipping</span><span>${inv.shipping===0?'FREE':'$'+inv.shipping.toFixed(2)}</span></div>
+      ${inv.creditUsed>0?`<div class="inv-row" style="color:var(--mint)"><span>Store credit</span><span>−$${inv.creditUsed.toFixed(2)}</span></div>`:''}
+      <div class="inv-row inv-total"><span>Total to pay</span><span>$${inv.total.toFixed(2)}</span></div>
+    </div>
+    <div class="paynow">
+      <div class="pn-title">Pay by PayNow</div>
+      ${inv.paynowQr?`<img class="pn-qr" src="${inv.paynowQr}" alt="PayNow QR">`:`<div class="pn-qr pn-qr-ph">QR code<br><span>(add in Config)</span></div>`}
+      <div class="pn-num">${inv.paynowName}<br><b>${inv.paynowNumber}</b></div>
+      <div class="pn-note">Transfer $${inv.total.toFixed(2)}, then upload your payment screenshot below to confirm.</div>
+    </div>
+    <label class="upl" id="uplLabel">📎 Upload payment screenshot
+      <input type="file" accept="image/*" id="proofInput" style="display:none" onchange="onProof(event)">
+    </label>
+    <div id="proofPreview"></div>
+    <button class="cta" id="invSubmit" onclick="submitProof()" disabled>Upload a screenshot to confirm</button>
+    <p class="note">Your cards are reserved. Once we verify payment we'll pack and ship — you'll see updates in Orders.</p>`;
+  document.getElementById('invScrim').classList.add('show');
+  document.getElementById('invSheet').classList.add('show');
+}
+function closeInvoice(){ document.getElementById('invScrim').classList.remove('show'); document.getElementById('invSheet').classList.remove('show'); }
+function onProof(e){
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ PAYPROOF=reader.result;
+    document.getElementById('proofPreview').innerHTML=`<img class="proof-img" src="${PAYPROOF}" alt="proof">`;
+    document.getElementById('uplLabel').innerHTML='✅ Screenshot attached (tap to change)<input type="file" accept="image/*" id="proofInput" style="display:none" onchange="onProof(event)">';
+    const b=document.getElementById('invSubmit'); b.disabled=false; b.textContent='Confirm payment';
+  };
+  reader.readAsDataURL(f);
+}
+async function submitProof(){
+  if(!PAYPROOF||!INVOICE) return;
+  const b=document.getElementById('invSubmit'); b.disabled=true; b.textContent='Sending…';
+  const r=await api('submitPayment',{orderId:INVOICE.orderId,image:PAYPROOF});
+  if(r.ok){
+    closeInvoice();
+    const msg='Payment submitted for '+INVOICE.orderId+'! 🎉 We\'ll verify and start packing. Track it in Orders.';
+    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    loadOverview();
+  } else { b.disabled=false; b.textContent='Confirm payment'; (tg&&tg.showAlert?tg.showAlert:alert)('Upload failed, try again.'); }
+}
+
 /* ============ ORDERS ============ */
 async function loadOrders(){
   const list=document.getElementById('ordersList');
@@ -482,15 +669,15 @@ async function loadOrders(){
   STATE.orders=r.orders||[];
   if(!STATE.orders.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet. Your claims will show up here with live tracking.</p></div>`; return; }
   list.innerHTML=STATE.orders.map(o=>{
-    const si=STEPS.indexOf(o.status);
-    const bcls={'Ordered':'b-ordered','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered','Cancelled':'b-cancelled'}[o.status]||'b-ordered';
+    const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:0;
+    const bcls={'Awaiting Payment':'b-ordered','Payment Claimed':'b-transit','Paid':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered','Cancelled':'b-cancelled'}[o.status]||'b-ordered';
     const track = o.status==='Cancelled' ? '' :
       `<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
     return `<div class="order">
       <div class="hd"><span class="oid">#${o.id}</span><span class="badge ${bcls}">${o.status}</span></div>
       ${track}
       ${o.lastUpdate?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
-      ${o.tracking?`<a class="trackn" href="https://www.singpost.com/track-items?trackingNumber=${o.tracking}" target="_blank">Track ${o.tracking} ↗</a>`:''}
+      ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
       <div class="oitems">${o.items.map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
         <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>Total</span><span>$${o.total.toFixed(2)}</span></div></div>
     </div>`;
@@ -528,6 +715,50 @@ async function submitBuyback(){
     ['bb-name','bb-set','bb-num','bb-val'].forEach(id=>document.getElementById(id).value='');
     quote();
   }
+}
+
+/* ============ ADMIN QUICK SELL ============ */
+const CHANNELS = ['tiktok','carousell','instagram','in-person','other'];
+let ADMIN_CHAN = 'tiktok', ADMIN_ITEMS = [];
+function renderChanChips(){
+  document.getElementById('chanChips').innerHTML = CHANNELS.map(ch=>
+    `<button class="chip ${ch===ADMIN_CHAN?'on':''}" onclick="ADMIN_CHAN='${ch}';renderChanChips();">${ch}</button>`).join('');
+}
+async function loadAdmin(){
+  renderChanChips();
+  document.getElementById('adminList').innerHTML='<div class="skel" style="height:60px"></div>';
+  const r = await api('adminList',{q:document.getElementById('adminQ').value||''});
+  ADMIN_ITEMS = r.items||[];
+  renderAdmin();
+}
+let adminSearchT=null;
+function renderAdmin(){
+  clearTimeout(adminSearchT);
+  adminSearchT=setTimeout(async()=>{
+    const r = await api('adminList',{q:document.getElementById('adminQ').value||''});
+    ADMIN_ITEMS = r.items||[];
+    paintAdmin();
+  },250);
+}
+function paintAdmin(){
+  const el=document.getElementById('adminList');
+  if(!ADMIN_ITEMS.length){ el.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No available cards match.</p></div>`; return; }
+  el.innerHTML = ADMIN_ITEMS.map(c=>
+    `<div class="asell">
+      <div class="ci">${c.image?`<img src="${c.image}">`:(EMOJI[c.tier]||'🃏')}</div>
+      <div class="ainfo"><div class="an">${c.name}</div><div class="as">${c.set}${c.number?' · '+c.number:''} · $${c.price.toFixed(2)}</div></div>
+      <button class="asellbtn" onclick="doSell('${c.id}','${(c.name||'').replace(/'/g,'')}')">Sold</button>
+    </div>`).join('');
+}
+async function doSell(id,name){
+  const ok = tg&&tg.showConfirm
+    ? await new Promise(res=>tg.showConfirm(`Mark "${name}" sold on ${ADMIN_CHAN}?`,res))
+    : confirm(`Mark "${name}" sold on ${ADMIN_CHAN}?`);
+  if(!ok) return;
+  const r = await api('adminSell',{cardId:id,channel:ADMIN_CHAN});
+  const msg = r.ok ? (r.message||'Sold.') : (r.message||'Could not sell (maybe already sold).');
+  tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+  loadAdmin();
 }
 
 /* ============ INIT ============ */
