@@ -475,6 +475,35 @@ html{scroll-behavior:smooth}
 .loyal-refb{width:100%;background:var(--fawn);color:#fff;font-weight:800;font-size:13px;padding:10px;border-radius:12px}
 .loyal-refb:active{transform:scale(.97)}
 
+/* ── unpaid banner ── */
+.unpaid-banner{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:linear-gradient(135deg,#fff3f3,#ffe9f2);
+  border:1.5px solid #e8a0b4;border-radius:16px;padding:13px 14px;margin-top:14px;animation:ubpulse 2.4s ease infinite}
+.unpaid-banner .ub-ic{font-size:22px}
+.unpaid-banner .ub-t{flex:1;font-size:12.5px;line-height:1.45;color:var(--text)}
+.unpaid-banner .ub-t b{color:#c2405e}
+.unpaid-banner .ub-go{font-weight:800;color:#c2405e;font-size:13px}
+@keyframes ubpulse{0%,100%{box-shadow:0 0 0 0 rgba(194,64,94,.25)}50%{box-shadow:0 0 0 6px rgba(194,64,94,0)}}
+
+/* ── credit page ── */
+.back-btn{font-weight:800;color:var(--fawn-deep);font-size:14px;padding:6px 2px;margin-bottom:8px}
+.cr-hd{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.cr-cap{font-size:11px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.5px}
+.cr-bal{font-family:'Plus Jakarta Sans';font-weight:800;font-size:28px;color:var(--fawn-deep);margin-top:2px}
+.cr-row{display:flex;align-items:center;justify-content:space-between;padding:11px 2px;border-bottom:1px solid var(--line)}
+.cr-rsn{font-size:13px;font-weight:700}
+.cr-dt{font-size:11px;color:var(--hint)}
+.cr-amt{font-weight:800;font-size:14px}
+.cr-amt.pos{color:#1c7a52}
+.cr-amt.neg{color:#c2405e}
+
+/* used/greyed combine button */
+.cta-hold.used,.cta-hold:disabled{opacity:.45;pointer-events:none}
+.cw-modal .cta.used,.cw-modal .cta:disabled{opacity:.5;pointer-events:none}
+
+/* slimmer nav to fit 7 tabs */
+.nav button{font-size:9.5px;padding:7px 1px}
+.nav .ni{font-size:17px}
+
 /* ── combine warning modal ── */
 .cw-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);opacity:0;pointer-events:none;
   width:min(88vw,340px);background:var(--card);border-radius:22px;padding:22px 18px;z-index:60;text-align:center;
@@ -535,6 +564,7 @@ html{scroll-behavior:smooth}
       <div class="ic">🆘</div><div><h3>Help &amp; support</h3><p>Message us about an order or anything else</p></div>
       <span class="chev">›</span>
     </button>
+    <div id="ov-unpaid"></div>
     <div class="howto">
       <div class="howto-t">Getting around 🗺️</div>
       <div class="howto-g">
@@ -546,7 +576,7 @@ html{scroll-behavior:smooth}
     </div>
     <div id="ov-loyalty" style="margin-top:14px"></div>
     <div id="ov-policies" style="margin-top:14px"></div>
-    <p class="note" id="ov-tip" style="margin-top:12px">Tip: free shipping on orders over $25 🐾</p>
+    <p class="note" id="ov-tip" style="margin-top:12px"></p>
   </div>
 
   <!-- STORE -->
@@ -565,12 +595,7 @@ html{scroll-behavior:smooth}
   <!-- ORDERS -->
   <div class="view hidden" id="v-orders">
     <div class="section-t">Your orders</div>
-    <div class="seg" id="ordSeg">
-      <button class="seg-b on" onclick="ordMode('orders')">📦 Orders</button>
-      <button class="seg-b" onclick="ordMode('binder')">📖 My Binder</button>
-    </div>
     <div id="ordersList"></div>
-    <div id="binderWrap" class="hidden"></div>
   </div>
 
   <!-- BUYBACK -->
@@ -592,9 +617,13 @@ html{scroll-behavior:smooth}
   </div>
 
   <!-- PROFILE -->
+  <div class="view hidden" id="v-binder">
+    <div class="section-t" style="margin:4px 4px 10px">📖 My Binder</div>
+    <div id="binderWrap"></div>
+  </div>
+
   <div class="view hidden" id="v-profile">
     <div class="prof-hd">
-      <div class="prof-av" id="prof-av">🦊</div>
       <div><div class="prof-name">FluffMart Member</div><div class="prof-sub" id="prof-sub">Collector 🐾</div></div>
     </div>
     <div class="prof-stats">
@@ -628,9 +657,18 @@ html{scroll-behavior:smooth}
 </div><!-- /#app -->
 
 <!-- NAV -->
+<div class="view hidden" id="v-credit">
+  <button class="back-btn" onclick="backToProfile()">‹ Back</button>
+  <div class="cr-hd"><div class="cr-cap">Store credit balance</div><div class="cr-bal" id="creditBal">$0.00</div>
+  <p class="note" style="margin:6px 0 0">Toggle "Use store credit" at checkout to subsidise your total with this balance.</p></div>
+  <div class="section-t" style="margin:16px 4px 8px">History</div>
+  <div id="creditList"></div>
+</div>
+
 <div class="nav" id="nav">
   <button class="on" data-t="overview" onclick="go('overview')"><span class="ni">🏠</span>Home</button>
   <button data-t="orders" onclick="go('orders')"><span class="ni">📦</span>Orders</button>
+  <button data-t="binder" onclick="go('binder')"><span class="ni">📖</span>Binder</button>
   <button data-t="store" onclick="go('store')"><span class="ni">🛍️</span>Store</button>
   <button data-t="cart" onclick="openCart()"><span class="ni">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
   <button data-t="buyback" onclick="go('buyback')"><span class="ni">💰</span>Sell</button>
@@ -681,8 +719,8 @@ html{scroll-behavior:smooth}
 <div class="cw-modal" id="cwModal">
   <div class="cw-ic">🧺💌</div>
   <div class="cw-t">You've got a parcel brewing!</div>
-  <div class="cw-b">You already have an open order — checking out separately means paying <b>shipping twice</b>. Hold these cards instead and they'll ship together in one parcel (shipping paid once). 🐾</div>
-  <button class="cta" onclick="cwHold()">🧺 Add to my parcel (save shipping)</button>
+  <div class="cw-b">You have a paid parcel on hold — checking out separately means paying <b>shipping twice</b>. Add these cards to that parcel instead and they all ship together, with no extra shipping fee. 🐾</div>
+  <button class="cta" onclick="cwHold(this)">🧺 Add to my parcel — FREE shipping</button>
   <button class="cw-alt" onclick="cwCheckout()">Check out separately anyway</button>
 </div>
 
@@ -773,13 +811,14 @@ function _store(key,val){ // val: string or null to delete
   }catch(e){}
 }
 function _load(key,cb){
+  // localStorage first (synchronous — instant), then CloudStorage overrides when
+  // it answers (it's async and was sometimes losing the race with first render).
+  try{const l=localStorage.getItem(key); if(l) cb(l);}catch(e){}
   try{
     if(tg&&tg.CloudStorage&&tg.CloudStorage.getItem){
-      tg.CloudStorage.getItem(key,(err,v)=>{ if(!err&&v) cb(v); else { try{const l=localStorage.getItem(key); if(l) cb(l);}catch(e){} } });
-      return;
+      tg.CloudStorage.getItem(key,(err,v)=>{ if(!err&&v) cb(v); });
     }
   }catch(e){}
-  try{const l=localStorage.getItem(key); if(l) cb(l);}catch(e){}
 }
 function persistCart(){ STATE.cart.length ? _store('fm_cart',JSON.stringify(STATE.cart)) : _store('fm_cart',null); }
 function persistShip(){ _store('fm_ship',JSON.stringify(STATE.ship)); }
@@ -799,7 +838,7 @@ function saveAddrEdit(){
 }
 function restorePersisted(){
   _load('fm_cart',v=>{ try{ const c=JSON.parse(v); if(Array.isArray(c)&&c.length){ STATE.cart=c; updateCartDot(); } }catch(e){} });
-  _load('fm_ship',v=>{ try{ const s=JSON.parse(v); if(s&&typeof s==='object') STATE.ship={name:s.name||'',address:s.address||'',phone:s.phone||''}; }catch(e){} });
+  _load('fm_ship',v=>{ try{ const s=JSON.parse(v); if(s&&typeof s==='object'){ STATE.ship={name:s.name||'',address:s.address||'',phone:s.phone||''}; if(document.getElementById('cartSheet')&&document.getElementById('cartSheet').classList.contains('show')) renderCart(); } }catch(e){} });
 }
 // After inventory loads, drop cart items that were sold/removed while the app was closed.
 function pruneCart(){
@@ -845,7 +884,10 @@ const DEMO_ORDERS = [
   {id:'EF7QP9',status:'Delivered',tracking:'SP987654321SG',total:34,created:'2026-08-14T09:00:00Z',lastUpdate:'Delivered',items:[{name:'Pikachu with Grey Felt Hat',tier:'AR',price:34}]},
 ];
 const STEPS = ['Ordered','Verified','Packed','Shipped','Delivered'];
-const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Verified':1,'Packed':2,'Shipped':3,'In Transit':3,'Delivered':4,'Cancelled':-1};
+const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Verified':1,'Held (Paid)':1,'Packed':2,'Shipped':3,'In Transit':3,'Delivered':4,'Cancelled':-1};
+
+const POKE_FACTS=["Pikachu was almost not the mascot — Clefairy was the original pick.","Rhydon was the very first Pokémon ever designed.","Wobbuffet's blue body is a decoy — its real target is the black tail.","Azurill can change gender when it evolves into Marill.","Slowpoke's tail regrows — and is considered a delicacy in the games.","A Magikarp can leap over mountains… and still be useless in battle.","Cubone wears the skull of its mother.","Ditto and Mew are the only Pokémon that can transform — fueling fan theories for decades.","Arcanine was originally meant to be Legendary.","Gengar might be Clefable's shadow — look at their silhouettes.","Poliwag's swirl is based on tadpole intestines, visible through their skin.","Charizard isn't a Dragon-type (until Mega X).","Eevee has the most evolutions of any Pokémon — 8 and counting.","Wailord is lighter than water — it would float like a balloon.","Alakazam's IQ is said to be over 5,000.","Farfetch'd is based on a Japanese saying about a duck bringing its own seasoning.","Snorlax weighs 460 kg — about the same as a grand piano and a half.","Jigglypuff's song works on any creature that can hear.","Vaporeon's cells are so water-like it can melt into water and vanish.","Meowth is one of the few Pokémon that learned to speak human language.","Spinda's spot pattern has over 4 billion possible combinations.","Shuckle can produce the strongest single attack in the games via Power Trick shenanigans.","Mimikyu wears its disguise because it wants to be loved like Pikachu.","Dragonite can fly around the globe in about 16 hours.","Magcargo's body temperature is hotter than the surface of the sun (18,000°F).","Absol doesn't cause disasters — it tries to warn people about them.","Metapod's Harden is its whole personality.","Umbreon's rings glow when it's excited or at night — moonlight powers it.","The first shiny most players ever saw was the Red Gyarados.","Togepi's shell is said to be stuffed with happiness."];
+function pokeFact(){ return POKE_FACTS[Math.floor(Math.random()*POKE_FACTS.length)]; }
 
 /* ============ API ============ */
 async function api(action, payload={}){
@@ -862,6 +904,8 @@ function mock(action,p){
   if(action==='finalizeParcel') return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:40,shipping:0,creditUsed:0,total:40,savedShipping:6,items:[{name:'Held card A',tier:'AR',price:20},{name:'Held card B',tier:'EX',price:20}],paynowMobile:'',paynowName:'Fluffmart TCG',paymentWindowMins:10};
   if(action==='inventory') return {ok:true,items:DEMO_INV};
   if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
+  if(action==='boot'){ return {ok:true,overview:mock('overview'),inventory:mock('inventory')}; }
+  if(action==='shipHeld') return {ok:true,released:1};
   if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
   if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); const sh=p.cart.length>=5?0:3; return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:sh,creditUsed:0,total:sub+sh,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowMobile:'+6598755180',paynowName:'FluffMart TCG'}; }
   if(action==='submitPayment') return {ok:true};
@@ -877,19 +921,38 @@ function mock(action,p){
 
 /* ============ NAV ============ */
 function go(tab){
-  ['overview','store','orders','buyback','support','profile'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
+  ['overview','store','orders','binder','buyback','support','profile','credit'].forEach(t=>{const el=document.getElementById('v-'+t); if(el) el.classList.toggle('hidden',t!==tab);});
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
   if(tab==='store'&&!STATE.inventory.length) loadStore();
+  if(tab==='binder'){ if(STATE.orders.length) buildBinder(); else api('orders').then(r=>{STATE.orders=r.orders||[];ORDERS_CACHE=STATE.orders;buildBinder();}); document.getElementById('binderWrap').classList.remove('hidden'); }
   if(tab==='orders') loadOrders();
   if(tab==='profile') loadProfile();
   window.scrollTo(0,0);
 }
 
 /* ============ OVERVIEW ============ */
+async function bootApp(){
+  // 1) paint instantly from the last snapshot (stale-while-revalidate)
+  try{ const c=JSON.parse(localStorage.getItem('fm_boot')||'null');
+    if(c&&c.overview){ applyOverview(c.overview); }
+    if(c&&c.inventory){ STATE.inventory=c.inventory; renderCatTabs(); renderStore(); }
+  }catch(e){}
+  // 2) one round trip refreshes both
+  const r=await api('boot');
+  if(r&&r.ok){
+    if(r.overview&&r.overview.ok) applyOverview(r.overview);
+    if(r.inventory&&r.inventory.ok){ STATE.inventory=r.inventory.items||[]; pruneCart(); renderCatTabs(); renderStore(); }
+    try{ localStorage.setItem('fm_boot',JSON.stringify({overview:r.overview,inventory:(r.inventory&&r.inventory.items)||[]})); }catch(e){}
+  } else { loadOverview(); loadStore(); }
+}
 async function loadOverview(){
   const r = await api('overview');
   if(!r.ok) return;
+  applyOverview(r);
+}
+function applyOverview(r){
+  if(!r||!r.ok) return;
   STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,freeShipMin:r.freeShipMin||r.freeShipThreshold||25,shipFlat:r.shipFlat!=null?r.shipFlat:3};
   STATE.credit = r.credit||0;
   STATE.isAdmin = !!r.isAdmin;
@@ -901,10 +964,19 @@ async function loadOverview(){
     if(el) el.innerHTML = `<div class="feat" style="cursor:default"><div class="ic">🚚</div><div><h3>Store info</h3><p>${[r.shippingPolicy,r.holdPolicy,r.policyExtra].filter(Boolean).join('<br>')}</p></div></div>`;
   }
   if(r.welcome){ const h=document.querySelector('.hero p'); if(h) h.textContent=r.welcome; }
-  if(r.tip){ const t=document.getElementById('ov-tip'); if(t) t.textContent=r.tip; }
+  { const t=document.getElementById('ov-tip'); if(t) t.textContent='✨ Did you know? '+pokeFact(); }
   if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
-  STATE.openOrders=r.openOrders||0; STATE.holdCount=r.holdCount||0; STATE.holdDays=r.holdExpiryDays||21;
+  STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.parcelCombinable=!!r.parcelCombinable; STATE.heldCount=r.heldCount||0; STATE.holdDays=r.holdExpiryDays||21;
+  renderUnpaidBanner();
   renderLoyalty(r);
+}
+function renderUnpaidBanner(){
+  const el=document.getElementById('ov-unpaid'); if(!el) return;
+  el.innerHTML=(STATE.unpaidOrders>0)?`<button class="unpaid-banner" onclick="go('orders')">
+      <span class="ub-ic">💳</span>
+      <span class="ub-t"><b>You have ${STATE.unpaidOrders>1?STATE.unpaidOrders+' unpaid orders':'an unpaid order'}!</b><br>Complete payment before your cards are released.</span>
+      <span class="ub-go">Pay ›</span>
+    </button>`:'';
 }
 function renderLoyalty(r){
   const el=document.getElementById('ov-loyalty'); if(!el) return;
@@ -1028,7 +1100,6 @@ function renderStore(){
         <div class="nm">${c.name}</div>
         <div class="meta">${c.set}${c.number?' · '+c.number:''}</div>
         <div class="desc">${TIER_NAME[c.tier]||c.tier}${c.variance?' · '+c.variance:''} · ${c.grade?('Graded '+c.grade):(c.condition||'NM')}</div>
-        ${(!c.image||c.imageType==='stock')?`<button class="pics" onclick="event.stopPropagation();askPics('${c.id}')">📷 Ask us for photos</button>`:''}
         <div class="prow">
           <span class="price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="was">$${c.marketPrice.toFixed(2)}</span>`:''}</span>
           <button class="add" ${soldOut?'disabled':''} onclick="event.stopPropagation();addToCart('${c.id}')">+</button>
@@ -1063,7 +1134,8 @@ function openCardView(id){
         ${c.variance?`<span class="cv-tag">${c.variance}</span>`:''}
         <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
       </div>
-      ${hasBack?'<div class="cv-hint">tap card to flip ⤾</div>':`<button class="pics" style="max-width:220px;margin:8px auto 0" onclick="askPics('${c.id}');closeCardView()">📷 Ask us for photos</button>`}
+      ${hasBack?'<div class="cv-hint">tap card to flip ⤾</div>':''}
+      ${(!c.image||c.imageType==='stock')?`<button class="pics" style="max-width:220px;margin:8px auto 0" onclick="askPics('${c.id}');closeCardView()">📷 Ask us for photos</button>`:''}
       <div class="cv-price">$${c.price.toFixed(2)}</div>
       <button class="cta" ${(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">Add to cart</button>
       <button class="cta-alt" onclick="makeOffer('${c.id}','${(c.name||'').replace(/'/g,'')}',${c.price})">💬 Make an offer</button>
@@ -1162,8 +1234,8 @@ function renderCart(){
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
     <button class="cta" onclick="guard(this,checkout)">Place order · $${total.toFixed(2)}</button>
-    <button class="cta-hold" onclick="guard(this,holdParcel)">🧺 Hold to combine &amp; save shipping</button>
-    <p class="hold-hint">Holding reserves these cards in your parcel for up to 3 weeks — check out everything together later and pay shipping once.</p>`;
+    ${STATE.parcelCombinable?`<button class="cta-hold" id="combineBtn" onclick="combineCheckout(this)">🧺 Ship with my held parcel — FREE shipping</button>
+    <p class="hold-hint">You have a paid parcel on hold — this order joins it, so there's no second shipping fee. 🐾</p>`:''}`;
 }
 function showCombineWarn(){
   document.getElementById('cwScrim').classList.add('show');
@@ -1173,36 +1245,12 @@ function closeCombineWarn(){
   document.getElementById('cwScrim').classList.remove('show');
   document.getElementById('cwModal').classList.remove('show');
 }
-function cwHold(){ closeCombineWarn(); holdParcel(); }
-function cwCheckout(){ closeCombineWarn(); checkout(true); }
-async function holdParcel(){
-  if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){
-    (tg&&tg.showAlert?tg.showAlert:alert)('Add a delivery name and address first (so we know where the combined parcel goes).');
-    return;
-  }
-  const r = await api('submitOrder',{hold:true,cart:STATE.cart,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone,note:(STATE.note||'').trim()});
-  if(r.ok&&r.held){
-    STATE.cart=[]; STATE.note=''; updateCartDot(); persistCart(); closeCart();
-    const msg='🧺 Added to your parcel! These cards are reserved. Add more anytime, then check out your whole parcel from Orders to pay shipping once.';
-    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
-    ORDERS_CACHE=null; go('orders'); loadOrders(true);
-  } else if(r.error==='unavailable'){
-    (tg&&tg.showAlert?tg.showAlert:alert)('Ah — one of those cards was just claimed. Cart updated.'); loadStore();
-  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Couldn\'t hold those, try again.'); }
-}
-async function finalizeParcel(){
-  const r = await api('finalizeParcel',{useCredit:STATE.useCredit?1e9:0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone});
-  if(r.ok){
-    ORDERS_CACHE=null;
-    if(r.paidByCredit){
-      const msg='🎉 Your parcel is fully covered by store credit — nothing to pay! We\'re confirming it now.';
-      tg&&tg.showAlert?tg.showAlert(msg):alert(msg); loadOrders(true); loadOverview();
-    } else { showInvoice(r); loadOverview(); }
-  } else if(r.error==='no_parcel'){
-    (tg&&tg.showAlert?tg.showAlert:alert)('You don\'t have any held cards to check out.');
-  } else if(r.error==='address_required'){
-    (tg&&tg.showAlert?tg.showAlert:alert)('Add a delivery name and address first.');
-  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Couldn\'t finalize, try again.'); }
+function cwHold(btn){ if(btn){btn.disabled=true;btn.classList.add('used');} closeCombineWarn(); checkout(true, true); }
+function cwCheckout(){ closeCombineWarn(); checkout(true, false); }
+async function shipHeldNow(){
+  const r=await api('shipHeld');
+  if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🚚 On it — your parcel is being packed and will ship soon!'); ORDERS_CACHE=null; loadOrders(true); loadOverview(); }
+  else (tg&&tg.showAlert?tg.showAlert:alert)('No held parcel found.');
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 function editAddress(){ STATE.editAddr=true; renderCart(); }
@@ -1210,22 +1258,27 @@ function doneAddress(){
   if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){ (tg&&tg.showAlert?tg.showAlert:alert)('Add a name and address first.'); return; }
   STATE.editAddr=false; persistShip(); renderCart();
 }
-async function checkout(force){
+async function combineCheckout(btn){
+  if(btn){ btn.disabled=true; btn.classList.add('used'); btn.textContent='🧺 Adding to your parcel…'; }
+  await checkout(true, true);
+}
+async function checkout(force, combine){
   if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){
     (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and mailing address first.');
     return;
   }
-  if(!force && ((STATE.openOrders||0)>0 || (STATE.holdCount||0)>0)){ showCombineWarn(); return; }
+  if(!force && STATE.parcelCombinable){ showCombineWarn(); return; }
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
-  const ship0=sub0>=(STATE.config.freeShipMin||25)?0:(STATE.config.shipFlat||3);
-  const r = await api('submitOrder',{cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0+ship0):0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone,note:(STATE.note||'').trim()});
+  const ship0=combine?0:(sub0>=(STATE.config.freeShipMin||25)?0:(STATE.config.shipFlat||3));
+  const r = await api('submitOrder',{combine:!!combine,cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0+ship0):0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone,note:(STATE.note||'').trim()});
   if(r.ok){
     STATE.cart=[]; STATE.useCredit=false; STATE.note=''; updateCartDot(); persistCart(); closeCart();
     if(r.paidByCredit){
-      const msg='🎉 Order '+r.orderId+' is fully covered by your store credit — nothing to pay! We\'re confirming it now and will start packing.';
+      const msg='🎉 Order '+r.orderId+' is fully covered by your store credit — nothing to pay! We\'re confirming it now.';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       ORDERS_CACHE=null; loadOverview();
     } else {
+      if(r.combinedFree){ const m2='🧺 No shipping fee — this order ships with your held parcel once payment is verified.'; tg&&tg.showAlert?tg.showAlert(m2):setTimeout(()=>alert(m2),300); }
       showInvoice(r);
       loadOverview();
     }
@@ -1320,22 +1373,18 @@ async function loadOrders(force){
 }
 function paintOrders(){
   const list=document.getElementById('ordersList');
-  const held=STATE.orders.filter(o=>o.status==='Holding');
-  const normal=STATE.orders.filter(o=>o.status!=='Holding');
+  const held=STATE.orders.filter(o=>o.status==='Held (Paid)');
+  const normal=STATE.orders.filter(o=>o.status!=='Held (Paid)');
   let parcelHtml='';
   if(held.length){
     const items=held.reduce((a,o)=>a.concat(o.items),[]);
-    const sub=items.reduce((s,i)=>s+i.price,0);
-    const fsMin=STATE.config.freeShipMin||25;
-    const shipEach=STATE.config.shipFlat||3;
-    const saved=held.length>1?(held.length-1)*shipEach:0;
+    const val=items.reduce((s,i)=>s+i.price,0);
     parcelHtml=`<div class="parcel">
-      <div class="parcel-hd"><span>🧺 Your combining parcel</span><span class="parcel-n">${items.length} card${items.length>1?'s':''}</span></div>
+      <div class="parcel-hd"><span>🧺 Your held parcel</span><span class="parcel-n">${items.length} card${items.length>1?'s':''}</span></div>
       <div class="parcel-items">${items.slice(0,8).map(i=>`<div class="parcel-i"><span>${EMOJI[i.tier]||'🃏'} ${i.name}</span><span>$${i.price.toFixed(2)}</span></div>`).join('')}${items.length>8?`<div class="parcel-i" style="color:var(--hint)">…and ${items.length-8} more</div>`:''}</div>
-      <div class="parcel-foot"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
-      ${saved>0?`<div class="parcel-save">💚 Combining saves you ~$${saved.toFixed(2)} in shipping</div>`:``}
-      ${sub<fsMin?`<div class="parcel-hint">Add $${(fsMin-sub).toFixed(2)} more to this parcel for FREE shipping</div>`:`<div class="parcel-hint">🎉 This parcel ships FREE</div>`}
-      <button class="cta" onclick="guard(this,finalizeParcel)">Check out parcel · pay shipping once</button>
+      <div class="parcel-save">💚 Paid &amp; safely held — new orders ship FREE in this parcel</div>
+      <div class="parcel-hint">Held up to ${STATE.holdDays||21} days, then it ships automatically.</div>
+      <button class="cta" onclick="guard(this,shipHeldNow)">🚚 Ship my parcel now</button>
     </div>`;
   }
   if(!normal.length && !held.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; return; }
@@ -1343,7 +1392,7 @@ function paintOrders(){
     const merged=(o.status||'').indexOf('Merged into')===0;
     const cancelled=(o.status||'').indexOf('Cancelled')===0;
     const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:(cancelled?-1:0);
-    const bcls=merged?'b-delivered':(cancelled?'b-cancelled':({'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered'}[o.status]||'b-ordered'));
+    const bcls=merged?'b-delivered':(cancelled?'b-cancelled':({'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Held (Paid)':'b-transit','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered'}[o.status]||'b-ordered'));
     const track = (cancelled||merged) ? '' :
       `<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
     return `<div class="order">
@@ -1361,14 +1410,7 @@ function paintOrders(){
 
 /* ============ BINDER (past purchases) ============ */
 let BINDER={page:0,cards:[]};
-function ordMode(m){
-  document.querySelectorAll('#ordSeg .seg-b').forEach((b,i)=>b.classList.toggle('on',(m==='orders')===(i===0)));
-  document.getElementById('ordersList').classList.toggle('hidden',m!=='orders');
-  document.getElementById('binderWrap').classList.toggle('hidden',m!=='binder');
-  if(m==='binder') buildBinder();
-  if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-}
-const OWNED_STATUSES=['Payment Verified','Packed','Shipped','In Transit','Delivered'];
+const OWNED_STATUSES=['Payment Verified','Held (Paid)','Packed','Shipped','In Transit','Delivered'];
 function buildBinder(){
   const wrap=document.getElementById('binderWrap');
   const cards=[];
@@ -1448,7 +1490,7 @@ function openBinderCard(idx){
         <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
         <span class="cv-tag">Claimed for $${Number(c.price).toFixed(2)}</span>
       </div>
-      <div class="cv-hint">From order #${c.orderId}${c.date?' · '+new Date(c.date).toLocaleDateString():''}</div>
+      <div class="cv-hint">Order #${c.orderId}${c.date?' · claimed '+new Date(c.date).toLocaleDateString():''} · ${c.status||''}</div>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
@@ -1598,11 +1640,18 @@ function loadProfile(){
   },300);
 }
 async function loadCredit(){
+  document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+  document.getElementById('v-credit').classList.remove('hidden');
+  const list=document.getElementById('creditList');
+  list.innerHTML='<div class="skelcard" style="height:120px"></div>';
   const r=await api('credit');
   const led=(r.ledger||[]);
-  const msg = led.length ? led.map(l=>`${l.amount>0?'+':''}$${l.amount.toFixed(2)} — ${l.reason}`).join('\n') : 'No credit history yet.';
-  (tg&&tg.showAlert?tg.showAlert:alert)('Store credit: $'+(r.balance||0).toFixed(2)+'\n\n'+msg);
+  document.getElementById('creditBal').textContent='$'+(r.balance||0).toFixed(2);
+  list.innerHTML = led.length
+    ? led.map(l=>`<div class="cr-row"><div class="cr-l"><div class="cr-rsn">${l.reason||'Adjustment'}</div><div class="cr-dt">${l.at?new Date(l.at).toLocaleDateString():''}</div></div><div class="cr-amt ${l.amount>0?'pos':'neg'}">${l.amount>0?'+':''}$${Math.abs(l.amount).toFixed(2)}</div></div>`).join('')
+    : `<div class="empty" style="padding:30px"><div class="e-ic">💳</div><p>No store credit transactions yet.<br>Sell us cards or earn rewards to start! 🐾</p></div>`;
 }
+function backToProfile(){ document.getElementById('v-credit').classList.add('hidden'); document.getElementById('v-profile').classList.remove('hidden'); }
 
 /* ============ INIT ============ */
 (function init(){
@@ -1611,8 +1660,7 @@ async function loadCredit(){
     if(u){ STATE.user={id:String(u.id),name:[u.first_name,u.last_name].filter(Boolean).join(' '),username:u.username||''}; }
   }
   restorePersisted();
-  loadOverview();
-  loadStore(); // prefetch so the Shop tab opens instantly
+  bootApp();
 })();
 </script>
 </body>
