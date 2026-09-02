@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Fluffmart TCG</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Fluffmart palette — cream base, pink primary, rose secondary, yellow accent */
+  --fawn:#D58EBF; --fawn-deep:#B25C93; --cream:#F1DFD3; --ruff:#F0D9CB;
+  --berry:#D58EBF; --berry-deep:#B25C93; --rose:#E2A8BE; --mint:#3FB68B;
+  --yellow:#F9D326; --ink:#5A3A4E;
+  --bg:#F1DFD3;
+  --card:#FFFFFF;
+  --text:#5A3A4E;
+  --hint:#a98da0;
+  --link:#B25C93;
+  --line:rgba(178,92,147,.16);
+  --radius:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  padding-bottom:88px;line-height:1.55;overflow-x:hidden;
+}
+/* On desktop, present the app as a centered phone-width column with a backdrop,
+   and align all fixed overlays (nav, sheets, card view) to that same column. */
+@media (min-width:600px){
+  body{background:#e3d5bd;padding-bottom:0}
+  #app{width:520px;margin:0 auto;min-height:100vh;background:var(--bg);
+    box-shadow:0 0 60px rgba(74,53,36,.22);position:relative;padding-bottom:100px}
+  .wrap{max-width:100%;padding:0 20px}
+  .top{padding-left:20px;padding-right:20px}
+  .nav{left:50%;right:auto;transform:translateX(-50%);width:520px;
+    border-left:1px solid var(--line);border-right:1px solid var(--line)}
+  .sheet{left:50%;right:auto;transform:translateX(-50%) translateY(100%);width:520px;margin:0}
+  .sheet.show{transform:translateX(-50%) translateY(0)}
+  .cardview{left:50%;right:auto;transform:translateX(-50%);width:520px;margin:0}
+  .grid{grid-template-columns:1fr 1fr 1fr}
+}
+h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;margin:0;letter-spacing:-.01em}
+.brand{font-family:'Fraunces',serif;font-weight:600;margin:0;letter-spacing:-.01em}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* header */
+.top{display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
+.mascot{width:42px;height:42px;border-radius:50%;background:var(--ruff);
+  display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
+  border:2px solid var(--fawn)}
+.top .brand{font-size:20px;color:var(--fawn-deep);letter-spacing:.2px}
+.top .sub{font-size:12px;color:var(--hint);margin-top:-2px}
+
+/* views */
+.view{padding-top:4px;animation:pop .22s ease}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* hero */
+.hero{background:var(--fawn);color:#fff;border-radius:22px;padding:18px 18px 16px;position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;background:rgba(255,255,255,.12);border-radius:50%}
+.hero h2{font-size:22px;font-weight:600}
+.hero p{margin:4px 0 0;font-size:13px;opacity:.92;max-width:80%}
+.stats{display:flex;gap:10px;margin-top:14px}
+.stat{flex:1;background:rgba(255,255,255,.18);border-radius:14px;padding:10px 12px}
+.stat .n{font-family:'Plus Jakarta Sans';font-size:20px;font-weight:600}
+.stat .l{font-size:11px;opacity:.9}
+
+.section-t{font-family:'Plus Jakarta Sans';font-size:15px;color:var(--fawn-deep);margin:20px 4px 10px}
+
+/* feature rows */
+.feat{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--radius);
+  padding:13px 14px;margin-bottom:10px;border:1px solid var(--line);width:100%;text-align:left}
+.feat .ic{width:38px;height:38px;border-radius:12px;background:var(--ruff);color:var(--fawn-deep);
+  display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.feat h3{font-size:15px;font-weight:600;font-family:'Plus Jakarta Sans'}
+.feat p{margin:1px 0 0;font-size:12.5px;color:var(--hint)}
+.feat .chev{margin-left:auto;color:var(--hint)}
+
+/* store */
+.tools{display:flex;gap:8px;margin:12px 0 6px;align-items:stretch}
+.search{flex:1;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:0 12px;min-height:40px}
+.search input{border:none;background:none;outline:none;flex:1;font-size:14px;color:var(--text);font-family:inherit}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;font-size:12.5px;font-weight:700;padding:6px 13px;border-radius:20px;
+  background:var(--card);border:1px solid var(--line);color:var(--hint)}
+.chip.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;position:relative}
+.pcard .img{aspect-ratio:3/4;background:linear-gradient(135deg,var(--ruff),#e9d3ad);
+  display:flex;align-items:center;justify-content:center;font-size:34px;position:relative;perspective:900px}
+.pcard .img img{width:100%;height:100%;object-fit:cover}
+.flippable{cursor:pointer}
+.flip-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.3,.8,.4,1)}
+.img.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:34px}
+.flip-back{transform:rotateY(180deg);background:linear-gradient(135deg,#d9c4a0,#c9ae82)}
+.flip-hint{position:absolute;bottom:6px;right:6px;background:rgba(74,53,36,.6);color:#fff;font-size:10px;
+  font-weight:800;padding:2px 7px;border-radius:8px;z-index:2;pointer-events:none}
+.pcard .body{padding:9px 10px 11px}
+.pcard .nm{font-size:13px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px}
+.pcard .meta{font-size:11px;color:var(--hint);margin-top:2px}
+.tier{position:absolute;top:8px;left:8px;font-size:10px;font-weight:800;letter-spacing:.4px;
+  padding:3px 7px;border-radius:8px;background:#fff;color:var(--berry-deep);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.prow{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.price{font-family:'Plus Jakarta Sans';font-size:16px;font-weight:600;color:var(--fawn-deep)}
+.was{font-size:11px;color:var(--hint);font-weight:600;text-decoration:line-through;margin-left:5px}
+.pcard{display:flex;flex-direction:column}
+.pcard .body{display:flex;flex-direction:column;flex:1}
+.pcard .prow{margin-top:auto;padding-top:8px}
+.add{width:30px;height:30px;border-radius:10px;background:var(--fawn);color:#fff;font-size:19px;
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.add:disabled{background:var(--line);color:#fff}
+.soldout{position:absolute;inset:0;background:rgba(74,53,36,.55);color:#fff;display:flex;
+  align-items:center;justify-content:center;font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:15px}
+
+/* orders */
+.order{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.order .hd{display:flex;justify-content:space-between;align-items:center}
+.oid{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:14px}
+.badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px}
+.b-ordered{background:#fdeede;color:#a56a13}.b-packed{background:#e7eefb;color:#2a5aa5}
+.b-shipped{background:#e7eefb;color:#2a5aa5}.b-transit{background:#fce9f0;color:var(--berry-deep)}
+.b-delivered{background:#e2f5ec;color:#1c7a52}.b-cancelled{background:#f0e6e6;color:#7a2f2f}
+.track{display:flex;gap:6px;margin:14px 0 6px}
+.step{flex:1;text-align:center}
+.dot{width:16px;height:16px;border-radius:50%;background:var(--line);margin:0 auto 5px;position:relative}
+.step.done .dot{background:var(--mint)}
+.step.done .dot:after{content:"✓";color:#fff;font-size:10px;position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.step .lbl{font-size:10px;color:var(--hint)}
+.step.done .lbl{color:var(--text);font-weight:700}
+.oitems{border-top:1px dashed var(--line);margin-top:10px;padding-top:10px}
+.oitem{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0;color:var(--hint)}
+.trackn{font-size:11.5px;color:var(--link);margin-top:8px;display:inline-block}
+
+/* buyback */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--hint);margin-bottom:5px}
+.field input,.field select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;
+  font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;outline:none}
+.field input:focus,.field select:focus{border-color:var(--fawn)}
+.two{display:flex;gap:10px}.two>*{flex:1}
+.quote{display:flex;gap:10px;margin:6px 0 14px}
+.qbox{flex:1;border-radius:14px;padding:12px;text-align:center;border:2px solid var(--line)}
+.qbox.sel{border-color:var(--berry)}
+.qbox .qt{font-size:11px;font-weight:800;color:var(--hint)}
+.qbox .qv{font-family:'Plus Jakarta Sans';font-size:21px;font-weight:600;color:var(--fawn-deep);margin-top:2px}
+.qbox .qr{font-size:10.5px;color:var(--hint)}
+.cta{width:100%;background:var(--berry);color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;
+  font-size:16px;padding:14px;border-radius:14px;margin-top:4px}
+.cta:disabled{opacity:.5}
+.note{font-size:12px;color:var(--hint);text-align:center;margin-top:10px;line-height:1.5}
+
+/* bottom nav */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);
+  display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:20;max-width:520px;margin:0 auto}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:var(--hint);font-size:10px;font-weight:700}
+.nav button .ni{font-size:21px}
+.nav button.on{color:var(--fawn-deep)}
+.cart-dot{position:absolute;top:2px;right:calc(50% - 20px);background:var(--berry);color:#fff;
+  font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;display:flex;
+  align-items:center;justify-content:center;padding:0 4px}
+
+/* cart sheet */
+.scrim{position:fixed;inset:0;background:rgba(74,53,36,.4);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-radius:22px 22px 0 0;
+  z-index:31;transform:translateY(100%);transition:transform .26s cubic-bezier(.3,.8,.4,1);
+  max-width:520px;margin:0 auto;max-height:82vh;display:flex;flex-direction:column}
+.sheet.show{transform:none}
+.sheet .sh-hd{padding:16px 18px 8px;display:flex;justify-content:space-between;align-items:center}
+.sheet .sh-hd h2{font-size:18px;color:var(--fawn-deep)}
+.sheet .body{overflow-y:auto;padding:0 18px}
+.crow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.crow .ci{width:34px;height:44px;border-radius:8px;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.crow .cn{font-size:13px;font-weight:700;flex:1;line-height:1.2}
+.crow .cp{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;color:var(--fawn-deep)}
+.crow .rm{color:var(--hint);font-size:20px;padding:4px}
+.nudge{background:var(--ruff);color:var(--fawn-deep);border-radius:12px;padding:10px 12px;
+  font-size:12.5px;font-weight:700;margin:12px 0;display:flex;gap:8px;align-items:center}
+.creditrow{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line);font-size:13px;font-weight:700}
+.switch{width:44px;height:26px;border-radius:20px;background:var(--line);position:relative;transition:.2s}
+.switch.on{background:var(--mint)}
+.switch:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on:after{left:21px}
+.sh-ft{padding:14px 18px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.tot{display:flex;justify-content:space-between;font-family:'Plus Jakarta Sans';font-size:18px;font-weight:600;margin-bottom:10px}
+
+.sortsel{-webkit-appearance:none;appearance:none;border:1px solid var(--line);background:var(--card);
+  color:var(--text);border-radius:12px;padding:0 30px 0 12px;font-size:12.5px;font-weight:700;
+  font-family:inherit;outline:none;max-width:140px;height:40px;cursor:pointer;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239a8a76' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center}
+.sortsel:focus{border-color:var(--fawn)}
+.stockflag{position:absolute;bottom:6px;left:6px;font-size:9px;font-weight:800;letter-spacing:.3px;
+  padding:2px 6px;border-radius:6px;background:rgba(74,53,36,.72);color:#fff;text-transform:uppercase}
+.desc{font-size:11px;color:var(--hint);margin-top:3px;line-height:1.35}
+.pics{background:none;border:1px dashed var(--line);color:var(--hint);font-size:11px;font-weight:700;
+  padding:4px 8px;border-radius:8px;margin-top:6px;width:100%}
+.addr{margin:12px 0 4px}
+.totline{display:flex;justify-content:space-between;font-size:13px;color:var(--hint);font-weight:700;padding:1px 0}
+/* invoice */
+.inv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.inv-oid{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:16px;color:var(--fawn-deep)}
+.inv-badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;background:#fdeede;color:#a56a13}
+.inv-items{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.inv-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--text)}
+.inv-total{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:16px;border-top:1px dashed var(--line);margin-top:6px;padding-top:8px}
+.paynow{background:var(--ruff);border-radius:14px;padding:14px;text-align:center;margin-bottom:12px}
+.pn-title{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;color:var(--fawn-deep);margin-bottom:8px}
+.pn-qr{width:150px;height:150px;object-fit:contain;margin:0 auto 8px;border-radius:8px;background:#fff;display:block}
+.pn-qr-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--hint);font-weight:700;font-size:13px}
+.pn-qr-ph span{font-size:11px;font-weight:600}
+.inv-badge{transition:background .3s}
+.pay-warn{background:#fff3cd;color:#8a6d00;border-radius:10px;padding:9px 12px;font-size:12.5px;
+  font-weight:700;text-align:center;margin-bottom:12px}
+#pnQr{width:170px;height:170px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:8px;padding:4px}
+#pnQr img,#pnQr canvas{display:block}
+.pn-num{font-size:13px;color:var(--text);line-height:1.5}.pn-num b{font-size:15px}
+.pn-note{font-size:11.5px;color:var(--fawn-deep);margin-top:8px}
+.upl{display:block;text-align:center;border:2px dashed var(--fawn);color:var(--fawn-deep);border-radius:12px;
+  padding:12px;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:10px}
+.proof-img{width:100%;max-height:200px;object-fit:contain;border-radius:10px;margin-bottom:10px;border:1px solid var(--line)}
+/* card view */
+.cv-scrim{position:fixed;inset:0;background:rgba(74,53,36,.75);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.cv-scrim.show{opacity:1;pointer-events:auto}
+.cardview{position:fixed;inset:0;z-index:41;display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;padding:56px 24px 32px;opacity:0;pointer-events:none;transition:opacity .2s;
+  max-width:520px;margin:0 auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.cardview.show{opacity:1;pointer-events:auto}
+.cv-close{position:absolute;top:16px;right:16px;color:#fff;font-size:26px;z-index:42;background:rgba(0,0,0,.3);
+  width:40px;height:40px;border-radius:50%}
+.cv-card{width:min(64vw,240px);aspect-ratio:3/4;perspective:1200px;cursor:pointer;flex-shrink:0}
+.cv-card.noflip{cursor:default}
+.cv-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,.8,.4,1)}
+.cv-card.flipped .cv-inner{transform:rotateY(180deg)}
+.cv-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;overflow:hidden;
+  box-shadow:0 12px 40px rgba(0,0,0,.4);background:#fff}
+.cv-face img{width:100%;height:100%;object-fit:cover}
+.cv-back{transform:rotateY(180deg)}
+.cv-noimg{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:64px;background:linear-gradient(135deg,var(--ruff),#e9d3ad);color:var(--fawn-deep)}
+.cv-noimg span{font-size:13px;font-weight:700;margin-top:8px}
+.cv-meta{text-align:center;color:#fff;margin-top:18px;max-width:320px}
+.cv-name{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:19px}
+.cv-sub{font-size:13px;opacity:.85;margin-top:2px}
+.cv-desc{font-size:12px;opacity:.8;margin-top:6px}
+.cv-hint{font-size:12px;opacity:.75;margin-top:10px}
+.cv-price{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:22px;margin:12px 0 10px}
+.cardview .cta{max-width:320px}
+.cta-alt{max-width:320px;width:100%;background:transparent;border:1.5px solid #fff;color:#fff;
+  font-family:'Plus Jakarta Sans';font-weight:700;font-size:15px;padding:11px;border-radius:14px;margin-top:8px}
+.asell{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.asell .ci{width:34px;height:44px;border-radius:8px;background:var(--ruff);display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden}
+.asell .ci img{width:100%;height:100%;object-fit:cover}
+.asell .ainfo{flex:1;min-width:0}
+.asell .an{font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asell .as{font-size:11px;color:var(--hint)}
+.asellbtn{background:var(--berry);color:#fff;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;flex-shrink:0}
+.rates{display:flex;gap:12px;margin:4px 0 4px}
+.rate{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 12px;text-align:center;position:relative}
+.rate:first-child{border-color:var(--berry)}
+.rate-cap{font-size:11px;font-weight:700;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:-2px}
+.rate-n{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:30px;color:var(--fawn-deep)}
+.rate-l{font-size:12px;color:var(--hint);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.rate-b{font-size:10px;font-weight:800;color:#fff;background:var(--berry);border-radius:10px;padding:2px 8px;display:inline-block;margin-top:6px}
+.field textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font-size:14px;
+  background:var(--bg);color:var(--text);font-family:inherit;outline:none;resize:vertical;line-height:1.5}
+.field textarea:focus{border-color:var(--fawn)}
+/* custom in-app dropdown */
+.dd{position:relative;flex-shrink:0}
+.dd-btn{display:flex;align-items:center;gap:6px;height:40px;padding:0 12px;border:1px solid var(--line);
+  background:var(--card);border-radius:12px;font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap}
+.dd-chev{color:var(--hint);font-size:14px;line-height:1;transition:transform .2s}
+.dd.open .dd-chev{transform:rotate(180deg)}
+.dd-menu{position:absolute;top:46px;right:0;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;box-shadow:0 8px 28px rgba(74,53,36,.18);padding:6px;min-width:180px;z-index:25;
+  opacity:0;pointer-events:none;transform:translateY(-6px);transition:.16s}
+.dd.open .dd-menu{opacity:1;pointer-events:auto;transform:none}
+.dd-item{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-size:13px;
+  font-weight:600;color:var(--text)}
+.dd-item:hover{background:var(--bg)}
+.dd-item.on{background:var(--ruff);color:var(--fawn-deep);font-weight:800}
+.dd-lbl{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;
+  padding:8px 12px 4px;border-top:1px solid var(--line);margin-top:4px}
+.dd-lbl:first-child{border-top:none;margin-top:0}
+.cattabs{display:flex;gap:8px;margin:12px 0 0}
+.cattab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);
+  font-size:13px;font-weight:700;color:var(--hint)}
+.cattab.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
+.dd-menu{max-height:60vh;overflow-y:auto}
+/* card view tags */
+.cv-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
+.cv-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff}
+/* ── animations ── */
+html{scroll-behavior:smooth}
+*{transition-timing-function:cubic-bezier(.22,.61,.36,1)}
+@keyframes fadeRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pop2{0%{transform:scale(.92)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.view{animation:fadeRise .35s cubic-bezier(.22,.61,.36,1)}
+.pcard{animation:fadeRise .4s cubic-bezier(.22,.61,.36,1) both}
+.pcard:active{animation:pop2 .3s ease}
+.feat{transition:transform .15s ease, box-shadow .15s ease}
+.feat:active{transform:scale(.98)}
+.cta,.add,.asellbtn,.chip,.cattab,.dd-btn{transition:transform .12s ease,filter .15s ease,background .15s ease}
+.cta:active,.add:active{transform:scale(.96)}
+.cta:disabled{opacity:.55;filter:grayscale(.3)}
+.tier{transition:transform .2s}
+.pcard:hover .tier{transform:scale(1.05)}
+.skelcard{background:linear-gradient(100deg,var(--card) 30%,var(--ruff) 50%,var(--card) 70%);
+  background-size:200% 100%;animation:shimmer 1.3s linear infinite;border:1px solid var(--line);
+  border-radius:var(--radius);height:230px}
+/* ── stock urgency ── */
+.stock-tag{position:absolute;top:8px;right:8px;font-size:10px;font-weight:800;padding:3px 8px;
+  border-radius:8px;background:var(--yellow);color:#7a5a00;box-shadow:0 1px 4px rgba(0,0,0,.12);z-index:2}
+/* ── sticky cart bar ── */
+.cartbar{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(120%);
+  width:calc(100% - 32px);max-width:488px;background:var(--berry);color:#fff;border-radius:16px;
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:19;
+  box-shadow:0 8px 24px rgba(178,92,147,.4);transition:transform .3s cubic-bezier(.3,.8,.4,1);cursor:pointer}
+.cartbar.show{transform:translateX(-50%) translateY(0)}
+.cartbar .cb-l{font-weight:700;font-size:13px}
+.cartbar .cb-r{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:15px;display:flex;align-items:center;gap:8px}
+/* ── empty states ── */
+.prof-hd{display:flex;align-items:center;gap:14px;padding:8px 4px 16px}
+.prof-av{width:56px;height:56px;border-radius:50%;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid var(--fawn)}
+.prof-name{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:20px;color:var(--fawn-deep)}
+.prof-sub{font-size:12px;color:var(--hint)}
+.prof-stats{display:flex;gap:10px;margin-bottom:16px}
+.pstat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 8px;text-align:center}
+.pstat .pn{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:22px;color:var(--fawn-deep)}
+.pstat .pl{font-size:10.5px;color:var(--hint);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.prof-menu{margin-bottom:8px}
+.notif{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;font-size:13px}
+.notif .nt-ic{font-size:16px}
+.notif .nt-sub{font-size:11px;color:var(--hint);margin-top:2px}
+.inv-card{background:var(--bg);border-radius:18px;padding:18px;max-width:380px;width:100%;color:var(--text);max-height:78vh;overflow-y:auto}
+.inv-c-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.inv-c-oid{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:18px;color:var(--fawn-deep)}
+.inv-c-date{font-size:11px;color:var(--hint)}
+.inv-c-items{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.inv-c-row{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:8px}
+.inv-c-thumb{width:38px;height:52px;border-radius:6px;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0}
+.inv-c-thumb img{width:100%;height:100%;object-fit:cover}
+.inv-c-nm{flex:1;font-size:13px;font-weight:700;line-height:1.2}
+.inv-c-tier{font-size:10.5px;color:var(--hint);font-weight:600}
+.inv-c-pr{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;color:var(--fawn-deep)}
+.inv-c-tot{border-top:1px dashed var(--line);padding-top:10px}
+.inv-track{display:block;text-align:center;background:var(--berry);color:#fff;font-weight:700;font-size:13px;padding:10px;border-radius:12px;margin-top:12px;text-decoration:none}
+.inv-c-ship{font-size:11.5px;color:var(--hint);margin-top:10px;text-align:center}
+.empty .e-ic{animation:floaty 3s ease-in-out infinite}
+.empty{text-align:center;padding:40px 20px;color:var(--hint)}
+.empty .e-ic{font-size:44px;margin-bottom:10px}
+.empty p{font-size:13px}
+.skel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);height:210px;
+  animation:blink 1.2s ease infinite}
+@keyframes blink{50%{opacity:.5}}
+
+/* ── design polish ── */
+.pcard{box-shadow:0 2px 10px rgba(178,92,147,.07);transition:transform .18s ease,box-shadow .18s ease}
+.pcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(178,92,147,.14)}
+.hero{background:linear-gradient(135deg,var(--fawn) 0%,var(--rose) 100%);box-shadow:0 8px 24px rgba(213,142,191,.35)}
+.hero:after{content:"✦";position:absolute;left:14px;bottom:10px;color:rgba(255,255,255,.25);font-size:15px}
+.cta{box-shadow:0 6px 18px rgba(178,92,147,.28)}
+.nav button{border-radius:14px;margin:0 2px;transition:background .18s ease}
+.nav button.on{background:var(--ruff)}
+.order,.panel,.feat{box-shadow:0 1px 6px rgba(178,92,147,.06)}
+.section-t{text-transform:uppercase;letter-spacing:.8px;font-size:12px;font-weight:800}
+.sheet{box-shadow:0 -12px 40px rgba(90,58,78,.18)}
+.sheet .sh-hd:before{content:"";display:block;position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:38px;height:4px;border-radius:3px;background:var(--line)}
+.sheet .sh-hd{position:relative}
+.top{padding-top:16px}
+.top .brand{font-size:22px}
+
+/* ── segmented toggle (Orders / Binder) ── */
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;margin:4px 0 14px}
+.seg-b{flex:1;padding:9px;border-radius:11px;font-size:13px;font-weight:700;color:var(--hint);transition:.18s}
+.seg-b.on{background:var(--fawn);color:#fff;box-shadow:0 3px 10px rgba(213,142,191,.35)}
+
+/* ── binder ── */
+.binder{background:linear-gradient(150deg,#8e4a74,#6d3358);border-radius:20px;padding:16px 14px 14px 26px;
+  position:relative;box-shadow:0 14px 34px rgba(109,51,88,.4);
+  border:1px solid rgba(255,255,255,.12)}
+.binder-rings{position:absolute;left:6px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-evenly}
+.binder-rings span{width:13px;height:13px;border-radius:50%;border:2.5px solid #d9b8cc;background:transparent;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}
+.binder-page{perspective:1100px;transform-style:preserve-3d}
+.pocket-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:rgba(255,255,255,.07);
+  border-radius:14px;padding:10px;border:1px dashed rgba(255,255,255,.18)}
+.pocket{aspect-ratio:3/4;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden;position:relative;
+  display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.25);padding:0}
+.pocket.filled{background:#fff;cursor:pointer;transition:transform .16s ease}
+.pocket.filled:active{transform:scale(.95)}
+.pocket.filled img{width:100%;height:100%;object-fit:cover;display:block}
+.pocket.filled:after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.28) 0%,transparent 38%);pointer-events:none}
+.bp-emoji{font-size:26px}
+.bp-paw{font-size:15px;opacity:.28}
+.binder-nav{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.bn-btn{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.14);color:#fff;font-size:20px;
+  font-weight:800;transition:.15s}
+.bn-btn:disabled{opacity:.3}
+.bn-btn:active{transform:scale(.92)}
+.bn-count{color:#f2ddea;font-size:12.5px;font-weight:800;letter-spacing:.4px}
+.bn-hint{text-align:center;color:rgba(255,255,255,.55);font-size:10.5px;margin-top:8px;font-weight:600}
+@keyframes pageFlipL{from{transform:rotateY(0)}to{transform:rotateY(-78deg);opacity:.2}}
+@keyframes pageFlipR{from{transform:rotateY(0)}to{transform:rotateY(78deg);opacity:.2}}
+@keyframes pageInR{from{transform:rotateY(60deg);opacity:0}to{transform:rotateY(0);opacity:1}}
+@keyframes pageInL{from{transform:rotateY(-60deg);opacity:0}to{transform:rotateY(0);opacity:1}}
+.binder-page.flip-l{animation:pageFlipL .18s ease-in forwards;transform-origin:left center}
+.binder-page.flip-r{animation:pageFlipR .18s ease-in forwards;transform-origin:right center}
+.binder-page.flip-in-r{animation:pageInR .26s ease-out;transform-origin:left center}
+.binder-page.flip-in-l{animation:pageInL .26s ease-out;transform-origin:right center}
+
+/* ── wishlist ── */
+.wtabs{display:flex;gap:8px;margin-bottom:10px}
+.wtab{flex:1;padding:9px;border-radius:11px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:700;color:var(--hint)}
+.wtab.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
+.wish-add input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;outline:none}
+.wish-add input:focus{border-color:var(--fawn)}
+.wish-sug{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.wsug{font-size:12px;font-weight:700;padding:6px 12px;border-radius:16px;background:var(--ruff);color:var(--fawn-deep)}
+.wsug:active{transform:scale(.95)}
+.wrow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.wrow .wk{font-size:18px}
+.wrow .wn{flex:1;font-size:13.5px;font-weight:700;line-height:1.2}
+.wrow .ws{font-size:11px;color:var(--hint);font-weight:600}
+
+/* ── saved address summary ── */
+.addr-saved{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0 4px}
+.as-l{flex:1;min-width:0}
+.as-cap{font-size:11px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.4px}
+.as-val{font-size:13.5px;font-weight:700;margin-top:3px;line-height:1.35}
+.as-val span{font-weight:500;color:var(--hint);font-size:12.5px}
+.as-edit{font-size:12px;font-weight:700;color:var(--fawn-deep);background:var(--ruff);padding:7px 12px;border-radius:10px;flex-shrink:0}
+.as-done{width:100%;margin-top:4px;background:var(--ruff);color:var(--fawn-deep);font-weight:700;font-size:13px;padding:10px;border-radius:11px}
+
+/* ── hold-to-combine ── */
+.cta-hold{width:100%;margin-top:8px;background:var(--card);border:1.5px solid var(--fawn);color:var(--fawn-deep);
+  font-family:'Plus Jakarta Sans';font-weight:800;font-size:14px;padding:12px;border-radius:14px}
+.cta-hold:active{transform:scale(.97)}
+.hold-hint{font-size:11px;color:var(--hint);text-align:center;margin:8px 2px 0;line-height:1.4}
+.parcel{background:linear-gradient(150deg,#fff,#fbeef6);border:1.5px solid var(--fawn);border-radius:18px;
+  padding:14px;margin-bottom:14px;box-shadow:0 6px 20px rgba(213,142,191,.18)}
+.parcel-hd{display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--fawn-deep);font-size:15px}
+.parcel-n{font-size:12px;background:var(--ruff);color:var(--fawn-deep);padding:3px 10px;border-radius:12px}
+.parcel-items{margin:10px 0;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:8px 0}
+.parcel-i{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0;color:var(--text)}
+.parcel-foot{display:flex;justify-content:space-between;font-weight:800;font-size:14px;margin:6px 0}
+.parcel-save{background:#e2f5ec;color:#1c7a52;font-size:12px;font-weight:700;border-radius:10px;padding:7px 10px;margin-bottom:6px}
+.parcel-hint{font-size:11.5px;color:var(--hint);margin-bottom:10px}
+.parcel .cta{margin-top:2px}
+
+/* ── loyalty / referral ── */
+.loyal{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.loyal-hd{font-weight:800;color:var(--fawn-deep);font-size:15px;margin-bottom:8px}
+.loyal-row{font-size:13px;font-weight:600}
+.loyal-bar{height:9px;background:var(--ruff);border-radius:6px;overflow:hidden;margin:8px 0 5px}
+.loyal-fill{height:100%;background:linear-gradient(90deg,var(--fawn),var(--yellow));border-radius:6px;transition:width .5s}
+.loyal-sub{font-size:11px;color:var(--hint);font-weight:600}
+.loyal-ref{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+.loyal-reft{font-size:12px;color:var(--text);line-height:1.45;margin-bottom:8px}
+.loyal-refb{width:100%;background:var(--fawn);color:#fff;font-weight:800;font-size:13px;padding:10px;border-radius:12px}
+.loyal-refb:active{transform:scale(.97)}
+
+/* ── unpaid banner ── */
+.unpaid-banner{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:linear-gradient(135deg,#fff3f3,#ffe9f2);
+  border:1.5px solid #e8a0b4;border-radius:16px;padding:13px 14px;margin-top:14px;animation:ubpulse 2.4s ease infinite}
+.unpaid-banner .ub-ic{font-size:22px}
+.unpaid-banner .ub-t{flex:1;font-size:12.5px;line-height:1.45;color:var(--text)}
+.unpaid-banner .ub-t b{color:#c2405e}
+.unpaid-banner .ub-go{font-weight:800;color:#c2405e;font-size:13px}
+@keyframes ubpulse{0%,100%{box-shadow:0 0 0 0 rgba(194,64,94,.25)}50%{box-shadow:0 0 0 6px rgba(194,64,94,0)}}
+
+/* ── credit page ── */
+.back-btn{font-weight:800;color:var(--fawn-deep);font-size:14px;padding:6px 2px;margin-bottom:8px}
+.cr-hd{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.cr-cap{font-size:11px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.5px}
+.cr-bal{font-family:'Plus Jakarta Sans';font-weight:800;font-size:28px;color:var(--fawn-deep);margin-top:2px}
+.cr-row{display:flex;align-items:center;justify-content:space-between;padding:11px 2px;border-bottom:1px solid var(--line)}
+.cr-rsn{font-size:13px;font-weight:700}
+.cr-dt{font-size:11px;color:var(--hint)}
+.cr-amt{font-weight:800;font-size:14px}
+.cr-amt.pos{color:#1c7a52}
+.cr-amt.neg{color:#c2405e}
+
+/* used/greyed combine button */
+.cta-hold.used,.cta-hold:disabled{opacity:.45;pointer-events:none}
+.cw-modal .cta.used,.cw-modal .cta:disabled{opacity:.5;pointer-events:none}
+
+/* slimmer nav to fit 7 tabs */
+.nav button{font-size:9.5px;padding:7px 1px}
+.nav .ni{font-size:17px}
+
+/* ── combine warning modal ── */
+.cw-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);opacity:0;pointer-events:none;
+  width:min(88vw,340px);background:var(--card);border-radius:22px;padding:22px 18px;z-index:60;text-align:center;
+  box-shadow:0 24px 60px rgba(90,58,78,.3);transition:.22s ease}
+.cw-modal.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.cw-ic{font-size:34px;margin-bottom:6px}
+.cw-t{font-family:'Plus Jakarta Sans';font-weight:800;font-size:17px;color:var(--fawn-deep);margin-bottom:8px}
+.cw-b{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:14px}
+.cw-b b{color:var(--fawn-deep)}
+.cw-alt{width:100%;margin-top:8px;padding:11px;font-size:12.5px;font-weight:700;color:var(--hint);background:transparent;border-radius:12px}
+.ask-pics{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--ruff);
+  border:1px dashed var(--fawn);border-radius:14px;padding:11px 13px;margin:10px 0 2px;transition:.15s}
+.ask-pics:active{transform:scale(.98)}
+.ask-pics .ap-ic{font-size:20px}
+.ask-pics .ap-t{flex:1;font-size:11.5px;line-height:1.4;color:var(--text)}
+.ask-pics .ap-t b{color:var(--fawn-deep)}
+.ask-pics .ap-go{font-weight:800;color:var(--fawn-deep);font-size:13px}
+.cancel-link{width:100%;margin-top:6px;padding:8px;font-size:12px;font-weight:700;color:var(--hint);background:transparent;text-decoration:underline;text-underline-offset:3px}
+.ptag{font-size:10px;font-weight:800;color:var(--fawn-deep);background:var(--ruff);padding:2px 7px;border-radius:9px;vertical-align:1px}
+
+/* ── homepage how-to ── */
+.howto{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
+.howto-t{font-weight:800;color:var(--fawn-deep);font-size:14px;margin-bottom:9px}
+.howto-g{display:grid;gap:8px}
+.howto-i{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.4;color:var(--text)}
+.howto-i span{font-size:16px}
+.howto-i b{color:var(--fawn-deep)}
+</style>
+</head>
+<body>
+
+<div id="app">
+<div class="top" onclick="go('store')" style="cursor:pointer">
+  <div class="mascot">🦊</div>
+  <div>
+    <div class="brand">FluffMart TCG</div>
+    <div class="sub" id="greeting">Pokémon TCG · Singapore</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- OVERVIEW -->
+  <div class="view" id="v-overview">
+    <div class="hero">
+      <h2>Welcome back! 🌟</h2>
+      <p>Claim singles, track parcels, and turn spare cards into store credit.</p>
+      <div class="stats">
+        <div class="stat"><div class="n" id="ov-credit">$0.00</div><div class="l">Store credit</div></div>
+        <div class="stat"><div class="n" id="ov-transit">0</div><div class="l">In transit</div></div>
+      </div>
+    </div>
+    <div class="section-t">What you can do</div>
+    <button class="feat" onclick="go('store')">
+      <div class="ic">🛍️</div><div><h3>Browse the store</h3><p>Cards available to claim right now</p></div>
+      <span class="chev">›</span>
+    </button>
+    <button class="feat" onclick="go('orders')">
+      <div class="ic">📦</div><div><h3>Track your orders</h3><p>Live SingPost status &amp; past orders</p></div>
+      <span class="chev">›</span>
+    </button>
+    <button class="feat" onclick="go('buyback')">
+      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>~80% cash · ~85% store credit (est.)</p></div>
+      <span class="chev">›</span>
+    </button>
+    <button class="feat" onclick="go('support')">
+      <div class="ic">🆘</div><div><h3>Help &amp; support</h3><p>Message us about an order or anything else</p></div>
+      <span class="chev">›</span>
+    </button>
+    <div id="ov-unpaid"></div>
+    <div class="howto">
+      <div class="howto-t">Getting around 🗺️</div>
+      <div class="howto-g">
+        <div class="howto-i"><span>🛍️</span><div><b>Shop</b> — browse &amp; claim singles, sealed, merch</div></div>
+        <div class="howto-i"><span>💰</span><div><b>Sell</b> — turn your cards into cash or credit</div></div>
+        <div class="howto-i"><span>📦</span><div><b>Orders</b> — parcels, tracking &amp; your binder</div></div>
+        <div class="howto-i"><span>🦊</span><div><b>Me</b> — credit, wishlist, address &amp; invoices</div></div>
+      </div>
+    </div>
+    <div id="ov-loyalty" style="margin-top:14px"></div>
+    <div id="ov-policies" style="margin-top:14px"></div>
+    <p class="note" id="ov-tip" style="margin-top:12px"></p>
+  </div>
+
+  <!-- STORE -->
+  <div class="view hidden" id="v-store">
+    <div class="cattabs" id="cattabs"></div>
+    <div class="tools">
+      <div class="search">🔎<input id="q" placeholder="Search…" oninput="renderStore()"></div>
+      <div class="dd" id="sortDD">
+        <button class="dd-btn" onclick="toggleSort(event)"><span id="sortLabel">All cards</span><span class="dd-chev">⌄</span></button>
+        <div class="dd-menu" id="sortMenu"></div>
+      </div>
+    </div>
+    <div class="grid" id="storeGrid"></div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="view hidden" id="v-orders">
+    <div class="section-t">Your orders</div>
+    <div id="ordersList"></div>
+  </div>
+
+  <!-- BUYBACK -->
+  <div class="view hidden" id="v-buyback">
+    <div class="section-t">Sell your cards to us</div>
+    <div class="rates">
+      <div class="rate"><div class="rate-cap">~ est.</div><div class="rate-n" id="rate-credit">85%</div><div class="rate-l">store credit</div><div class="rate-b">best value</div></div>
+      <div class="rate"><div class="rate-cap">~ est.</div><div class="rate-n" id="rate-cash">80%</div><div class="rate-l">cash</div></div>
+    </div>
+    <p class="note" style="text-align:left;margin:2px 4px 14px">These are our <b>estimated</b> rates — the final offer depends on the card's condition and current market value. Tell us what you've got below and we'll message you back to confirm an offer.</p>
+    <div class="panel">
+      <div class="field">
+        <label>What are you selling?</label>
+        <textarea id="bb-msg" rows="5" placeholder="Tell us what you have or what you're after — e.g. 'Umbreon VMAX alt art 215/203, Near Mint, looking to sell for store credit' or 'a stack of ~30 SV holos, want a bulk cash offer'. The more detail, the faster we can quote you."></textarea>
+      </div>
+      <button class="cta" id="bb-submit" onclick="guard(this,submitBuyback)">Send &amp; talk to us</button>
+      <p class="note">This starts a chat — no commitment. We'll reply in Telegram to sort out a price.</p>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="view hidden" id="v-binder">
+    <div class="section-t" style="margin:4px 4px 10px">📖 My Binder</div>
+    <div id="binderWrap"></div>
+  </div>
+
+  <div class="view hidden" id="v-profile">
+    <div class="prof-hd">
+      <div><div class="prof-name">FluffMart Member</div><div class="prof-sub" id="prof-sub">Collector 🐾</div></div>
+    </div>
+    <div class="prof-stats">
+      <div class="pstat"><div class="pn" id="p-credit">$0</div><div class="pl">Store credit</div></div>
+      <div class="pstat"><div class="pn" id="p-orders">0</div><div class="pl">Orders</div></div>
+      <div class="pstat"><div class="pn" id="p-transit">0</div><div class="pl">In transit</div></div>
+    </div>
+    <div class="prof-menu">
+      <button class="feat" onclick="go('orders')"><div class="ic">🧾</div><div><h3>My invoices &amp; orders</h3><p>View past purchases with photos</p></div><span class="chev">›</span></button>
+      <button class="feat" onclick="openWishlist()"><div class="ic">🔔</div><div><h3>My wishlist</h3><p id="p-wish-sub">Get pinged when cards restock</p></div><span class="chev">›</span></button>
+      <button class="feat" onclick="openAddrEdit()"><div class="ic">📦</div><div><h3>Delivery address</h3><p id="p-addr-sub">Saved for faster checkout</p></div><span class="chev">›</span></button>
+      <button class="feat" onclick="loadCredit()"><div class="ic">💳</div><div><h3>Store credit history</h3><p id="p-credit-sub">See your credit ledger</p></div><span class="chev">›</span></button>
+      <button class="feat" onclick="go('support')"><div class="ic">🆘</div><div><h3>Help &amp; support</h3><p>Message us</p></div><span class="chev">›</span></button>
+    </div>
+    <div id="prof-notifs"></div>
+  </div>
+
+  <!-- SUPPORT -->
+  <div class="view hidden" id="v-support">
+    <div class="section-t">Help &amp; support</div>
+    <div class="panel">
+      <p class="note" style="text-align:left;margin:0 0 12px">Got a question about an order, payment, or a card? Send us a message and we'll reply in Telegram.</p>
+      <div class="field"><label>Order number (optional)</label><input id="sup-order" placeholder="e.g. EF1A2B3C"></div>
+      <div class="field"><label>Your message</label><textarea id="sup-msg" rows="5" placeholder="Tell us how we can help…"></textarea></div>
+      <button class="cta" id="sup-send" onclick="sendSupport(this)">Send message</button>
+    </div>
+  </div>
+
+</div>
+
+</div><!-- /#app -->
+
+<!-- NAV -->
+<div class="view hidden" id="v-credit">
+  <button class="back-btn" onclick="backToProfile()">‹ Back</button>
+  <div class="cr-hd"><div class="cr-cap">Store credit balance</div><div class="cr-bal" id="creditBal">$0.00</div>
+  <p class="note" style="margin:6px 0 0">Toggle "Use store credit" at checkout to subsidise your total with this balance.</p></div>
+  <div class="section-t" style="margin:16px 4px 8px">History</div>
+  <div id="creditList"></div>
+</div>
+
+<div class="nav" id="nav">
+  <button class="on" data-t="overview" onclick="go('overview')"><span class="ni">🏠</span>Home</button>
+  <button data-t="orders" onclick="go('orders')"><span class="ni">📦</span>Orders</button>
+  <button data-t="binder" onclick="go('binder')"><span class="ni">📖</span>Binder</button>
+  <button data-t="store" onclick="go('store')"><span class="ni">🛍️</span>Store</button>
+  <button data-t="cart" onclick="openCart()"><span class="ni">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
+  <button data-t="buyback" onclick="go('buyback')"><span class="ni">💰</span>Sell</button>
+  <button data-t="profile" onclick="go('profile')"><span class="ni">👤</span>Me</button>
+</div>
+
+<div class="cartbar" id="cartBar" onclick="openCart()">
+  <span class="cb-l" id="cbCount">0 in cart</span>
+  <span class="cb-r"><span id="cbTotal">$0.00</span> · View cart →</span>
+</div>
+
+<!-- CART -->
+<div class="scrim" id="scrim" onclick="closeCart()"></div>
+<div class="sheet" id="cartSheet">
+  <div class="sh-hd"><h2>Your cart</h2><button class="rm" onclick="closeCart()">✕</button></div>
+  <div class="body" id="cartBody"></div>
+  <div class="sh-ft" id="cartFoot"></div>
+</div>
+
+<!-- INVOICE -->
+<div class="scrim" id="invScrim" onclick="closeInvoice()"></div>
+<div class="sheet" id="invSheet">
+  <div class="sh-hd"><h2>Checkout</h2><button class="rm" onclick="closeInvoice()">✕</button></div>
+  <div class="body" id="invBody" style="padding-bottom:20px"></div>
+</div>
+
+<!-- CARD VIEW -->
+<div class="cv-scrim" id="cardViewScrim" onclick="closeCardView()"></div>
+<div class="cardview" id="cardView">
+  <button class="cv-close" onclick="closeCardView()">✕</button>
+  <div id="cardViewBody"></div>
+</div>
+
+<!-- OFFER -->
+<div class="scrim" id="offerScrim" onclick="closeOffer()"></div>
+<div class="sheet" id="offerSheet">
+  <div class="sh-hd"><h2 id="offerTitle">Make an offer</h2><button class="rm" onclick="closeOffer()">✕</button></div>
+  <div class="body" style="padding-bottom:20px">
+    <p class="note" id="offerSub" style="text-align:left;margin:0 0 12px"></p>
+    <div class="field"><label>Your offer (S$)</label>
+      <input id="offerInput" type="number" inputmode="decimal" placeholder="0.00"></div>
+    <button class="cta" id="offerSend" onclick="guard(this,sendOffer)">Send offer</button>
+    <p class="note">We'll get your offer and message you back to discuss. No payment yet — just a chat.</p>
+  </div>
+</div>
+
+<div class="scrim" id="addrScrim" onclick="closeAddrEdit()"></div>
+<div class="sheet" id="addrSheet">
+  <div class="sh-hd"><h2>📦 Delivery address</h2><button class="rm" onclick="closeAddrEdit()">✕</button></div>
+  <div class="body" style="padding-bottom:20px">
+    <div class="field"><label>Name for delivery</label><input id="pa-name" placeholder="Full name"></div>
+    <div class="field"><label>Mailing address</label><input id="pa-addr" placeholder="Block, street, unit, postal code"></div>
+    <div class="field"><label>Phone (optional)</label><input id="pa-phone" placeholder="For delivery issues"></div>
+    <button class="cta" onclick="saveAddrEdit()">Save address</button>
+    <p class="note">Used to pre-fill checkout — you can still change it per order.</p>
+  </div>
+</div>
+
+<div class="scrim" id="wishScrim" onclick="closeWishlist()"></div><div class="sheet" id="wishSheet">
+  <div class="sh-hd"><h2>🔔 My wishlist</h2><button class="rm" onclick="closeWishlist()">✕</button></div>
+  <div class="body" style="padding-bottom:20px">
+    <p class="note" style="text-align:left;margin:0 0 12px">Watch a Pokémon or a set — we'll DM you the moment matching cards are back in stock.</p>
+    <div class="wish-add">
+      <div class="wtabs">
+        <button class="wtab on" id="wtab-name" onclick="wishKind('name')">Pokémon</button>
+        <button class="wtab" id="wtab-set" onclick="wishKind('set')">Set</button>
+      </div>
+      <input id="wishInput" placeholder="e.g. Umbreon" oninput="wishSuggest(this.value)" autocomplete="off">
+      <div id="wishSug" class="wish-sug"></div>
+      <button class="cta" style="margin-top:10px" onclick="guard(this,addWish)">Add to wishlist</button>
+    </div>
+    <div class="section-t" style="margin:18px 4px 8px">You're watching</div>
+    <div id="wishList"></div>
+  </div>
+</div>
+
+<script>
+/* ==== DEBUG: show any error on screen (temporary) ==== */
+window.addEventListener('error', function(e){
+  try{
+    var b=document.getElementById('__err')||document.createElement('div');
+    b.id='__err'; b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#b00020;color:#fff;font:12px monospace;padding:10px;white-space:pre-wrap;max-height:50vh;overflow:auto';
+    b.textContent='JS ERROR:\n'+(e.message||e.error||e)+'\n@ '+(e.filename||'')+':'+(e.lineno||'')+':'+(e.colno||'');
+    document.body?document.body.appendChild(b):document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(b);});
+  }catch(_){}
+});
+window.addEventListener('unhandledrejection', function(e){
+  try{
+    var b=document.getElementById('__err2')||document.createElement('div');
+    b.id='__err2'; b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#8a4500;color:#fff;font:12px monospace;padding:10px;white-space:pre-wrap;max-height:50vh;overflow:auto';
+    b.textContent='PROMISE ERROR:\n'+((e.reason&&(e.reason.stack||e.reason.message))||e.reason||e);
+    (document.body||document.documentElement).appendChild(b);
+  }catch(_){}
+});
+/* ============ CONFIG ============ */
+// Paste your deployed Apps Script Web App URL here. Leave blank to preview with demo data.
+const API_URL = "https://fluffmart-bot.shrimaniac.workers.dev/api"; // Cloudflare edge proxy → Apps Script
+/* ================================ */
+
+function imgUrl(u,w){ if(!u) return u; return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
+
+// PayNow SGQR payload generator (amount + reference embedded)
+function crc16(s){let c=0xFFFF;for(let i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(let j=0;j<8;j++){c=(c&0x8000)?(c<<1)^0x1021:c<<1;c&=0xFFFF;}}return c.toString(16).toUpperCase().padStart(4,'0');}
+function tlv(id,v){return id+String(v.length).padStart(2,'0')+v;}
+function payNowPayload(mobile,amount,ref){
+  const hasAmt = Number(amount) > 0;
+  // field 03 = amount editable: '0' (locked) only when an amount IS embedded;
+  // '1' (payer types it) otherwise — a locked QR with no amount is unpayable in most bank apps.
+  const acct=tlv('00','SG.PAYNOW')+tlv('01','0')+tlv('02',mobile)+tlv('03',hasAmt?'0':'1');
+  let p='';p+=tlv('00','01')+tlv('01','12')+tlv('26',acct)+tlv('52','0000')+tlv('53','702');
+  if(hasAmt)p+=tlv('54',Number(amount).toFixed(2));
+  p+=tlv('58','SG')+tlv('59','Fluffmart')+tlv('60','Singapore');
+  if(ref)p+=tlv('62',tlv('01',ref));
+  p+='6304';return p+crc16(p);
+}
+let PAY_TIMER=null;
+function renderPayQR(inv, isRetry){
+  const box=document.getElementById('pnQr'); if(!box) return;
+  box.innerHTML=''; // never stack a new QR on top of a stale one
+  const mobile=(inv.paynowMobile||'').replace(/\s/g,'');
+  if(!mobile){ box.innerHTML='<div class="pn-qr-ph">Set PayNow<br><span>in Config</span></div>'; return; }
+  // If the CDN script didn't load (flaky network inside the Telegram webview), pull it again once.
+  if(typeof QRCode==='undefined'){
+    if(isRetry){ box.innerHTML='<div class="pn-qr-ph">QR unavailable —<br><span>pay to the number below</span></div>'; return; }
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload=()=>renderPayQR(inv,true);
+    s.onerror=()=>renderPayQR(inv,true);
+    document.head.appendChild(s);
+    box.innerHTML='<div class="pn-qr-ph">Loading QR…</div>';
+    return;
+  }
+  try {
+    const payload=payNowPayload(mobile,inv.total,inv.orderId);
+    box.innerHTML='';
+    new QRCode(box,{text:payload,width:170,height:170,correctLevel:QRCode.CorrectLevel.M});
+  } catch(e){ box.innerHTML='<div class="pn-qr-ph">QR unavailable —<br><span>pay to the number below</span></div>'; }
+}
+const tg = window.Telegram && window.Telegram.WebApp;
+
+/* ---- persistence: cart + address survive closing the app ---- */
+function _store(key,val){ // val: string or null to delete
+  try{
+    if(tg&&tg.CloudStorage&&tg.CloudStorage.setItem){
+      val===null ? tg.CloudStorage.removeItem(key,()=>{}) : tg.CloudStorage.setItem(key,val,()=>{});
+    }
+    val===null ? localStorage.removeItem(key) : localStorage.setItem(key,val); // belt & braces
+  }catch(e){}
+}
+function _load(key,cb){
+  // localStorage first (synchronous — instant), then CloudStorage overrides when
+  // it answers (it's async and was sometimes losing the race with first render).
+  try{const l=localStorage.getItem(key); if(l) cb(l);}catch(e){}
+  try{
+    if(tg&&tg.CloudStorage&&tg.CloudStorage.getItem){
+      tg.CloudStorage.getItem(key,(err,v)=>{ if(!err&&v) cb(v); });
+    }
+  }catch(e){}
+}
+function persistShip(){ _store('fm_ship',JSON.stringify(STATE.ship)); }
+function openAddrEdit(){
+  document.getElementById('pa-name').value=STATE.ship.name||'';
+  document.getElementById('pa-addr').value=STATE.ship.address||'';
+  document.getElementById('pa-phone').value=STATE.ship.phone||'';
+  document.getElementById('addrScrim').classList.add('show');
+  document.getElementById('addrSheet').classList.add('show');
+}
+function closeAddrEdit(){ document.getElementById('addrScrim').classList.remove('show'); document.getElementById('addrSheet').classList.remove('show'); }
+function saveAddrEdit(){
+  STATE.ship={name:document.getElementById('pa-name').value.trim(),address:document.getElementById('pa-addr').value.trim(),phone:document.getElementById('pa-phone').value.trim()};
+  persistShip(); closeAddrEdit();
+  const sub=document.getElementById('p-addr-sub'); if(sub) sub.textContent=STATE.ship.address?STATE.ship.address.slice(0,36)+(STATE.ship.address.length>36?'…':''):'Saved for faster checkout';
+  (tg&&tg.HapticFeedback)&&tg.HapticFeedback.notificationOccurred('success');
+}
+function restorePersisted(){
+  _load('fm_ship',v=>{ try{ const s=JSON.parse(v); if(s&&typeof s==='object'){ STATE.ship={name:s.name||'',address:s.address||'',phone:s.phone||''}; if(document.getElementById('cartSheet')&&document.getElementById('cartSheet').classList.contains('show')) renderCart(); } }catch(e){} });
+}
+// Prevents double-clicks/spam: disables a button during an async action.
+async function guard(btn, fn){
+  if(!btn || btn.disabled) return;
+  const orig = btn.textContent; btn.disabled = true; btn.dataset.busy='1';
+  try { await fn(); } finally { btn.disabled = false; btn.dataset.busy=''; if(btn.textContent==='') btn.textContent=orig; }
+}
+let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[] };
+
+const TIERS = ['All','AR','SIR','SR','EX','Double Rare','Holo','Slab','Merch'];
+const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Sealed:'📦',Merch:'🎁'};
+const RARITY_RANK = {SIR:0,SR:1,AR:2,'Double Rare':3,EX:4,Slab:5,Holo:6,Sealed:7,Merch:8};
+const TIER_NAME = {AR:'Art Rare',SIR:'Special Illustration Rare',SR:'Super Rare',EX:'EX / V',Holo:'Holo Rare','Double Rare':'Double Rare',Slab:'Graded Slab',Sealed:'Sealed Product',Merch:'Merch',All:'All cards'};
+
+/* demo data so the app is previewable before the backend is wired */
+const DEMO_INV = [
+  {id:'1',name:'Umbreon VMAX (Alt Art)',set:'Evolving Skies',number:'215/203',tier:'SIR',price:520,marketPrice:560,qty:1,condition:'NM'},
+  {id:'2',name:'Charizard ex',set:'Obsidian Flames',number:'223/197',tier:'SIR',price:98,qty:1,condition:'NM'},
+  {id:'3',name:'Pikachu with Grey Felt Hat',set:'Celebrations',number:'',tier:'AR',price:34,qty:1,condition:'NM'},
+  {id:'4',name:'Mimikyu ex',set:'Paldea Evolved',number:'',tier:'AR',price:12,qty:2,condition:'NM'},
+  {id:'5',name:'Gardevoir ex',set:'Scarlet & Violet',number:'',tier:'Double Rare',price:8,qty:1,condition:'NM'},
+  {id:'6',name:'Snorlax',set:'Vivid Voltage',number:'',tier:'Holo',price:5,qty:3,condition:'LP'},
+  {id:'7',name:'Sylveon ex',set:'Prismatic',number:'',tier:'EX',price:6,qty:1,condition:'NM'},
+  {id:'8',name:'Fluffmart Playmat',set:'Merch',number:'',tier:'Merch',price:18,qty:5,condition:'New'},
+];
+const DEMO_ORDERS = [
+  {id:'EF8XK2',status:'In Transit',tracking:'SP123456789SG',total:46,created:'2026-08-28T09:00:00Z',lastUpdate:'Departed Singapore Regional eCommerce Hub',items:[{name:'Mimikyu ex',tier:'AR',price:12},{name:'Snorlax',tier:'Holo',price:5},{name:'Sylveon ex',tier:'EX',price:6}]},
+  {id:'EF7QP9',status:'Delivered',tracking:'SP987654321SG',total:34,created:'2026-08-14T09:00:00Z',lastUpdate:'Delivered',items:[{name:'Pikachu with Grey Felt Hat',tier:'AR',price:34}]},
+];
+const STEPS = ['Ordered','Verified','Packed','Shipped','Delivered'];
+const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Verified':1,'Packed':2,'Shipped':3,'In Transit':3,'Delivered':4,'Cancelled':-1};
+
+const POKE_FACTS=["Pikachu was almost not the mascot — Clefairy was the original pick.","Rhydon was the very first Pokémon ever designed.","Wobbuffet's blue body is a decoy — its real target is the black tail.","Azurill can change gender when it evolves into Marill.","Slowpoke's tail regrows — and is considered a delicacy in the games.","A Magikarp can leap over mountains… and still be useless in battle.","Cubone wears the skull of its mother.","Ditto and Mew are the only Pokémon that can transform — fueling fan theories for decades.","Arcanine was originally meant to be Legendary.","Gengar might be Clefable's shadow — look at their silhouettes.","Poliwag's swirl is based on tadpole intestines, visible through their skin.","Charizard isn't a Dragon-type (until Mega X).","Eevee has the most evolutions of any Pokémon — 8 and counting.","Wailord is lighter than water — it would float like a balloon.","Alakazam's IQ is said to be over 5,000.","Farfetch'd is based on a Japanese saying about a duck bringing its own seasoning.","Snorlax weighs 460 kg — about the same as a grand piano and a half.","Jigglypuff's song works on any creature that can hear.","Vaporeon's cells are so water-like it can melt into water and vanish.","Meowth is one of the few Pokémon that learned to speak human language.","Spinda's spot pattern has over 4 billion possible combinations.","Shuckle can produce the strongest single attack in the games via Power Trick shenanigans.","Mimikyu wears its disguise because it wants to be loved like Pikachu.","Dragonite can fly around the globe in about 16 hours.","Magcargo's body temperature is hotter than the surface of the sun (18,000°F).","Absol doesn't cause disasters — it tries to warn people about them.","Metapod's Harden is its whole personality.","Umbreon's rings glow when it's excited or at night — moonlight powers it.","The first shiny most players ever saw was the Red Gyarados.","Togepi's shell is said to be stuffed with happiness."];
+function pokeFact(){ return POKE_FACTS[Math.floor(Math.random()*POKE_FACTS.length)]; }
+
+/* ============ API ============ */
+async function api(action, payload={}){
+  if(!API_URL){ return mock(action,payload); }
+  const initData = tg ? tg.initData : '';
+  const res = await fetch(API_URL, {
+    method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action, initData, ...payload})
+  });
+  return res.json();
+}
+function mock(action,p){
+  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:25,shipFlat:3,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FluffmartBot?start=ref_1',openParcel:null,unpaidOrders:0};
+  if(action==='finalizeParcel') return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:40,shipping:0,creditUsed:0,total:40,savedShipping:6,items:[{name:'Held card A',tier:'AR',price:20},{name:'Held card B',tier:'EX',price:20}],paynowMobile:'',paynowName:'Fluffmart TCG',paymentWindowMins:10};
+  if(action==='inventory') return {ok:true,items:DEMO_INV};
+  if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
+  if(action==='boot'){ return {ok:true,overview:mock('overview'),inventory:mock('inventory')}; }
+  if(action==='shipParcel') return {ok:true,orders:2};
+  if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
+  if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); const sh=p.cart.length>=5?0:3; return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:sh,creditUsed:0,total:sub+sh,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowMobile:'+6598755180',paynowName:'FluffMart TCG'}; }
+  if(action==='submitPayment') return {ok:true};
+  if(action==='makeOffer') return {ok:true,message:'Offer sent! (demo)'};
+  if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review — we\'ll confirm your offer in chat shortly.'};
+  if(action==='requestPictures') return {ok:true,requestId:'PR'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Photo request sent! (demo)'};
+  if(action==='storeInfo') return {ok:true,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards'};
+  if(action==='wishlist') return {ok:true,wishes:[{kind:'name',target:'Umbreon',label:'Umbreon'}],nameSuggestions:['Umbreon','Charizard','Pikachu','Mimikyu','Gardevoir','Sylveon','Snorlax'],setSuggestions:['Evolving Skies','Prismatic','Obsidian Flames','Paldea Evolved']};
+  if(action==='wishlistAdd') return {ok:true,message:'Added to your wishlist! (demo)'};
+  if(action==='wishlistRemove') return {ok:true};
+  return {ok:false};
+}
+
+/* ============ NAV ============ */
+function go(tab){
+  ['overview','store','orders','binder','buyback','support','profile','credit'].forEach(t=>{const el=document.getElementById('v-'+t); if(el) el.classList.toggle('hidden',t!==tab);});
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+  if(tab==='store'&&!STATE.inventory.length) loadStore();
+  if(tab==='binder'){ if(STATE.orders.length) buildBinder(); else api('orders').then(r=>{STATE.orders=r.orders||[];ORDERS_CACHE=STATE.orders;buildBinder();}); document.getElementById('binderWrap').classList.remove('hidden'); }
+  if(tab==='orders') loadOrders();
+  if(tab==='profile') loadProfile();
+  window.scrollTo(0,0);
+}
+
+/* ============ OVERVIEW ============ */
+async function bootApp(){
+  // 1) paint instantly from the last snapshot (stale-while-revalidate)
+  try{ const c=JSON.parse(localStorage.getItem('fm_boot')||'null');
+    if(c&&c.overview){ applyOverview(c.overview); }
+    if(c&&c.inventory){ STATE.inventory=c.inventory; renderCatTabs(); renderStore(); }
+  }catch(e){}
+  // 2) one round trip refreshes both
+  const r=await api('boot');
+  if(r&&r.ok){
+    if(r.overview&&r.overview.ok) applyOverview(r.overview);
+    if(r.inventory&&r.inventory.ok){ STATE.inventory=r.inventory.items||[]; renderCatTabs(); renderStore(); }
+    try{ localStorage.setItem('fm_boot',JSON.stringify({overview:r.overview,inventory:(r.inventory&&r.inventory.items)||[]})); }catch(e){}
+  } else { loadOverview(); loadStore(); }
+}
+async function loadOverview(){
+  const r = await api('overview');
+  if(!r.ok) return;
+  applyOverview(r);
+}
+function applyOverview(r){
+  if(!r||!r.ok) return;
+  STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,freeShipMin:r.freeShipMin||r.freeShipThreshold||25,shipFlat:r.shipFlat!=null?r.shipFlat:3};
+  STATE.credit = r.credit||0;
+  STATE.isAdmin = !!r.isAdmin;
+  updateRateLabels();
+  document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
+  document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
+  if(r.holdPolicy||r.shippingPolicy||r.policyExtra){
+    const el=document.getElementById('ov-policies');
+    if(el) el.innerHTML = `<div class="feat" style="cursor:default"><div class="ic">🚚</div><div><h3>Store info</h3><p>${[r.shippingPolicy,r.holdPolicy,r.policyExtra].filter(Boolean).join('<br>')}</p></div></div>`;
+  }
+  if(r.welcome){ const h=document.querySelector('.hero p'); if(h) h.textContent=r.welcome; }
+  { const t=document.getElementById('ov-tip'); if(t) t.textContent='✨ Did you know? '+pokeFact(); }
+  if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
+  STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.openParcel=r.openParcel||null; STATE.holdDays=r.holdExpiryDays||21;
+  renderUnpaidBanner();
+  renderLoyalty(r);
+}
+function renderUnpaidBanner(){
+  const el=document.getElementById('ov-unpaid'); if(!el) return;
+  el.innerHTML=(STATE.unpaidOrders>0)?`<button class="unpaid-banner" onclick="go('orders')">
+      <span class="ub-ic">💳</span>
+      <span class="ub-t"><b>You have ${STATE.unpaidOrders>1?STATE.unpaidOrders+' unpaid orders':'an unpaid order'}!</b><br>Complete payment before your cards are released.</span>
+      <span class="ub-go">Pay ›</span>
+    </button>`:'';
+}
+function renderLoyalty(r){
+  const el=document.getElementById('ov-loyalty'); if(!el) return;
+  const thr=r.rewardThreshold||100, rc=r.rewardCredit||3, spend=r.spend||0;
+  const into=spend%thr, pct=Math.min(100,Math.round(into/thr*100)), toGo=(thr-into);
+  const refLink=r.referralLink||'';
+  el.innerHTML=`
+    <div class="loyal">
+      <div class="loyal-hd">🎁 Rewards</div>
+      <div class="loyal-row">Spend $${toGo.toFixed(2)} more to earn <b>$${rc.toFixed(2)}</b> store credit</div>
+      <div class="loyal-bar"><div class="loyal-fill" style="width:${pct}%"></div></div>
+      <div class="loyal-sub">$${spend.toFixed(2)} spent · reward every $${thr}</div>
+      ${refLink?`<div class="loyal-ref">
+        <div class="loyal-reft">Refer a friend → you both win. They spend $${r.referralMinSpend||15}+, you get $${(r.referralCredit||3).toFixed(2)} credit.</div>
+        <button class="loyal-refb" onclick="shareReferral('${refLink.replace(/'/g,'')}')">🔗 Copy my referral link</button>
+      </div>`:''}
+    </div>`;
+}
+function shareReferral(link){
+  try{
+    if(tg&&tg.openTelegramLink){ tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Come collect Pokémon cards at FluffMart TCG! 🦊')); return; }
+  }catch(e){}
+  try{ navigator.clipboard.writeText(link); (tg&&tg.showAlert?tg.showAlert:alert)('Referral link copied! Share it with a friend 🐾'); }
+  catch(e){ (tg&&tg.showAlert?tg.showAlert:alert)(link); }
+}
+
+/* ============ STORE ============ */
+
+const SORTS=[{v:'rarity',l:'Rarity (rarest first)'},{v:'price-desc',l:'Price: high to low'},{v:'price-asc',l:'Price: low to high'},{v:'name',l:'Name A\u2013Z'},{v:'set',l:'Set A\u2013Z'}];
+function toggleSort(e){
+  e.stopPropagation();
+  const dd=document.getElementById('sortDD'), menu=document.getElementById('sortMenu');
+  if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
+  const pool=STATE.inventory.filter(c=>(c.category||'single').toLowerCase()===STATE.cat);
+  const sets=[...new Set(pool.map(c=>c.set).filter(Boolean))].sort();
+  const tiers=[...new Set(pool.map(c=>c.tier).filter(Boolean))]
+    .sort((a,b)=>(RARITY_RANK[a]??99)-(RARITY_RANK[b]??99));
+  let html='<div class="dd-lbl">Sort by</div>';
+  html+=SORTS.map(s=>`<button class="dd-item ${s.v===STATE.sort&&STATE.tier==='All'&&!STATE.set?'on':''}" onclick="pickSort('${s.v}','${s.l}')">${s.l}</button>`).join('');
+  if(tiers.length){
+    html+='<div class="dd-lbl">Rarity</div>';
+    html+=`<button class="dd-item ${STATE.tier==='All'?'on':''}" onclick="pickTier('All')">All rarities</button>`;
+    html+=tiers.map(t=>`<button class="dd-item ${STATE.tier===t?'on':''}" onclick="pickTier('${t}')">${EMOJI[t]||''} ${TIER_NAME[t]||t}</button>`).join('');
+  }
+  if(sets.length){
+    html+='<div class="dd-lbl">Set</div>';
+    html+=`<button class="dd-item ${!STATE.set?'on':''}" onclick="pickSet('')">All sets</button>`;
+    html+=sets.map(s=>`<button class="dd-item ${STATE.set===s?'on':''}" onclick="pickSet(${JSON.stringify(s).replace(/"/g,'&quot;')})">${s}</button>`).join('');
+  }
+  menu.innerHTML=html;
+  dd.classList.add('open');
+}
+function ddLabel(){
+  let parts=[];
+  if(STATE.tier!=='All') parts.push(TIER_NAME[STATE.tier]||STATE.tier);
+  if(STATE.set) parts.push(STATE.set);
+  if(!parts.length){ const s=SORTS.find(x=>x.v===STATE.sort); parts.push(s?s.l:'All cards'); }
+  document.getElementById('sortLabel').textContent=parts.join(' \u00B7 ');
+}
+function pickSort(v,l){ STATE.sort=v; closeDD(); ddLabel(); renderStore(); }
+function pickTier(t){ STATE.tier=t; closeDD(); ddLabel(); renderStore(); }
+function pickSet(s){ STATE.set=s; closeDD(); ddLabel(); renderStore(); }
+const CATS=[{c:'single',l:'🃏 Singles'},{c:'sealed',l:'📦 Sealed'},{c:'merch',l:'🎁 Merch'}];
+function renderCatTabs(){
+  const have={}; STATE.inventory.forEach(x=>{ have[(x.category||'single').toLowerCase()]=true; });
+  const avail=CATS.filter(x=>have[x.c]);
+  if(!avail.length){ document.getElementById('cattabs').innerHTML=''; return; }
+  if(!avail.find(x=>x.c===STATE.cat)) STATE.cat=avail[0].c;
+  document.getElementById('cattabs').innerHTML=avail.map(x=>
+    `<button class="cattab ${x.c===STATE.cat?'on':''}" onclick="pickCat('${x.c}')">${x.l}</button>`).join('');
+  // hide the tab bar entirely if only singles exist
+  document.getElementById('cattabs').style.display = avail.length>1 ? 'flex' : 'none';
+}
+function pickCat(c){
+  STATE.cat=c; STATE.tier='All'; STATE.set='';
+  renderCatTabs(); ddLabel(); renderStore();
+}
+function closeDD(){ document.getElementById('sortDD').classList.remove('open'); }
+document.addEventListener('click',()=>{const d=document.getElementById('sortDD'); if(d) d.classList.remove('open');});
+async function loadStore(){
+  document.getElementById('storeGrid').innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
+  const r = await api('inventory');
+  STATE.inventory = r.items||[];
+ 
+  renderCatTabs(); renderStore();
+}
+function renderStore(){
+  const q = (document.getElementById('q').value||'').toLowerCase();
+  let list = STATE.inventory.filter(c=>{
+    const okTier = STATE.tier==='All'||c.tier===STATE.tier;
+    const okSet = !STATE.set || c.set===STATE.set;
+    const cc = (c.category||'single').toLowerCase();
+    const okCat = cc===STATE.cat;
+    const okQ = !q || (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().includes(q);
+    return okTier && okSet && okCat && okQ;
+  });
+  const s = STATE.sort;
+  list.sort((a,b)=>{
+    if(s==='price-asc') return a.price-b.price;
+    if(s==='price-desc') return b.price-a.price;
+    if(s==='set') return (a.set||'').localeCompare(b.set||'')||a.name.localeCompare(b.name);
+    if(s==='name') return a.name.localeCompare(b.name);
+    // rarity: rarest first, then price high
+    const ra=RARITY_RANK[a.tier]??99, rb=RARITY_RANK[b.tier]??99;
+    return ra-rb || b.price-a.price;
+  });
+  const grid = document.getElementById('storeGrid');
+  if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔍</div><p>No cards match. Try another tier or search.</p></div>`; return; }
+  grid.innerHTML = list.map(c=>{
+    const inCart = STATE.cart.filter(x=>x.id===c.id).length;
+    const soldOut = (c.qty - inCart) <= 0;
+    const front = c.image?`<img src="${imgUrl(c.image,400)}" loading="lazy" alt="">`:(EMOJI[c.tier]||'🃏');
+    return `<div class="pcard" onclick="openCardView('${c.id}')">
+      <div class="tier">${EMOJI[c.tier]||''} ${c.tier}</div>
+      ${c.qty===1?'<div class="stock-tag">Only 1!</div>':(c.qty<=3&&c.qty>1?`<div class="stock-tag">${c.qty} left</div>`:'')}
+      <div class="img">${front}
+        ${c.imageBack?'<div class="flip-hint">⤾ flip</div>':''}
+        ${c.imageType==='stock'?'<div class="stockflag">stock image</div>':''}
+        ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
+      <div class="body">
+        <div class="nm">${c.name}</div>
+        <div class="meta">${c.set}${c.number?' · '+c.number:''}</div>
+        <div class="desc">${TIER_NAME[c.tier]||c.tier}${c.variance?' · '+c.variance:''} · ${c.grade?('Graded '+c.grade):(c.condition||'NM')}</div>
+        <div class="prow">
+          <span class="price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="was">$${c.marketPrice.toFixed(2)}</span>`:''}</span>
+          <button class="add" ${soldOut?'disabled':''} onclick="event.stopPropagation();addToCart('${c.id}')">+</button>
+        </div>
+      </div></div>`;
+  }).join('');
+}
+
+async function askPics(id){
+  const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
+  const r = await api('requestPictures',{cardId:c.id,cardName:c.name,set:c.set});
+  if(r&&r.error==='rate_limited'){ (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Already requested — photos are on the way! 🐾'); return; }
+  const msg = r.ok ? (r.message||'Photo request sent!') : 'Couldn\'t send request, try again.';
+  tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+}
+function openCardView(id){
+  const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
+  const front = c.image?`<img src="${imgUrl(c.image,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo yet</span></div>`;
+  const hasBack = !!c.imageBack;
+  document.getElementById('cardViewBody').innerHTML = `
+    <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="this.classList.toggle('flipped')"`:''}>
+      <div class="cv-inner">
+        <div class="cv-face cv-front">${front}</div>
+        ${hasBack?`<div class="cv-face cv-back"><img src="${imgUrl(c.imageBack,800)}" alt="back"></div>`:''}
+      </div>
+    </div>
+    <div class="cv-meta">
+      <div class="cv-name">${c.name}</div>
+      <div class="cv-sub">${c.set}${c.number?' · '+c.number:''}</div>
+      <div class="cv-tags">
+        <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
+        ${c.variance?`<span class="cv-tag">${c.variance}</span>`:''}
+        <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
+      </div>
+      ${hasBack?'<div class="cv-hint">tap card to flip ⤾</div>':''}
+      ${(!c.image||c.imageType==='stock')?`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want to see the real card?</b><br>We'll send you our scans in chat</span><span class="ap-go">Ask ›</span></button>`:''}
+      <div class="cv-price">$${c.price.toFixed(2)}</div>
+      <button class="cta" ${(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">Add to cart</button>
+      <button class="cta-alt" onclick="makeOffer('${c.id}','${(c.name||'').replace(/'/g,'')}',${c.price})">💬 Make an offer</button>
+    </div>`;
+  document.getElementById('cardViewScrim').classList.add('show');
+  document.getElementById('cardView').classList.add('show');
+}
+function closeCardView(){ document.getElementById('cardViewScrim').classList.remove('show'); document.getElementById('cardView').classList.remove('show'); }
+let OFFER_CARD=null;
+function makeOffer(id,name,listed){
+  if(STATE.cart.find(x=>x.id===id)){
+    (tg&&tg.showAlert?tg.showAlert:alert)('That card\'s already in your cart — just check out to buy it, or remove it first to make an offer.');
+    return;
+  }
+  OFFER_CARD={id,name,listed};
+  closeCardView();
+  document.getElementById('offerTitle').textContent='Offer for '+name;
+  document.getElementById('offerSub').textContent='Listed at $'+listed.toFixed(2);
+  document.getElementById('offerInput').value='';
+  document.getElementById('offerScrim').classList.add('show');
+  document.getElementById('offerSheet').classList.add('show');
+  setTimeout(()=>document.getElementById('offerInput').focus(),100);
+}
+function closeOffer(){ document.getElementById('offerScrim').classList.remove('show'); document.getElementById('offerSheet').classList.remove('show'); }
+async function sendOffer(){
+  if(!OFFER_CARD) return;
+  const offer=parseFloat(document.getElementById('offerInput').value);
+  if(!offer||offer<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('Enter a valid amount.'); return; }
+  const btn=document.getElementById('offerSend'); btn.disabled=true; btn.textContent='Sending…';
+  const r=await api('makeOffer',{cardId:OFFER_CARD.id,offer});
+  btn.disabled=false; btn.textContent='Send offer';
+  closeOffer(); closeCardView();
+  const msg=r.ok?(r.message||'Offer sent!'):'Couldn\'t send offer, try again.';
+  tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+}
+
+/* ============ CART ============ */
+function addToCart(id){
+  const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
+  const inCart = STATE.cart.filter(x=>x.id===id).length;
+  if(inCart>=c.qty) return;
+  STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price});
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  updateCartDot(); renderStore();
+}
+function removeFromCart(idx){ STATE.cart.splice(idx,1); updateCartDot(); renderCart(); renderStore(); }
+function updateCartDot(){
+  const d=document.getElementById('cartDot'); d.textContent=STATE.cart.length;
+  d.classList.toggle('hidden',!STATE.cart.length);
+  const bar=document.getElementById('cartBar');
+  if(bar){
+    const n=STATE.cart.length, tot=STATE.cart.reduce((s,c)=>s+c.price,0);
+    document.getElementById('cbCount').textContent=n+' card'+(n===1?'':'s')+' in cart';
+    document.getElementById('cbTotal').textContent='$'+tot.toFixed(2);
+    bar.classList.toggle('show', n>0);
+  }
+}
+function openCart(){ renderCart(); document.getElementById('scrim').classList.add('show'); document.getElementById('cartSheet').classList.add('show'); }
+function closeCart(){ document.getElementById('scrim').classList.remove('show'); document.getElementById('cartSheet').classList.remove('show'); }
+function renderCart(){
+  const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
+  if(!STATE.cart.length){
+    body.innerHTML=`<div class="empty"><div class="e-ic">🦊</div><p>Your cart's empty!<br>Go claim some cute cards 🐾</p></div>`;
+    foot.innerHTML=''; return;
+  }
+  const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
+  const fsMin=STATE.config.freeShipMin||25;
+  const joiningParcel = !!STATE.openParcel && !STATE.shipAlone;
+  const shipping = joiningParcel ? 0 : (subtotal>=fsMin ? 0 : (STATE.config.shipFlat||3));
+  const need=fsMin-subtotal;
+  const nudge = joiningParcel
+    ? `<div class="nudge">🧺 Ships FREE in your open parcel — everything goes out together!</div>`
+    : (need>0
+      ? `<div class="nudge">🐾 You're $${need.toFixed(2)} away from FREE shipping (saves $${(STATE.config.shipFlat||3).toFixed(2)})</div>`
+      : `<div class="nudge">🎉 Free shipping unlocked — nice bundle!</div>`);
+  body.innerHTML = STATE.cart.map((c,i)=>
+    `<div class="crow"><div class="ci">${EMOJI[c.tier]||'🃏'}</div>
+      <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.tier}</div></div>
+      <span class="cp">$${c.price.toFixed(2)}</span>
+      <button class="rm" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
+    (STATE.ship.name&&STATE.ship.address&&!STATE.editAddr
+      ? `<div class="addr-saved">
+           <div class="as-l"><div class="as-cap">📦 Shipping to</div><div class="as-val">${STATE.ship.name}<br><span>${STATE.ship.address}</span></div></div>
+           <button class="as-edit" onclick="editAddress()">✏️ Change</button>
+         </div>`
+      : `<div class="addr">
+      <div class="field"><label>Name for delivery</label><input id="ship-name" value="${STATE.ship.name}" oninput="STATE.ship.name=this.value;persistShip()" placeholder="Full name"></div>
+      <div class="field"><label>Mailing address</label><input id="ship-addr" value="${STATE.ship.address}" oninput="STATE.ship.address=this.value;persistShip()" placeholder="Block, street, unit, postal code"></div>
+      <div class="field"><label>Phone (optional)</label><input id="ship-phone" value="${STATE.ship.phone}" oninput="STATE.ship.phone=this.value;persistShip()" placeholder="For delivery issues"></div>
+      ${STATE.ship.name&&STATE.ship.address?`<button class="as-done" onclick="doneAddress()">✓ Save address</button>`:''}
+    </div>`) +
+    `<div class="field" style="margin:10px 0 4px"><label>Order note (optional)</label><input id="ord-note" value="${(STATE.note||'').replace(/"/g,'&quot;')}" maxlength="200" oninput="STATE.note=this.value" placeholder="e.g. double-sleeve please, leave with guard"></div>` +
+    (STATE.credit>0?`<div class="creditrow"><span>Use store credit ($${STATE.credit.toFixed(2)})</span>
+      <button class="switch ${STATE.useCredit?'on':''}" onclick="toggleCredit()"></button></div>`:'');
+  const creditApplied = STATE.useCredit ? Math.min(STATE.credit,subtotal+shipping) : 0;
+  const total = subtotal + shipping - creditApplied;
+  foot.innerHTML = `<div class="totline"><span>Subtotal</span><span>$${subtotal.toFixed(2)}</span></div>
+    <div class="totline"><span>Shipping</span><span>${shipping===0?'FREE':'$'+shipping.toFixed(2)}</span></div>
+    ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
+    <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
+    <button class="cta" onclick="guard(this,checkout)">${joiningParcel?`Place order · $${total.toFixed(2)} · joins your parcel 🧺`:`Place order · $${total.toFixed(2)}`}</button>
+    ${joiningParcel
+      ?`<button class="cancel-link" onclick="STATE.shipAlone=true;renderCart()">Ship this order alone instead (+$${(STATE.config.shipFlat||3).toFixed(2)} unless over $${fsMin})</button>`
+      :(STATE.openParcel
+        ?`<button class="cancel-link" onclick="STATE.shipAlone=false;renderCart()">🧺 Put it back in my parcel (free shipping)</button>`
+        :`<button class="cta-hold" onclick="STATE.startParcel=!STATE.startParcel;renderCart()">${STATE.startParcel?'🧺 Starting a parcel ✓ (tap to undo)':'🧺 Start a parcel — future orders ship free with this one'}</button>
+    <p class="hold-hint">A parcel holds your paid orders together (up to ${STATE.holdDays||21} days) so everything ships once — later purchases join it with no shipping fee.</p>`)}`;
+}
+async function cancelUnpaid(id){
+  const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
+    if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('Order cancelled — the cards are back in the shop'+(r.creditRefunded>0?' and your $'+r.creditRefunded.toFixed(2)+' credit was refunded':'')+'.'); ORDERS_CACHE=null; loadOrders(true); loadOverview(); }
+    else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Couldn\'t cancel that order.');
+  });
+  if(tg&&tg.showConfirm) tg.showConfirm('Cancel this order? The cards go back on sale.',ok=>{ if(ok) go(); });
+  else if(confirm('Cancel this order? The cards go back on sale.')) go();
+}
+async function shipParcelNow(){
+  const r=await api('shipParcel');
+  if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🚚 On it — your parcel ('+(r.orders||1)+' order'+(r.orders>1?'s':'')+') is off to packing!'); STATE.openParcel=null; STATE.openParcelId=null; ORDERS_CACHE=null; loadOrders(true); loadOverview(); }
+  else (tg&&tg.showAlert?tg.showAlert:alert)('No open parcel found.');
+}
+function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
+function editAddress(){ STATE.editAddr=true; renderCart(); }
+function doneAddress(){
+  if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){ (tg&&tg.showAlert?tg.showAlert:alert)('Add a name and address first.'); return; }
+  STATE.editAddr=false; persistShip(); renderCart();
+}
+async function checkout(){
+  if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){
+    (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and mailing address first.');
+    return;
+  }
+  const joining=!!STATE.openParcel&&!STATE.shipAlone;
+  const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
+  const ship0=joining?0:(sub0>=(STATE.config.freeShipMin||25)?0:(STATE.config.shipFlat||3));
+  const r = await api('submitOrder',{shipAlone:!!STATE.shipAlone,startParcel:!!STATE.startParcel,cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0+ship0):0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone,note:(STATE.note||'').trim()});
+  if(r.ok){
+    STATE.cart=[]; STATE.useCredit=false; STATE.note=''; STATE.shipAlone=false; STATE.startParcel=false; updateCartDot(); closeCart();
+    if(r.paidByCredit){
+      const msg='🎉 Order '+r.orderId+' is fully covered by your store credit — nothing to pay! We\'re confirming it now.';
+      tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+      ORDERS_CACHE=null; loadOverview();
+    } else {
+      if(r.combinedFree){ const m2='🧺 No shipping fee — this order joins your open parcel and ships with it.'; tg&&tg.showAlert?tg.showAlert(m2):setTimeout(()=>alert(m2),300); }
+      else if(r.startedParcel){ const m3='🧺 Parcel started! Anything you buy from now ships FREE with it — release it anytime from Orders.'; tg&&tg.showAlert?tg.showAlert(m3):setTimeout(()=>alert(m3),300); }
+      showInvoice(r);
+      loadOverview();
+    }
+  } else if(r.error==='address_required'){
+    (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and address.');
+  } else if(r.error==='unavailable'){
+    const msg='Ah — one of those cards was just claimed by someone else. Cart updated.';
+    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    loadStore();
+  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Something went wrong. Try again in a sec.'); }
+}
+
+let INVOICE=null, PAYPROOF=null;
+function showInvoice(inv){
+  INVOICE=inv; PAYPROOF=null;
+  const b=document.getElementById('invBody');
+  const mins=inv.paymentWindowMins||10;
+  b.innerHTML=`
+    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge" id="payTimer">${inv._resumeSecs!=null?Math.floor(inv._resumeSecs/60)+':'+String(inv._resumeSecs%60).padStart(2,'0'):mins+':00'}</div></div>
+    <div class="pay-warn">⏱ Please pay within <b>${mins} minutes</b> or your cards will be released.</div>
+    <div class="inv-items">
+      ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
+      <div class="inv-row"><span>Shipping</span><span>${inv.shipping===0?'FREE':'$'+inv.shipping.toFixed(2)}</span></div>
+      ${inv.creditUsed>0?`<div class="inv-row" style="color:var(--mint)"><span>Store credit</span><span>−$${inv.creditUsed.toFixed(2)}</span></div>`:''}
+      <div class="inv-row inv-total"><span>Total to pay</span><span>$${inv.total.toFixed(2)}</span></div>
+    </div>
+    <div class="paynow">
+      <div class="pn-title">Scan to pay by PayNow</div>
+      <div class="pn-qr" id="pnQr"></div>
+      <div class="pn-num">${inv.paynowName}<br><b>${inv.paynowMobile||""}</b><br><span style="font-size:11px;color:var(--hint)">Ref: ${inv.orderId}</span></div>
+      <div class="pn-note">The QR has the exact amount ($${inv.total.toFixed(2)}) built in. Pay, then upload your screenshot below.</div>
+    </div>
+    <label class="upl" id="uplLabel">📎 Upload payment screenshot
+      <input type="file" accept="image/*" id="proofInput" style="display:none" onchange="onProof(event)">
+    </label>
+    <div id="proofPreview"></div>
+    <button class="cta" id="invSubmit" onclick="guard(this,submitProof)" disabled>Upload a screenshot to confirm</button>
+    <p class="note">Your cards are reserved. Once we verify payment we'll pack & ship — track it in Orders.</p>`;
+  // generate the PayNow QR
+  renderPayQR(inv);
+  // countdown
+  let left=inv._resumeSecs!=null?inv._resumeSecs:mins*60;
+  clearInterval(PAY_TIMER);
+  PAY_TIMER=setInterval(()=>{
+    left--;
+    const el=document.getElementById('payTimer');
+    if(!el){ clearInterval(PAY_TIMER); return; }
+    const m=Math.floor(left/60), s=left%60;
+    el.textContent=m+':'+String(s).padStart(2,'0');
+    if(left<=60) el.style.background='#e74c3c';
+    if(left<=0){ clearInterval(PAY_TIMER); closeInvoice();
+      (tg&&tg.showAlert?tg.showAlert:alert)('Payment time expired — your cards have been released. You can re-order anytime.');
+      loadStore(); }
+  },1000);
+  document.getElementById('invScrim').classList.add('show');
+  document.getElementById('invSheet').classList.add('show');
+}
+function closeInvoice(){ clearInterval(PAY_TIMER); document.getElementById('invScrim').classList.remove('show'); document.getElementById('invSheet').classList.remove('show'); }
+function onProof(e){
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ PAYPROOF=reader.result;
+    document.getElementById('proofPreview').innerHTML=`<img class="proof-img" src="${PAYPROOF}" alt="proof">`;
+    document.getElementById('uplLabel').innerHTML='✅ Screenshot attached (tap to change)<input type="file" accept="image/*" id="proofInput" style="display:none" onchange="onProof(event)">';
+    const b=document.getElementById('invSubmit'); b.disabled=false; b.textContent='Confirm payment';
+  };
+  reader.readAsDataURL(f);
+}
+async function submitProof(){
+  if(!PAYPROOF||!INVOICE) return;
+  const b=document.getElementById('invSubmit'); b.disabled=true; b.textContent='Sending…';
+  const r=await api('submitPayment',{orderId:INVOICE.orderId,image:PAYPROOF});
+  if(r.ok){
+    clearInterval(PAY_TIMER);
+    closeInvoice();
+    const msg='Payment submitted for '+INVOICE.orderId+'! 🎉 We\'re verifying it now — you\'ll get an update once confirmed. Track it in Orders.';
+    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    loadOverview();
+  } else { b.disabled=false; b.textContent='Confirm payment'; (tg&&tg.showAlert?tg.showAlert:alert)('Upload failed, try again.'); }
+}
+
+/* ============ ORDERS ============ */
+let ORDERS_CACHE=null, ORDERS_TS=0;
+async function loadOrders(force){
+  const list=document.getElementById('ordersList');
+  if(ORDERS_CACHE && !force && Date.now()-ORDERS_TS<20000){ STATE.orders=ORDERS_CACHE; paintOrders(); return; }
+  if(!ORDERS_CACHE) list.innerHTML='<div class="skelcard" style="height:150px"></div>';
+  let r;
+  try { r = await api('orders'); }
+  catch(e){ list.innerHTML='<div class="empty"><div class="e-ic">⚠️</div><p>Couldn\'t load orders.<br><small style="opacity:.7">'+String(e&&e.message||e)+'</small></p></div>'; return; }
+  if(!r || r.ok===false){ list.innerHTML='<div class="empty"><div class="e-ic">⚠️</div><p>Orders didn\'t load.<br><small style="opacity:.7">'+JSON.stringify(r).slice(0,300)+'</small></p></div>'; return; }
+  ORDERS_CACHE=r.orders||[]; ORDERS_TS=Date.now(); STATE.orders=ORDERS_CACHE;
+  STATE.payInfo={mobile:r.paynowMobile,name:r.paynowName,mins:r.paymentWindowMins||10};
+  STATE.openParcelId=r.openParcel||null;
+  paintOrders();
+}
+function paintOrders(){
+  const list=document.getElementById('ordersList');
+  const openPid=STATE.openParcelId||null;
+  const inParcel=openPid?STATE.orders.filter(o=>o.parcelId===openPid):[];
+  const normal=openPid?STATE.orders.filter(o=>o.parcelId!==openPid):STATE.orders;
+  let parcelHtml='';
+  if(inParcel.length){
+    const items=inParcel.reduce((a,o)=>a.concat(o.items),[]);
+    const allVerified=inParcel.every(o=>o.status==='Payment Verified');
+    parcelHtml=`<div class="parcel">
+      <div class="parcel-hd"><span>🧺 Your open parcel</span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${items.length} card${items.length>1?'s':''}</span></div>
+      <div class="parcel-items">${items.slice(0,8).map(i=>`<div class="parcel-i"><span>${EMOJI[i.tier]||'🃏'} ${i.name}</span><span>$${i.price.toFixed(2)}</span></div>`).join('')}${items.length>8?`<div class="parcel-i" style="color:var(--hint)">…and ${items.length-8} more</div>`:''}</div>
+      <div class="parcel-save">💚 New orders join this parcel with FREE shipping</div>
+      <div class="parcel-hint">${allVerified?'All paid — ships whenever you say (or automatically after '+(STATE.holdDays||21)+' days).':'Ships once payments are verified — or release it now.'}</div>
+      <button class="cta" onclick="guard(this,shipParcelNow)">🚚 Ship my parcel now</button>
+    </div>`;
+  }
+  if(!normal.length && !inParcel.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; return; }
+  list.innerHTML=parcelHtml+normal.map(o=>{
+    const merged=(o.status||'').indexOf('Merged into')===0;
+    const cancelled=(o.status||'').indexOf('Cancelled')===0;
+    const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:(cancelled?-1:0);
+    const bcls=merged?'b-delivered':(cancelled?'b-cancelled':({'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered'}[o.status]||'b-ordered'));
+    const track = (cancelled||merged) ? '' :
+      `<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
+    return `<div class="order">
+      <div class="hd"><span class="oid">#${o.id}${o.parcelId?` <span class="ptag">🧺 ${o.parcelId}</span>`:''}</span><span class="badge ${bcls}">${o.status}</span></div>
+      ${track}
+      ${o.lastUpdate?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
+      ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
+      <div class="oitems">${o.items.map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
+        <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>Total</span><span>$${o.total.toFixed(2)}</span></div></div>
+      ${o.status==='Awaiting Payment'?`<button class="cta" style="margin-top:8px" onclick="resumePayment('${o.id}')">💳 Complete payment</button>
+      <button class="cancel-link" onclick="cancelUnpaid('${o.id}')">Cancel this order</button>`:''}
+      <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
+    </div>`;
+  }).join('');
+}
+
+/* ============ BINDER (past purchases) ============ */
+let BINDER={page:0,cards:[]};
+const OWNED_STATUSES=['Payment Verified','Packed','Shipped','In Transit','Delivered'];
+function buildBinder(){
+  const wrap=document.getElementById('binderWrap');
+  const cards=[];
+  (STATE.orders||[]).forEach(o=>{
+    if(!OWNED_STATUSES.includes(o.status)) return;
+    (o.items||[]).forEach(it=>cards.push({...it,orderId:o.id,date:o.created,status:o.status}));
+  });
+  BINDER.cards=cards;
+  if(!cards.length){
+    wrap.innerHTML=`<div class="empty"><div class="e-ic">📖</div><p>Your binder's empty for now!<br>Cards you claim will live here forever 🐾</p></div>`;
+    return;
+  }
+  const pages=Math.ceil(cards.length/9);
+  if(BINDER.page>=pages) BINDER.page=pages-1;
+  wrap.innerHTML=`
+    <div class="binder">
+      <div class="binder-rings">${'<span></span>'.repeat(5)}</div>
+      <div class="binder-page" id="binderPage"></div>
+      <div class="binder-nav">
+        <button class="bn-btn" id="bnPrev" onclick="binderFlip(-1)">‹</button>
+        <div class="bn-count" id="bnCount"></div>
+        <button class="bn-btn" id="bnNext" onclick="binderFlip(1)">›</button>
+      </div>
+      <div class="bn-hint">swipe or tap arrows to flip · tap a card to admire it ✨</div>
+    </div>`;
+  paintBinderPage(false);
+  const pg=document.getElementById('binderPage');
+  let sx=null;
+  pg.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;},{passive:true});
+  pg.addEventListener('touchend',e=>{
+    if(sx===null) return;
+    const dx=e.changedTouches[0].clientX-sx; sx=null;
+    if(Math.abs(dx)>48) binderFlip(dx<0?1:-1);
+  },{passive:true});
+}
+function paintBinderPage(animate,dir){
+  const cards=BINDER.cards, pages=Math.ceil(cards.length/9);
+  const pg=document.getElementById('binderPage'); if(!pg) return;
+  const slice=cards.slice(BINDER.page*9,BINDER.page*9+9);
+  const pockets=[];
+  for(let i=0;i<9;i++){
+    const c=slice[i];
+    if(c){
+      const im=c.image?`<img src="${imgUrl(c.image,400)}" loading="lazy" alt="">`:`<span class="bp-emoji">${EMOJI[c.tier]||'🃏'}</span>`;
+      pockets.push(`<button class="pocket filled" onclick="openBinderCard(${BINDER.page*9+i})">${im}</button>`);
+    } else {
+      pockets.push(`<div class="pocket"><span class="bp-paw">🐾</span></div>`);
+    }
+  }
+  const html=`<div class="pocket-grid">${pockets.join('')}</div>`;
+  if(animate){
+    pg.classList.remove('flip-l','flip-r'); void pg.offsetWidth;
+    pg.classList.add(dir>0?'flip-l':'flip-r');
+    setTimeout(()=>{ pg.innerHTML=html; pg.classList.remove('flip-l','flip-r'); pg.classList.add(dir>0?'flip-in-r':'flip-in-l');
+      setTimeout(()=>pg.classList.remove('flip-in-r','flip-in-l'),260); },180);
+  } else pg.innerHTML=html;
+  document.getElementById('bnCount').textContent='Page '+(BINDER.page+1)+' / '+pages;
+  document.getElementById('bnPrev').disabled=BINDER.page===0;
+  document.getElementById('bnNext').disabled=BINDER.page>=pages-1;
+}
+function binderFlip(dir){
+  const pages=Math.ceil(BINDER.cards.length/9);
+  const next=BINDER.page+dir;
+  if(next<0||next>=pages) return;
+  BINDER.page=next;
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  paintBinderPage(true,dir);
+}
+function openBinderCard(idx){
+  const c=BINDER.cards[idx]; if(!c) return;
+  const front=c.image?`<img src="${imgUrl(c.image,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo</span></div>`;
+  document.getElementById('cardViewBody').innerHTML=`
+    <div class="cv-card noflip"><div class="cv-inner"><div class="cv-face cv-front">${front}</div></div></div>
+    <div class="cv-meta">
+      <div class="cv-name">${c.name}</div>
+      <div class="cv-tags">
+        <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
+        <span class="cv-tag">Claimed for $${Number(c.price).toFixed(2)}</span>
+      </div>
+      <div class="cv-hint">Order #${c.orderId}${c.date?' · claimed '+new Date(c.date).toLocaleDateString():''} · ${c.status||''}</div>
+    </div>`;
+  document.getElementById('cardViewScrim').classList.add('show');
+  document.getElementById('cardView').classList.add('show');
+}
+
+/* ============ WISHLIST ============ */
+let WISH={kind:'name',suggestions:{name:[],set:[]}};
+async function openWishlist(){
+  document.getElementById('wishScrim').classList.add('show');
+  document.getElementById('wishSheet').classList.add('show');
+  document.getElementById('wishInput').value='';
+  document.getElementById('wishSug').innerHTML='';
+  const r=await api('wishlist');
+  if(r.ok){
+    STATE.wishes=r.wishes||[];
+    WISH.suggestions={name:r.nameSuggestions||[],set:r.setSuggestions||[]};
+  }
+  renderWishlist();
+}
+function closeWishlist(){ document.getElementById('wishScrim').classList.remove('show'); document.getElementById('wishSheet').classList.remove('show'); }
+function wishKind(k){
+  WISH.kind=k;
+  document.getElementById('wtab-name').classList.toggle('on',k==='name');
+  document.getElementById('wtab-set').classList.toggle('on',k==='set');
+  document.getElementById('wishInput').placeholder=k==='name'?'e.g. Umbreon':'e.g. Prismatic Evolutions';
+  document.getElementById('wishInput').value='';
+  wishSuggest('');
+}
+function wishSuggest(v){
+  const q=(v||'').toLowerCase();
+  const pool=WISH.suggestions[WISH.kind]||[];
+  const matches=(q?pool.filter(x=>x.toLowerCase().includes(q)):pool).slice(0,8);
+  document.getElementById('wishSug').innerHTML=matches.map(m=>
+    `<button class="wsug" onclick="pickWish(${JSON.stringify(m).replace(/"/g,'&quot;')})">${m}</button>`).join('');
+}
+function pickWish(v){ document.getElementById('wishInput').value=v; document.getElementById('wishSug').innerHTML=''; }
+async function addWish(){
+  const val=document.getElementById('wishInput').value.trim();
+  if(!val){ (tg&&tg.showAlert?tg.showAlert:alert)('Type a Pokémon or set name first.'); return; }
+  const r=await api('wishlistAdd',{kind:WISH.kind,target:val,label:val});
+  if(r.ok){
+    document.getElementById('wishInput').value=''; document.getElementById('wishSug').innerHTML='';
+    if(tg&&tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    if(!r.already) STATE.wishes.push({kind:WISH.kind,target:val,label:val});
+    renderWishlist();
+    if(r.message&&(tg&&tg.showAlert)) tg.showAlert(r.message);
+  } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Couldn\'t add that, try again.'); }
+}
+async function removeWish(kind,target){
+  await api('wishlistRemove',{kind,target});
+  STATE.wishes=STATE.wishes.filter(w=>!(w.kind===kind&&w.target===target));
+  renderWishlist();
+}
+function renderWishlist(){
+  const el=document.getElementById('wishList');
+  const sub=document.getElementById('p-wish-sub');
+  if(sub) sub.textContent=STATE.wishes.length?`Watching ${STATE.wishes.length} — we'll ping you`:'Get pinged when cards restock';
+  if(!STATE.wishes.length){ el.innerHTML=`<div class="empty" style="padding:24px"><div class="e-ic">🔔</div><p>Nothing on your wishlist yet.<br>Add a Pokémon or set above 🐾</p></div>`; return; }
+  el.innerHTML=STATE.wishes.map(w=>
+    `<div class="wrow"><span class="wk">${w.kind==='set'?'📚':'⭐'}</span>
+      <div class="wn">${w.label||w.target}<div class="ws">${w.kind==='set'?'Set':'Pokémon'}</div></div>
+      <button class="rm" onclick="removeWish('${w.kind}','${(w.target||'').replace(/'/g,'')}')">✕</button></div>`).join('');
+}
+
+/* ============ BUYBACK / SELL REQUEST ============ */
+function updateRateLabels(){
+  const rc=document.getElementById('rate-credit'), rk=document.getElementById('rate-cash');
+  if(rc) rc.textContent=Math.round(STATE.config.creditRate*100)+'%';
+  if(rk) rk.textContent=Math.round(STATE.config.cashRate*100)+'%';
+}
+async function submitBuyback(){
+  const msg=document.getElementById('bb-msg').value.trim();
+  if(!msg){ (tg&&tg.showAlert?tg.showAlert:alert)('Tell us what you\'d like to sell first.'); return; }
+  const btn=document.getElementById('bb-submit'); btn.disabled=true; btn.textContent='Sending\u2026';
+  const r=await api('submitBuyback',{message:msg});
+  btn.disabled=false; btn.textContent='Send & talk to us';
+  if(r.ok){
+    document.getElementById('bb-msg').value='';
+    const m=r.message||'Sent! We\'ll message you back shortly.';
+    tg&&tg.showAlert?tg.showAlert(m):alert(m);
+  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Couldn\'t send, try again.'); }
+}
+
+async function sendSupport(btn){
+  await guard(btn, async()=>{
+    const msg=document.getElementById('sup-msg').value.trim();
+    if(!msg){ (tg&&tg.showAlert?tg.showAlert:alert)('Type a message first.'); return; }
+    btn.textContent='Sending…';
+    const r=await api('contactSupport',{message:msg,orderId:document.getElementById('sup-order').value.trim()});
+    if(r.ok){ document.getElementById('sup-msg').value=''; document.getElementById('sup-order').value='';
+      (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Sent!'); go('overview'); }
+    else { (tg&&tg.showAlert?tg.showAlert:alert)('Could not send, try again.'); }
+  });
+}
+// View a past order as a full invoice
+function resumePayment(id){
+  const o=STATE.orders.find(x=>x.id===id); if(!o) return;
+  const mins=(STATE.payInfo&&STATE.payInfo.mins)||10;
+  const elapsed=o.createdMs?Math.floor((Date.now()-o.createdMs)/1000):0;
+  const remain=Math.max(0, mins*60 - elapsed);
+  if(remain<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('This order\'s payment window has expired. Please re-order.'); return; }
+  const inv={ orderId:o.id, items:o.items, subtotal:o.items.reduce((s,i)=>s+i.price,0),
+    shipping:o.shipping, creditUsed:o.creditUsed, total:o.total,
+    paynowMobile:(STATE.payInfo&&STATE.payInfo.mobile)||'', paynowName:(STATE.payInfo&&STATE.payInfo.name)||'Fluffmart TCG',
+    paymentWindowMins:mins, _resumeSecs:remain };
+  showInvoice(inv);
+}
+function viewInvoice(id){
+  const o=STATE.orders.find(x=>x.id===id); if(!o) return;
+  if(o.status==='Awaiting Payment'){ closeCardView&&closeCardView(); resumePayment(id); return; }
+  const sub=o.items.reduce((s,i)=>s+i.price,0);
+  const findImg=(it)=>{ if(it.image) return imgUrl(it.image,200); const c=STATE.inventory.find(x=>x.name===it.name); return c&&c.image?imgUrl(c.image,200):''; };
+  document.getElementById('cardViewBody').innerHTML=`
+    <div class="inv-card">
+      <div class="inv-c-hd">
+        <div><div class="inv-c-oid">🧾 ${o.id}</div><div class="inv-c-date">${o.created?new Date(o.created).toLocaleDateString():''}</div></div>
+        <div class="badge ${(o.status||'').toLowerCase().includes('ship')?'b-shipped':(o.status||'').toLowerCase().includes('deliver')?'b-delivered':'b-packed'}">${o.status}</div>
+      </div>
+      <div class="inv-c-items">
+        ${o.items.map(i=>{const im=findImg(i); return `<div class="inv-c-row"><div class="inv-c-thumb">${im?`<img src="${im}">`:(EMOJI[i.tier]||'🃏')}</div><div class="inv-c-nm">${i.name}<div class="inv-c-tier">${TIER_NAME[i.tier]||i.tier}</div></div><div class="inv-c-pr">$${i.price.toFixed(2)}</div></div>`;}).join('')}
+      </div>
+      <div class="inv-c-tot">
+        <div class="inv-row"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
+        <div class="inv-row"><span>Shipping</span><span>${o.shipping===0?'FREE':'$'+o.shipping.toFixed(2)}</span></div>
+        ${o.creditUsed>0?`<div class="inv-row" style="color:var(--mint)"><span>Credit</span><span>−$${o.creditUsed.toFixed(2)}</span></div>`:''}
+        <div class="inv-row inv-total"><span>Total</span><span>$${o.total.toFixed(2)}</span></div>
+      </div>
+      ${o.tracking?`<a class="inv-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${o.tracking} ↗</a>`:''}
+      ${o.shipAddress?`<div class="inv-c-ship">Ship to: ${o.shipName}, ${o.shipAddress}</div>`:''}
+    </div>`;
+  document.getElementById('cardViewScrim').classList.add('show');
+  document.getElementById('cardView').classList.add('show');
+}
+
+function loadProfile(){
+  const u=STATE.user;
+  document.getElementById('prof-av').textContent = '🦊';
+  document.getElementById('p-credit').textContent = '$'+(STATE.credit||0).toFixed(0);
+  loadOrders(); // ensures ORDERS_CACHE
+  setTimeout(()=>{
+    const os=ORDERS_CACHE||[];
+    document.getElementById('p-orders').textContent=os.length;
+    document.getElementById('p-transit').textContent=os.filter(o=>['Awaiting Payment','Awaiting Verification','Payment Verified','Packed','Shipped','In Transit'].includes(o.status)).length;
+    // recent notifications from order lastUpdates
+    const nt=os.filter(o=>o.lastUpdate).slice(0,5).map(o=>`<div class="notif"><span class="nt-ic">🔔</span><div><b>#${o.id}</b> — ${o.status}<div class="nt-sub">${o.lastUpdate}</div></div></div>`).join('');
+    document.getElementById('prof-notifs').innerHTML = nt ? '<div class="section-t">Recent updates</div>'+nt : '';
+  },300);
+}
+async function loadCredit(){
+  document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+  document.getElementById('v-credit').classList.remove('hidden');
+  const list=document.getElementById('creditList');
+  list.innerHTML='<div class="skelcard" style="height:120px"></div>';
+  const r=await api('credit');
+  const led=(r.ledger||[]);
+  document.getElementById('creditBal').textContent='$'+(r.balance||0).toFixed(2);
+  list.innerHTML = led.length
+    ? led.map(l=>`<div class="cr-row"><div class="cr-l"><div class="cr-rsn">${l.reason||'Adjustment'}</div><div class="cr-dt">${l.at?new Date(l.at).toLocaleDateString():''}</div></div><div class="cr-amt ${l.amount>0?'pos':'neg'}">${l.amount>0?'+':''}$${Math.abs(l.amount).toFixed(2)}</div></div>`).join('')
+    : `<div class="empty" style="padding:30px"><div class="e-ic">💳</div><p>No store credit transactions yet.<br>Sell us cards or earn rewards to start! 🐾</p></div>`;
+}
+function backToProfile(){ document.getElementById('v-credit').classList.add('hidden'); document.getElementById('v-profile').classList.remove('hidden'); }
+
+/* ============ INIT ============ */
+(function init(){
+  if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#C98B5E');
+    const u=tg.initDataUnsafe&&tg.initDataUnsafe.user;
+    if(u){ STATE.user={id:String(u.id),name:[u.first_name,u.last_name].filter(Boolean).join(' '),username:u.username||''}; }
+  }
+  restorePersisted();
+  bootApp();
+})();
+</script>
+</body>
+</html>
