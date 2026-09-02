@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Fluffmart TCG</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
@@ -214,7 +215,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .pn-title{font-family:'Fredoka';font-weight:600;color:var(--fawn-deep);margin-bottom:8px}
 .pn-qr{width:150px;height:150px;object-fit:contain;margin:0 auto 8px;border-radius:8px;background:#fff;display:block}
 .pn-qr-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--hint);font-weight:700;font-size:13px}
-.pn-qr-ph span{font-size:11px;font-weight:600}
+".pn-qr-ph span{font-size:11px;font-weight:600}
+.inv-badge{transition:background .3s}
+.pay-warn{background:#fff3cd;color:#8a6d00;border-radius:10px;padding:9px 12px;font-size:12.5px;
+  font-weight:700;text-align:center;margin-bottom:12px}
+#pnQr{width:170px;height:170px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:8px;padding:4px}
+#pnQr img,#pnQr canvas{display:block}
 .pn-num{font-size:13px;color:var(--text);line-height:1.5}.pn-num b{font-size:15px}
 .pn-note{font-size:11.5px;color:var(--fawn-deep);margin-top:8px}
 .upl{display:block;text-align:center;border:2px dashed var(--fawn);color:var(--fawn-deep);border-radius:12px;
@@ -294,12 +300,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cv-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .cv-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff}
 /* ── animations ── */
-@keyframes fadeRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+html{scroll-behavior:smooth}
+*{transition-timing-function:cubic-bezier(.22,.61,.36,1)}
+@keyframes fadeRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes pop2{0%{transform:scale(.92)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-.view{animation:fadeRise .28s ease}
-.pcard{animation:fadeRise .3s ease both}
+.view{animation:fadeRise .35s cubic-bezier(.22,.61,.36,1)}
+.pcard{animation:fadeRise .4s cubic-bezier(.22,.61,.36,1) both}
 .pcard:active{animation:pop2 .3s ease}
 .feat{transition:transform .15s ease, box-shadow .15s ease}
 .feat:active{transform:scale(.98)}
@@ -323,6 +331,32 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cartbar .cb-l{font-weight:700;font-size:13px}
 .cartbar .cb-r{font-family:'Fredoka';font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px}
 /* ── empty states ── */
+.prof-hd{display:flex;align-items:center;gap:14px;padding:8px 4px 16px}
+.prof-av{width:56px;height:56px;border-radius:50%;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid var(--fawn)}
+.prof-name{font-family:'Fredoka';font-weight:600;font-size:20px;color:var(--fawn-deep)}
+.prof-sub{font-size:12px;color:var(--hint)}
+.prof-stats{display:flex;gap:10px;margin-bottom:16px}
+.pstat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 8px;text-align:center}
+.pstat .pn{font-family:'Fredoka';font-weight:600;font-size:22px;color:var(--fawn-deep)}
+.pstat .pl{font-size:10.5px;color:var(--hint);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.prof-menu{margin-bottom:8px}
+.notif{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;font-size:13px}
+.notif .nt-ic{font-size:16px}
+.notif .nt-sub{font-size:11px;color:var(--hint);margin-top:2px}
+.inv-card{background:var(--bg);border-radius:18px;padding:18px;max-width:380px;width:100%;color:var(--text);max-height:78vh;overflow-y:auto}
+.inv-c-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.inv-c-oid{font-family:'Fredoka';font-weight:600;font-size:18px;color:var(--fawn-deep)}
+.inv-c-date{font-size:11px;color:var(--hint)}
+.inv-c-items{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.inv-c-row{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:8px}
+.inv-c-thumb{width:38px;height:52px;border-radius:6px;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0}
+.inv-c-thumb img{width:100%;height:100%;object-fit:cover}
+.inv-c-nm{flex:1;font-size:13px;font-weight:700;line-height:1.2}
+.inv-c-tier{font-size:10.5px;color:var(--hint);font-weight:600}
+.inv-c-pr{font-family:'Fredoka';font-weight:600;color:var(--fawn-deep)}
+.inv-c-tot{border-top:1px dashed var(--line);padding-top:10px}
+.inv-track{display:block;text-align:center;background:var(--berry);color:#fff;font-weight:700;font-size:13px;padding:10px;border-radius:12px;margin-top:12px;text-decoration:none}
+.inv-c-ship{font-size:11.5px;color:var(--hint);margin-top:10px;text-align:center}
 .empty .e-ic{animation:floaty 3s ease-in-out infinite}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
@@ -335,7 +369,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <body>
 
 <div id="app">
-<div class="top">
+<div class="top" onclick="go('store')" style="cursor:pointer">
   <div class="mascot">🦊</div>
   <div>
     <div class="brand">Fluffmart TCG</div>
@@ -365,7 +399,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('buyback')">
-      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>up to 80% cash · up to 85% store credit</p></div>
+      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>~80% cash · ~85% store credit (est.)</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('support')">
@@ -373,7 +407,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <span class="chev">›</span>
     </button>
     <div id="ov-policies" style="margin-top:14px"></div>
-    <p class="note" id="ov-tip" style="margin-top:12px">Tip: bundle 5+ cards in one order for free shipping 🐾</p>
+    <p class="note" id="ov-tip" style="margin-top:12px">Tip: free shipping on orders over $25 🐾</p>
   </div>
 
   <!-- STORE -->
@@ -399,10 +433,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="view hidden" id="v-buyback">
     <div class="section-t">Sell your cards to us</div>
     <div class="rates">
-      <div class="rate"><div class="rate-cap">up to</div><div class="rate-n" id="rate-credit">85%</div><div class="rate-l">store credit</div><div class="rate-b">best value</div></div>
-      <div class="rate"><div class="rate-cap">up to</div><div class="rate-n" id="rate-cash">80%</div><div class="rate-l">cash</div></div>
+      <div class="rate"><div class="rate-cap">~ est.</div><div class="rate-n" id="rate-credit">85%</div><div class="rate-l">store credit</div><div class="rate-b">best value</div></div>
+      <div class="rate"><div class="rate-cap">~ est.</div><div class="rate-n" id="rate-cash">80%</div><div class="rate-l">cash</div></div>
     </div>
-    <p class="note" style="text-align:left;margin:2px 4px 14px">These are our <b>maximum</b> rates — the final offer depends on the card's condition and current market value. Tell us what you've got below and we'll message you back to confirm an offer.</p>
+    <p class="note" style="text-align:left;margin:2px 4px 14px">These are our <b>estimated</b> rates — the final offer depends on the card's condition and current market value. Tell us what you've got below and we'll message you back to confirm an offer.</p>
     <div class="panel">
       <div class="field">
         <label>What are you selling?</label>
@@ -411,6 +445,25 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <button class="cta" id="bb-submit" onclick="guard(this,submitBuyback)">Send &amp; talk to us</button>
       <p class="note">This starts a chat — no commitment. We'll reply in Telegram to sort out a price.</p>
     </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="view hidden" id="v-profile">
+    <div class="prof-hd">
+      <div class="prof-av" id="prof-av">🦊</div>
+      <div><div class="prof-name" id="prof-name">You</div><div class="prof-sub" id="prof-sub">Fluffmart member</div></div>
+    </div>
+    <div class="prof-stats">
+      <div class="pstat"><div class="pn" id="p-credit">$0</div><div class="pl">Store credit</div></div>
+      <div class="pstat"><div class="pn" id="p-orders">0</div><div class="pl">Orders</div></div>
+      <div class="pstat"><div class="pn" id="p-transit">0</div><div class="pl">In transit</div></div>
+    </div>
+    <div class="prof-menu">
+      <button class="feat" onclick="go('orders')"><div class="ic">🧾</div><div><h3>My invoices &amp; orders</h3><p>View past purchases with photos</p></div><span class="chev">›</span></button>
+      <button class="feat" onclick="loadCredit()"><div class="ic">💳</div><div><h3>Store credit history</h3><p id="p-credit-sub">See your credit ledger</p></div><span class="chev">›</span></button>
+      <button class="feat" onclick="go('support')"><div class="ic">🆘</div><div><h3>Help &amp; support</h3><p>Message us</p></div><span class="chev">›</span></button>
+    </div>
+    <div id="prof-notifs"></div>
   </div>
 
   <!-- SUPPORT -->
@@ -435,6 +488,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <button data-t="store" onclick="go('store')"><span class="ni">🛍️</span>Store</button>
   <button data-t="cart" onclick="openCart()"><span class="ni">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
   <button data-t="buyback" onclick="go('buyback')"><span class="ni">💰</span>Sell</button>
+  <button data-t="profile" onclick="go('profile')"><span class="ni">👤</span>Me</button>
 </div>
 
 <div class="cartbar" id="cartBar" onclick="openCart()">
@@ -484,6 +538,19 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyp1Uof8tbcuYsacQuJU42X
 /* ================================ */
 
 function imgUrl(u,w){ if(!u) return u; return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
+
+// PayNow SGQR payload generator (amount + reference embedded)
+function crc16(s){let c=0xFFFF;for(let i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(let j=0;j<8;j++){c=(c&0x8000)?(c<<1)^0x1021:c<<1;c&=0xFFFF;}}return c.toString(16).toUpperCase().padStart(4,'0');}
+function tlv(id,v){return id+String(v.length).padStart(2,'0')+v;}
+function payNowPayload(mobile,amount,ref){
+  const acct=tlv('00','SG.PAYNOW')+tlv('01','0')+tlv('02',mobile)+tlv('03','0');
+  let p='';p+=tlv('00','01')+tlv('01','12')+tlv('26',acct)+tlv('52','0000')+tlv('53','702');
+  if(amount)p+=tlv('54',Number(amount).toFixed(2));
+  p+=tlv('58','SG')+tlv('59','Fluffmart')+tlv('60','Singapore');
+  if(ref)p+=tlv('62',tlv('01',ref));
+  p+='6304';return p+crc16(p);
+}
+let PAY_TIMER=null;
 const tg = window.Telegram && window.Telegram.WebApp;
 // Prevents double-clicks/spam: disables a button during an async action.
 async function guard(btn, fn){
@@ -513,8 +580,8 @@ const DEMO_ORDERS = [
   {id:'EF8XK2',status:'In Transit',tracking:'SP123456789SG',total:46,created:'2026-08-28T09:00:00Z',lastUpdate:'Departed Singapore Regional eCommerce Hub',items:[{name:'Mimikyu ex',tier:'AR',price:12},{name:'Snorlax',tier:'Holo',price:5},{name:'Sylveon ex',tier:'EX',price:6}]},
   {id:'EF7QP9',status:'Delivered',tracking:'SP987654321SG',total:34,created:'2026-08-14T09:00:00Z',lastUpdate:'Delivered',items:[{name:'Pikachu with Grey Felt Hat',tier:'AR',price:34}]},
 ];
-const STEPS = ['Ordered','Paid','Packed','Shipped','Delivered'];
-const STATUS_STEP = {'Awaiting Payment':0,'Payment Claimed':0,'Paid':1,'Packed':2,'Shipped':3,'In Transit':3,'Delivered':4,'Cancelled':-1};
+const STEPS = ['Ordered','Verified','Packed','Shipped','Delivered'];
+const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Verified':1,'Packed':2,'Shipped':3,'In Transit':3,'Delivered':4,'Cancelled':-1};
 
 /* ============ API ============ */
 async function api(action, payload={}){
@@ -542,11 +609,12 @@ function mock(action,p){
 
 /* ============ NAV ============ */
 function go(tab){
-  ['overview','store','orders','buyback','support'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
+  ['overview','store','orders','buyback','support','profile'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
   if(tab==='store'&&!STATE.inventory.length) loadStore();
   if(tab==='orders') loadOrders();
+  if(tab==='profile') loadProfile();
   window.scrollTo(0,0);
 }
 
@@ -815,8 +883,10 @@ let INVOICE=null, PAYPROOF=null;
 function showInvoice(inv){
   INVOICE=inv; PAYPROOF=null;
   const b=document.getElementById('invBody');
+  const mins=inv.paymentWindowMins||10;
   b.innerHTML=`
-    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge">Awaiting payment</div></div>
+    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge" id="payTimer">${mins}:00</div></div>
+    <div class="pay-warn">⏱ Please pay within <b>${mins} minutes</b> or your cards will be released.</div>
     <div class="inv-items">
       ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
       <div class="inv-row"><span>Shipping</span><span>${inv.shipping===0?'FREE':'$'+inv.shipping.toFixed(2)}</span></div>
@@ -824,21 +894,42 @@ function showInvoice(inv){
       <div class="inv-row inv-total"><span>Total to pay</span><span>$${inv.total.toFixed(2)}</span></div>
     </div>
     <div class="paynow">
-      <div class="pn-title">Pay by PayNow</div>
-      ${inv.paynowQr?`<img class="pn-qr" src="${inv.paynowQr}" alt="PayNow QR">`:`<div class="pn-qr pn-qr-ph">QR code<br><span>(add in Config)</span></div>`}
-      <div class="pn-num">${inv.paynowName}<br><b>${inv.paynowNumber}</b></div>
-      <div class="pn-note">Transfer $${inv.total.toFixed(2)}, then upload your payment screenshot below to confirm.</div>
+      <div class="pn-title">Scan to pay by PayNow</div>
+      <div class="pn-qr" id="pnQr"></div>
+      <div class="pn-num">${inv.paynowName}<br><b>${inv.paynowNumber||inv.paynowMobile}</b><br><span style="font-size:11px;color:var(--hint)">Ref: ${inv.orderId}</span></div>
+      <div class="pn-note">The QR has the exact amount ($${inv.total.toFixed(2)}) built in. Pay, then upload your screenshot below.</div>
     </div>
     <label class="upl" id="uplLabel">📎 Upload payment screenshot
       <input type="file" accept="image/*" id="proofInput" style="display:none" onchange="onProof(event)">
     </label>
     <div id="proofPreview"></div>
-    <button class="cta" id="invSubmit" onclick="submitProof()" disabled>Upload a screenshot to confirm</button>
-    <p class="note">Your cards are reserved. Once we verify payment we'll pack and ship — you'll see updates in Orders.</p>`;
+    <button class="cta" id="invSubmit" onclick="guard(this,submitProof)" disabled>Upload a screenshot to confirm</button>
+    <p class="note">Your cards are reserved. Once we verify payment we'll pack & ship — track it in Orders.</p>`;
+  // generate the PayNow QR
+  try {
+    const mobile=(inv.paynowMobile||'').replace(/\s/g,'');
+    if(mobile){ const payload=payNowPayload(mobile,inv.total,inv.orderId);
+      new QRCode(document.getElementById('pnQr'),{text:payload,width:170,height:170,correctLevel:QRCode.CorrectLevel.M}); }
+    else { document.getElementById('pnQr').innerHTML='<div class="pn-qr-ph">Set PayNow<br><span>in Config</span></div>'; }
+  } catch(e){ document.getElementById('pnQr').innerHTML='<div class="pn-qr-ph">QR unavailable</div>'; }
+  // countdown
+  let left=mins*60;
+  clearInterval(PAY_TIMER);
+  PAY_TIMER=setInterval(()=>{
+    left--;
+    const el=document.getElementById('payTimer');
+    if(!el){ clearInterval(PAY_TIMER); return; }
+    const m=Math.floor(left/60), s=left%60;
+    el.textContent=m+':'+String(s).padStart(2,'0');
+    if(left<=60) el.style.background='#e74c3c';
+    if(left<=0){ clearInterval(PAY_TIMER); closeInvoice();
+      (tg&&tg.showAlert?tg.showAlert:alert)('Payment time expired — your cards have been released. You can re-order anytime.');
+      loadStore(); }
+  },1000);
   document.getElementById('invScrim').classList.add('show');
   document.getElementById('invSheet').classList.add('show');
 }
-function closeInvoice(){ document.getElementById('invScrim').classList.remove('show'); document.getElementById('invSheet').classList.remove('show'); }
+function closeInvoice(){ clearInterval(PAY_TIMER); document.getElementById('invScrim').classList.remove('show'); document.getElementById('invSheet').classList.remove('show'); }
 function onProof(e){
   const f=e.target.files&&e.target.files[0]; if(!f) return;
   const reader=new FileReader();
@@ -854,23 +945,30 @@ async function submitProof(){
   const b=document.getElementById('invSubmit'); b.disabled=true; b.textContent='Sending…';
   const r=await api('submitPayment',{orderId:INVOICE.orderId,image:PAYPROOF});
   if(r.ok){
+    clearInterval(PAY_TIMER);
     closeInvoice();
-    const msg='Payment submitted for '+INVOICE.orderId+'! 🎉 We\'ll verify and start packing. Track it in Orders.';
+    const msg='Payment submitted for '+INVOICE.orderId+'! 🎉 We\'re verifying it now — you\'ll get an update once confirmed. Track it in Orders.';
     tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
     loadOverview();
   } else { b.disabled=false; b.textContent='Confirm payment'; (tg&&tg.showAlert?tg.showAlert:alert)('Upload failed, try again.'); }
 }
 
 /* ============ ORDERS ============ */
-async function loadOrders(){
+let ORDERS_CACHE=null, ORDERS_TS=0;
+async function loadOrders(force){
   const list=document.getElementById('ordersList');
-  list.innerHTML='<div class="skel" style="height:150px"></div>';
+  if(ORDERS_CACHE && !force && Date.now()-ORDERS_TS<20000){ STATE.orders=ORDERS_CACHE; paintOrders(); return; }
+  if(!ORDERS_CACHE) list.innerHTML='<div class="skelcard" style="height:150px"></div>';
   const r=await api('orders');
-  STATE.orders=r.orders||[];
+  ORDERS_CACHE=r.orders||[]; ORDERS_TS=Date.now(); STATE.orders=ORDERS_CACHE;
+  paintOrders();
+}
+function paintOrders(){
+  const list=document.getElementById('ordersList');
   if(!STATE.orders.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; return; }
   list.innerHTML=STATE.orders.map(o=>{
     const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:0;
-    const bcls={'Awaiting Payment':'b-ordered','Payment Claimed':'b-transit','Paid':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered','Cancelled':'b-cancelled'}[o.status]||'b-ordered';
+    const bcls={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered','Cancelled':'b-cancelled'}[o.status]||'b-ordered';
     const track = o.status==='Cancelled' ? '' :
       `<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
     return `<div class="order">
@@ -919,20 +1017,49 @@ async function sendSupport(btn){
 function viewInvoice(id){
   const o=STATE.orders.find(x=>x.id===id); if(!o) return;
   const sub=o.items.reduce((s,i)=>s+i.price,0);
+  const findImg=(nm)=>{ const c=STATE.inventory.find(x=>x.name===nm); return c&&c.image?imgUrl(c.image,200):''; };
   document.getElementById('cardViewBody').innerHTML=`
-    <div style="background:var(--bg);border-radius:16px;padding:18px;max-width:360px;width:100%;color:var(--text)">
-      <div class="inv-head"><div class="inv-oid">Invoice · ${o.id}</div><div class="badge b-${(o.status||'').toLowerCase().replace(/ /g,'')}">${o.status}</div></div>
-      <div class="inv-items" style="margin-top:10px">
-        ${o.items.map(i=>`<div class="inv-row"><span>${EMOJI[i.tier]||''} ${i.name}</span><span>$${i.price.toFixed(2)}</span></div>`).join('')}
+    <div class="inv-card">
+      <div class="inv-c-hd">
+        <div><div class="inv-c-oid">🧾 ${o.id}</div><div class="inv-c-date">${o.created?new Date(o.created).toLocaleDateString():''}</div></div>
+        <div class="badge ${(o.status||'').toLowerCase().includes('ship')?'b-shipped':(o.status||'').toLowerCase().includes('deliver')?'b-delivered':'b-packed'}">${o.status}</div>
+      </div>
+      <div class="inv-c-items">
+        ${o.items.map(i=>{const im=findImg(i.name); return `<div class="inv-c-row"><div class="inv-c-thumb">${im?`<img src="${im}">`:(EMOJI[i.tier]||'🃏')}</div><div class="inv-c-nm">${i.name}<div class="inv-c-tier">${TIER_NAME[i.tier]||i.tier}</div></div><div class="inv-c-pr">$${i.price.toFixed(2)}</div></div>`;}).join('')}
+      </div>
+      <div class="inv-c-tot">
+        <div class="inv-row"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
         <div class="inv-row"><span>Shipping</span><span>${o.shipping===0?'FREE':'$'+o.shipping.toFixed(2)}</span></div>
         ${o.creditUsed>0?`<div class="inv-row" style="color:var(--mint)"><span>Credit</span><span>−$${o.creditUsed.toFixed(2)}</span></div>`:''}
         <div class="inv-row inv-total"><span>Total</span><span>$${o.total.toFixed(2)}</span></div>
       </div>
-      ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
-      ${o.shipAddress?`<p class="note" style="text-align:left;margin-top:10px">Ship to: ${o.shipName}, ${o.shipAddress}</p>`:''}
+      ${o.tracking?`<a class="inv-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${o.tracking} ↗</a>`:''}
+      ${o.shipAddress?`<div class="inv-c-ship">Ship to: ${o.shipName}, ${o.shipAddress}</div>`:''}
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
+}
+
+function loadProfile(){
+  const u=STATE.user;
+  document.getElementById('prof-name').textContent = u ? (u.username?'@'+u.username:u.name) : 'You';
+  document.getElementById('prof-av').textContent = '🦊';
+  document.getElementById('p-credit').textContent = '$'+(STATE.credit||0).toFixed(0);
+  loadOrders(); // ensures ORDERS_CACHE
+  setTimeout(()=>{
+    const os=ORDERS_CACHE||[];
+    document.getElementById('p-orders').textContent=os.length;
+    document.getElementById('p-transit').textContent=os.filter(o=>['Awaiting Payment','Awaiting Verification','Payment Verified','Packed','Shipped','In Transit'].includes(o.status)).length;
+    // recent notifications from order lastUpdates
+    const nt=os.filter(o=>o.lastUpdate).slice(0,5).map(o=>`<div class="notif"><span class="nt-ic">🔔</span><div><b>#${o.id}</b> — ${o.status}<div class="nt-sub">${o.lastUpdate}</div></div></div>`).join('');
+    document.getElementById('prof-notifs').innerHTML = nt ? '<div class="section-t">Recent updates</div>'+nt : '';
+  },300);
+}
+async function loadCredit(){
+  const r=await api('credit');
+  const led=(r.ledger||[]);
+  const msg = led.length ? led.map(l=>`${l.amount>0?'+':''}$${l.amount.toFixed(2)} — ${l.reason}`).join('\n') : 'No credit history yet.';
+  (tg&&tg.showAlert?tg.showAlert:alert)('Store credit: $'+(r.balance||0).toFixed(2)+'\n\n'+msg);
 }
 
 /* ============ INIT ============ */
