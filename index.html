@@ -114,6 +114,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .prow{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
 .price{font-family:'Plus Jakarta Sans';font-size:16px;font-weight:600;color:var(--fawn-deep)}
 .was{font-size:11px;color:var(--hint);font-weight:600;text-decoration:line-through;margin-left:5px}
+.pcard{display:flex;flex-direction:column}
+.pcard .body{display:flex;flex-direction:column;flex:1}
+.pcard .prow{margin-top:auto;padding-top:8px}
 .add{width:30px;height:30px;border-radius:10px;background:var(--fawn);color:#fff;font-size:19px;
   display:flex;align-items:center;justify-content:center;line-height:1}
 .add:disabled{background:var(--line);color:#fff}
@@ -514,6 +517,15 @@ html{scroll-behavior:smooth}
 .cw-b{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:14px}
 .cw-b b{color:var(--fawn-deep)}
 .cw-alt{width:100%;margin-top:8px;padding:11px;font-size:12.5px;font-weight:700;color:var(--hint);background:transparent;border-radius:12px}
+.ask-pics{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:var(--ruff);
+  border:1px dashed var(--fawn);border-radius:14px;padding:11px 13px;margin:10px 0 2px;transition:.15s}
+.ask-pics:active{transform:scale(.98)}
+.ask-pics .ap-ic{font-size:20px}
+.ask-pics .ap-t{flex:1;font-size:11.5px;line-height:1.4;color:var(--text)}
+.ask-pics .ap-t b{color:var(--fawn-deep)}
+.ask-pics .ap-go{font-weight:800;color:var(--fawn-deep);font-size:13px}
+.cancel-link{width:100%;margin-top:6px;padding:8px;font-size:12px;font-weight:700;color:var(--hint);background:transparent;text-decoration:underline;text-underline-offset:3px}
+.ptag{font-size:10px;font-weight:800;color:var(--fawn-deep);background:var(--ruff);padding:2px 7px;border-radius:9px;vertical-align:1px}
 
 /* ── homepage how-to ── */
 .howto{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
@@ -715,15 +727,6 @@ html{scroll-behavior:smooth}
   </div>
 </div>
 
-<div class="scrim" id="cwScrim" onclick="closeCombineWarn()"></div>
-<div class="cw-modal" id="cwModal">
-  <div class="cw-ic">🧺💌</div>
-  <div class="cw-t">You've got a parcel brewing!</div>
-  <div class="cw-b">You have a paid parcel on hold — checking out separately means paying <b>shipping twice</b>. Add these cards to that parcel instead and they all ship together, with no extra shipping fee. 🐾</div>
-  <button class="cta" onclick="cwHold(this)">🧺 Add to my parcel — FREE shipping</button>
-  <button class="cw-alt" onclick="cwCheckout()">Check out separately anyway</button>
-</div>
-
 <div class="scrim" id="addrScrim" onclick="closeAddrEdit()"></div>
 <div class="sheet" id="addrSheet">
   <div class="sh-hd"><h2>📦 Delivery address</h2><button class="rm" onclick="closeAddrEdit()">✕</button></div>
@@ -757,7 +760,7 @@ html{scroll-behavior:smooth}
 <script>
 /* ============ CONFIG ============ */
 // Paste your deployed Apps Script Web App URL here. Leave blank to preview with demo data.
-const API_URL = "https://script.google.com/macros/s/AKfycbyp1Uof8tbcuYsacQuJU42XXOoI0Weh1jCDS2SFlG2Gi1b7pQIz1cSdBKB-tt31Q8drNQ/exec";
+const API_URL = "https://fluffmart-bot.shrimaniac.workers.dev/api"; // Cloudflare edge proxy → Apps Script
 /* ================================ */
 
 function imgUrl(u,w){ if(!u) return u; return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
@@ -820,7 +823,6 @@ function _load(key,cb){
     }
   }catch(e){}
 }
-function persistCart(){ STATE.cart.length ? _store('fm_cart',JSON.stringify(STATE.cart)) : _store('fm_cart',null); }
 function persistShip(){ _store('fm_ship',JSON.stringify(STATE.ship)); }
 function openAddrEdit(){
   document.getElementById('pa-name').value=STATE.ship.name||'';
@@ -837,23 +839,7 @@ function saveAddrEdit(){
   (tg&&tg.HapticFeedback)&&tg.HapticFeedback.notificationOccurred('success');
 }
 function restorePersisted(){
-  _load('fm_cart',v=>{ try{ const c=JSON.parse(v); if(Array.isArray(c)&&c.length){ STATE.cart=c; updateCartDot(); } }catch(e){} });
   _load('fm_ship',v=>{ try{ const s=JSON.parse(v); if(s&&typeof s==='object'){ STATE.ship={name:s.name||'',address:s.address||'',phone:s.phone||''}; if(document.getElementById('cartSheet')&&document.getElementById('cartSheet').classList.contains('show')) renderCart(); } }catch(e){} });
-}
-// After inventory loads, drop cart items that were sold/removed while the app was closed.
-function pruneCart(){
-  if(!STATE.cart.length||!STATE.inventory.length) return;
-  const counts={};
-  const kept=STATE.cart.filter(item=>{
-    const c=STATE.inventory.find(x=>x.id===item.id);
-    if(!c) return false;
-    counts[item.id]=(counts[item.id]||0)+1;
-    return counts[item.id]<=c.qty;
-  });
-  if(kept.length!==STATE.cart.length){
-    STATE.cart=kept; updateCartDot(); persistCart();
-    (tg&&tg.showAlert?tg.showAlert:alert)('Heads up — some cards in your saved cart were claimed while you were away. Cart updated.');
-  }
 }
 // Prevents double-clicks/spam: disables a button during an async action.
 async function guard(btn, fn){
@@ -884,7 +870,7 @@ const DEMO_ORDERS = [
   {id:'EF7QP9',status:'Delivered',tracking:'SP987654321SG',total:34,created:'2026-08-14T09:00:00Z',lastUpdate:'Delivered',items:[{name:'Pikachu with Grey Felt Hat',tier:'AR',price:34}]},
 ];
 const STEPS = ['Ordered','Verified','Packed','Shipped','Delivered'];
-const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Verified':1,'Held (Paid)':1,'Packed':2,'Shipped':3,'In Transit':3,'Delivered':4,'Cancelled':-1};
+const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Verified':1,'Packed':2,'Shipped':3,'In Transit':3,'Delivered':4,'Cancelled':-1};
 
 const POKE_FACTS=["Pikachu was almost not the mascot — Clefairy was the original pick.","Rhydon was the very first Pokémon ever designed.","Wobbuffet's blue body is a decoy — its real target is the black tail.","Azurill can change gender when it evolves into Marill.","Slowpoke's tail regrows — and is considered a delicacy in the games.","A Magikarp can leap over mountains… and still be useless in battle.","Cubone wears the skull of its mother.","Ditto and Mew are the only Pokémon that can transform — fueling fan theories for decades.","Arcanine was originally meant to be Legendary.","Gengar might be Clefable's shadow — look at their silhouettes.","Poliwag's swirl is based on tadpole intestines, visible through their skin.","Charizard isn't a Dragon-type (until Mega X).","Eevee has the most evolutions of any Pokémon — 8 and counting.","Wailord is lighter than water — it would float like a balloon.","Alakazam's IQ is said to be over 5,000.","Farfetch'd is based on a Japanese saying about a duck bringing its own seasoning.","Snorlax weighs 460 kg — about the same as a grand piano and a half.","Jigglypuff's song works on any creature that can hear.","Vaporeon's cells are so water-like it can melt into water and vanish.","Meowth is one of the few Pokémon that learned to speak human language.","Spinda's spot pattern has over 4 billion possible combinations.","Shuckle can produce the strongest single attack in the games via Power Trick shenanigans.","Mimikyu wears its disguise because it wants to be loved like Pikachu.","Dragonite can fly around the globe in about 16 hours.","Magcargo's body temperature is hotter than the surface of the sun (18,000°F).","Absol doesn't cause disasters — it tries to warn people about them.","Metapod's Harden is its whole personality.","Umbreon's rings glow when it's excited or at night — moonlight powers it.","The first shiny most players ever saw was the Red Gyarados.","Togepi's shell is said to be stuffed with happiness."];
 function pokeFact(){ return POKE_FACTS[Math.floor(Math.random()*POKE_FACTS.length)]; }
@@ -900,12 +886,12 @@ async function api(action, payload={}){
   return res.json();
 }
 function mock(action,p){
-  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:25,shipFlat:3,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FluffmartBot?start=ref_1'};
+  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:25,shipFlat:3,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FluffmartBot?start=ref_1',openParcel:null,unpaidOrders:0};
   if(action==='finalizeParcel') return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:40,shipping:0,creditUsed:0,total:40,savedShipping:6,items:[{name:'Held card A',tier:'AR',price:20},{name:'Held card B',tier:'EX',price:20}],paynowMobile:'',paynowName:'Fluffmart TCG',paymentWindowMins:10};
   if(action==='inventory') return {ok:true,items:DEMO_INV};
   if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
   if(action==='boot'){ return {ok:true,overview:mock('overview'),inventory:mock('inventory')}; }
-  if(action==='shipHeld') return {ok:true,released:1};
+  if(action==='shipParcel') return {ok:true,orders:2};
   if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
   if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); const sh=p.cart.length>=5?0:3; return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:sh,creditUsed:0,total:sub+sh,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowMobile:'+6598755180',paynowName:'FluffMart TCG'}; }
   if(action==='submitPayment') return {ok:true};
@@ -942,7 +928,7 @@ async function bootApp(){
   const r=await api('boot');
   if(r&&r.ok){
     if(r.overview&&r.overview.ok) applyOverview(r.overview);
-    if(r.inventory&&r.inventory.ok){ STATE.inventory=r.inventory.items||[]; pruneCart(); renderCatTabs(); renderStore(); }
+    if(r.inventory&&r.inventory.ok){ STATE.inventory=r.inventory.items||[]; renderCatTabs(); renderStore(); }
     try{ localStorage.setItem('fm_boot',JSON.stringify({overview:r.overview,inventory:(r.inventory&&r.inventory.items)||[]})); }catch(e){}
   } else { loadOverview(); loadStore(); }
 }
@@ -966,7 +952,7 @@ function applyOverview(r){
   if(r.welcome){ const h=document.querySelector('.hero p'); if(h) h.textContent=r.welcome; }
   { const t=document.getElementById('ov-tip'); if(t) t.textContent='✨ Did you know? '+pokeFact(); }
   if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
-  STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.parcelCombinable=!!r.parcelCombinable; STATE.heldCount=r.heldCount||0; STATE.holdDays=r.holdExpiryDays||21;
+  STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.openParcel=r.openParcel||null; STATE.holdDays=r.holdExpiryDays||21;
   renderUnpaidBanner();
   renderLoyalty(r);
 }
@@ -1060,7 +1046,7 @@ async function loadStore(){
   document.getElementById('storeGrid').innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
   const r = await api('inventory');
   STATE.inventory = r.items||[];
-  pruneCart();
+ 
   renderCatTabs(); renderStore();
 }
 function renderStore(){
@@ -1135,7 +1121,7 @@ function openCardView(id){
         <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
       </div>
       ${hasBack?'<div class="cv-hint">tap card to flip ⤾</div>':''}
-      ${(!c.image||c.imageType==='stock')?`<button class="pics" style="max-width:220px;margin:8px auto 0" onclick="askPics('${c.id}');closeCardView()">📷 Ask us for photos</button>`:''}
+      ${(!c.image||c.imageType==='stock')?`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want to see the real card?</b><br>We'll send you our scans in chat</span><span class="ap-go">Ask ›</span></button>`:''}
       <div class="cv-price">$${c.price.toFixed(2)}</div>
       <button class="cta" ${(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">Add to cart</button>
       <button class="cta-alt" onclick="makeOffer('${c.id}','${(c.name||'').replace(/'/g,'')}',${c.price})">💬 Make an offer</button>
@@ -1179,9 +1165,9 @@ function addToCart(id){
   if(inCart>=c.qty) return;
   STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price});
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-  updateCartDot(); persistCart(); renderStore();
+  updateCartDot(); renderStore();
 }
-function removeFromCart(idx){ STATE.cart.splice(idx,1); updateCartDot(); persistCart(); renderCart(); renderStore(); }
+function removeFromCart(idx){ STATE.cart.splice(idx,1); updateCartDot(); renderCart(); renderStore(); }
 function updateCartDot(){
   const d=document.getElementById('cartDot'); d.textContent=STATE.cart.length;
   d.classList.toggle('hidden',!STATE.cart.length);
@@ -1203,11 +1189,14 @@ function renderCart(){
   }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
   const fsMin=STATE.config.freeShipMin||25;
-  const shipping = subtotal>=fsMin ? 0 : (STATE.config.shipFlat||3);
+  const joiningParcel = !!STATE.openParcel && !STATE.shipAlone;
+  const shipping = joiningParcel ? 0 : (subtotal>=fsMin ? 0 : (STATE.config.shipFlat||3));
   const need=fsMin-subtotal;
-  const nudge = need>0
-    ? `<div class="nudge">🐾 You're $${need.toFixed(2)} away from FREE shipping (saves $${(STATE.config.shipFlat||3).toFixed(2)})</div>`
-    : `<div class="nudge">🎉 Free shipping unlocked — nice bundle!</div>`;
+  const nudge = joiningParcel
+    ? `<div class="nudge">🧺 Ships FREE in your open parcel — everything goes out together!</div>`
+    : (need>0
+      ? `<div class="nudge">🐾 You're $${need.toFixed(2)} away from FREE shipping (saves $${(STATE.config.shipFlat||3).toFixed(2)})</div>`
+      : `<div class="nudge">🎉 Free shipping unlocked — nice bundle!</div>`);
   body.innerHTML = STATE.cart.map((c,i)=>
     `<div class="crow"><div class="ci">${EMOJI[c.tier]||'🃏'}</div>
       <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.tier}</div></div>
@@ -1233,24 +1222,26 @@ function renderCart(){
     <div class="totline"><span>Shipping</span><span>${shipping===0?'FREE':'$'+shipping.toFixed(2)}</span></div>
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
-    <button class="cta" onclick="guard(this,checkout)">Place order · $${total.toFixed(2)}</button>
-    ${STATE.parcelCombinable?`<button class="cta-hold" id="combineBtn" onclick="combineCheckout(this)">🧺 Ship with my held parcel — FREE shipping</button>
-    <p class="hold-hint">You have a paid parcel on hold — this order joins it, so there's no second shipping fee. 🐾</p>`:''}`;
+    <button class="cta" onclick="guard(this,checkout)">${joiningParcel?`Place order · $${total.toFixed(2)} · joins your parcel 🧺`:`Place order · $${total.toFixed(2)}`}</button>
+    ${joiningParcel
+      ?`<button class="cancel-link" onclick="STATE.shipAlone=true;renderCart()">Ship this order alone instead (+$${(STATE.config.shipFlat||3).toFixed(2)} unless over $${fsMin})</button>`
+      :(STATE.openParcel
+        ?`<button class="cancel-link" onclick="STATE.shipAlone=false;renderCart()">🧺 Put it back in my parcel (free shipping)</button>`
+        :`<button class="cta-hold" onclick="STATE.startParcel=!STATE.startParcel;renderCart()">${STATE.startParcel?'🧺 Starting a parcel ✓ (tap to undo)':'🧺 Start a parcel — future orders ship free with this one'}</button>
+    <p class="hold-hint">A parcel holds your paid orders together (up to ${STATE.holdDays||21} days) so everything ships once — later purchases join it with no shipping fee.</p>`)}`;
 }
-function showCombineWarn(){
-  document.getElementById('cwScrim').classList.add('show');
-  document.getElementById('cwModal').classList.add('show');
+async function cancelUnpaid(id){
+  const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
+    if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('Order cancelled — the cards are back in the shop'+(r.creditRefunded>0?' and your $'+r.creditRefunded.toFixed(2)+' credit was refunded':'')+'.'); ORDERS_CACHE=null; loadOrders(true); loadOverview(); }
+    else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Couldn\'t cancel that order.');
+  });
+  if(tg&&tg.showConfirm) tg.showConfirm('Cancel this order? The cards go back on sale.',ok=>{ if(ok) go(); });
+  else if(confirm('Cancel this order? The cards go back on sale.')) go();
 }
-function closeCombineWarn(){
-  document.getElementById('cwScrim').classList.remove('show');
-  document.getElementById('cwModal').classList.remove('show');
-}
-function cwHold(btn){ if(btn){btn.disabled=true;btn.classList.add('used');} closeCombineWarn(); checkout(true, true); }
-function cwCheckout(){ closeCombineWarn(); checkout(true, false); }
-async function shipHeldNow(){
-  const r=await api('shipHeld');
-  if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🚚 On it — your parcel is being packed and will ship soon!'); ORDERS_CACHE=null; loadOrders(true); loadOverview(); }
-  else (tg&&tg.showAlert?tg.showAlert:alert)('No held parcel found.');
+async function shipParcelNow(){
+  const r=await api('shipParcel');
+  if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🚚 On it — your parcel ('+(r.orders||1)+' order'+(r.orders>1?'s':'')+') is off to packing!'); STATE.openParcel=null; STATE.openParcelId=null; ORDERS_CACHE=null; loadOrders(true); loadOverview(); }
+  else (tg&&tg.showAlert?tg.showAlert:alert)('No open parcel found.');
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 function editAddress(){ STATE.editAddr=true; renderCart(); }
@@ -1258,27 +1249,24 @@ function doneAddress(){
   if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){ (tg&&tg.showAlert?tg.showAlert:alert)('Add a name and address first.'); return; }
   STATE.editAddr=false; persistShip(); renderCart();
 }
-async function combineCheckout(btn){
-  if(btn){ btn.disabled=true; btn.classList.add('used'); btn.textContent='🧺 Adding to your parcel…'; }
-  await checkout(true, true);
-}
-async function checkout(force, combine){
+async function checkout(){
   if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){
     (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and mailing address first.');
     return;
   }
-  if(!force && STATE.parcelCombinable){ showCombineWarn(); return; }
+  const joining=!!STATE.openParcel&&!STATE.shipAlone;
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
-  const ship0=combine?0:(sub0>=(STATE.config.freeShipMin||25)?0:(STATE.config.shipFlat||3));
-  const r = await api('submitOrder',{combine:!!combine,cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0+ship0):0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone,note:(STATE.note||'').trim()});
+  const ship0=joining?0:(sub0>=(STATE.config.freeShipMin||25)?0:(STATE.config.shipFlat||3));
+  const r = await api('submitOrder',{shipAlone:!!STATE.shipAlone,startParcel:!!STATE.startParcel,cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0+ship0):0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone,note:(STATE.note||'').trim()});
   if(r.ok){
-    STATE.cart=[]; STATE.useCredit=false; STATE.note=''; updateCartDot(); persistCart(); closeCart();
+    STATE.cart=[]; STATE.useCredit=false; STATE.note=''; STATE.shipAlone=false; STATE.startParcel=false; updateCartDot(); closeCart();
     if(r.paidByCredit){
       const msg='🎉 Order '+r.orderId+' is fully covered by your store credit — nothing to pay! We\'re confirming it now.';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       ORDERS_CACHE=null; loadOverview();
     } else {
-      if(r.combinedFree){ const m2='🧺 No shipping fee — this order ships with your held parcel once payment is verified.'; tg&&tg.showAlert?tg.showAlert(m2):setTimeout(()=>alert(m2),300); }
+      if(r.combinedFree){ const m2='🧺 No shipping fee — this order joins your open parcel and ships with it.'; tg&&tg.showAlert?tg.showAlert(m2):setTimeout(()=>alert(m2),300); }
+      else if(r.startedParcel){ const m3='🧺 Parcel started! Anything you buy from now ships FREE with it — release it anytime from Orders.'; tg&&tg.showAlert?tg.showAlert(m3):setTimeout(()=>alert(m3),300); }
       showInvoice(r);
       loadOverview();
     }
@@ -1369,40 +1357,43 @@ async function loadOrders(force){
   const r=await api('orders');
   ORDERS_CACHE=r.orders||[]; ORDERS_TS=Date.now(); STATE.orders=ORDERS_CACHE;
   STATE.payInfo={mobile:r.paynowMobile,name:r.paynowName,mins:r.paymentWindowMins||10};
+  STATE.openParcelId=r.openParcel||null;
   paintOrders();
 }
 function paintOrders(){
   const list=document.getElementById('ordersList');
-  const held=STATE.orders.filter(o=>o.status==='Held (Paid)');
-  const normal=STATE.orders.filter(o=>o.status!=='Held (Paid)');
+  const openPid=STATE.openParcelId||null;
+  const inParcel=openPid?STATE.orders.filter(o=>o.parcelId===openPid):[];
+  const normal=openPid?STATE.orders.filter(o=>o.parcelId!==openPid):STATE.orders;
   let parcelHtml='';
-  if(held.length){
-    const items=held.reduce((a,o)=>a.concat(o.items),[]);
-    const val=items.reduce((s,i)=>s+i.price,0);
+  if(inParcel.length){
+    const items=inParcel.reduce((a,o)=>a.concat(o.items),[]);
+    const allVerified=inParcel.every(o=>o.status==='Payment Verified');
     parcelHtml=`<div class="parcel">
-      <div class="parcel-hd"><span>🧺 Your held parcel</span><span class="parcel-n">${items.length} card${items.length>1?'s':''}</span></div>
+      <div class="parcel-hd"><span>🧺 Your open parcel</span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${items.length} card${items.length>1?'s':''}</span></div>
       <div class="parcel-items">${items.slice(0,8).map(i=>`<div class="parcel-i"><span>${EMOJI[i.tier]||'🃏'} ${i.name}</span><span>$${i.price.toFixed(2)}</span></div>`).join('')}${items.length>8?`<div class="parcel-i" style="color:var(--hint)">…and ${items.length-8} more</div>`:''}</div>
-      <div class="parcel-save">💚 Paid &amp; safely held — new orders ship FREE in this parcel</div>
-      <div class="parcel-hint">Held up to ${STATE.holdDays||21} days, then it ships automatically.</div>
-      <button class="cta" onclick="guard(this,shipHeldNow)">🚚 Ship my parcel now</button>
+      <div class="parcel-save">💚 New orders join this parcel with FREE shipping</div>
+      <div class="parcel-hint">${allVerified?'All paid — ships whenever you say (or automatically after '+(STATE.holdDays||21)+' days).':'Ships once payments are verified — or release it now.'}</div>
+      <button class="cta" onclick="guard(this,shipParcelNow)">🚚 Ship my parcel now</button>
     </div>`;
   }
-  if(!normal.length && !held.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; return; }
+  if(!normal.length && !inParcel.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; return; }
   list.innerHTML=parcelHtml+normal.map(o=>{
     const merged=(o.status||'').indexOf('Merged into')===0;
     const cancelled=(o.status||'').indexOf('Cancelled')===0;
     const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:(cancelled?-1:0);
-    const bcls=merged?'b-delivered':(cancelled?'b-cancelled':({'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Held (Paid)':'b-transit','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered'}[o.status]||'b-ordered'));
+    const bcls=merged?'b-delivered':(cancelled?'b-cancelled':({'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered'}[o.status]||'b-ordered'));
     const track = (cancelled||merged) ? '' :
       `<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
     return `<div class="order">
-      <div class="hd"><span class="oid">#${o.id}</span><span class="badge ${bcls}">${o.status}</span></div>
+      <div class="hd"><span class="oid">#${o.id}${o.parcelId?` <span class="ptag">🧺 ${o.parcelId}</span>`:''}</span><span class="badge ${bcls}">${o.status}</span></div>
       ${track}
       ${o.lastUpdate?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
       ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
       <div class="oitems">${o.items.map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
         <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>Total</span><span>$${o.total.toFixed(2)}</span></div></div>
-      ${o.status==='Awaiting Payment'?`<button class="cta" style="margin-top:8px" onclick="resumePayment('${o.id}')">💳 Complete payment</button>`:''}
+      ${o.status==='Awaiting Payment'?`<button class="cta" style="margin-top:8px" onclick="resumePayment('${o.id}')">💳 Complete payment</button>
+      <button class="cancel-link" onclick="cancelUnpaid('${o.id}')">Cancel this order</button>`:''}
       <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
     </div>`;
   }).join('');
@@ -1410,7 +1401,7 @@ function paintOrders(){
 
 /* ============ BINDER (past purchases) ============ */
 let BINDER={page:0,cards:[]};
-const OWNED_STATUSES=['Payment Verified','Held (Paid)','Packed','Shipped','In Transit','Delivered'];
+const OWNED_STATUSES=['Payment Verified','Packed','Shipped','In Transit','Delivered'];
 function buildBinder(){
   const wrap=document.getElementById('binderWrap');
   const cards=[];
