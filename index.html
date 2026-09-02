@@ -280,6 +280,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   font-weight:600;color:var(--text)}
 .dd-item:hover{background:var(--bg)}
 .dd-item.on{background:var(--ruff);color:var(--fawn-deep);font-weight:800}
+.dd-lbl{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;
+  padding:8px 12px 4px;border-top:1px solid var(--line);margin-top:4px}
+.dd-lbl:first-child{border-top:none;margin-top:0}
+.cattabs{display:flex;gap:8px;margin:12px 0 0}
+.cattab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);
+  font-size:13px;font-weight:700;color:var(--hint)}
+.cattab.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
+.dd-menu{max-height:60vh;overflow-y:auto}
 /* card view tags */
 .cv-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .cv-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff}
@@ -327,20 +335,24 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>up to 80% cash · up to 85% store credit</p></div>
       <span class="chev">›</span>
     </button>
+    <button class="feat" onclick="go('support')">
+      <div class="ic">🆘</div><div><h3>Help &amp; support</h3><p>Message us about an order or anything else</p></div>
+      <span class="chev">›</span>
+    </button>
     <div id="ov-policies" style="margin-top:14px"></div>
-    <p class="note" style="margin-top:12px">Tip: bundle 5+ cards in one order for free shipping 🐾</p>
+    <p class="note" id="ov-tip" style="margin-top:12px">Tip: bundle 5+ cards in one order for free shipping 🐾</p>
   </div>
 
   <!-- STORE -->
   <div class="view hidden" id="v-store">
+    <div class="cattabs" id="cattabs"></div>
     <div class="tools">
-      <div class="search">🔎<input id="q" placeholder="Search cards or sets…" oninput="renderStore()"></div>
+      <div class="search">🔎<input id="q" placeholder="Search…" oninput="renderStore()"></div>
       <div class="dd" id="sortDD">
-        <button class="dd-btn" onclick="toggleSort(event)"><span id="sortLabel">Rarity</span><span class="dd-chev">⌄</span></button>
+        <button class="dd-btn" onclick="toggleSort(event)"><span id="sortLabel">All cards</span><span class="dd-chev">⌄</span></button>
         <div class="dd-menu" id="sortMenu"></div>
       </div>
     </div>
-    <div class="chips" id="chips"></div>
     <div class="grid" id="storeGrid"></div>
   </div>
 
@@ -363,12 +375,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
         <label>What are you selling?</label>
         <textarea id="bb-msg" rows="5" placeholder="Tell us what you have or what you're after — e.g. 'Umbreon VMAX alt art 215/203, Near Mint, looking to sell for store credit' or 'a stack of ~30 SV holos, want a bulk cash offer'. The more detail, the faster we can quote you."></textarea>
       </div>
-      <button class="cta" id="bb-submit" onclick="submitBuyback()">Send &amp; talk to us</button>
+      <button class="cta" id="bb-submit" onclick="guard(this,submitBuyback)">Send &amp; talk to us</button>
       <p class="note">This starts a chat — no commitment. We'll reply in Telegram to sort out a price.</p>
     </div>
   </div>
 
-  <!-- ADMIN -->
+  <!-- SUPPORT -->
+  <div class="view hidden" id="v-support">
+    <div class="section-t">Help &amp; support</div>
+    <div class="panel">
+      <p class="note" style="text-align:left;margin:0 0 12px">Got a question about an order, payment, or a card? Send us a message and we'll reply in Telegram.</p>
+      <div class="field"><label>Order number (optional)</label><input id="sup-order" placeholder="e.g. EF1A2B3C"></div>
+      <div class="field"><label>Your message</label><textarea id="sup-msg" rows="5" placeholder="Tell us how we can help…"></textarea></div>
+      <button class="cta" id="sup-send" onclick="sendSupport(this)">Send message</button>
+    </div>
+  </div>
 
 </div>
 
@@ -413,7 +434,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <p class="note" id="offerSub" style="text-align:left;margin:0 0 12px"></p>
     <div class="field"><label>Your offer (S$)</label>
       <input id="offerInput" type="number" inputmode="decimal" placeholder="0.00"></div>
-    <button class="cta" id="offerSend" onclick="sendOffer()">Send offer</button>
+    <button class="cta" id="offerSend" onclick="guard(this,sendOffer)">Send offer</button>
     <p class="note">We'll get your offer and message you back to discuss. No payment yet — just a chat.</p>
   </div>
 </div>
@@ -425,12 +446,18 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyp1Uof8tbcuYsacQuJU42X
 /* ================================ */
 
 const tg = window.Telegram && window.Telegram.WebApp;
-let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''} };
+// Prevents double-clicks/spam: disables a button during an async action.
+async function guard(btn, fn){
+  if(!btn || btn.disabled) return;
+  const orig = btn.textContent; btn.disabled = true; btn.dataset.busy='1';
+  try { await fn(); } finally { btn.disabled = false; btn.dataset.busy=''; if(btn.textContent==='') btn.textContent=orig; }
+}
+let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''} };
 
 const TIERS = ['All','AR','SIR','SR','EX','Double Rare','Holo','Slab','Merch'];
-const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Merch:'🎁'};
-const RARITY_RANK = {SIR:0,SR:1,AR:2,'Double Rare':3,EX:4,Slab:5,Holo:6,Merch:7};
-const TIER_NAME = {AR:'Art Rare',SIR:'Special Illustration Rare',SR:'Super Rare',EX:'EX / V',Holo:'Holo Rare','Double Rare':'Double Rare',Slab:'Graded Slab',Merch:'Merch',All:'All cards'};
+const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Sealed:'📦',Merch:'🎁'};
+const RARITY_RANK = {SIR:0,SR:1,AR:2,'Double Rare':3,EX:4,Slab:5,Holo:6,Sealed:7,Merch:8};
+const TIER_NAME = {AR:'Art Rare',SIR:'Special Illustration Rare',SR:'Super Rare',EX:'EX / V',Holo:'Holo Rare','Double Rare':'Double Rare',Slab:'Graded Slab',Sealed:'Sealed Product',Merch:'Merch',All:'All cards'};
 
 /* demo data so the app is previewable before the backend is wired */
 const DEMO_INV = [
@@ -476,7 +503,7 @@ function mock(action,p){
 
 /* ============ NAV ============ */
 function go(tab){
-  ['overview','store','orders','buyback'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
+  ['overview','store','orders','buyback','support'].forEach(t=>document.getElementById('v-'+t).classList.toggle('hidden',t!==tab));
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
   if(tab==='store'&&!STATE.inventory.length) loadStore();
@@ -494,46 +521,83 @@ async function loadOverview(){
   updateRateLabels();
   document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
   document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
-  if(r.holdPolicy||r.shippingPolicy){
+  if(r.holdPolicy||r.shippingPolicy||r.policyExtra){
     const el=document.getElementById('ov-policies');
-    if(el) el.innerHTML = `<div class="feat" style="cursor:default"><div class="ic">🚚</div><div><h3>Store info</h3><p>${r.shippingPolicy||''}${r.holdPolicy?'<br>'+r.holdPolicy:''}</p></div></div>`;
+    if(el) el.innerHTML = `<div class="feat" style="cursor:default"><div class="ic">🚚</div><div><h3>Store info</h3><p>${[r.shippingPolicy,r.holdPolicy,r.policyExtra].filter(Boolean).join('<br>')}</p></div></div>`;
   }
+  if(r.welcome){ const h=document.querySelector('.hero p'); if(h) h.textContent=r.welcome; }
+  if(r.tip){ const t=document.getElementById('ov-tip'); if(t) t.textContent=r.tip; }
   if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
 }
 
 /* ============ STORE ============ */
-function renderChips(){
-  document.getElementById('chips').innerHTML = TIERS.map(t=>
-    `<button class="chip ${t===STATE.tier?'on':''}" onclick="setTier('${t}')">${t==='All'?'All':(EMOJI[t]||'')+' '+(TIER_NAME[t]||t)}</button>`).join('');
-}
-function setTier(t){ STATE.tier=t; renderChips(); renderStore(); }
-const SORTS=[{v:'rarity',l:'Rarity'},{v:'price-desc',l:'Price: high to low'},{v:'price-asc',l:'Price: low to high'},{v:'set',l:'Set A–Z'},{v:'name',l:'Name A–Z'}];
+
+const SORTS=[{v:'rarity',l:'Rarity (rarest first)'},{v:'price-desc',l:'Price: high to low'},{v:'price-asc',l:'Price: low to high'},{v:'name',l:'Name A\u2013Z'},{v:'set',l:'Set A\u2013Z'}];
 function toggleSort(e){
   e.stopPropagation();
   const dd=document.getElementById('sortDD'), menu=document.getElementById('sortMenu');
   if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
-  menu.innerHTML=SORTS.map(s=>`<button class="dd-item ${s.v===STATE.sort?'on':''}" onclick="pickSort('${s.v}','${s.l}')">${s.l}</button>`).join('');
+  const pool=STATE.inventory.filter(c=>(c.category||'single').toLowerCase()===STATE.cat);
+  const sets=[...new Set(pool.map(c=>c.set).filter(Boolean))].sort();
+  const tiers=[...new Set(pool.map(c=>c.tier).filter(Boolean))]
+    .sort((a,b)=>(RARITY_RANK[a]??99)-(RARITY_RANK[b]??99));
+  let html='<div class="dd-lbl">Sort by</div>';
+  html+=SORTS.map(s=>`<button class="dd-item ${s.v===STATE.sort&&STATE.tier==='All'&&!STATE.set?'on':''}" onclick="pickSort('${s.v}','${s.l}')">${s.l}</button>`).join('');
+  if(tiers.length){
+    html+='<div class="dd-lbl">Rarity</div>';
+    html+=`<button class="dd-item ${STATE.tier==='All'?'on':''}" onclick="pickTier('All')">All rarities</button>`;
+    html+=tiers.map(t=>`<button class="dd-item ${STATE.tier===t?'on':''}" onclick="pickTier('${t}')">${EMOJI[t]||''} ${TIER_NAME[t]||t}</button>`).join('');
+  }
+  if(sets.length){
+    html+='<div class="dd-lbl">Set</div>';
+    html+=`<button class="dd-item ${!STATE.set?'on':''}" onclick="pickSet('')">All sets</button>`;
+    html+=sets.map(s=>`<button class="dd-item ${STATE.set===s?'on':''}" onclick="pickSet(${JSON.stringify(s).replace(/"/g,'&quot;')})">${s}</button>`).join('');
+  }
+  menu.innerHTML=html;
   dd.classList.add('open');
 }
-function pickSort(v,l){
-  STATE.sort=v;
-  document.getElementById('sortLabel').textContent=l;
-  document.getElementById('sortDD').classList.remove('open');
-  renderStore();
+function ddLabel(){
+  let parts=[];
+  if(STATE.tier!=='All') parts.push(TIER_NAME[STATE.tier]||STATE.tier);
+  if(STATE.set) parts.push(STATE.set);
+  if(!parts.length){ const s=SORTS.find(x=>x.v===STATE.sort); parts.push(s?s.l:'All cards'); }
+  document.getElementById('sortLabel').textContent=parts.join(' \u00B7 ');
 }
+function pickSort(v,l){ STATE.sort=v; closeDD(); ddLabel(); renderStore(); }
+function pickTier(t){ STATE.tier=t; closeDD(); ddLabel(); renderStore(); }
+function pickSet(s){ STATE.set=s; closeDD(); ddLabel(); renderStore(); }
+const CATS=[{c:'single',l:'🃏 Singles'},{c:'sealed',l:'📦 Sealed'},{c:'merch',l:'🎁 Merch'}];
+function renderCatTabs(){
+  const have={}; STATE.inventory.forEach(x=>{ have[(x.category||'single').toLowerCase()]=true; });
+  const avail=CATS.filter(x=>have[x.c]);
+  if(!avail.length){ document.getElementById('cattabs').innerHTML=''; return; }
+  if(!avail.find(x=>x.c===STATE.cat)) STATE.cat=avail[0].c;
+  document.getElementById('cattabs').innerHTML=avail.map(x=>
+    `<button class="cattab ${x.c===STATE.cat?'on':''}" onclick="pickCat('${x.c}')">${x.l}</button>`).join('');
+  // hide the tab bar entirely if only singles exist
+  document.getElementById('cattabs').style.display = avail.length>1 ? 'flex' : 'none';
+}
+function pickCat(c){
+  STATE.cat=c; STATE.tier='All'; STATE.set='';
+  renderCatTabs(); ddLabel(); renderStore();
+}
+function closeDD(){ document.getElementById('sortDD').classList.remove('open'); }
 document.addEventListener('click',()=>{const d=document.getElementById('sortDD'); if(d) d.classList.remove('open');});
 async function loadStore(){
   document.getElementById('storeGrid').innerHTML = Array(4).fill('<div class="skel"></div>').join('');
   const r = await api('inventory');
   STATE.inventory = r.items||[];
-  renderChips(); renderStore();
+  renderCatTabs(); renderStore();
 }
 function renderStore(){
   const q = (document.getElementById('q').value||'').toLowerCase();
   let list = STATE.inventory.filter(c=>{
     const okTier = STATE.tier==='All'||c.tier===STATE.tier;
+    const okSet = !STATE.set || c.set===STATE.set;
+    const cc = (c.category||'single').toLowerCase();
+    const okCat = cc===STATE.cat;
     const okQ = !q || (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().includes(q);
-    return okTier && okQ;
+    return okTier && okSet && okCat && okQ;
   });
   const s = STATE.sort;
   list.sort((a,b)=>{
@@ -606,6 +670,10 @@ function openCardView(id){
 function closeCardView(){ document.getElementById('cardViewScrim').classList.remove('show'); document.getElementById('cardView').classList.remove('show'); }
 let OFFER_CARD=null;
 function makeOffer(id,name,listed){
+  if(STATE.cart.find(x=>x.id===id)){
+    (tg&&tg.showAlert?tg.showAlert:alert)('That card\'s already in your cart — just check out to buy it, or remove it first to make an offer.');
+    return;
+  }
   OFFER_CARD={id,name,listed};
   closeCardView();
   document.getElementById('offerTitle').textContent='Offer for '+name;
@@ -674,7 +742,7 @@ function renderCart(){
     <div class="totline"><span>Shipping</span><span>${shipping===0?'FREE':'$'+shipping.toFixed(2)}</span></div>
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
-    <button class="cta" onclick="checkout()">Place order · $${total.toFixed(2)}</button>`;
+    <button class="cta" onclick="guard(this,checkout)">Place order · $${total.toFixed(2)}</button>`;
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 async function checkout(){
@@ -765,6 +833,7 @@ async function loadOrders(){
       ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
       <div class="oitems">${o.items.map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
         <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>Total</span><span>$${o.total.toFixed(2)}</span></div></div>
+      <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
     </div>`;
   }).join('');
 }
@@ -788,13 +857,43 @@ async function submitBuyback(){
   } else { (tg&&tg.showAlert?tg.showAlert:alert)('Couldn\'t send, try again.'); }
 }
 
+async function sendSupport(btn){
+  await guard(btn, async()=>{
+    const msg=document.getElementById('sup-msg').value.trim();
+    if(!msg){ (tg&&tg.showAlert?tg.showAlert:alert)('Type a message first.'); return; }
+    btn.textContent='Sending…';
+    const r=await api('contactSupport',{message:msg,orderId:document.getElementById('sup-order').value.trim()});
+    if(r.ok){ document.getElementById('sup-msg').value=''; document.getElementById('sup-order').value='';
+      (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Sent!'); go('overview'); }
+    else { (tg&&tg.showAlert?tg.showAlert:alert)('Could not send, try again.'); }
+  });
+}
+// View a past order as a full invoice
+function viewInvoice(id){
+  const o=STATE.orders.find(x=>x.id===id); if(!o) return;
+  const sub=o.items.reduce((s,i)=>s+i.price,0);
+  document.getElementById('cardViewBody').innerHTML=`
+    <div style="background:var(--bg);border-radius:16px;padding:18px;max-width:360px;width:100%;color:var(--text)">
+      <div class="inv-head"><div class="inv-oid">Invoice · ${o.id}</div><div class="badge b-${(o.status||'').toLowerCase().replace(/ /g,'')}">${o.status}</div></div>
+      <div class="inv-items" style="margin-top:10px">
+        ${o.items.map(i=>`<div class="inv-row"><span>${EMOJI[i.tier]||''} ${i.name}</span><span>$${i.price.toFixed(2)}</span></div>`).join('')}
+        <div class="inv-row"><span>Shipping</span><span>${o.shipping===0?'FREE':'$'+o.shipping.toFixed(2)}</span></div>
+        ${o.creditUsed>0?`<div class="inv-row" style="color:var(--mint)"><span>Credit</span><span>−$${o.creditUsed.toFixed(2)}</span></div>`:''}
+        <div class="inv-row inv-total"><span>Total</span><span>$${o.total.toFixed(2)}</span></div>
+      </div>
+      ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
+      ${o.shipAddress?`<p class="note" style="text-align:left;margin-top:10px">Ship to: ${o.shipName}, ${o.shipAddress}</p>`:''}
+    </div>`;
+  document.getElementById('cardViewScrim').classList.add('show');
+  document.getElementById('cardView').classList.add('show');
+}
+
 /* ============ INIT ============ */
 (function init(){
   if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#C98B5E');
     const u=tg.initDataUnsafe&&tg.initDataUnsafe.user;
     if(u){ STATE.user={id:String(u.id),name:[u.first_name,u.last_name].filter(Boolean).join(' '),username:u.username||''}; }
   }
-  renderChips();
   loadOverview();
 })();
 </script>
