@@ -41,7 +41,7 @@ body{
     border-left:1px solid var(--line);border-right:1px solid var(--line)}
   .sheet{left:50%;right:auto;transform:translateX(-50%) translateY(100%);width:520px;margin:0}
   .sheet.show{transform:translateX(-50%) translateY(0)}
-  .cardview{left:50%;right:auto;transform:translateX(-50%);width:520px;margin:0}
+  .cardview{max-width:none}
   .grid{grid-template-columns:1fr 1fr 1fr}
 }
 h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;margin:0;letter-spacing:-.01em}
@@ -234,32 +234,44 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 /* card view */
 .cv-scrim{position:fixed;inset:0;background:rgba(74,53,36,.75);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
 .cv-scrim.show{opacity:1;pointer-events:auto}
-.cardview{position:fixed;inset:0;z-index:41;display:flex;flex-direction:column;align-items:center;
-  justify-content:flex-start;padding:56px 24px 32px;opacity:0;pointer-events:none;transition:opacity .2s;
-  max-width:520px;margin:0 auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.cardview{position:fixed;inset:0;z-index:41;display:flex;align-items:center;justify-content:center;
+  padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
 .cardview.show{opacity:1;pointer-events:auto}
-.cv-close{position:absolute;top:16px;right:16px;color:#fff;font-size:26px;z-index:42;background:rgba(0,0,0,.3);
-  width:40px;height:40px;border-radius:50%}
-.cv-card{width:min(64vw,240px);aspect-ratio:3/4;perspective:1200px;cursor:pointer;flex-shrink:0}
+.cv-panel{background:var(--card);border-radius:24px;width:100%;max-width:360px;max-height:90vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;box-shadow:0 24px 70px rgba(0,0,0,.45);position:relative;
+  transform:scale(.94);transition:transform .24s cubic-bezier(.3,.9,.4,1)}
+.cardview.show .cv-panel{transform:scale(1)}
+.cv-close{position:absolute;top:12px;right:12px;color:var(--fawn-deep);font-size:20px;z-index:42;
+  background:rgba(255,255,255,.85);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.cv-top{padding:26px 22px 16px;display:flex;flex-direction:column;align-items:center;
+  background:linear-gradient(160deg,var(--ruff),#fbeef6)}
+.cv-card{width:min(58vw,200px);aspect-ratio:3/4;perspective:1200px;cursor:pointer;flex-shrink:0}
 .cv-card.noflip{cursor:default}
 .cv-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,.8,.4,1)}
 .cv-card.flipped .cv-inner{transform:rotateY(180deg)}
 .cv-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;overflow:hidden;
-  box-shadow:0 12px 40px rgba(0,0,0,.4);background:#fff}
+  box-shadow:0 10px 30px rgba(0,0,0,.28);background:#fff}
 .cv-face img{width:100%;height:100%;object-fit:cover}
 .cv-back{transform:rotateY(180deg)}
 .cv-noimg{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-size:64px;background:linear-gradient(135deg,var(--ruff),#e9d3ad);color:var(--fawn-deep)}
-.cv-noimg span{font-size:13px;font-weight:700;margin-top:8px}
-.cv-meta{text-align:center;color:#fff;margin-top:18px;max-width:320px}
-.cv-name{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:19px}
-.cv-sub{font-size:13px;opacity:.85;margin-top:2px}
-.cv-desc{font-size:12px;opacity:.8;margin-top:6px}
-.cv-hint{font-size:12px;opacity:.75;margin-top:10px}
-.cv-price{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:22px;margin:12px 0 10px}
-.cardview .cta{max-width:320px}
-.cta-alt{max-width:320px;width:100%;background:transparent;border:1.5px solid #fff;color:#fff;
+  font-size:56px;background:linear-gradient(135deg,#fff,#e9d3ad);color:var(--fawn-deep)}
+.cv-noimg span{font-size:12px;font-weight:700;margin-top:8px}
+.cv-flip-hint{font-size:11px;color:var(--fawn-deep);font-weight:700;opacity:.7;margin-top:10px}
+.cv-meta{text-align:center;padding:18px 22px 22px}
+.cv-name{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:19px;color:var(--text);line-height:1.25}
+.cv-sub{font-size:12.5px;color:var(--hint);margin-top:3px}
+.cv-desc{font-size:12px;color:var(--hint);margin-top:6px}
+.cv-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px 0}
+.cv-tag{font-size:11px;font-weight:700;color:var(--fawn-deep);background:var(--ruff);padding:4px 10px;border-radius:11px}
+.cv-hint{font-size:11.5px;color:var(--hint);margin-top:8px}
+.cv-price{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:26px;color:var(--fawn-deep);margin:8px 0 14px}
+.cardview .cta{width:100%}
+.cv-was{font-size:14px;color:var(--hint);font-weight:600;text-decoration:line-through;margin-left:8px}
+.cta-alt{width:100%;background:transparent;border:1.5px solid var(--fawn);color:var(--fawn-deep);
   font-family:'Plus Jakarta Sans';font-weight:700;font-size:15px;padding:11px;border-radius:14px;margin-top:8px}
+.oseg{display:flex;gap:6px;background:var(--ruff);padding:4px;border-radius:14px;margin-bottom:14px}
+.oseg-b{flex:1;padding:9px 4px;border-radius:11px;font-weight:800;font-size:12.5px;color:var(--hint);background:transparent}
+.oseg-b.on{background:var(--card);color:var(--fawn-deep);box-shadow:0 1px 4px rgba(0,0,0,.08)}
 .asell{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
   border-radius:12px;padding:8px 10px;margin-bottom:8px}
 .asell .ci{width:34px;height:44px;border-radius:8px;background:var(--ruff);display:flex;align-items:center;
@@ -651,8 +663,14 @@ html{scroll-behavior:smooth}
 
   <!-- ORDERS -->
   <div class="view hidden" id="v-orders">
-    <div class="section-t">Your orders</div>
-    <div id="ordersList"></div>
+    <div class="oseg">
+      <button class="oseg-b on" data-oseg="parcel" onclick="orderSeg('parcel')">🧺 Parcel</button>
+      <button class="oseg-b" data-oseg="orders" onclick="orderSeg('orders')">📦 Orders</button>
+      <button class="oseg-b" data-oseg="binder" onclick="orderSeg('binder')">📖 Binder</button>
+    </div>
+    <div id="oseg-parcel"><div id="parcelPane"></div></div>
+    <div id="oseg-orders" class="hidden"><div id="ordersList"></div></div>
+    <div id="oseg-binder" class="hidden"><div id="binderWrap"></div></div>
   </div>
 
   <!-- BUYBACK -->
@@ -674,11 +692,6 @@ html{scroll-behavior:smooth}
   </div>
 
   <!-- PROFILE -->
-  <div class="view hidden" id="v-binder">
-    <div class="section-t" style="margin:4px 4px 10px">📖 My Binder</div>
-    <div id="binderWrap"></div>
-  </div>
-
   <div class="view hidden" id="v-profile">
     <div class="prof-hd">
       <div><div class="prof-name">FluffMart Member</div><div class="prof-sub" id="prof-sub">Collector 🐾</div></div>
@@ -725,7 +738,6 @@ html{scroll-behavior:smooth}
 <div class="nav" id="nav">
   <button class="on" data-t="overview" onclick="go('overview')"><span class="ni">🏠</span>Home</button>
   <button data-t="orders" onclick="go('orders')"><span class="ni">📦</span>Orders</button>
-  <button data-t="binder" onclick="go('binder')"><span class="ni">📖</span>Binder</button>
   <button data-t="store" onclick="go('store')"><span class="ni">🛍️</span>Store</button>
   <button data-t="cart" onclick="openCart()"><span class="ni">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
   <button data-t="buyback" onclick="go('buyback')"><span class="ni">💰</span>Sell</button>
@@ -755,7 +767,6 @@ html{scroll-behavior:smooth}
 <!-- CARD VIEW -->
 <div class="cv-scrim" id="cardViewScrim" onclick="closeCardView()"></div>
 <div class="cardview" id="cardView">
-  <button class="cv-close" onclick="closeCardView()">✕</button>
   <div id="cardViewBody"></div>
 </div>
 
@@ -980,11 +991,10 @@ function mock(action,p){
 
 /* ============ NAV ============ */
 function go(tab){
-  ['overview','store','orders','binder','buyback','support','profile','credit'].forEach(t=>{const el=document.getElementById('v-'+t); if(el) el.classList.toggle('hidden',t!==tab);});
+  ['overview','store','orders','buyback','support','profile','credit'].forEach(t=>{const el=document.getElementById('v-'+t); if(el) el.classList.toggle('hidden',t!==tab);});
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
   if(tab==='store'&&!STATE.inventory.length) loadStore();
-  if(tab==='binder'){ if(STATE.orders.length) buildBinder(); else api('orders').then(r=>{STATE.orders=r.orders||[];ORDERS_CACHE=STATE.orders;buildBinder();}); document.getElementById('binderWrap').classList.remove('hidden'); }
   if(tab==='orders') loadOrders();
   if(tab==='profile') loadProfile();
   window.scrollTo(0,0);
@@ -1178,26 +1188,32 @@ function openCardView(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
   const front = c.image?`<img src="${imgUrl(c.image,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo yet</span></div>`;
   const hasBack = !!c.imageBack;
+  const soldOut=(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0;
   document.getElementById('cardViewBody').innerHTML = `
-    <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="this.classList.toggle('flipped')"`:''}>
-      <div class="cv-inner">
-        <div class="cv-face cv-front">${front}</div>
-        ${hasBack?`<div class="cv-face cv-back"><img src="${imgUrl(c.imageBack,800)}" alt="back"></div>`:''}
+    <div class="cv-panel">
+      <button class="cv-close" onclick="closeCardView()">✕</button>
+      <div class="cv-top">
+        <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="this.classList.toggle('flipped')"`:''}>
+          <div class="cv-inner">
+            <div class="cv-face cv-front">${front}</div>
+            ${hasBack?`<div class="cv-face cv-back"><img src="${imgUrl(c.imageBack,800)}" alt="back"></div>`:''}
+          </div>
+        </div>
+        ${hasBack?'<div class="cv-flip-hint">tap card to flip ⤾</div>':''}
       </div>
-    </div>
-    <div class="cv-meta">
-      <div class="cv-name">${c.name}</div>
-      <div class="cv-sub">${c.set}${c.number?' · '+c.number:''}</div>
-      <div class="cv-tags">
-        <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
-        ${c.variance?`<span class="cv-tag">${c.variance}</span>`:''}
-        <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
+      <div class="cv-meta">
+        <div class="cv-name">${c.name}</div>
+        <div class="cv-sub">${c.set}${c.number?' · '+c.number:''}</div>
+        <div class="cv-tags">
+          <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
+          ${c.variance?`<span class="cv-tag">${c.variance}</span>`:''}
+          <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
+        </div>
+        ${(!c.image||c.imageType==='stock')?`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want to see the real card?</b><br>We'll send you our scans in chat</span><span class="ap-go">Ask ›</span></button>`:''}
+        <div class="cv-price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="cv-was">$${c.marketPrice.toFixed(2)}</span>`:''}</div>
+        <button class="cta" ${soldOut?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">${soldOut?'In your cart':'Add to cart'}</button>
+        <button class="cta-alt" onclick="makeOffer('${c.id}','${(c.name||'').replace(/'/g,'')}',${c.price})">💬 Make an offer</button>
       </div>
-      ${hasBack?'<div class="cv-hint">tap card to flip ⤾</div>':''}
-      ${(!c.image||c.imageType==='stock')?`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want to see the real card?</b><br>We'll send you our scans in chat</span><span class="ap-go">Ask ›</span></button>`:''}
-      <div class="cv-price">$${c.price.toFixed(2)}</div>
-      <button class="cta" ${(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">Add to cart</button>
-      <button class="cta-alt" onclick="makeOffer('${c.id}','${(c.name||'').replace(/'/g,'')}',${c.price})">💬 Make an offer</button>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
@@ -1493,8 +1509,12 @@ function paintOrders(){
       })()}
     </div>`;
   }
-  if(!normal.length && !inParcel.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; return; }
-  list.innerHTML=parcelHtml+normal.map(o=>{
+  // Parcel pane (its own sub-tab)
+  const ppane=document.getElementById('parcelPane');
+  if(ppane) ppane.innerHTML = parcelHtml || `<div class="empty"><div class="e-ic">🧺</div><p>No open parcel yet.<br>Claim a card and check out to start one 🐾</p></div>`;
+  // Orders pane
+  if(!normal.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; }
+  else list.innerHTML=normal.map(o=>{
     const merged=(o.status||'').indexOf('Merged into')===0;
     const cancelled=(o.status||'').indexOf('Cancelled')===0;
     const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:(cancelled?-1:0);
@@ -1513,6 +1533,13 @@ function paintOrders(){
       <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
     </div>`;
   }).join('');
+  buildBinder();
+}
+function orderSeg(which){
+  ['parcel','orders','binder'].forEach(k=>{
+    document.getElementById('oseg-'+k).classList.toggle('hidden',k!==which);
+    document.querySelector('.oseg-b[data-oseg="'+k+'"]').classList.toggle('on',k===which);
+  });
 }
 
 /* ============ BINDER (past purchases) ============ */
@@ -1589,15 +1616,24 @@ function binderFlip(dir){
 function openBinderCard(idx){
   const c=BINDER.cards[idx]; if(!c) return;
   const front=c.image?`<img src="${imgUrl(c.image,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo</span></div>`;
+  const back=c.imageBack?`<div class="cv-face cv-back"><img src="${imgUrl(c.imageBack,800)}" alt="back"></div>`:'';
   document.getElementById('cardViewBody').innerHTML=`
-    <div class="cv-card noflip"><div class="cv-inner"><div class="cv-face cv-front">${front}</div></div></div>
-    <div class="cv-meta">
-      <div class="cv-name">${c.name}</div>
-      <div class="cv-tags">
-        <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
-        <span class="cv-tag">Claimed for $${Number(c.price).toFixed(2)}</span>
+    <div class="cv-panel">
+      <button class="cv-close" onclick="closeCardView()">✕</button>
+      <div class="cv-top">
+        <div class="cv-card ${c.imageBack?'':'noflip'}" ${c.imageBack?`onclick="this.classList.toggle('flipped')"`:''}>
+          <div class="cv-inner"><div class="cv-face cv-front">${front}</div>${back}</div>
+        </div>
+        ${c.imageBack?'<div class="cv-flip-hint">tap card to flip ⤾</div>':''}
       </div>
-      <div class="cv-hint">Order #${c.orderId}${c.date?' · claimed '+new Date(c.date).toLocaleDateString():''} · ${c.status||''}</div>
+      <div class="cv-meta">
+        <div class="cv-name">${c.name}</div>
+        <div class="cv-tags">
+          <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
+          <span class="cv-tag">Claimed for $${Number(c.price).toFixed(2)}</span>
+        </div>
+        <div class="cv-hint">Order #${c.orderId}${c.date?' · '+new Date(c.date).toLocaleDateString():''}<br>${c.status||''}</div>
+      </div>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
