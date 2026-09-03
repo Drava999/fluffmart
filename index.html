@@ -1345,7 +1345,7 @@ function doneAddress(){
 }
 async function checkout(){
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
-  const r = await api('submitOrder',{cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0):0,note:(STATE.note||'').trim()});
+  const r = await api('submitOrder',{cart:STATE.cart.map(c=>({id:c.id})),useCredit:STATE.useCredit?Math.min(STATE.credit, sub0):0,note:(STATE.note||'').trim()});
   if(r.ok){
     STATE.cart=[]; STATE.useCredit=false; STATE.note=''; updateCartDot(); closeCart();
     if(r.paidByCredit){
@@ -1372,6 +1372,8 @@ async function checkout(){
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       closeCart(); go('store');
     }
+  } else if(r.error==='cart_too_big'){
+    (tg&&tg.showAlert?tg.showAlert:alert)('That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');
   } else { (tg&&tg.showAlert?tg.showAlert:alert)('Checkout error: '+(r&&(r.error||r.raw)?JSON.stringify(r.error||r.raw).slice(0,200):'unknown')+'. Try again in a sec.'); }
 }
 let INVOICE=null, PAYPROOF=null;
