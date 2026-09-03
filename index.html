@@ -1336,7 +1336,7 @@ async function confirmShip(){
   const r=await api('parcelDelivery',{mode:'ship',parcelId:STATE.pendingParcel,shipName:name,shipAddress:addr,shipPhone:phone});
   closeShipAddr();
   if(r.ok&&r.shipOrderId){ ORDERS_CACHE=null; await loadOrders(true); resumePayment(r.shipOrderId); }
-  else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Could not start shipping.');
+    else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||('Could not start shipping ('+(r.error||JSON.stringify(r).slice(0,120))+')'));
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 function editAddress(){ STATE.editAddr=true; renderCart(); }
