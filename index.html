@@ -758,23 +758,6 @@ html{scroll-behavior:smooth}
 </div>
 
 <script>
-/* ==== DEBUG: show any error on screen (temporary) ==== */
-window.addEventListener('error', function(e){
-  try{
-    var b=document.getElementById('__err')||document.createElement('div');
-    b.id='__err'; b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#b00020;color:#fff;font:12px monospace;padding:10px;white-space:pre-wrap;max-height:50vh;overflow:auto';
-    b.textContent='JS ERROR:\n'+(e.message||e.error||e)+'\n@ '+(e.filename||'')+':'+(e.lineno||'')+':'+(e.colno||'');
-    document.body?document.body.appendChild(b):document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(b);});
-  }catch(_){}
-});
-window.addEventListener('unhandledrejection', function(e){
-  try{
-    var b=document.getElementById('__err2')||document.createElement('div');
-    b.id='__err2'; b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#8a4500;color:#fff;font:12px monospace;padding:10px;white-space:pre-wrap;max-height:50vh;overflow:auto';
-    b.textContent='PROMISE ERROR:\n'+((e.reason&&(e.reason.stack||e.reason.message))||e.reason||e);
-    (document.body||document.documentElement).appendChild(b);
-  }catch(_){}
-});
 /* ============ CONFIG ============ */
 // Paste your deployed Apps Script Web App URL here. Leave blank to preview with demo data.
 const API_URL = "https://fluffmart-api.shrimaniac.workers.dev/api"; // new modules-format Worker
@@ -1643,8 +1626,7 @@ function viewInvoice(id){
 
 function loadProfile(){
   const u=STATE.user;
-  document.getElementById('prof-av').textContent = '🦊';
-  document.getElementById('p-credit').textContent = '$'+(STATE.credit||0).toFixed(0);
+  const pc=document.getElementById('p-credit'); if(pc) pc.textContent = '$'+(STATE.credit||0).toFixed(0);
   loadOrders(); // ensures ORDERS_CACHE
   setTimeout(()=>{
     const os=ORDERS_CACHE||[];
