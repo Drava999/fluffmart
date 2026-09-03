@@ -777,7 +777,7 @@ window.addEventListener('unhandledrejection', function(e){
 });
 /* ============ CONFIG ============ */
 // Paste your deployed Apps Script Web App URL here. Leave blank to preview with demo data.
-const API_URL = "https://script.google.com/macros/s/AKfycbyp1Uof8tbcuYsacQuJU42XXOoI0Weh1jCDS2SFlG2Gi1b7pQIz1cSdBKB-tt31Q8drNQ/exec"; // Apps Script direct — reverted off the Worker
+const API_URL = "https://fluffmart-api.shrimaniac.workers.dev/api"; // new modules-format Worker
 /* ================================ */
 
 function imgUrl(u,w){ if(!u) return u; return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
