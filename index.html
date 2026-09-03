@@ -551,6 +551,16 @@ html{scroll-behavior:smooth}
 .po-amt{font-weight:800;font-size:13px;text-align:right}
 .po-pay{margin-top:4px;background:var(--fawn);color:#fff;font-weight:800;font-size:11.5px;padding:6px 12px;border-radius:10px}
 .po-pay:active{transform:scale(.95)}
+.parcel-choose{margin-top:10px;border-top:1px dashed var(--line);padding-top:12px}
+.pc-t{font-size:12.5px;font-weight:700;color:var(--fawn-deep);margin-bottom:9px}
+.pc-btns{display:flex;gap:8px}
+.pc-b{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 6px;border-radius:14px;background:var(--card);border:1.5px solid var(--fawn);font-weight:800;font-size:13px;color:var(--fawn-deep)}
+.pc-b span{font-size:11px;color:var(--hint);font-weight:700}
+.pc-b:active{transform:scale(.97)}
+.parcel-ship-inv{margin-top:10px;border-top:1px dashed var(--line);padding-top:12px}
+.psi-t{font-weight:800;font-size:14px;color:var(--fawn-deep)}
+.psi-s{font-size:11.5px;color:var(--hint);margin:2px 0 8px}
+.parcel-done{margin-top:10px;background:#e2f5ec;color:#1c7a52;font-size:12.5px;font-weight:700;border-radius:12px;padding:10px 12px}
 
 /* ── homepage how-to ── */
 .howto{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
@@ -762,6 +772,18 @@ html{scroll-behavior:smooth}
   </div>
 </div>
 
+<div class="scrim" id="shipAddrScrim" onclick="closeShipAddr()"></div>
+<div class="sheet" id="shipAddrSheet">
+  <div class="sh-hd"><h2>🚚 Ship my parcel</h2><button class="rm" onclick="closeShipAddr()">✕</button></div>
+  <div class="body" style="padding-bottom:20px">
+    <p class="note" style="margin:0 0 10px">We'll generate a $${''}<span id="sa-fee"></span> PayNow QR for shipping. Where should it go?</p>
+    <div class="field"><label>Name for delivery</label><input id="sa-name" placeholder="Full name"></div>
+    <div class="field"><label>Mailing address</label><input id="sa-addr" placeholder="Block, street, unit, postal code"></div>
+    <div class="field"><label>Phone (optional)</label><input id="sa-phone" placeholder="For delivery issues"></div>
+    <button class="cta" onclick="confirmShip()">Continue to payment →</button>
+  </div>
+</div>
+
 <div class="scrim" id="addrScrim" onclick="closeAddrEdit()"></div>
 <div class="sheet" id="addrSheet">
   <div class="sh-hd"><h2>📦 Delivery address</h2><button class="rm" onclick="closeAddrEdit()">✕</button></div>
@@ -942,6 +964,7 @@ function mock(action,p){
   if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
   if(action==='boot'){ return {ok:true,overview:mock('overview'),inventory:mock('inventory')}; }
   if(action==='shipParcel') return {ok:true,orders:2};
+  if(action==='parcelDelivery') return p.mode==='pickup'?{ok:true,mode:'pickup',pickupNote:'Meet at Bishan MRT, message to arrange.'}:{ok:true,mode:'ship',shipOrderId:'SH'+Math.random().toString(36).slice(2,7).toUpperCase(),fee:3,paynowMobile:'+6598755180',paynowName:'FluffMart TCG',paymentWindowMins:10};
   if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
   if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); const sh=p.cart.length>=5?0:3; return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:sh,creditUsed:0,total:sub+sh,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowMobile:'+6598755180',paynowName:'FluffMart TCG'}; }
   if(action==='submitPayment') return {ok:true};
@@ -1238,49 +1261,24 @@ function renderCart(){
     foot.innerHTML=''; return;
   }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
-  const fsMin=STATE.config.freeShipMin||25;
-  const pickup = STATE.delivery==='pickup';
-  const joiningParcel = !pickup && !!STATE.openParcel;
-  const shipping = (pickup||joiningParcel) ? 0 : (subtotal>=fsMin ? 0 : (STATE.config.shipFlat||3));
-  const need=fsMin-subtotal;
-  const nudge = pickup
-    ? `<div class="nudge">🤝 Self-pickup — no shipping fee. We'll arrange collection after payment.</div>`
-    : (joiningParcel
-      ? `<div class="nudge">🧺 Ships FREE in your open parcel — everything goes out together!</div>`
-      : (need>0
-        ? `<div class="nudge">🐾 You're $${need.toFixed(2)} away from FREE shipping (saves $${(STATE.config.shipFlat||3).toFixed(2)})</div>`
-        : `<div class="nudge">🎉 Free shipping unlocked — nice bundle!</div>`));
+  const nudge = STATE.openParcel
+    ? `<div class="nudge">🧺 These join your open parcel — pay per order now, choose shipping or pickup later from the Parcel tab.</div>`
+    : `<div class="nudge">🧺 This opens your parcel — pay for your cards now (no shipping yet). You'll pick ship or self-pickup later.</div>`;
   body.innerHTML = STATE.cart.map((c,i)=>
     `<div class="crow"><div class="ci">${EMOJI[c.tier]||'🃏'}</div>
       <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.tier}</div></div>
       <span class="cp">$${c.price.toFixed(2)}</span>
       <button class="rm" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
-    (STATE.ship.name&&STATE.ship.address&&!STATE.editAddr
-      ? `<div class="addr-saved">
-           <div class="as-l"><div class="as-cap">📦 Shipping to</div><div class="as-val">${STATE.ship.name}<br><span>${STATE.ship.address}</span></div></div>
-           <button class="as-edit" onclick="editAddress()">✏️ Change</button>
-         </div>`
-      : `<div class="addr">
-      <div class="field"><label>Name for delivery</label><input id="ship-name" value="${STATE.ship.name}" oninput="STATE.ship.name=this.value;persistShip()" placeholder="Full name"></div>
-      <div class="field"><label>Mailing address</label><input id="ship-addr" value="${STATE.ship.address}" oninput="STATE.ship.address=this.value;persistShip()" placeholder="Block, street, unit, postal code"></div>
-      <div class="field"><label>Phone (optional)</label><input id="ship-phone" value="${STATE.ship.phone}" oninput="STATE.ship.phone=this.value;persistShip()" placeholder="For delivery issues"></div>
-      ${STATE.ship.name&&STATE.ship.address?`<button class="as-done" onclick="doneAddress()">✓ Save address</button>`:''}
-    </div>`) +
-    `<div class="field" style="margin:10px 0 4px"><label>Order note (optional)</label><input id="ord-note" value="${(STATE.note||'').replace(/"/g,'&quot;')}" maxlength="200" oninput="STATE.note=this.value" placeholder="e.g. double-sleeve please, leave with guard"></div>` +
+    `<div class="field" style="margin:10px 0 4px"><label>Order note (optional)</label><input id="ord-note" value="${(STATE.note||'').replace(/"/g,'&quot;')}" maxlength="200" oninput="STATE.note=this.value" placeholder="e.g. double-sleeve please"></div>` +
     (STATE.credit>0?`<div class="creditrow"><span>Use store credit ($${STATE.credit.toFixed(2)})</span>
       <button class="switch ${STATE.useCredit?'on':''}" onclick="toggleCredit()"></button></div>`:'');
-  const creditApplied = STATE.useCredit ? Math.min(STATE.credit,subtotal+shipping) : 0;
-  const total = subtotal + shipping - creditApplied;
-  foot.innerHTML = `<div class="totline"><span>Subtotal</span><span>$${subtotal.toFixed(2)}</span></div>
-    <div class="totline"><span>Shipping</span><span>${shipping===0?'FREE':'$'+shipping.toFixed(2)}</span></div>
+    const creditApplied = STATE.useCredit ? Math.min(STATE.credit,subtotal) : 0;
+  const total = subtotal - creditApplied;
+  foot.innerHTML = `<div class="totline"><span>Subtotal (${STATE.cart.length} card${STATE.cart.length>1?'s':''})</span><span>$${subtotal.toFixed(2)}</span></div>
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
-    <div class="dlv-seg">
-      <button class="dlv-b ${!pickup?'on':''}" onclick="STATE.delivery='ship';renderCart()">🚚 Ship${STATE.openParcel?' · joins parcel':''}</button>
-      <button class="dlv-b ${pickup?'on':''}" onclick="STATE.delivery='pickup';renderCart()">🤝 Self-pickup · FREE</button>
-    </div>
-    <button class="cta" onclick="guard(this,checkout)">${pickup?`Place order · $${total.toFixed(2)} · pickup 🤝`:(joiningParcel?`Place order · $${total.toFixed(2)} · joins your parcel 🧺`:`Place order · $${total.toFixed(2)}`)}</button>
-    ${(!pickup&&!STATE.openParcel)?`<p class="hold-hint">This order opens your parcel 🧺 — anything you buy after ships FREE in it, and it goes out whenever you say (up to ${STATE.holdDays||21} days).</p>`:``}`;
+    <button class="cta" onclick="guard(this,checkout)">Place order · $${total.toFixed(2)}</button>
+    <p class="hold-hint">No shipping charged here. Your paid cards go into your parcel 🧺 — choose ship ($${(STATE.shipFlat||3).toFixed(2)}) or free self-pickup later from the Parcel tab.</p>`;
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
@@ -1290,10 +1288,38 @@ async function cancelUnpaid(id){
   if(tg&&tg.showConfirm) tg.showConfirm('Cancel this order? The cards go back on sale.',ok=>{ if(ok) go(); });
   else if(confirm('Cancel this order? The cards go back on sale.')) go();
 }
-async function shipParcelNow(){
-  const r=await api('shipParcel');
-  if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🚚 On it — your parcel ('+(r.orders||1)+' order'+(r.orders>1?'s':'')+') is off to packing!'); STATE.openParcel=null; STATE.openParcelId=null; ORDERS_CACHE=null; loadOrders(true); loadOverview(); }
-  else (tg&&tg.showAlert?tg.showAlert:alert)('No open parcel found.');
+async function chooseDelivery(mode){
+  if(mode==='pickup'){
+    const go=async()=>{
+      const r=await api('parcelDelivery',{mode:'pickup'});
+      if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🤝 Self-pickup set! '+(r.pickupNote||'We\'ll message you to arrange a time and place.')); ORDERS_CACHE=null; loadOrders(true); }
+      else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Could not set pickup.');
+    };
+    if(tg&&tg.showConfirm) tg.showConfirm('Collect your parcel yourself (free)? We\'ll message you with details.',ok=>{if(ok)go();});
+    else if(confirm('Self-pickup (free)?')) go();
+    return;
+  }
+  // Ship: need a delivery address. Reuse saved ship details or prompt.
+  openShipAddr();
+}
+function openShipAddr(){
+  document.getElementById('sa-name').value=STATE.ship.name||'';
+  document.getElementById('sa-addr').value=STATE.ship.address||'';
+  document.getElementById('sa-phone').value=STATE.ship.phone||'';
+  document.getElementById('shipAddrScrim').classList.add('show');
+  document.getElementById('shipAddrSheet').classList.add('show');
+}
+function closeShipAddr(){ document.getElementById('shipAddrScrim').classList.remove('show'); document.getElementById('shipAddrSheet').classList.remove('show'); }
+async function confirmShip(){
+  const name=document.getElementById('sa-name').value.trim();
+  const addr=document.getElementById('sa-addr').value.trim();
+  const phone=document.getElementById('sa-phone').value.trim();
+  if(!name||!addr){ (tg&&tg.showAlert?tg.showAlert:alert)('Please add a name and address.'); return; }
+  STATE.ship={name,address:addr,phone}; persistShip();
+  const r=await api('parcelDelivery',{mode:'ship',shipName:name,shipAddress:addr,shipPhone:phone});
+  closeShipAddr();
+  if(r.ok&&r.shipOrderId){ ORDERS_CACHE=null; await loadOrders(true); resumePayment(r.shipOrderId); }
+  else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Could not start shipping.');
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 function editAddress(){ STATE.editAddr=true; renderCart(); }
@@ -1302,37 +1328,36 @@ function doneAddress(){
   STATE.editAddr=false; persistShip(); renderCart();
 }
 async function checkout(){
-  const pickup=STATE.delivery==='pickup';
-  if(!STATE.ship.name.trim()||(!pickup&&!STATE.ship.address.trim())){
-    (tg&&tg.showAlert?tg.showAlert:alert)(pickup?'Please add your name so we know who\'s collecting.':'Please add a delivery name and mailing address first.');
-    return;
-  }
-  const joining=!pickup&&!!STATE.openParcel;
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
-  const ship0=(pickup||joining)?0:(sub0>=(STATE.config.freeShipMin||25)?0:(STATE.config.shipFlat||3));
-  const r = await api('submitOrder',{pickup:pickup,cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0+ship0):0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone,note:(STATE.note||'').trim()});
+  const r = await api('submitOrder',{cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0):0,note:(STATE.note||'').trim()});
   if(r.ok){
     STATE.cart=[]; STATE.useCredit=false; STATE.note=''; updateCartDot(); closeCart();
     if(r.paidByCredit){
-      const msg='🎉 Order '+r.orderId+' is fully covered by your store credit — nothing to pay! We\'re confirming it now.';
+      const msg='\ud83c\udf89 Order '+r.orderId+' is fully covered by your store credit \u2014 nothing to pay! Once we verify, your cards go into your parcel \ud83e\uddf7';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       ORDERS_CACHE=null; loadOverview();
     } else {
-      if(r.pickup){ const mp='🤝 Self-pickup order placed — pay within the window and we\'ll arrange collection once verified.'; tg&&tg.showAlert?tg.showAlert(mp):setTimeout(()=>alert(mp),300); }
-      else if(r.combinedFree){ const m2='🧺 No shipping fee — this order joins your open parcel and ships with it.'; tg&&tg.showAlert?tg.showAlert(m2):setTimeout(()=>alert(m2),300); }
-      else if(r.startedParcel){ const m3='🧺 Parcel opened! Anything you buy from now ships FREE with it — release it anytime from Orders.'; tg&&tg.showAlert?tg.showAlert(m3):setTimeout(()=>alert(m3),300); }
       showInvoice(r);
       loadOverview();
     }
-  } else if(r.error==='address_required'){
-    (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and address.');
   } else if(r.error==='unavailable'){
-    const msg='Ah — one of those cards was just claimed by someone else. Cart updated.';
-    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    const gone=(r.cards||[]).map(String);
+    const goneNames=STATE.cart.filter(c=>gone.includes(String(c.id))).map(c=>c.name);
+    STATE.cart=STATE.cart.filter(c=>!gone.includes(String(c.id)));
+    updateCartDot();
     loadStore();
+    const named=goneNames.length?('\u201c'+goneNames.slice(0,3).join('\u201d, \u201c')+'\u201d'+(goneNames.length>3?(' and '+(goneNames.length-3)+' more'):'')):'A card';
+    if(STATE.cart.length){
+      const msg=named+' just got claimed by someone else, so we took '+(goneNames.length>1?'them':'it')+' out. The rest of your cart is ready \u2014 tap checkout again. \ud83d\udc3e';
+      tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+      renderCart();
+    } else {
+      const msg=named+' just got claimed and that was your last item, so your cart is empty now. Back to the shop! \ud83d\udc3e';
+      tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+      closeCart(); go('store');
+    }
   } else { (tg&&tg.showAlert?tg.showAlert:alert)('Something went wrong. Try again in a sec.'); }
 }
-
 let INVOICE=null, PAYPROOF=null;
 function showInvoice(inv){
   INVOICE=inv; PAYPROOF=null;
@@ -1415,26 +1440,32 @@ async function loadOrders(force){
   ORDERS_CACHE=r.orders||[]; ORDERS_TS=Date.now(); STATE.orders=ORDERS_CACHE;
   STATE.payInfo={mobile:r.paynowMobile,name:r.paynowName,mins:r.paymentWindowMins||10};
   STATE.openParcelId=r.openParcel||null;
+  STATE.parcelStatus=r.parcelStatus||null;
+  STATE.shipInvoice=r.shipInvoice||null;
+  STATE.pickupNote=r.pickupNote||'';
+  STATE.shipFlat=r.shipFlat||3;
   paintOrders();
 }
 function paintOrders(){
   const list=document.getElementById('ordersList');
   const openPid=STATE.openParcelId||null;
-  const inParcel=openPid?STATE.orders.filter(o=>o.parcelId===openPid):[];
-  const normal=openPid?STATE.orders.filter(o=>o.parcelId!==openPid):STATE.orders;
+  // Exclude shipping-fee (SH) orders from the card list — they're shown as the ship invoice.
+  const inParcel=openPid?STATE.orders.filter(o=>o.parcelId===openPid && String(o.id).indexOf('SH')!==0):[];
+  const normal=openPid?STATE.orders.filter(o=>o.parcelId!==openPid && String(o.id).indexOf('SH')!==0):STATE.orders.filter(o=>String(o.id).indexOf('SH')!==0);
+  const shipInv=STATE.shipInvoice||null;
+  const pstatus=STATE.parcelStatus||'open';
   let parcelHtml='';
   if(inParcel.length){
     const nCards=inParcel.reduce((a,o)=>a+o.items.length,0);
-    const shipPaid=inParcel.reduce((a,o)=>a+(o.shipping||0),0);
-    const verified=inParcel.filter(o=>o.status==='Payment Verified').length;
+    const paidCards=inParcel.filter(o=>o.status==='Payment Verified');
     const unpaid=inParcel.filter(o=>o.status==='Awaiting Payment');
+    const canDeliver=paidCards.length>0;
     parcelHtml=`<div class="parcel">
-      <div class="parcel-hd"><span>🧺 Your open parcel</span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${nCards} card${nCards>1?'s':''}</span></div>
-      <div class="parcel-ship">📦 Shipping paid for this parcel: <b>${shipPaid>0?'$'+shipPaid.toFixed(2)+' (once)':'FREE'}</b></div>
+      <div class="parcel-hd"><span>🧺 Your parcel</span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${nCards} card${nCards>1?'s':''}</span></div>
       <div class="parcel-orders">${inParcel.map(o=>`
         <div class="po-row">
           <div class="po-l">
-            <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-wait'}">${o.status}</span></div>
+            <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-ordered'}">${o.status==='Payment Verified'?'✓ In parcel':o.status}</span></div>
             <div class="po-items">${o.items.slice(0,3).map(i=>i.name).join(', ')}${o.items.length>3?' +'+(o.items.length-3):''}</div>
           </div>
           <div class="po-r">
@@ -1442,10 +1473,24 @@ function paintOrders(){
             ${o.status==='Awaiting Payment'?`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button>`:''}
           </div>
         </div>`).join('')}</div>
-      ${unpaid.length?`<div class="parcel-hint">⏳ ${unpaid.length} order${unpaid.length>1?'s':''} still need payment — unpaid orders release automatically after the payment window.</div>`:''}
-      ${verified>0?`<button class="cta" onclick="guard(this,shipParcelNow)">🚚 Ship my parcel now (${verified} paid order${verified>1?'s':''})</button>
-      <div class="parcel-hint">Or keep shopping — new orders ship FREE in this parcel. Auto-ships after ${STATE.holdDays||21} days.</div>`
-      :`<div class="parcel-hint">Pay for an order above to unlock shipping this parcel.</div>`}
+      ${unpaid.length?`<div class="parcel-hint">⏳ Pay the ${unpaid.length} pending order${unpaid.length>1?'s':''} above — unpaid orders auto-release after the payment window.</div>`:''}
+      ${(()=>{
+        if(pstatus==='shipping_paid') return `<div class="parcel-done">🚚 Shipping paid — your parcel is being packed! You'll get tracking soon.</div>`;
+        if(pstatus==='pickup_ready') return `<div class="parcel-done">🤝 Self-pickup arranged — ${(STATE.pickupNote||'we\'ll message you with details')}.</div>`;
+        if(shipInv) return `<div class="parcel-ship-inv">
+            <div class="psi-t">🚚 Shipping fee — $${shipInv.fee.toFixed(2)}</div>
+            <div class="psi-s">Pay this to send your whole parcel out.</div>
+            <button class="cta" onclick="resumePayment('${shipInv.id}')">💳 Pay shipping ($${shipInv.fee.toFixed(2)})</button>
+          </div>`;
+        if(canDeliver) return `<div class="parcel-choose">
+            <div class="pc-t">Ready to receive your cards? Choose how:</div>
+            <div class="pc-btns">
+              <button class="pc-b" onclick="chooseDelivery('ship')">🚚 Ship to me<span>$${(STATE.shipFlat||3).toFixed(2)}</span></button>
+              <button class="pc-b" onclick="chooseDelivery('pickup')">🤝 Self-pickup<span>FREE</span></button>
+            </div>
+          </div>`;
+        return `<div class="parcel-hint">Once we verify your payment, you'll be able to ship or self-pickup here.</div>`;
+      })()}
     </div>`;
   }
   if(!normal.length && !inParcel.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; return; }
