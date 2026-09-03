@@ -1372,7 +1372,7 @@ async function checkout(){
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       closeCart(); go('store');
     }
-  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Something went wrong. Try again in a sec.'); }
+  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Checkout error: '+(r&&(r.error||r.raw)?JSON.stringify(r.error||r.raw).slice(0,200):'unknown')+'. Try again in a sec.'); }
 }
 let INVOICE=null, PAYPROOF=null;
 function showInvoice(inv){
