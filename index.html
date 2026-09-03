@@ -527,6 +527,31 @@ html{scroll-behavior:smooth}
 .cancel-link{width:100%;margin-top:6px;padding:8px;font-size:12px;font-weight:700;color:var(--hint);background:transparent;text-decoration:underline;text-underline-offset:3px}
 .ptag{font-size:10px;font-weight:800;color:var(--fawn-deep);background:var(--ruff);padding:2px 7px;border-radius:9px;vertical-align:1px}
 
+/* ── how-buying-works explainer ── */
+.howbuy{background:var(--card);border:1.5px solid var(--fawn);border-radius:16px;margin-bottom:14px;overflow:hidden}
+.howbuy-hd{width:100%;display:flex;justify-content:space-between;align-items:center;padding:13px 15px;
+  font-family:'Plus Jakarta Sans';font-weight:800;font-size:14px;color:var(--fawn-deep);background:transparent}
+.howbuy-b{max-height:0;overflow:hidden;transition:max-height .3s ease;padding:0 15px}
+.howbuy-b.open{max-height:520px;padding-bottom:13px}
+.hb-step{display:flex;gap:9px;font-size:12.5px;line-height:1.5;color:var(--text);margin-bottom:9px}
+.hb-step b{color:var(--fawn-deep)}
+
+/* ── delivery segmented ── */
+.dlv-seg{display:flex;gap:7px;margin:10px 0}
+.dlv-b{flex:1;padding:11px 6px;border-radius:13px;font-weight:800;font-size:12.5px;background:var(--ruff);color:var(--text);border:1.5px solid transparent}
+.dlv-b.on{background:var(--card);border-color:var(--fawn);color:var(--fawn-deep)}
+
+/* ── parcel order rows ── */
+.parcel-ship{font-size:12px;color:var(--text);margin:8px 0 4px}
+.parcel-ship b{color:#1c7a52}
+.parcel-orders{margin:6px 0;border-top:1px dashed var(--line)}
+.po-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.po-id{font-weight:800;font-size:12.5px}
+.po-items{font-size:11px;color:var(--hint);margin-top:2px}
+.po-amt{font-weight:800;font-size:13px;text-align:right}
+.po-pay{margin-top:4px;background:var(--fawn);color:#fff;font-weight:800;font-size:11.5px;padding:6px 12px;border-radius:10px}
+.po-pay:active{transform:scale(.95)}
+
 /* ── homepage how-to ── */
 .howto{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
 .howto-t{font-weight:800;color:var(--fawn-deep);font-size:14px;margin-bottom:9px}
@@ -593,6 +618,16 @@ html{scroll-behavior:smooth}
 
   <!-- STORE -->
   <div class="view hidden" id="v-store">
+    <div class="howbuy" id="howBuy">
+      <button class="howbuy-hd" onclick="toggleHowBuy()"><span>🛍️ How buying works</span><span class="hb-chev" id="hbChev">▾</span></button>
+      <div class="howbuy-b" id="hbBody">
+        <div class="hb-step"><span>1️⃣</span><div><b>Claim your cards</b> — tap + to add to cart. Cards are only reserved once you check out.</div></div>
+        <div class="hb-step"><span>2️⃣</span><div><b>Check out</b> — choose 🚚 <b>Ship</b> or 🤝 <b>Self-pickup</b> (free). Shipped orders go into your <b>parcel</b>: you pay shipping once, and every order after that ships FREE in the same parcel.</div></div>
+        <div class="hb-step"><span>3️⃣</span><div><b>Pay by PayNow</b> — scan the QR (10-min window) and upload your payment screenshot. Each order has its own invoice.</div></div>
+        <div class="hb-step"><span>4️⃣</span><div><b>We verify &amp; pack</b> — you'll get a Telegram confirmation for every order.</div></div>
+        <div class="hb-step"><span>5️⃣</span><div><b>Your parcel ships when YOU say</b> — tap "Ship my parcel" anytime (or it ships automatically after 3 weeks). Track everything in Orders 📦</div></div>
+      </div>
+    </div>
     <div class="cattabs" id="cattabs"></div>
     <div class="tools">
       <div class="search">🔎<input id="q" placeholder="Search…" oninput="renderStore()"></div>
@@ -847,7 +882,8 @@ async function guard(btn, fn){
   const orig = btn.textContent; btn.disabled = true; btn.dataset.busy='1';
   try { await fn(); } finally { btn.disabled = false; btn.dataset.busy=''; if(btn.textContent==='') btn.textContent=orig; }
 }
-let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[] };
+const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered'};
+let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
 
 const TIERS = ['All','AR','SIR','SR','EX','Double Rare','Holo','Slab','Merch'];
 const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Sealed:'📦',Merch:'🎁'};
@@ -874,6 +910,15 @@ const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Ver
 
 const POKE_FACTS=["Pikachu was almost not the mascot — Clefairy was the original pick.","Rhydon was the very first Pokémon ever designed.","Wobbuffet's blue body is a decoy — its real target is the black tail.","Azurill can change gender when it evolves into Marill.","Slowpoke's tail regrows — and is considered a delicacy in the games.","A Magikarp can leap over mountains… and still be useless in battle.","Cubone wears the skull of its mother.","Ditto and Mew are the only Pokémon that can transform — fueling fan theories for decades.","Arcanine was originally meant to be Legendary.","Gengar might be Clefable's shadow — look at their silhouettes.","Poliwag's swirl is based on tadpole intestines, visible through their skin.","Charizard isn't a Dragon-type (until Mega X).","Eevee has the most evolutions of any Pokémon — 8 and counting.","Wailord is lighter than water — it would float like a balloon.","Alakazam's IQ is said to be over 5,000.","Farfetch'd is based on a Japanese saying about a duck bringing its own seasoning.","Snorlax weighs 460 kg — about the same as a grand piano and a half.","Jigglypuff's song works on any creature that can hear.","Vaporeon's cells are so water-like it can melt into water and vanish.","Meowth is one of the few Pokémon that learned to speak human language.","Spinda's spot pattern has over 4 billion possible combinations.","Shuckle can produce the strongest single attack in the games via Power Trick shenanigans.","Mimikyu wears its disguise because it wants to be loved like Pikachu.","Dragonite can fly around the globe in about 16 hours.","Magcargo's body temperature is hotter than the surface of the sun (18,000°F).","Absol doesn't cause disasters — it tries to warn people about them.","Metapod's Harden is its whole personality.","Umbreon's rings glow when it's excited or at night — moonlight powers it.","The first shiny most players ever saw was the Red Gyarados.","Togepi's shell is said to be stuffed with happiness."];
 function pokeFact(){ return POKE_FACTS[Math.floor(Math.random()*POKE_FACTS.length)]; }
+
+function toggleHowBuy(){
+  const b=document.getElementById('hbBody'), c=document.getElementById('hbChev');
+  const open=b.classList.toggle('open'); c.textContent=open?'▴':'▾';
+  try{ localStorage.setItem('fm_seen_guide','1'); }catch(e){}
+}
+function initHowBuy(){
+  try{ if(!localStorage.getItem('fm_seen_guide')){ document.getElementById('hbBody').classList.add('open'); document.getElementById('hbChev').textContent='▴'; } }catch(e){}
+}
 
 /* ============ API ============ */
 async function api(action, payload={}){
@@ -1194,14 +1239,17 @@ function renderCart(){
   }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
   const fsMin=STATE.config.freeShipMin||25;
-  const joiningParcel = !!STATE.openParcel && !STATE.shipAlone;
-  const shipping = joiningParcel ? 0 : (subtotal>=fsMin ? 0 : (STATE.config.shipFlat||3));
+  const pickup = STATE.delivery==='pickup';
+  const joiningParcel = !pickup && !!STATE.openParcel;
+  const shipping = (pickup||joiningParcel) ? 0 : (subtotal>=fsMin ? 0 : (STATE.config.shipFlat||3));
   const need=fsMin-subtotal;
-  const nudge = joiningParcel
-    ? `<div class="nudge">🧺 Ships FREE in your open parcel — everything goes out together!</div>`
-    : (need>0
-      ? `<div class="nudge">🐾 You're $${need.toFixed(2)} away from FREE shipping (saves $${(STATE.config.shipFlat||3).toFixed(2)})</div>`
-      : `<div class="nudge">🎉 Free shipping unlocked — nice bundle!</div>`);
+  const nudge = pickup
+    ? `<div class="nudge">🤝 Self-pickup — no shipping fee. We'll arrange collection after payment.</div>`
+    : (joiningParcel
+      ? `<div class="nudge">🧺 Ships FREE in your open parcel — everything goes out together!</div>`
+      : (need>0
+        ? `<div class="nudge">🐾 You're $${need.toFixed(2)} away from FREE shipping (saves $${(STATE.config.shipFlat||3).toFixed(2)})</div>`
+        : `<div class="nudge">🎉 Free shipping unlocked — nice bundle!</div>`));
   body.innerHTML = STATE.cart.map((c,i)=>
     `<div class="crow"><div class="ci">${EMOJI[c.tier]||'🃏'}</div>
       <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.tier}</div></div>
@@ -1227,13 +1275,12 @@ function renderCart(){
     <div class="totline"><span>Shipping</span><span>${shipping===0?'FREE':'$'+shipping.toFixed(2)}</span></div>
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
-    <button class="cta" onclick="guard(this,checkout)">${joiningParcel?`Place order · $${total.toFixed(2)} · joins your parcel 🧺`:`Place order · $${total.toFixed(2)}`}</button>
-    ${joiningParcel
-      ?`<button class="cancel-link" onclick="STATE.shipAlone=true;renderCart()">Ship this order alone instead (+$${(STATE.config.shipFlat||3).toFixed(2)} unless over $${fsMin})</button>`
-      :(STATE.openParcel
-        ?`<button class="cancel-link" onclick="STATE.shipAlone=false;renderCart()">🧺 Put it back in my parcel (free shipping)</button>`
-        :`<button class="cta-hold" onclick="STATE.startParcel=!STATE.startParcel;renderCart()">${STATE.startParcel?'🧺 Starting a parcel ✓ (tap to undo)':'🧺 Start a parcel — future orders ship free with this one'}</button>
-    <p class="hold-hint">A parcel holds your paid orders together (up to ${STATE.holdDays||21} days) so everything ships once — later purchases join it with no shipping fee.</p>`)}`;
+    <div class="dlv-seg">
+      <button class="dlv-b ${!pickup?'on':''}" onclick="STATE.delivery='ship';renderCart()">🚚 Ship${STATE.openParcel?' · joins parcel':''}</button>
+      <button class="dlv-b ${pickup?'on':''}" onclick="STATE.delivery='pickup';renderCart()">🤝 Self-pickup · FREE</button>
+    </div>
+    <button class="cta" onclick="guard(this,checkout)">${pickup?`Place order · $${total.toFixed(2)} · pickup 🤝`:(joiningParcel?`Place order · $${total.toFixed(2)} · joins your parcel 🧺`:`Place order · $${total.toFixed(2)}`)}</button>
+    ${(!pickup&&!STATE.openParcel)?`<p class="hold-hint">This order opens your parcel 🧺 — anything you buy after ships FREE in it, and it goes out whenever you say (up to ${STATE.holdDays||21} days).</p>`:``}`;
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
@@ -1255,23 +1302,25 @@ function doneAddress(){
   STATE.editAddr=false; persistShip(); renderCart();
 }
 async function checkout(){
-  if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){
-    (tg&&tg.showAlert?tg.showAlert:alert)('Please add a delivery name and mailing address first.');
+  const pickup=STATE.delivery==='pickup';
+  if(!STATE.ship.name.trim()||(!pickup&&!STATE.ship.address.trim())){
+    (tg&&tg.showAlert?tg.showAlert:alert)(pickup?'Please add your name so we know who\'s collecting.':'Please add a delivery name and mailing address first.');
     return;
   }
-  const joining=!!STATE.openParcel&&!STATE.shipAlone;
+  const joining=!pickup&&!!STATE.openParcel;
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
-  const ship0=joining?0:(sub0>=(STATE.config.freeShipMin||25)?0:(STATE.config.shipFlat||3));
-  const r = await api('submitOrder',{shipAlone:!!STATE.shipAlone,startParcel:!!STATE.startParcel,cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0+ship0):0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone,note:(STATE.note||'').trim()});
+  const ship0=(pickup||joining)?0:(sub0>=(STATE.config.freeShipMin||25)?0:(STATE.config.shipFlat||3));
+  const r = await api('submitOrder',{pickup:pickup,cart:STATE.cart,useCredit:STATE.useCredit?Math.min(STATE.credit, sub0+ship0):0,shipName:STATE.ship.name,shipAddress:STATE.ship.address,shipPhone:STATE.ship.phone,note:(STATE.note||'').trim()});
   if(r.ok){
-    STATE.cart=[]; STATE.useCredit=false; STATE.note=''; STATE.shipAlone=false; STATE.startParcel=false; updateCartDot(); closeCart();
+    STATE.cart=[]; STATE.useCredit=false; STATE.note=''; updateCartDot(); closeCart();
     if(r.paidByCredit){
       const msg='🎉 Order '+r.orderId+' is fully covered by your store credit — nothing to pay! We\'re confirming it now.';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       ORDERS_CACHE=null; loadOverview();
     } else {
-      if(r.combinedFree){ const m2='🧺 No shipping fee — this order joins your open parcel and ships with it.'; tg&&tg.showAlert?tg.showAlert(m2):setTimeout(()=>alert(m2),300); }
-      else if(r.startedParcel){ const m3='🧺 Parcel started! Anything you buy from now ships FREE with it — release it anytime from Orders.'; tg&&tg.showAlert?tg.showAlert(m3):setTimeout(()=>alert(m3),300); }
+      if(r.pickup){ const mp='🤝 Self-pickup order placed — pay within the window and we\'ll arrange collection once verified.'; tg&&tg.showAlert?tg.showAlert(mp):setTimeout(()=>alert(mp),300); }
+      else if(r.combinedFree){ const m2='🧺 No shipping fee — this order joins your open parcel and ships with it.'; tg&&tg.showAlert?tg.showAlert(m2):setTimeout(()=>alert(m2),300); }
+      else if(r.startedParcel){ const m3='🧺 Parcel opened! Anything you buy from now ships FREE with it — release it anytime from Orders.'; tg&&tg.showAlert?tg.showAlert(m3):setTimeout(()=>alert(m3),300); }
       showInvoice(r);
       loadOverview();
     }
@@ -1375,14 +1424,28 @@ function paintOrders(){
   const normal=openPid?STATE.orders.filter(o=>o.parcelId!==openPid):STATE.orders;
   let parcelHtml='';
   if(inParcel.length){
-    const items=inParcel.reduce((a,o)=>a.concat(o.items),[]);
-    const allVerified=inParcel.every(o=>o.status==='Payment Verified');
+    const nCards=inParcel.reduce((a,o)=>a+o.items.length,0);
+    const shipPaid=inParcel.reduce((a,o)=>a+(o.shipping||0),0);
+    const verified=inParcel.filter(o=>o.status==='Payment Verified').length;
+    const unpaid=inParcel.filter(o=>o.status==='Awaiting Payment');
     parcelHtml=`<div class="parcel">
-      <div class="parcel-hd"><span>🧺 Your open parcel</span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${items.length} card${items.length>1?'s':''}</span></div>
-      <div class="parcel-items">${items.slice(0,8).map(i=>`<div class="parcel-i"><span>${EMOJI[i.tier]||'🃏'} ${i.name}</span><span>$${i.price.toFixed(2)}</span></div>`).join('')}${items.length>8?`<div class="parcel-i" style="color:var(--hint)">…and ${items.length-8} more</div>`:''}</div>
-      <div class="parcel-save">💚 New orders join this parcel with FREE shipping</div>
-      <div class="parcel-hint">${allVerified?'All paid — ships whenever you say (or automatically after '+(STATE.holdDays||21)+' days).':'Ships once payments are verified — or release it now.'}</div>
-      <button class="cta" onclick="guard(this,shipParcelNow)">🚚 Ship my parcel now</button>
+      <div class="parcel-hd"><span>🧺 Your open parcel</span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${nCards} card${nCards>1?'s':''}</span></div>
+      <div class="parcel-ship">📦 Shipping paid for this parcel: <b>${shipPaid>0?'$'+shipPaid.toFixed(2)+' (once)':'FREE'}</b></div>
+      <div class="parcel-orders">${inParcel.map(o=>`
+        <div class="po-row">
+          <div class="po-l">
+            <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-wait'}">${o.status}</span></div>
+            <div class="po-items">${o.items.slice(0,3).map(i=>i.name).join(', ')}${o.items.length>3?' +'+(o.items.length-3):''}</div>
+          </div>
+          <div class="po-r">
+            <div class="po-amt">$${o.total.toFixed(2)}</div>
+            ${o.status==='Awaiting Payment'?`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button>`:''}
+          </div>
+        </div>`).join('')}</div>
+      ${unpaid.length?`<div class="parcel-hint">⏳ ${unpaid.length} order${unpaid.length>1?'s':''} still need payment — unpaid orders release automatically after the payment window.</div>`:''}
+      ${verified>0?`<button class="cta" onclick="guard(this,shipParcelNow)">🚚 Ship my parcel now (${verified} paid order${verified>1?'s':''})</button>
+      <div class="parcel-hint">Or keep shopping — new orders ship FREE in this parcel. Auto-ships after ${STATE.holdDays||21} days.</div>`
+      :`<div class="parcel-hint">Pay for an order above to unlock shipping this parcel.</div>`}
     </div>`;
   }
   if(!normal.length && !inParcel.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; return; }
@@ -1394,7 +1457,7 @@ function paintOrders(){
     const track = (cancelled||merged) ? '' :
       `<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
     return `<div class="order">
-      <div class="hd"><span class="oid">#${o.id}${o.parcelId?` <span class="ptag">🧺 ${o.parcelId}</span>`:''}</span><span class="badge ${bcls}">${o.status}</span></div>
+      <div class="hd"><span class="oid">#${o.id}${o.delivery==='pickup'?' <span class="ptag">🤝 pickup</span>':(o.parcelId?` <span class="ptag">🧺 ${o.parcelId}</span>`:'')}</span><span class="badge ${bcls}">${o.status}</span></div>
       ${track}
       ${o.lastUpdate?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
       ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
@@ -1658,6 +1721,7 @@ function backToProfile(){ document.getElementById('v-credit').classList.add('hid
     if(u){ STATE.user={id:String(u.id),name:[u.first_name,u.last_name].filter(Boolean).join(' '),username:u.username||''}; }
   }
   restorePersisted();
+  initHowBuy();
   bootApp();
 })();
 </script>
