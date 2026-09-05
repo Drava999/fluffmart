@@ -50,6 +50,26 @@ h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;margin:0;let
 .hidden{display:none!important}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
+/* ── zoom viewer ── */
+.zoom-wrap{position:fixed;inset:0;z-index:60;background:rgba(20,10,16,.94);
+  display:none;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
+.zoom-wrap.show{display:flex}
+.zoom-img{max-width:92vw;max-height:88vh;border-radius:12px;transform-origin:center center;
+  will-change:transform;user-select:none;-webkit-user-drag:none;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.zoom-close{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:62;
+  width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.9);color:var(--fawn-deep);
+  font-size:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.zoom-hint{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom));left:0;right:0;
+  text-align:center;color:rgba(255,255,255,.75);font-size:11.5px;font-weight:600;pointer-events:none}
+.zoom-reset{position:absolute;bottom:calc(48px + env(safe-area-inset-bottom));left:50%;
+  transform:translateX(-50%);background:rgba(255,255,255,.15);color:#fff;font-size:12px;
+  font-weight:700;padding:7px 16px;border-radius:20px;z-index:62}
+/* magnifier badge on the card image */
+.cv-zoom{position:absolute;bottom:8px;right:8px;z-index:3;background:rgba(90,58,78,.72);color:#fff;
+  font-size:14px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.cv-card{position:relative}
+
 /* header */
 .top{display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
 .mascot{width:42px;height:42px;border-radius:50%;background:var(--ruff);
@@ -453,6 +473,14 @@ html{scroll-behavior:smooth}
 .wrow .wn{flex:1;font-size:13.5px;font-weight:700;line-height:1.2}
 .wrow .ws{font-size:11px;color:var(--hint);font-weight:600}
 
+<div class="zoom-wrap" id="zoomWrap">
+  <button class="zoom-close" onclick="closeZoom()">✕</button>
+  <img class="zoom-img" id="zoomImg" alt="">
+  <button class="zoom-reset" id="zoomReset" onclick="zoomReset()" style="display:none">Reset</button>
+  <div class="zoom-hint">pinch or double-tap to zoom · drag to pan</div>
+</div>
+
+
 /* ── saved address summary ── */
 .addr-saved{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0 4px}
 .as-l{flex:1;min-width:0}
@@ -581,6 +609,14 @@ html{scroll-behavior:smooth}
 .howto-i{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.4;color:var(--text)}
 .howto-i span{font-size:16px}
 .howto-i b{color:var(--fawn-deep)}
+
+button:disabled{opacity:.5;pointer-events:none;filter:grayscale(.25)}
+button.busy{position:relative;color:transparent!important}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid currentColor;
+  border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;
+  color:#fff;vertical-align:-2px}
+.cta-alt .spin,.cta-hold .spin,.pc-b .spin,.wsug .spin{color:var(--fawn-deep)}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -791,7 +827,7 @@ html{scroll-behavior:smooth}
     <div class="field"><label>Name for delivery</label><input id="sa-name" placeholder="Full name"></div>
     <div class="field"><label>Mailing address</label><input id="sa-addr" placeholder="Block, street, unit, postal code"></div>
     <div class="field"><label>Phone (optional)</label><input id="sa-phone" placeholder="For delivery issues"></div>
-    <button class="cta" onclick="confirmShip()">Continue to payment →</button>
+    <button class="cta" onclick="guard(this,confirmShip)">Continue to payment →</button>
   </div>
 </div>
 
@@ -910,10 +946,21 @@ function restorePersisted(){
   _load('fm_ship',v=>{ try{ const s=JSON.parse(v); if(s&&typeof s==='object'){ STATE.ship={name:s.name||'',address:s.address||'',phone:s.phone||''}; if(document.getElementById('cartSheet')&&document.getElementById('cartSheet').classList.contains('show')) renderCart(); } }catch(e){} });
 }
 // Prevents double-clicks/spam: disables a button during an async action.
+// Prevents double-taps AND shows the user it's working.
 async function guard(btn, fn){
   if(!btn || btn.disabled) return;
-  const orig = btn.textContent; btn.disabled = true; btn.dataset.busy='1';
-  try { await fn(); } finally { btn.disabled = false; btn.dataset.busy=''; if(btn.textContent==='') btn.textContent=orig; }
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.dataset.busy = '1';
+  btn.innerHTML = '<span class="spin"></span>';
+  try { return await fn(); }
+  finally { btn.disabled = false; btn.dataset.busy = ''; btn.innerHTML = orig; }
+}
+// Disables a group of buttons for the duration (e.g. both delivery choices).
+async function guardGroup(selector, btn, fn){
+  const all=[...document.querySelectorAll(selector)];
+  all.forEach(b=>{ if(b!==btn) b.disabled=true; });
+  try { return await guard(btn, fn); }
+  finally { all.forEach(b=>{ b.disabled=false; }); }
 }
 const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered'};
 let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
@@ -1198,8 +1245,9 @@ function openCardView(id){
             <div class="cv-face cv-front">${front}</div>
             ${hasBack?`<div class="cv-face cv-back"><img src="${imgUrl(c.imageBack,800)}" alt="back"></div>`:''}
           </div>
+          ${c.image?`<button class="cv-zoom" onclick="event.stopPropagation();zoomCard('${c.id}')">🔍</button>`:''}
         </div>
-        ${hasBack?'<div class="cv-flip-hint">tap card to flip ⤾</div>':''}
+        ${hasBack?'<div class="cv-flip-hint">tap card to flip ⤾ · 🔍 to zoom</div>':(c.image?'<div class="cv-flip-hint">🔍 tap to zoom in</div>':'')}
       </div>
       <div class="cv-meta">
         <div class="cv-name">${c.name}</div>
@@ -1209,7 +1257,7 @@ function openCardView(id){
           ${c.variance?`<span class="cv-tag">${c.variance}</span>`:''}
           <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
         </div>
-        ${(!c.image||c.imageType==='stock')?`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want to see the real card?</b><br>We'll send you our scans in chat</span><span class="ap-go">Ask ›</span></button>`:''}
+        <button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups — we'll send them in chat</span><span class="ap-go">Ask ›</span></button>
         <div class="cv-price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="cv-was">$${c.marketPrice.toFixed(2)}</span>`:''}</div>
         <button class="cta" ${soldOut?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">${soldOut?'In your cart':'Add to cart'}</button>
         <button class="cta-alt" onclick="makeOffer('${c.id}','${(c.name||'').replace(/'/g,'')}',${c.price})">💬 Make an offer</button>
@@ -1239,9 +1287,7 @@ async function sendOffer(){
   if(!OFFER_CARD) return;
   const offer=parseFloat(document.getElementById('offerInput').value);
   if(!offer||offer<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('Enter a valid amount.'); return; }
-  const btn=document.getElementById('offerSend'); btn.disabled=true; btn.textContent='Sending…';
   const r=await api('makeOffer',{cardId:OFFER_CARD.id,offer});
-  btn.disabled=false; btn.textContent='Send offer';
   closeOffer(); closeCardView();
   const msg=r.ok?(r.message||'Offer sent!'):'Couldn\'t send offer, try again.';
   tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
@@ -1435,7 +1481,6 @@ function onProof(e){
 }
 async function submitProof(){
   if(!PAYPROOF||!INVOICE) return;
-  const b=document.getElementById('invSubmit'); b.disabled=true; b.textContent='Sending…';
   const r=await api('submitPayment',{orderId:INVOICE.orderId,image:PAYPROOF});
   if(r.ok){
     clearInterval(PAY_TIMER);
@@ -1443,7 +1488,7 @@ async function submitProof(){
     const msg='Payment submitted for '+INVOICE.orderId+'! 🎉 We\'re verifying it now — you\'ll get an update once confirmed. Track it in Orders.';
     tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
     loadOverview();
-  } else { b.disabled=false; b.textContent='Confirm payment'; (tg&&tg.showAlert?tg.showAlert:alert)('Upload failed, try again.'); }
+  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Upload failed, try again.'); }
 }
 
 /* ============ ORDERS ============ */
@@ -1485,8 +1530,8 @@ function renderParcelCard(p){
   else if(p.status==='pickup_ready') foot=`<div class="parcel-done">🤝 Self-pickup arranged — ${(STATE.pickupNote||'we\'ll message you with details')}.</div>`;
   else if(shipInv) foot=`<div class="parcel-ship-inv"><div class="psi-t">🚚 Shipping fee — $${shipInv.fee.toFixed(2)}</div><div class="psi-s">Pay this to send your whole parcel out.</div><button class="cta" onclick="resumePayment('${shipInv.id}')">💳 Pay shipping ($${shipInv.fee.toFixed(2)})</button></div>`;
   else if(canDeliver) foot=`<div class="parcel-choose"><div class="pc-t">Ready to receive your cards? Choose how:</div><div class="pc-btns">
-      <button class="pc-b" onclick="chooseDelivery('ship','${p.id}')">🚚 Ship to me<span>$${(STATE.shipFlat||3).toFixed(2)}</span></button>
-      <button class="pc-b" onclick="chooseDelivery('pickup','${p.id}')">🤝 Self-pickup<span>FREE</span></button></div></div>`;
+      <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('ship','${p.id}'))">🚚 Ship to me<span>$${(STATE.shipFlat||3).toFixed(2)}</span></button>
+      <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('pickup','${p.id}'))">🤝 Self-pickup<span>FREE</span></button></div></div>`;
   else foot=`<div class="parcel-hint">Once we verify your payment, you'll be able to ship or self-pickup here.</div>`;
   return `<div class="parcel">
     <div class="parcel-hd"><span>${PARCEL_TITLE[p.status]||'🧺 Parcel'} <span style="font-size:11px;opacity:.6">${p.id}</span></span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${nCards} card${nCards>1?'s':''}</span></div>
@@ -1523,7 +1568,7 @@ function paintOrders(){
       <div class="oitems">${o.items.map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
         <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>Total</span><span>$${o.total.toFixed(2)}</span></div></div>
       ${o.status==='Awaiting Payment'?`<button class="cta" style="margin-top:8px" onclick="resumePayment('${o.id}')">💳 Complete payment</button>
-      <button class="cancel-link" onclick="cancelUnpaid('${o.id}')">Cancel this order</button>`:''}
+      <button class="cancel-link" onclick="guard(this,()=>cancelUnpaid('${o.id}'))">Cancel this order</button>`:''}
       <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
     </div>`;
   }).join('');
@@ -1619,8 +1664,9 @@ function openBinderCard(idx){
       <div class="cv-top">
         <div class="cv-card ${c.imageBack?'':'noflip'}" ${c.imageBack?`onclick="this.classList.toggle('flipped')"`:''}>
           <div class="cv-inner"><div class="cv-face cv-front">${front}</div>${back}</div>
+          ${c.image?`<button class="cv-zoom" onclick="event.stopPropagation();openZoom('${imgUrl(c.image,1600)}')">🔍</button>`:''}
         </div>
-        ${c.imageBack?'<div class="cv-flip-hint">tap card to flip ⤾</div>':''}
+        ${c.imageBack?'<div class="cv-flip-hint">tap card to flip ⤾ · 🔍 to zoom</div>':(c.image?'<div class="cv-flip-hint">🔍 tap to zoom in</div>':'')}
       </div>
       <div class="cv-meta">
         <div class="cv-name">${c.name}</div>
@@ -1691,7 +1737,7 @@ function renderWishlist(){
   el.innerHTML=STATE.wishes.map(w=>
     `<div class="wrow"><span class="wk">${w.kind==='set'?'📚':'⭐'}</span>
       <div class="wn">${w.label||w.target}<div class="ws">${w.kind==='set'?'Set':'Pokémon'}</div></div>
-      <button class="rm" onclick="removeWish('${w.kind}','${(w.target||'').replace(/'/g,'')}')">✕</button></div>`).join('');
+      <button class="rm" onclick="guard(this,()=>removeWish('${w.kind}','${(w.target||'').replace(/'/g,'')}')">✕</button></div>`).join('');
 }
 
 /* ============ BUYBACK / SELL REQUEST ============ */
@@ -1703,9 +1749,7 @@ function updateRateLabels(){
 async function submitBuyback(){
   const msg=document.getElementById('bb-msg').value.trim();
   if(!msg){ (tg&&tg.showAlert?tg.showAlert:alert)('Tell us what you\'d like to sell first.'); return; }
-  const btn=document.getElementById('bb-submit'); btn.disabled=true; btn.textContent='Sending\u2026';
   const r=await api('submitBuyback',{message:msg});
-  btn.disabled=false; btn.textContent='Send & talk to us';
   if(r.ok){
     document.getElementById('bb-msg').value='';
     const m=r.message||'Sent! We\'ll message you back shortly.';
@@ -1717,7 +1761,6 @@ async function sendSupport(btn){
   await guard(btn, async()=>{
     const msg=document.getElementById('sup-msg').value.trim();
     if(!msg){ (tg&&tg.showAlert?tg.showAlert:alert)('Type a message first.'); return; }
-    btn.textContent='Sending…';
     const r=await api('contactSupport',{message:msg,orderId:document.getElementById('sup-order').value.trim()});
     if(r.ok){ document.getElementById('sup-msg').value=''; document.getElementById('sup-order').value='';
       (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Sent!'); go('overview'); }
@@ -1800,6 +1843,50 @@ function backToProfile(){ document.getElementById('v-credit').classList.add('hid
   restorePersisted();
   initHowBuy();
   bootApp();
+})();
+
+/* ============ ZOOM VIEWER ============ */
+let ZM={scale:1,x:0,y:0,d0:0,s0:1,px:0,py:0,drag:false,lastTap:0,pinch:false};
+function zoomApply(){
+  const img=document.getElementById('zoomImg'); if(!img) return;
+  img.style.transform=`translate(${ZM.x}px,${ZM.y}px) scale(${ZM.scale})`;
+  document.getElementById('zoomReset').style.display = ZM.scale>1.02?'block':'none';
+}
+function zoomReset(){ ZM.scale=1; ZM.x=0; ZM.y=0; zoomApply(); }
+function openZoom(src){
+  if(!src) return;
+  const w=document.getElementById('zoomWrap'), img=document.getElementById('zoomImg');
+  img.src=src; zoomReset(); w.classList.add('show');
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+function closeZoom(){ document.getElementById('zoomWrap').classList.remove('show'); }
+(function initZoom(){
+  const w=document.getElementById('zoomWrap'); if(!w) return;
+  const dist=(t)=>Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+  w.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){ ZM.pinch=true; ZM.d0=dist(e.touches); ZM.s0=ZM.scale; }
+    else if(e.touches.length===1){
+      const now=Date.now();
+      if(now-ZM.lastTap<300){ ZM.scale = ZM.scale>1.02?1:2.6; if(ZM.scale===1){ZM.x=0;ZM.y=0;} zoomApply(); ZM.lastTap=0; return; }
+      ZM.lastTap=now; ZM.drag=true; ZM.px=e.touches[0].clientX-ZM.x; ZM.py=e.touches[0].clientY-ZM.y;
+    }
+  },{passive:true});
+  w.addEventListener('touchmove',e=>{
+    if(ZM.pinch&&e.touches.length===2){
+      ZM.scale=Math.min(6,Math.max(1,ZM.s0*(dist(e.touches)/ZM.d0)));
+      if(ZM.scale<=1.02){ZM.x=0;ZM.y=0;}
+      zoomApply(); e.preventDefault();
+    } else if(ZM.drag&&e.touches.length===1&&ZM.scale>1.02){
+      ZM.x=e.touches[0].clientX-ZM.px; ZM.y=e.touches[0].clientY-ZM.py; zoomApply(); e.preventDefault();
+    }
+  },{passive:false});
+  w.addEventListener('touchend',e=>{
+    if(e.touches.length===0){ ZM.pinch=false; ZM.drag=false; }
+  },{passive:true});
+  // desktop: wheel to zoom, click backdrop to close
+  w.addEventListener('wheel',e=>{ ZM.scale=Math.min(6,Math.max(1,ZM.scale-e.deltaY*0.0015));
+    if(ZM.scale<=1.02){ZM.x=0;ZM.y=0;} zoomApply(); e.preventDefault(); },{passive:false});
+  w.addEventListener('click',e=>{ if(e.target===w) closeZoom(); });
 })();
 </script>
 </body>
