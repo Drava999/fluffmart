@@ -339,7 +339,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cattab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);
   font-size:13px;font-weight:700;color:var(--hint)}
 .cattab.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
-.dd-menu{max-height:60vh;overflow-y:auto}
 /* card view tags */
 .cv-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .cv-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.18);color:#fff}
@@ -1196,7 +1195,6 @@ function pickCat(c){
   renderCatTabs(); ddLabel(); renderStore();
 }
 function closeDD(){ document.getElementById('sortDD').classList.remove('open'); }
-},true);   // <-- capture phase
 async function loadStore(){
   document.getElementById('storeGrid').innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
   const r = await api('inventory');
