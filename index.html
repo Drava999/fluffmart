@@ -47,6 +47,7 @@ body{
   .cardview{max-width:none}
   .grid{grid-template-columns:1fr 1fr 1fr}
 }
+  #app{overflow-x:clip}
 h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;margin:0;letter-spacing:-.01em}
 .brand{font-family:'Fraunces',serif;font-weight:600;margin:0;letter-spacing:-.01em}
 .wrap{max-width:520px;margin:0 auto;padding:0 16px}
@@ -326,7 +327,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   opacity:0;pointer-events:none;transform:translateY(-6px);transition:.16s}
 .dd.open .dd-menu{opacity:1;pointer-events:auto;transform:none}
 .dd-item{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-size:13px;
-  font-weight:600;color:var(--text);white-space:normal;overflow-wrap:anywhere}
+  font-weight:600;color:var(--text);white-space:normal;overflow-wrap:anywhere; word-break:break-word}
 .dd-item:hover{background:var(--bg)}
 .dd-item.on{background:var(--ruff);color:var(--fawn-deep);font-weight:800}
 .dd-lbl{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;
@@ -575,8 +576,10 @@ html{scroll-behavior:smooth}
 .howbuy-hd{width:100%;display:flex;justify-content:space-between;align-items:center;padding:13px 15px;
   font-family:'Plus Jakarta Sans';font-weight:800;font-size:14px;color:var(--fawn-deep);background:transparent}
 .howbuy-b{max-height:0;overflow:hidden;transition:max-height .3s ease;padding:0 15px}
-.howbuy-b.open{max-height:520px;padding-bottom:13px}
+.howbuy-b.open{max-height:900px;padding-bottom:13px}
 .hb-step{display:flex;gap:9px;font-size:12.5px;line-height:1.5;color:var(--text);margin-bottom:9px}
+.hb-step > div{min-width:0;overflow-wrap:anywhere}
+.hb-step > span{flex-shrink:0}
 .hb-step b{color:var(--fawn-deep)}
 
 /* ── delivery segmented ── */
