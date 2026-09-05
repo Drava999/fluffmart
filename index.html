@@ -381,6 +381,7 @@ html{scroll-behavior:smooth}
 .notif .nt-ic{font-size:16px}
 .notif .nt-sub{font-size:11px;color:var(--hint);margin-top:2px}
 .inv-card{background:var(--bg);border-radius:18px;padding:18px;max-width:380px;width:100%;color:var(--text);max-height:78vh;overflow-y:auto}
+.inv-card{position:relative}
 .inv-c-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
 .inv-c-oid{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:18px;color:var(--fawn-deep)}
 .inv-c-date{font-size:11px;color:var(--hint)}
@@ -1794,9 +1795,10 @@ function viewInvoice(id){
   if(o.status==='Awaiting Payment'){ closeCardView&&closeCardView(); resumePayment(id); return; }
   const sub=o.items.reduce((s,i)=>s+i.price,0);
   const findImg=(it)=>{ if(it.image) return imgUrl(it.image,200); const c=STATE.inventory.find(x=>x.name===it.name); return c&&c.image?imgUrl(c.image,200):''; };
-  document.getElementById('cardViewBody').innerHTML=`
-    <div class="inv-card">
-      <div class="inv-c-hd">
+    document.getElementById('cardViewBody').innerHTML=`
+      <div class="inv-card">
+        <button class="cv-close" onclick="closeCardView()">✕</button>
+        <div class="inv-c-hd">
         <div><div class="inv-c-oid">🧾 ${o.id}</div><div class="inv-c-date">${o.created?new Date(o.created).toLocaleDateString():''}</div></div>
         <div class="badge ${(o.status||'').toLowerCase().includes('ship')?'b-shipped':(o.status||'').toLowerCase().includes('deliver')?'b-delivered':'b-packed'}">${o.status}</div>
       </div>
@@ -1811,6 +1813,7 @@ function viewInvoice(id){
       </div>
       ${o.tracking?`<a class="inv-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${o.tracking} ↗</a>`:''}
       ${o.shipAddress?`<div class="inv-c-ship">Ship to: ${o.shipName}, ${o.shipAddress}</div>`:''}
+      <button class="cta-alt" onclick="closeCardView()" style="margin-top:14px">Close</button>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
