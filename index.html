@@ -1236,7 +1236,6 @@ function openCardView(id){
   const soldOut=(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0;
   document.getElementById('cardViewBody').innerHTML = `
     <div class="cv-panel">
-      <button class="cv-close" onclick="closeCardView()">✕</button>
       <div class="cv-top">
         <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="this.classList.toggle('flipped')"`:''}>
           <div class="cv-inner">
