@@ -1279,6 +1279,13 @@ function makeOffer(id,name,listed){
   document.getElementById('offerSheet').classList.add('show');
   setTimeout(()=>document.getElementById('offerInput').focus(),100);
 }
+// Zooms whichever face of the store card is currently showing.
+function zoomCard(id){
+  const c=STATE.inventory.find(x=>x.id===id); if(!c) return;
+  const el=document.getElementById('cvCard');
+  const back = el && el.classList.contains('flipped') && c.imageBack;
+  openZoom(imgUrl(back?c.imageBack:c.image,1600));
+}
 function closeOffer(){ document.getElementById('offerScrim').classList.remove('show'); document.getElementById('offerSheet').classList.remove('show'); }
 async function sendOffer(){
   if(!OFFER_CARD) return;
@@ -1690,7 +1697,7 @@ async function openWishlist(){
     STATE.wishes=r.wishes||[];
     WISH.suggestions={name:r.nameSuggestions||[],set:r.setSuggestions||[]};
   }
-  ();
+  renderwishlist();
 }
 function closeWishlist(){ document.getElementById('wishScrim').classList.remove('show'); document.getElementById('wishSheet').classList.remove('show'); }
 function wishKind(k){
