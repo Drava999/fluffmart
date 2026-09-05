@@ -321,6 +321,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .dd-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;height:40px;padding:0 14px;
   border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:13px;font-weight:700;
   color:var(--text);white-space:nowrap;width:100%;overflow:hidden}
+.dd.open .dd-btn{position:relative;z-index:26}
 #sortLabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;min-width:0;flex:1}
 .dd-chev{color:var(--hint);font-size:14px;line-height:1;transition:transform .2s}
 .dd.open .dd-chev{transform:rotate(180deg)}
@@ -1197,7 +1198,10 @@ function pickCat(c){
   renderCatTabs(); ddLabel(); renderStore();
 }
 function closeDD(){ document.getElementById('sortDD').classList.remove('open'); }
-document.addEventListener('click',()=>{const d=document.getElementById('sortDD'); if(d) d.classList.remove('open');});
+document.addEventListener('click',(e)=>{
+  const dd=document.getElementById('sortDD');
+  if(dd && !dd.contains(e.target)) dd.classList.remove('open');
+});
 async function loadStore(){
   document.getElementById('storeGrid').innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
   const r = await api('inventory');
