@@ -325,11 +325,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 #sortLabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;min-width:0;flex:1}
 .dd-chev{color:var(--hint);font-size:14px;line-height:1;transition:transform .2s}
 .dd.open .dd-chev{transform:rotate(180deg)}
-.dd-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1px solid var(--line);
-  border-radius:14px;box-shadow:0 8px 28px rgba(74,53,36,.18);padding:6px;max-width:100%;z-index:25;
-  opacity:0;pointer-events:none;transform:translateY(-6px);transition:.16s}
-.dd-btn{position:relative;z-index:30}
-.dd.open .dd-menu{opacity:1;pointer-events:auto;transform:none}
+.dd-menu{max-height:0;overflow:hidden;background:var(--card);border-radius:14px;
+  transition:max-height .28s ease;width:100%;margin-top:0}
+.dd.open .dd-menu{max-height:60vh;overflow-y:auto;margin-top:6px;border:1px solid var(--line);padding:6px}
 .dd-item{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-size:13px;
   font-weight:600;color:var(--text);white-space:normal;overflow-wrap:anywhere; word-break:break-word}
 .dd-item:hover{background:var(--bg)}
@@ -1150,10 +1148,9 @@ function shareReferral(link){
 
 const SORTS=[{v:'rarity',l:'Rarity (rarest first)'},{v:'price-desc',l:'Price: high to low'},{v:'price-asc',l:'Price: low to high'},{v:'name',l:'Name A\u2013Z'},{v:'set',l:'Set A\u2013Z'}];
 function toggleSort(e){
-  e.stopPropagation();
+  if(e) e.stopPropagation();
   const dd=document.getElementById('sortDD'), menu=document.getElementById('sortMenu');
-  const isOpen=dd.classList.contains('open');
-  if(isOpen){ dd.classList.remove('open'); return; }
+  if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
   const pool=STATE.inventory.filter(c=>(c.category||'single').toLowerCase()===STATE.cat);
   const sets=[...new Set(pool.map(c=>c.set).filter(Boolean))].sort();
   const tiers=[...new Set(pool.map(c=>c.tier).filter(Boolean))]
@@ -1199,13 +1196,6 @@ function pickCat(c){
   renderCatTabs(); ddLabel(); renderStore();
 }
 function closeDD(){ document.getElementById('sortDD').classList.remove('open'); }
-document.addEventListener('click',(e)=>{
-  const dd=document.getElementById('sortDD');
-  if(!dd) return;
-  // If open and the tap is NOT on a dd-item (selection), close it.
-  if(dd.classList.contains('open') && !e.target.closest('.dd-item') && !e.target.closest('.dd-btn')){
-    dd.classList.remove('open');
-  }
 },true);   // <-- capture phase
 async function loadStore(){
   document.getElementById('storeGrid').innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
