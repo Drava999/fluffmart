@@ -1541,7 +1541,11 @@ function renderParcelCard(p){
     <div class="parcel-hd"><span>${PARCEL_TITLE[p.status]||'🧺 Parcel'} <span style="font-size:11px;opacity:.6">${p.id}</span></span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${nCards} card${nCards>1?'s':''}</span></div>
     <div class="parcel-orders">${inParcel.map(o=>`
       <div class="po-row"><div class="po-l">
-        <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-ordered'}">${o.status==='Payment Verified'?'✓ In parcel':o.status}</span></div>
+        <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-ordered'}">${
+          o.status==='Payment Verified'?'✓ In parcel'
+          :o.status==='Awaiting Verification'?'⏳ Checking payment'
+          :o.status==='Awaiting Payment'?'💳 Unpaid'
+          :o.status}</span></div>
         <div class="po-items">${o.items.slice(0,3).map(i=>i.name).join(', ')}${o.items.length>3?' +'+(o.items.length-3):''}</div></div>
       <div class="po-r"><div class="po-amt">$${o.total.toFixed(2)}</div>${o.status==='Awaiting Payment'?`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button>`:''}</div></div>`).join('')}</div>
     ${unpaid.length?`<div class="parcel-hint">⏳ Pay the ${unpaid.length} pending order${unpaid.length>1?'s':''} above — unpaid orders auto-release after the payment window.</div>`:''}
