@@ -1152,7 +1152,8 @@ const SORTS=[{v:'rarity',l:'Rarity (rarest first)'},{v:'price-desc',l:'Price: hi
 function toggleSort(e){
   e.stopPropagation();
   const dd=document.getElementById('sortDD'), menu=document.getElementById('sortMenu');
-  if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
+  const isOpen=dd.classList.contains('open');
+  if(isOpen){ dd.classList.remove('open'); return; }
   const pool=STATE.inventory.filter(c=>(c.category||'single').toLowerCase()===STATE.cat);
   const sets=[...new Set(pool.map(c=>c.set).filter(Boolean))].sort();
   const tiers=[...new Set(pool.map(c=>c.tier).filter(Boolean))]
@@ -1200,8 +1201,12 @@ function pickCat(c){
 function closeDD(){ document.getElementById('sortDD').classList.remove('open'); }
 document.addEventListener('click',(e)=>{
   const dd=document.getElementById('sortDD');
-  if(dd && !dd.contains(e.target)) dd.classList.remove('open');
-});
+  if(!dd) return;
+  // If open and the tap is NOT on a dd-item (selection), close it.
+  if(dd.classList.contains('open') && !e.target.closest('.dd-item') && !e.target.closest('.dd-btn')){
+    dd.classList.remove('open');
+  }
+},true);   // <-- capture phase
 async function loadStore(){
   document.getElementById('storeGrid').innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
   const r = await api('inventory');
