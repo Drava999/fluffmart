@@ -686,7 +686,8 @@ button.busy{position:relative;color:transparent!important}
         <div class="hb-step"><span>3️⃣</span><div><b>We verify → into your parcel</b> — once we confirm payment, your cards are held safely in your <b>parcel</b> 🧺 (find it in the Orders tab).</div></div>
         <div class="hb-step"><span>4️⃣</span><div><b>Keep shopping, one parcel</b> — everything you buy collects in the same parcel, so you pay shipping just once for the whole lot.</div></div>
         <div class="hb-step"><span>5️⃣</span><div><b>Ship or self-pickup — your call</b> — when you're ready, open the Parcel tab and choose 🚚 Ship (pay one small shipping fee) or 🤝 Self-pickup (free). Then track it in Orders 📦</div></div>
-         <div class="hb-step"><span>↩️</span><div><b>Changed your mind at any time?</b> Refunds are handled manually — head to Help &amp; Support with your order number and the card(s) you want to return, and we'll sort it out for you.</div></div>
+        <div class="hb-step"><span>↩️</span><div><b>Changed your mind at any time?</b> Refunds are handled manually — head to Help &amp; Support with your order number and the card(s) you want to return, and we'll sort it out for you.</div></div>
+        <div class="hb-step"><span>💳</span><div><b>Store credit</b> — earn $3 back for every $100 you spend, plus referral bonuses. Credit applies automatically at checkout: you'll see it deducted on your invoice before you pay. If credit covers the whole order, there's nothing to PayNow — we just verify and it's yours. Refunds can be returned as store credit too.</div></div>
       </div>
     </div>
     <div class="cattabs" id="cattabs"></div>
@@ -1505,7 +1506,7 @@ async function submitProof(){
     const msg='Payment submitted for '+INVOICE.orderId+'! 🎉 We\'re verifying it now — you\'ll get an update once confirmed. Track it in Orders.';
     tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
     loadOverview();
-  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Upload failed, try again.'); }
+  } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Upload failed, try again.'); }
 }
 
 /* ============ ORDERS ============ */
@@ -1540,13 +1541,16 @@ function renderParcelCard(p){
   const nCards=inParcel.reduce((a,o)=>a+o.items.length,0);
   const paidCards=inParcel.filter(o=>['Payment Verified','Packed'].includes(o.status));
   const unpaid=inParcel.filter(o=>o.status==='Awaiting Payment');
-  const canDeliver=paidCards.length>0 && (p.status==='open'||p.status==='ship_awaiting_fee');
+  const anyPending=inParcel.some(o=>['Awaiting Payment','Awaiting Verification'].includes(o.status));
+  const canDeliver=paidCards.length>0 && !anyPending && (p.status==='open'||p.status==='ship_awaiting_fee');
   const shipInv=p.shipInvoice;
   let foot='';
   if(p.status==='shipping_paid') foot=`<div class="parcel-done">🚚 Shipping paid — we're packing this parcel now. You'll get tracking soon.</div>`;
   else if(p.status==='pickup_ready') foot=`<div class="parcel-done">🤝 Self-pickup arranged — ${(STATE.pickupNote||'we\'ll message you with details')}.</div>`;
   else if(p.feeVerifying) foot=`<div class="parcel-done">⏳ Shipping payment received — we're verifying it now. Your parcel ships once confirmed.</div>`;
   else if(shipInv) foot=`<div class="parcel-ship-inv"><div class="psi-t">🚚 Shipping fee — $${shipInv.fee.toFixed(2)}</div><div class="psi-s">Pay this to send your whole parcel out.</div><button class="cta" onclick="resumePayment('${shipInv.id}')">💳 Pay shipping ($${shipInv.fee.toFixed(2)})</button></div>`;
+  else if(p.feeVerifying) foot=`<div class="parcel-done">⏳ Shipping payment received — we're verifying it now. Your parcel ships once confirmed.</div>`;
+  else if(paidCards.length>0 && anyPending) foot=`<div class="parcel-hint">⏳ Some orders in this parcel are still being verified. Once they're all confirmed, you'll be able to ship or self-pickup everything together.</div>`;
   else if(canDeliver) foot=`<div class="parcel-choose"><div class="pc-t">Ready to receive your cards? Choose how:</div><div class="pc-btns">
       <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('ship','${p.id}'))">🚚 Ship to me<span>$${(STATE.shipFlat||3).toFixed(2)}</span></button>
       <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('pickup','${p.id}'))">🤝 Self-pickup<span>FREE</span></button></div></div>`;
