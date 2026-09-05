@@ -398,6 +398,12 @@ html{scroll-behavior:smooth}
 .inv-c-tot{border-top:1px dashed var(--line);padding-top:10px}
 .inv-track{display:block;text-align:center;background:var(--berry);color:#fff;font-weight:700;font-size:13px;padding:10px;border-radius:12px;margin-top:12px;text-decoration:none}
 .inv-c-ship{font-size:11.5px;color:var(--hint);margin-top:10px;text-align:center}
+/* dedicated close for the invoice card — sits top-right, clear of the badge */
+.inv-c-close{position:absolute;top:12px;right:12px;z-index:3;width:30px;height:30px;border-radius:50%;
+  background:var(--ruff);color:var(--fawn-deep);font-size:15px;display:flex;align-items:center;
+  justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+/* keep the status badge from sliding under the ✕ */
+.inv-c-hd{padding-right:38px}
 .empty .e-ic{animation:floaty 3s ease-in-out infinite}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
@@ -1240,6 +1246,7 @@ function openCardView(id){
   const soldOut=(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0;
   document.getElementById('cardViewBody').innerHTML = `
     <div class="cv-panel">
+      <button class="cv-close" onclick="closeCardView()">✕</button>
       <div class="cv-top">
         <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="this.classList.toggle('flipped')"`:''}>
           <div class="cv-inner">
@@ -1800,6 +1807,7 @@ function viewInvoice(id){
   const findImg=(it)=>{ if(it.image) return imgUrl(it.image,200); const c=STATE.inventory.find(x=>x.name===it.name); return c&&c.image?imgUrl(c.image,200):''; };
     document.getElementById('cardViewBody').innerHTML=`
       <div class="inv-card">
+        <button class="inv-c-close" onclick="closeCardView()">✕</button>
         <div class="inv-c-hd">
         <div><div class="inv-c-oid">🧾 ${o.id}</div><div class="inv-c-date">${o.created?new Date(o.created).toLocaleDateString():''}</div></div>
         <div class="badge ${(o.status||'').toLowerCase().includes('ship')?'b-shipped':(o.status||'').toLowerCase().includes('deliver')?'b-delivered':'b-packed'}">${o.status}</div>
@@ -1815,7 +1823,6 @@ function viewInvoice(id){
       </div>
       ${o.tracking?`<a class="inv-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${o.tracking} ↗</a>`:''}
       ${o.shipAddress?`<div class="inv-c-ship">Ship to: ${o.shipName}, ${o.shipAddress}</div>`:''}
-      <button class="cta-alt" onclick="closeCardView()" style="margin-top:14px">Close</button>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
