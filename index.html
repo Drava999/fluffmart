@@ -1452,7 +1452,8 @@ function showInvoice(inv){
     </label>
     <div id="proofPreview"></div>
     <button class="cta" id="invSubmit" onclick="guard(this,submitProof)" disabled>Upload a screenshot to confirm</button>
-    <p class="note">Your cards are reserved. Once we verify payment we'll pack & ship — track it in Orders.</p>`;
+    <p class="note">Your cards are reserved. Once we verify payment we'll pack & ship — track it in Orders.</p>
+    <button class="cta-alt" onclick="closeInvoice()" style="margin-top:4px">Close — I'll pay later</button>`;
   // generate the PayNow QR
   renderPayQR(inv);
   // countdown
