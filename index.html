@@ -852,7 +852,12 @@ button.busy{position:relative;color:transparent!important}
     <div id="wishList"></div>
   </div>
 </div>
-
+<div class="zoom-wrap" id="zoomWrap">
+  <button class="zoom-close" onclick="closeZoom()">✕</button>
+  <img class="zoom-img" id="zoomImg" alt="">
+  <button class="zoom-reset" id="zoomReset" onclick="zoomReset()" style="display:none">Reset</button>
+  <div class="zoom-hint">pinch or double-tap to zoom · drag to pan</div>
+</div>
 <script>
 /* ============ CONFIG ============ */
 // Paste your deployed Apps Script Web App URL here. Leave blank to preview with demo data.
@@ -1881,13 +1886,5 @@ function closeZoom(){ document.getElementById('zoomWrap').classList.remove('show
   w.addEventListener('click',e=>{ if(e.target===w) closeZoom(); });
 })();
 </script>
-
-<div class="zoom-wrap" id="zoomWrap">
-  <button class="zoom-close" onclick="closeZoom()">✕</button>
-  <img class="zoom-img" id="zoomImg" alt="">
-  <button class="zoom-reset" id="zoomReset" onclick="zoomReset()" style="display:none">Reset</button>
-  <div class="zoom-hint">pinch or double-tap to zoom · drag to pan</div>
-</div>
-  
 </body>
 </html>
