@@ -1697,7 +1697,7 @@ async function openWishlist(){
     STATE.wishes=r.wishes||[];
     WISH.suggestions={name:r.nameSuggestions||[],set:r.setSuggestions||[]};
   }
-  renderwishlist();
+  renderWishlist();
 }
 function closeWishlist(){ document.getElementById('wishScrim').classList.remove('show'); document.getElementById('wishSheet').classList.remove('show'); }
 function wishKind(k){
