@@ -472,15 +472,7 @@ html{scroll-behavior:smooth}
 .wrow .wk{font-size:18px}
 .wrow .wn{flex:1;font-size:13.5px;font-weight:700;line-height:1.2}
 .wrow .ws{font-size:11px;color:var(--hint);font-weight:600}
-
-<div class="zoom-wrap" id="zoomWrap">
-  <button class="zoom-close" onclick="closeZoom()">✕</button>
-  <img class="zoom-img" id="zoomImg" alt="">
-  <button class="zoom-reset" id="zoomReset" onclick="zoomReset()" style="display:none">Reset</button>
-  <div class="zoom-hint">pinch or double-tap to zoom · drag to pan</div>
-</div>
-
-
+  
 /* ── saved address summary ── */
 .addr-saved{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0 4px}
 .as-l{flex:1;min-width:0}
@@ -1693,7 +1685,7 @@ async function openWishlist(){
     STATE.wishes=r.wishes||[];
     WISH.suggestions={name:r.nameSuggestions||[],set:r.setSuggestions||[]};
   }
-  renderWishlist();
+  ();
 }
 function closeWishlist(){ document.getElementById('wishScrim').classList.remove('show'); document.getElementById('wishSheet').classList.remove('show'); }
 function wishKind(k){
@@ -1737,7 +1729,7 @@ function renderWishlist(){
   el.innerHTML=STATE.wishes.map(w=>
     `<div class="wrow"><span class="wk">${w.kind==='set'?'📚':'⭐'}</span>
       <div class="wn">${w.label||w.target}<div class="ws">${w.kind==='set'?'Set':'Pokémon'}</div></div>
-      <button class="rm" onclick="guard(this,()=>removeWish('${w.kind}','${(w.target||'').replace(/'/g,'')}')">✕</button></div>`).join('');
+      <button class="rm" onclick="guard(this,()=>removeWish('${w.kind}','${(w.target||'').replace(/'/g,'')}'))">✕</button></div>`).join('');
 }
 
 /* ============ BUYBACK / SELL REQUEST ============ */
@@ -1889,5 +1881,13 @@ function closeZoom(){ document.getElementById('zoomWrap').classList.remove('show
   w.addEventListener('click',e=>{ if(e.target===w) closeZoom(); });
 })();
 </script>
+
+<div class="zoom-wrap" id="zoomWrap">
+  <button class="zoom-close" onclick="closeZoom()">✕</button>
+  <img class="zoom-img" id="zoomImg" alt="">
+  <button class="zoom-reset" id="zoomReset" onclick="zoomReset()" style="display:none">Reset</button>
+  <div class="zoom-hint">pinch or double-tap to zoom · drag to pan</div>
+</div>
+  
 </body>
 </html>
