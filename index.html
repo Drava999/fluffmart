@@ -386,27 +386,6 @@ html{scroll-behavior:smooth}
 .notif{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;font-size:13px}
 .notif .nt-ic{font-size:16px}
 .notif .nt-sub{font-size:11px;color:var(--hint);margin-top:2px}
-.inv-card{background:var(--bg);border-radius:18px;padding:18px;max-width:380px;width:100%;color:var(--text);max-height:78vh;overflow-y:auto}
-.inv-card{position:relative}
-.inv-c-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
-.inv-c-oid{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:18px;color:var(--fawn-deep)}
-.inv-c-date{font-size:11px;color:var(--hint)}
-.inv-c-items{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.inv-c-row{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:8px}
-.inv-c-thumb{width:38px;height:52px;border-radius:6px;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0}
-.inv-c-thumb img{width:100%;height:100%;object-fit:cover}
-.inv-c-nm{flex:1;font-size:13px;font-weight:700;line-height:1.2}
-.inv-c-tier{font-size:10.5px;color:var(--hint);font-weight:600}
-.inv-c-pr{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;color:var(--fawn-deep)}
-.inv-c-tot{border-top:1px dashed var(--line);padding-top:10px}
-.inv-track{display:block;text-align:center;background:var(--berry);color:#fff;font-weight:700;font-size:13px;padding:10px;border-radius:12px;margin-top:12px;text-decoration:none}
-.inv-c-ship{font-size:11.5px;color:var(--hint);margin-top:10px;text-align:center}
-/* dedicated close for the invoice card — sits top-right, clear of the badge */
-.inv-c-close{position:absolute;top:12px;right:12px;z-index:3;width:30px;height:30px;border-radius:50%;
-  background:var(--ruff);color:var(--fawn-deep);font-size:15px;display:flex;align-items:center;
-  justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-/* keep the status badge from sliding under the ✕ */
-.inv-c-hd{padding-right:38px}
 .empty .e-ic{animation:floaty 3s ease-in-out infinite}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
@@ -414,6 +393,46 @@ html{scroll-behavior:smooth}
 .skel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);height:210px;
   animation:blink 1.2s ease infinite}
 @keyframes blink{50%{opacity:.5}}
+
+/* ── INVOICE DOCUMENT ── */
+.doc{background:#fff;border-radius:18px;max-width:400px;width:100%;max-height:84vh;overflow-y:auto;
+  position:relative;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+.doc-close{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;
+  background:rgba(255,255,255,.92);color:var(--fawn-deep);font-size:15px;display:flex;align-items:center;
+  justify-content:center;z-index:3;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.doc-hd{padding:18px 18px 15px;background:linear-gradient(160deg,var(--ruff),#fbeef6);border-radius:18px 18px 0 0}
+.doc-brand{font-family:'Fraunces',serif;font-size:15px;color:var(--fawn-deep);letter-spacing:.4px}
+.doc-brandsub{font-size:10px;color:var(--hint);margin-top:0}
+.doc-oid{font-family:'Plus Jakarta Sans';font-weight:800;font-size:19px;margin-top:12px;letter-spacing:-.02em}
+.doc-meta{font-size:11.5px;color:var(--hint);margin-top:3px;line-height:1.6}
+.doc-stamp{position:absolute;top:52px;right:16px;font-size:10px;font-weight:800;letter-spacing:.6px;
+  padding:5px 10px;border-radius:8px;text-transform:uppercase}
+.doc-body{padding:6px 18px 18px}
+.doc-sec{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.7px;margin:16px 0 4px}
+.doc-line{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.doc-thumb{width:34px;height:46px;border-radius:6px;background:var(--ruff);display:flex;align-items:center;
+  justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0}
+.doc-thumb img{width:100%;height:100%;object-fit:cover}
+.doc-nm{flex:1;font-size:13px;font-weight:700;line-height:1.25;min-width:0}
+.doc-tag{font-size:10.5px;color:var(--hint);font-weight:600;margin-top:1px}
+.doc-amt{font-family:'Plus Jakarta Sans';font-weight:800;font-size:13.5px;flex-shrink:0}
+.doc-void .doc-nm,.doc-void .doc-amt{text-decoration:line-through}
+.doc-void{opacity:.6}
+.doc-void .doc-tag{color:#c2405e;text-decoration:none}
+.doc-tot{margin-top:14px;border-top:2px solid var(--line);padding-top:11px}
+.doc-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--text)}
+.doc-row.muted{color:var(--hint)}
+.doc-row.grand{font-family:'Plus Jakarta Sans';font-weight:800;font-size:17px;color:var(--fawn-deep);
+  border-top:1px dashed var(--line);margin-top:8px;padding-top:10px}
+.doc-note{background:var(--bg);border-radius:11px;padding:10px 12px;font-size:11.5px;color:var(--text);
+  margin-top:13px;line-height:1.55}
+.doc-note b{color:var(--fawn-deep)}
+.doc-trail{font-size:11.5px;color:var(--hint);margin-top:6px;line-height:1.9}
+.doc-trail b{color:var(--text);font-weight:700}
+.doc-track{display:block;text-align:center;background:var(--berry);color:#fff;font-weight:700;font-size:13px;
+  padding:11px;border-radius:12px;margin-top:14px;text-decoration:none}
+.doc-ft{text-align:center;font-size:10.5px;color:var(--hint);margin-top:16px;padding-top:12px;
+  border-top:1px solid var(--line);line-height:1.7}
 
 /* ── design polish ── */
 .pcard{box-shadow:0 2px 10px rgba(178,92,147,.07);transition:transform .18s ease,box-shadow .18s ease}
@@ -624,6 +643,10 @@ button.busy{position:relative;color:transparent!important}
   color:#fff;vertical-align:-2px}
 .cta-alt .spin,.cta-hold .spin,.pc-b .spin,.wsug .spin{color:var(--fawn-deep)}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* cancelled orders: present but clearly closed */
+.order.dead{opacity:.6;background:#faf5f5}
+.order.dead .oid{text-decoration:line-through}
+.past-hd{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.7px;margin:18px 4px 8px}
 </style>
 </head>
 <body>
@@ -646,7 +669,7 @@ button.busy{position:relative;color:transparent!important}
       <p>Claim singles, track parcels, and turn spare cards into store credit.</p>
       <div class="stats">
         <div class="stat"><div class="n" id="ov-credit">$0.00</div><div class="l">Store credit</div></div>
-        <div class="stat"><div class="n" id="ov-transit">0</div><div class="l">In transit</div></div>
+        <div class="stat"><div class="n" id="ov-transit">0</div><div class="l">Cards on the way</div></div>
       </div>
     </div>
     <div class="section-t">What you can do</div>
@@ -659,7 +682,7 @@ button.busy{position:relative;color:transparent!important}
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('buyback')">
-      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>~85% cash · ~90% store credit (est.)</p></div>
+      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>~80% cash · ~85% store credit (est.)</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('support')">
@@ -690,7 +713,7 @@ button.busy{position:relative;color:transparent!important}
         <div class="hb-step"><span>2️⃣</span><div><b>Pay for your cards</b> — no shipping fee here. Scan the PayNow QR (10-min window) and upload your screenshot. Each order has its own invoice.</div></div>
         <div class="hb-step"><span>3️⃣</span><div><b>We verify → into your parcel</b> — once we confirm payment, your cards are held safely in your <b>parcel</b> 🧺 (find it in the Orders tab).</div></div>
         <div class="hb-step"><span>4️⃣</span><div><b>Keep shopping, one parcel</b> — everything you buy collects in the same parcel, so you pay shipping just once for the whole lot.</div></div>
-        <div class="hb-step"><span>5️⃣</span><div><b>Ship or self-pickup — your call</b> — when you're ready, open the Parcel tab and choose 🚚 Ship (pay one small shipping fee) or 🤝 Self-pickup (free). Then track it in Orders 📦</div></div>
+        <div class="hb-step"><span>5️⃣</span><div><b>Ship or self-pickup — your call</b> — when you're ready, open the Parcel tab and choose 🚚 Ship or 🤝 Self-pickup (free). Spend enough in one parcel and shipping is free too. Then track it in Orders 📦</div></div>
         <div class="hb-step"><span>↩️</span><div><b>Changed your mind at any time?</b> Refunds are handled manually — head to Help &amp; Support with your order number and the card(s) you want to return, and we'll sort it out for you.</div></div>
         <div class="hb-step"><span>💳</span><div><b>Store credit</b> — earn $3 back for every $100 you spend, plus referral bonuses. Credit applies automatically at checkout: you'll see it deducted on your invoice before you pay. If credit covers the whole order, there's nothing to PayNow — we just verify and it's yours. Refunds can be returned as store credit too.</div></div>
       </div>
@@ -745,7 +768,7 @@ button.busy{position:relative;color:transparent!important}
     <div class="prof-stats">
       <div class="pstat"><div class="pn" id="p-credit">$0</div><div class="pl">Store credit</div></div>
       <div class="pstat"><div class="pn" id="p-orders">0</div><div class="pl">Orders</div></div>
-      <div class="pstat"><div class="pn" id="p-transit">0</div><div class="pl">In transit</div></div>
+      <div class="pstat"><div class="pn" id="p-transit">0</div><div class="pl">On the way</div></div>
     </div>
     <div class="prof-menu">
       <button class="feat" onclick="go('orders')"><div class="ic">🧾</div><div><h3>My invoices &amp; orders</h3><p>View past purchases with photos</p></div><span class="chev">›</span></button>
@@ -782,7 +805,7 @@ button.busy{position:relative;color:transparent!important}
   <div class="hb-body" style="padding:0 4px">
     <div class="hb-step"><span>🎁</span><div><b>How you earn it</b> — $3 back for every $100 you spend, automatically. Refer a friend and you get $3 once they spend $15+. Sell us cards and you can take store credit instead of cash (we pay a better rate for credit).</div></div>
     <div class="hb-step"><span>🛒</span><div><b>How you spend it</b> — at checkout, toggle "Use store credit" and it comes off your total before you PayNow. Partial is fine: if credit covers $4 of a $10 order, you just pay $6. If it covers everything, there's nothing to pay — we verify and your cards go straight into your parcel.</div></div>
-    <div class="hb-step"><span>↩️</span><div><b>Refunds</b> — if we refund a card, store credit is the fastest way to get it back (it lands instantly). Cash refunds are handled manually — just ask in Help &amp; Support.</div></div>
+    <div class="hb-step"><span>↩️</span><div><b>Refunds</b> — whatever you paid with credit comes back as credit, and whatever you paid by PayNow can come back as either. Credit lands instantly; cash refunds are sent by hand — just ask in Help &amp; Support.</div></div>
     <div class="hb-step"><span>ℹ️</span><div><b>Good to know</b> — credit never expires, but it can't be withdrawn as cash. If an order is cancelled or times out, any credit you used on it comes straight back to your balance.</div></div>
   </div>
 
@@ -846,7 +869,7 @@ button.busy{position:relative;color:transparent!important}
     <div class="field"><label>Name for delivery</label><input id="sa-name" placeholder="Full name"></div>
     <div class="field"><label>Mailing address</label><input id="sa-addr" placeholder="Block, street, unit, postal code"></div>
     <div class="field"><label>Phone (optional)</label><input id="sa-phone" placeholder="For delivery issues"></div>
-    <button class="cta" onclick="guard(this,confirmShip)">Continue to payment →</button>
+    <button class="cta" onclick="guard(this,confirmShip)">Continue →</button>
   </div>
 </div>
 
@@ -892,6 +915,8 @@ const API_URL = "https://fluffmart-api.shrimaniac.workers.dev/api"; // new modul
 /* ================================ */
 
 function imgUrl(u,w){ if(!u) return u; return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function money(n){ return '$'+Number(n||0).toFixed(2); }
 
 // PayNow SGQR payload generator (amount + reference embedded)
 function crc16(s){let c=0xFFFF;for(let i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(let j=0;j<8;j++){c=(c&0x8000)?(c<<1)^0x1021:c<<1;c&=0xFFFF;}}return c.toString(16).toUpperCase().padStart(4,'0');}
@@ -969,7 +994,6 @@ function saveAddrEdit(){
 function restorePersisted(){
   _load('fm_ship',v=>{ try{ const s=JSON.parse(v); if(s&&typeof s==='object'){ STATE.ship={name:s.name||'',address:s.address||'',phone:s.phone||''}; if(document.getElementById('cartSheet')&&document.getElementById('cartSheet').classList.contains('show')) renderCart(); } }catch(e){} });
 }
-// Prevents double-clicks/spam: disables a button during an async action.
 // Prevents double-taps AND shows the user it's working.
 async function guard(btn, fn){
   if(!btn || btn.disabled) return;
@@ -986,8 +1010,8 @@ async function guardGroup(selector, btn, fn){
   try { return await guard(btn, fn); }
   finally { all.forEach(b=>{ b.disabled=false; }); }
 }
-const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered'};
-let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
+const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered','Refunded':'b-cancelled'};
+let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], invTs:0, orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
 
 const TIERS = ['All','AR','SIR','SR','EX','Double Rare','Holo','Slab','Merch'];
 const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Sealed:'📦',Merch:'🎁'};
@@ -1040,20 +1064,19 @@ async function api(action, payload={}){
   }
 }
 function mock(action,p){
-  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:25,shipFlat:3,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FluffmartBot?start=ref_1',openParcel:null,unpaidOrders:0};
-  if(action==='finalizeParcel') return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:40,shipping:0,creditUsed:0,total:40,savedShipping:6,items:[{name:'Held card A',tier:'AR',price:20},{name:'Held card B',tier:'EX',price:20}],paynowMobile:'',paynowName:'Fluffmart TCG',paymentWindowMins:10};
+  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:40,shipFlat:3,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping — free over S$40',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FluffmartBot?start=ref_1',openParcel:null,unpaidOrders:0};
   if(action==='inventory') return {ok:true,items:DEMO_INV};
   if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
   if(action==='boot'){ return {ok:true,overview:mock('overview'),inventory:mock('inventory')}; }
   if(action==='shipParcel') return {ok:true,orders:2};
   if(action==='parcelDelivery') return p.mode==='pickup'?{ok:true,mode:'pickup',pickupNote:'Meet at Bishan MRT, message to arrange.'}:{ok:true,mode:'ship',shipOrderId:'SH'+Math.random().toString(36).slice(2,7).toUpperCase(),fee:3,paynowMobile:'+6598755180',paynowName:'FluffMart TCG',paymentWindowMins:10};
   if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
-  if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); const sh=p.cart.length>=5?0:3; return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:sh,creditUsed:0,total:sub+sh,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowMobile:'+6598755180',paynowName:'FluffMart TCG'}; }
+  if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:0,creditUsed:0,total:sub,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowMobile:'+6598755180',paynowName:'FluffMart TCG'}; }
   if(action==='submitPayment') return {ok:true};
   if(action==='makeOffer') return {ok:true,message:'Offer sent! (demo)'};
   if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review — we\'ll confirm your offer in chat shortly.'};
   if(action==='requestPictures') return {ok:true,requestId:'PR'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Photo request sent! (demo)'};
-  if(action==='storeInfo') return {ok:true,holdPolicy:'Purchases can be held for up to 1 month',shippingPolicy:'Flat S$3 shipping per order — free when you claim 5+ cards'};
+  if(action==='storeInfo') return {ok:true,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping — free over S$40'};
   if(action==='wishlist') return {ok:true,wishes:[{kind:'name',target:'Umbreon',label:'Umbreon'}],nameSuggestions:['Umbreon','Charizard','Pikachu','Mimikyu','Gardevoir','Sylveon','Snorlax'],setSuggestions:['Evolving Skies','Prismatic','Obsidian Flames','Paldea Evolved']};
   if(action==='wishlistAdd') return {ok:true,message:'Added to your wishlist! (demo)'};
   if(action==='wishlistRemove') return {ok:true};
@@ -1065,6 +1088,8 @@ function go(tab){
   ['overview','store','orders','buyback','support','profile','credit'].forEach(t=>{const el=document.getElementById('v-'+t); if(el) el.classList.toggle('hidden',t!==tab);});
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+  // Stock moves constantly (other buyers, claim drops, auctions). Anything older
+  // than a minute is refetched, otherwise sold cards linger on the shelf.
   if(tab==='store'&&(!STATE.inventory.length||Date.now()-(STATE.invTs||0)>60000)) loadStore();
   if(tab==='orders') loadOrders();
   if(tab==='profile') loadProfile();
@@ -1196,7 +1221,8 @@ function pickCat(c){
 }
 function closeDD(){ document.getElementById('sortDD').classList.remove('open'); }
 async function loadStore(){
-  document.getElementById('storeGrid').innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
+  const grid=document.getElementById('storeGrid');
+  if(!STATE.inventory.length) grid.innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
   const r = await api('inventory');
   STATE.inventory = r.items||[];
   STATE.invTs = Date.now();
@@ -1366,15 +1392,16 @@ function renderCart(){
       <button class="switch ${STATE.useCredit?'on':''}" onclick="toggleCredit()"></button></div>`:'');
     const creditApplied = STATE.useCredit ? Math.min(STATE.credit,subtotal) : 0;
   const total = subtotal - creditApplied;
+  const fsMin=(STATE.config&&STATE.config.freeShipMin)||0;
   foot.innerHTML = `<div class="totline"><span>Subtotal (${STATE.cart.length} card${STATE.cart.length>1?'s':''})</span><span>$${subtotal.toFixed(2)}</span></div>
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
     <button class="cta" onclick="guard(this,checkout)">Place order · $${total.toFixed(2)}</button>
-    <p class="hold-hint">No shipping charged here. Your paid cards go into your parcel 🧺 — choose ship ($${(STATE.shipFlat||3).toFixed(2)}) or free self-pickup later from the Parcel tab.</p>`;
+    <p class="hold-hint">No shipping charged here. Your paid cards go into your parcel 🧺 — choose ship ($${(STATE.shipFlat||3).toFixed(2)}${fsMin?', free over $'+fsMin.toFixed(2)+' per parcel':''}) or free self-pickup later from the Parcel tab.</p>`;
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
-    if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('Order cancelled — the cards are back in the shop'+(r.creditRefunded>0?' and your $'+r.creditRefunded.toFixed(2)+' credit was refunded':'')+'.'); ORDERS_CACHE=null; loadOrders(true); loadOverview(); }
+    if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('Order cancelled — the cards are back in the shop'+(r.creditRefunded>0?' and your $'+r.creditRefunded.toFixed(2)+' credit was refunded':'')+'.'); ORDERS_CACHE=null; loadOrders(true); loadOverview(); loadStore(); }
     else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Couldn\'t cancel that order.');
   });
   if(tg&&tg.showConfirm) tg.showConfirm('Cancel this order? The cards go back on sale.',ok=>{ if(ok) go(); });
@@ -1384,7 +1411,7 @@ async function chooseDelivery(mode,pid){
   STATE.pendingParcel=pid||STATE.openParcelId;
   if(mode==='pickup'){
     const go=async()=>{
-      const r=await api('parcelDelivery',{mode:'pickup'});
+      const r=await api('parcelDelivery',{mode:'pickup',parcelId:STATE.pendingParcel});
       if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🤝 Self-pickup set! '+(r.pickupNote||'We\'ll message you to arrange a time and place.')); ORDERS_CACHE=null; loadOrders(true); }
       else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Could not set pickup.');
     };
@@ -1411,30 +1438,28 @@ async function confirmShip(){
   STATE.ship={name,address:addr,phone}; persistShip();
   const r=await api('parcelDelivery',{mode:'ship',parcelId:STATE.pendingParcel,shipName:name,shipAddress:addr,shipPhone:phone});
   closeShipAddr();
-  if(r.ok&&r.freeShipping){ ORDERS_CACHE=null; await loadOrders(true);
-    (tg&&tg.showAlert?tg.showAlert:alert)('🎉 Free shipping! Your parcel is over the threshold, so there\'s nothing to pay. We\'re packing it now — tracking follows.'); }
+  if(r.ok&&r.freeShipping){
+    ORDERS_CACHE=null; await loadOrders(true);
+    (tg&&tg.showAlert?tg.showAlert:alert)('🎉 Free shipping! Your parcel is over the threshold, so there\'s nothing to pay. We\'re packing it now — tracking follows.');
+  }
   else if(r.ok&&r.shipOrderId){ ORDERS_CACHE=null; await loadOrders(true); resumePayment(r.shipOrderId); }
-    else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||('Could not start shipping ('+(r.error||JSON.stringify(r).slice(0,120))+')'));
+  else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||('Could not start shipping ('+(r.error||JSON.stringify(r).slice(0,120))+')'));
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
-function editAddress(){ STATE.editAddr=true; renderCart(); }
-function doneAddress(){
-  if(!STATE.ship.name.trim()||!STATE.ship.address.trim()){ (tg&&tg.showAlert?tg.showAlert:alert)('Add a name and address first.'); return; }
-  STATE.editAddr=false; persistShip(); renderCart();
-}
 async function checkout(){
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
   const r = await api('submitOrder',{cart:STATE.cart.map(c=>({id:c.id})),useCredit:STATE.useCredit?Math.min(STATE.credit, sub0):0,note:(STATE.note||'').trim()});
   if(r.ok){
     STATE.cart=[]; STATE.useCredit=false; STATE.note=''; updateCartDot(); closeCart();
+    ORDERS_CACHE=null;
     if(r.paidByCredit){
       const msg='\ud83c\udf89 Order '+r.orderId+' is fully covered by your store credit \u2014 nothing to pay! Once we verify, your cards go into your parcel \ud83e\uddf7';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
-      ORDERS_CACHE=null; loadOverview();
+      loadOverview(); loadStore();
     } else {
       showInvoice(r);
       loadOverview();
-      loadStore();          // the cards just bought must leave the shelf immediately
+      loadStore();   // the cards just bought must leave the shelf immediately
     }
   } else if(r.error==='unavailable'){
     const gone=(r.cards||[]).map(String);
@@ -1461,9 +1486,10 @@ function showInvoice(inv){
   INVOICE=inv; PAYPROOF=null;
   const b=document.getElementById('invBody');
   const mins=inv.paymentWindowMins||10;
+  const long=mins>60;
   b.innerHTML=`
-    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge" id="payTimer">${inv._resumeSecs!=null?Math.floor(inv._resumeSecs/60)+':'+String(inv._resumeSecs%60).padStart(2,'0'):mins+':00'}</div></div>
-    <div class="pay-warn">⏱ Please pay within <b>${mins} minutes</b> or your cards will be released.</div>
+    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge" id="payTimer">${inv._resumeSecs!=null?fmtLeft(inv._resumeSecs):fmtLeft(mins*60)}</div></div>
+    <div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>
     <div class="inv-items">
       ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
       <div class="inv-row"><span>Shipping</span><span>${inv.shipping===0?'FREE':'$'+inv.shipping.toFixed(2)}</span></div>
@@ -1492,8 +1518,7 @@ function showInvoice(inv){
     left--;
     const el=document.getElementById('payTimer');
     if(!el){ clearInterval(PAY_TIMER); return; }
-    const m=Math.floor(left/60), s=left%60;
-    el.textContent=m+':'+String(s).padStart(2,'0');
+    el.textContent=fmtLeft(left);
     if(left<=60) el.style.background='#e74c3c';
     if(left<=0){ clearInterval(PAY_TIMER); closeInvoice();
       (tg&&tg.showAlert?tg.showAlert:alert)('Payment time expired — your cards have been released. You can re-order anytime.');
@@ -1501,6 +1526,12 @@ function showInvoice(inv){
   },1000);
   document.getElementById('invScrim').classList.add('show');
   document.getElementById('invSheet').classList.add('show');
+}
+// h:mm:ss for long (claim/auction) windows, m:ss for the 10-minute one.
+function fmtLeft(s){
+  if(s<0) s=0;
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+  return h>0 ? (h+':'+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0')) : (m+':'+String(x).padStart(2,'0'));
 }
 function closeInvoice(){ clearInterval(PAY_TIMER); document.getElementById('invScrim').classList.remove('show'); document.getElementById('invSheet').classList.remove('show'); }
 function onProof(e){
@@ -1521,7 +1552,7 @@ async function submitProof(){
     closeInvoice();
     const msg='Payment submitted for '+INVOICE.orderId+'! 🎉 We\'re verifying it now — you\'ll get an update once confirmed. Track it in Orders.';
     tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
-    loadOverview();
+    ORDERS_CACHE=null; loadOverview(); loadOrders(true);
   } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Upload failed, try again.'); }
 }
 
@@ -1552,26 +1583,25 @@ async function loadOrders(force){
 }
 const PARCEL_TITLE={open:'🧺 Your parcel',ship_awaiting_fee:'🧺 Your parcel',shipping_paid:'🚚 Parcel being packed',pickup_ready:'🤝 Pickup arranged'};
 function renderParcelCard(p){
-  const inParcel=STATE.orders.filter(o=>o.parcelId===p.id && String(o.id).indexOf('SH')!==0);
+  const inParcel=STATE.orders.filter(o=>o.parcelId===p.id && String(o.id).indexOf('SH')!==0 && !o.cancelled && o.status!=='Refunded');
   if(!inParcel.length) return '';
-  const nCards=inParcel.reduce((a,o)=>a+o.items.length,0);
+  const nCards=inParcel.reduce((a,o)=>a+o.items.filter(i=>!i.refunded).length,0);
   const paidCards=inParcel.filter(o=>['Payment Verified','Packed'].includes(o.status));
   const unpaid=inParcel.filter(o=>o.status==='Awaiting Payment');
   const anyPending=inParcel.some(o=>['Awaiting Payment','Awaiting Verification'].includes(o.status));
   const canDeliver=paidCards.length>0 && !anyPending && (p.status==='open'||p.status==='ship_awaiting_fee');
   const shipInv=p.shipInvoice;
   let foot='';
-  if(p.status==='shipping_paid') foot=`<div class="parcel-done">🚚 Shipping paid — we're packing this parcel now. You'll get tracking soon.</div>`;
+  if(p.status==='shipping_paid') foot=`<div class="parcel-done">🚚 On its way — we're packing this parcel now. You'll get tracking soon.</div>`;
   else if(p.status==='pickup_ready') foot=`<div class="parcel-done">🤝 Self-pickup arranged — ${(STATE.pickupNote||'we\'ll message you with details')}.</div>`;
   else if(p.feeVerifying) foot=`<div class="parcel-done">⏳ Shipping payment received — we're verifying it now. Your parcel ships once confirmed.</div>`;
   else if(shipInv) foot=`<div class="parcel-ship-inv"><div class="psi-t">🚚 Shipping fee — $${shipInv.fee.toFixed(2)}</div><div class="psi-s">Pay this to send your whole parcel out.</div><button class="cta" onclick="resumePayment('${shipInv.id}')">💳 Pay shipping ($${shipInv.fee.toFixed(2)})</button></div>`;
-  else if(p.feeVerifying) foot=`<div class="parcel-done">⏳ Shipping payment received — we're verifying it now. Your parcel ships once confirmed.</div>`;
   else if(paidCards.length>0 && anyPending) foot=`<div class="parcel-hint">⏳ Some orders in this parcel are still being verified. Once they're all confirmed, you'll be able to ship or self-pickup everything together.</div>`;
   else if(canDeliver){
     const fee=(p.shipFee!=null?p.shipFee:(STATE.shipFlat||3));
     const need=(p.freeShipMin||0)-(p.merchValue||0);
     foot=`<div class="parcel-choose"><div class="pc-t">Ready to receive your cards? Choose how:</div>
-      ${fee<=0?`<div class="parcel-save">🎉 Free shipping unlocked — your parcel is over $${(p.freeShipMin||0).toFixed(2)}</div>`
+      ${fee<=0?`<div class="parcel-save">🎉 Free shipping unlocked — this parcel is over $${(p.freeShipMin||0).toFixed(2)}</div>`
              :(need>0&&need<=15?`<div class="parcel-hint">Add $${need.toFixed(2)} more to this parcel and shipping is free 🚚</div>`:'')}
       <div class="pc-btns">
       <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('ship','${p.id}'))">🚚 Ship to me<span>${fee<=0?'FREE':'$'+fee.toFixed(2)}</span></button>
@@ -1587,7 +1617,7 @@ function renderParcelCard(p){
           :o.status==='Awaiting Verification'?'⏳ Checking payment'
           :o.status==='Awaiting Payment'?'💳 Unpaid'
           :o.status}</span></div>
-        <div class="po-items">${o.items.slice(0,3).map(i=>i.name).join(', ')}${o.items.length>3?' +'+(o.items.length-3):''}</div></div>
+        <div class="po-items">${o.items.filter(i=>!i.refunded).slice(0,3).map(i=>i.name).join(', ')}${o.items.filter(i=>!i.refunded).length>3?' +'+(o.items.filter(i=>!i.refunded).length-3):''}</div></div>
       <div class="po-r"><div class="po-amt">$${o.total.toFixed(2)}</div>${o.status==='Awaiting Payment'?`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button>`:''}</div></div>`).join('')}</div>
     ${unpaid.length?`<div class="parcel-hint">⏳ Pay the ${unpaid.length} pending order${unpaid.length>1?'s':''} above — unpaid orders auto-release after the payment window.</div>`:''}
     ${foot}</div>`;
@@ -1597,33 +1627,39 @@ function paintOrders(){
   const parcels=STATE.parcels||[];
   const activeIds=new Set(parcels.map(p=>p.id));
   const isSH=o=>String(o.id).indexOf('SH')===0;
-  const dead=o=>(o.status||'').indexOf('Cancelled')===0;
-  const normal=STATE.orders.filter(o=>!isSH(o)&&!activeIds.has(o.parcelId))
-    .sort((a,b)=>(dead(a)?1:0)-(dead(b)?1:0));   // cancelled sink to the bottom
+  const dead=o=>!!o.cancelled;
+  const normal=STATE.orders.filter(o=>!isSH(o)&&!(activeIds.has(o.parcelId)&&!dead(o)));
+  const live=normal.filter(o=>!dead(o));
+  const past=normal.filter(dead);
   const rank={shipping_paid:0,pickup_ready:0,ship_awaiting_fee:1,open:2};
   const cards=parcels.slice().sort((a,b)=>(rank[a.status]??3)-(rank[b.status]??3)).map(renderParcelCard).filter(Boolean);
   const ppane=document.getElementById('parcelPane');
   if(ppane) ppane.innerHTML=cards.length?cards.join(''):`<div class="empty"><div class="e-ic">🧺</div><p>No open parcel yet.<br>Claim a card and check out to start one 🐾</p></div>`;
-  if(!normal.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; }
-  else list.innerHTML=normal.map(o=>{
-    const merged=(o.status||'').indexOf('Merged into')===0;
-    const cancelled=(o.status||'').indexOf('Cancelled')===0;
-    const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:(cancelled?-1:0);
-    const bcls=merged?'b-delivered':(cancelled?'b-cancelled':(BADGE[o.status]||'b-ordered'));
-    const track=(cancelled||merged)?'':`<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
-    return `<div class="order">
-      <div class="hd"><span class="oid">#${o.id}${o.delivery==='pickup'?' <span class="ptag">🤝 pickup</span>':(o.parcelId?` <span class="ptag">🧺 ${o.parcelId}</span>`:'')}</span><span class="badge ${bcls}">${o.status}</span></div>
+  if(!live.length&&!past.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; }
+  else list.innerHTML = live.map(orderCardHtml).join('')
+    + (past.length?`<div class="past-hd">Closed &amp; cancelled</div>`+past.map(orderCardHtml).join(''):'');
+  buildBinder();
+}
+function orderCardHtml(o){
+  const cancelled=!!o.cancelled;
+  const merged=(o.status||'').indexOf('Merged into')===0;
+  const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:(cancelled?-1:0);
+  const bcls=merged?'b-delivered':(cancelled?'b-cancelled':(BADGE[o.status]||'b-ordered'));
+  const track=(cancelled||merged)?'':`<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
+  const anyRefund=o.items.some(i=>i.refunded);
+  const live=o.items.filter(i=>!i.refunded);
+  return `<div class="order ${cancelled?'dead':''}">
+      <div class="hd"><span class="oid">#${o.id}${o.delivery==='pickup'?' <span class="ptag">🤝 pickup</span>':(o.parcelId&&!cancelled?` <span class="ptag">🧺 ${o.parcelId}</span>`:'')}</span><span class="badge ${bcls}">${o.status}</span></div>
       ${track}
-      ${o.lastUpdate?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
+      ${o.lastUpdate&&!cancelled?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
       ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
-      <div class="oitems">${o.items.map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
-        <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>Total</span><span>$${o.total.toFixed(2)}</span></div></div>
+      <div class="oitems">${(cancelled?o.items:live).map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}${it.refunded?' ↩️':''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
+        ${anyRefund&&!cancelled?`<div class="oitem" style="color:#c2405e">↩️ ${o.items.filter(i=>i.refunded).length} card(s) refunded — see invoice</div>`:''}
+        <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>${cancelled?'Charged':'Total'}</span><span>$${(cancelled?0:o.total).toFixed(2)}</span></div></div>
       ${o.status==='Awaiting Payment'?`<button class="cta" style="margin-top:8px" onclick="resumePayment('${o.id}')">💳 Complete payment</button>
       <button class="cancel-link" onclick="guard(this,()=>cancelUnpaid('${o.id}'))">Cancel this order</button>`:''}
       <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
     </div>`;
-  }).join('');
-  buildBinder();
 }
 function orderSeg(which){
   ['parcel','orders','binder'].forEach(k=>{
@@ -1640,7 +1676,7 @@ function buildBinder(){
   const cards=[];
   (STATE.orders||[]).forEach(o=>{
     if(!OWNED_STATUSES.includes(o.status)) return;
-    (o.items||[]).forEach(it=>cards.push({...it,orderId:o.id,date:o.created,status:o.status}));
+    (o.items||[]).filter(i=>!i.refunded).forEach(it=>cards.push({...it,orderId:o.id,date:o.created,status:o.status}));
   });
   const sig=cards.map(c=>c.orderId+'|'+c.name+'|'+c.status).join(';');
   if(sig===BINDER.sig && wrap.innerHTML) return;
@@ -1818,62 +1854,96 @@ async function sendSupport(btn){
     else { (tg&&tg.showAlert?tg.showAlert:alert)('Could not send, try again.'); }
   });
 }
-// View a past order as a full invoice
+
+/* ============ PAY / INVOICE ============ */
 function resumePayment(id){
   const o=STATE.orders.find(x=>x.id===id); if(!o) return;
+  // Claim + auction invoices carry their own, much longer window.
   const mins=o.payWindowMins||(STATE.payInfo&&STATE.payInfo.mins)||10;
   const elapsed=o.createdMs?Math.floor((Date.now()-o.createdMs)/1000):0;
   const remain=Math.max(0, mins*60 - elapsed);
   if(remain<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('This order\'s payment window has expired. Please re-order.'); return; }
-  const inv={ orderId:o.id, items:o.items, subtotal:o.items.reduce((s,i)=>s+i.price,0),
+  const items=(o.items||[]).filter(i=>!i.refunded);
+  const inv={ orderId:o.id, items:items, subtotal:items.reduce((s,i)=>s+i.price,0),
     shipping:o.shipping, creditUsed:o.creditUsed, total:o.total,
     paynowMobile:(STATE.payInfo&&STATE.payInfo.mobile)||'', paynowName:(STATE.payInfo&&STATE.payInfo.name)||'Fluffmart TCG',
     paymentWindowMins:mins, _resumeSecs:remain };
   showInvoice(inv);
 }
+
+// The invoice document. Shows EVERYTHING that happened to the order — cards
+// bought, cards refunded, credit applied, who handled it, where it went.
 function viewInvoice(id){
   const o=STATE.orders.find(x=>x.id===id); if(!o) return;
   if(o.status==='Awaiting Payment'){ closeCardView&&closeCardView(); resumePayment(id); return; }
-  const sub=o.items.filter(i=>!i.refunded).reduce((s,i)=>s+i.price,0);
-  const refunded=o.items.filter(i=>i.refunded).reduce((s,i)=>s+i.price,0);
   const findImg=(it)=>{ if(it.image) return imgUrl(it.image,200); const c=STATE.inventory.find(x=>x.name===it.name); return c&&c.image?imgUrl(c.image,200):''; };
-    document.getElementById('cardViewBody').innerHTML=`
-      <div class="inv-card">
-        <button class="inv-c-close" onclick="closeCardView()">✕</button>
-        <div class="inv-c-hd">
-                <div><div style="font-family:'Fraunces',serif;font-size:13px;color:var(--fawn-deep);letter-spacing:.5px">FLUFFMART TCG</div>
-          <div class="inv-c-oid">🧾 ${o.id}</div>
-          <div class="inv-c-date">${o.created?new Date(o.created).toLocaleString():''}${o.parcelId?' · 🧺 '+o.parcelId:''}</div></div>
-        <div class="badge ${(o.status||'').toLowerCase().includes('ship')?'b-shipped':(o.status||'').toLowerCase().includes('deliver')?'b-delivered':'b-packed'}">${o.status}</div>
+  const cancelled=!!o.cancelled;
+  const items=o.items||[];
+  const live=items.filter(i=>!i.refunded);
+  const gone=items.filter(i=>i.refunded);
+  const sub=live.reduce((s,i)=>s+i.price,0);
+  const refunded=gone.reduce((s,i)=>s+i.price,0);
+  const stamp=cancelled?{t:'Cancelled',c:'b-cancelled'}
+    :o.status==='Delivered'?{t:'Delivered',c:'b-delivered'}
+    :o.status==='Refunded'?{t:'Refunded',c:'b-cancelled'}
+    :(o.status||'').toLowerCase().includes('ship')||o.status==='In Transit'?{t:'Shipped',c:'b-shipped'}
+    :o.status==='Packed'?{t:'Packed',c:'b-packed'}
+    :o.status==='Payment Verified'?{t:'Paid',c:'b-packed'}
+    :{t:o.status||'',c:'b-ordered'};
+  const line=(it,void_)=>`<div class="doc-line ${void_?'doc-void':''}">
+      <div class="doc-thumb">${findImg(it)?`<img src="${findImg(it)}">`:(EMOJI[it.tier]||'🃏')}</div>
+      <div class="doc-nm">${esc(it.name)}<div class="doc-tag">${void_?('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):'')):(TIER_NAME[it.tier]||it.tier||'')}</div></div>
+      <div class="doc-amt">${money(it.price)}</div></div>`;
+  const trail=[
+    o.verifiedBy?`<b>Payment verified</b> · ${esc(o.verifiedBy)}`:'',
+    o.packedBy?`<b>Packed</b> · ${esc(o.packedBy)}`:'',
+    o.shippedBy?`<b>Shipped</b> · ${esc(o.shippedBy)}`:''
+  ].filter(Boolean).join('<br>');
+
+  document.getElementById('cardViewBody').innerHTML=`
+    <div class="doc">
+      <button class="doc-close" onclick="closeCardView()">✕</button>
+      <div class="doc-hd">
+        <div class="doc-brand">FLUFFMART TCG</div>
+        <div class="doc-brandsub">Pokémon TCG · Singapore</div>
+        <div class="doc-oid">🧾 ${esc(o.id)}</div>
+        <div class="doc-meta">${o.created?new Date(o.created).toLocaleString():''}${o.parcelId&&!cancelled?'<br>Parcel '+esc(o.parcelId):''}${o.delivery?'<br>'+(o.delivery==='pickup'?'🤝 Self-pickup':'🚚 Delivery'):''}</div>
       </div>
-      <div class="inv-c-items">
-        ${o.items.map(i=>{const im=findImg(i); const rf=!!i.refunded; return `<div class="inv-c-row" style="${rf?'opacity:.55':''}"><div class="inv-c-thumb">${im?`<img src="${im}">`:(EMOJI[i.tier]||'🃏')}</div><div class="inv-c-nm" style="${rf?'text-decoration:line-through':''}">${i.name}<div class="inv-c-tier">${rf?('↩️ Refunded'+(i.refundMethod?' · '+i.refundMethod:'')):(TIER_NAME[i.tier]||i.tier)}</div></div><div class="inv-c-pr" style="${rf?'text-decoration:line-through':''}">$${i.price.toFixed(2)}</div></div>`;}).join('')}
+      <div class="doc-stamp badge ${stamp.c}">${esc(stamp.t)}</div>
+      <div class="doc-body">
+        ${cancelled?`<div class="doc-note" style="background:#fdf0f0"><b>This order was cancelled.</b> Nothing was charged for it${o.creditUsed>0?', and any store credit you used was returned to your balance':''}. The cards went back on sale.</div>`:''}
+        ${live.length?`<div class="doc-sec">Cards</div>${live.map(i=>line(i,cancelled)).join('')}`:''}
+        ${gone.length?`<div class="doc-sec">Refunded</div>${gone.map(i=>line(i,true)).join('')}`:''}
+        <div class="doc-tot">
+          <div class="doc-row"><span>Subtotal${cancelled?' (not charged)':''}</span><span>${money(cancelled?0:sub)}</span></div>
+          ${refunded>0?`<div class="doc-row" style="color:#c2405e"><span>Refunded</span><span>−${money(refunded)}</span></div>`:''}
+          ${o.creditUsed>0?`<div class="doc-row" style="color:var(--mint)"><span>Store credit applied</span><span>−${money(o.creditUsed)}</span></div>`:''}
+          <div class="doc-row muted"><span>Shipping</span><span>${o.shipping?money(o.shipping):'FREE'}</span></div>
+          <div class="doc-row grand"><span>${cancelled?'Charged':'Total'}</span><span>${money(cancelled?0:o.total)}</span></div>
+        </div>
+        ${o.note?`<div class="doc-note">📝 ${esc(o.note)}</div>`:''}
+        ${trail?`<div class="doc-sec">Handled by</div><div class="doc-trail">${trail}</div>`:''}
+        ${o.shipAddress?`<div class="doc-sec">Ship to</div><div class="doc-trail">${esc(o.shipName||'')}<br>${esc(o.shipAddress)}</div>`:''}
+        ${o.tracking?`<a class="doc-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${esc(o.tracking)} ↗</a>`:''}
+        <div class="doc-ft">Paid by PayNow · Fluffmart TCG, Singapore<br>
+          Questions about this invoice? Help &amp; Support, quoting ${esc(o.id)}.<br>
+          Refunds return store credit instantly; cash refunds are sent by hand.</div>
       </div>
-      <div class="inv-c-tot">
-        <div class="inv-row"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
-        ${refunded>0?`<div class="inv-row" style="color:#c2405e"><span>Refunded</span><span>−$${refunded.toFixed(2)}</span></div>`:''}
-        <div class="inv-row"><span>Shipping</span><span>${o.shipping===0?'FREE':'$'+o.shipping.toFixed(2)}</span></div>
-        ${o.creditUsed>0?`<div class="inv-row" style="color:var(--mint)"><span>Credit</span><span>−$${o.creditUsed.toFixed(2)}</span></div>`:''}
-        <div class="inv-row inv-total"><span>Total</span><span>$${o.total.toFixed(2)}</span></div>
-      </div>
-      ${o.tracking?`<a class="inv-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${o.tracking} ↗</a>`:''}
-      ${o.shipAddress?`<div class="inv-c-ship">Ship to: ${o.shipName}, ${o.shipAddress}</div>`:''}
-      <div class="inv-c-ship" style="margin-top:8px;opacity:.8">Paid by PayNow · Fluffmart TCG, Singapore<br>Questions about this invoice? Help &amp; Support, quoting ${o.id}.</div>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
 }
 
 function loadProfile(){
-  const u=STATE.user;
   const pc=document.getElementById('p-credit'); if(pc) pc.textContent = '$'+(STATE.credit||0).toFixed(0);
   loadOrders(); // ensures ORDERS_CACHE
   setTimeout(()=>{
-    const os=ORDERS_CACHE||[];
-    document.getElementById('p-orders').textContent=os.length;
-    document.getElementById('p-transit').textContent=os.filter(o=>['Awaiting Payment','Awaiting Verification','Payment Verified','Packed','Shipped','In Transit'].includes(o.status)).length;
+    const os=(ORDERS_CACHE||[]).filter(o=>String(o.id).indexOf('SH')!==0);
+    const alive=os.filter(o=>!o.cancelled&&o.status!=='Refunded'&&(o.status||'').indexOf('Merged')!==0);
+    document.getElementById('p-orders').textContent=alive.length;
+    document.getElementById('p-transit').textContent=alive.filter(o=>['Payment Verified','Packed','Shipped','In Transit'].includes(o.status)).length;
     // recent notifications from order lastUpdates
-    const nt=os.filter(o=>o.lastUpdate).slice(0,5).map(o=>`<div class="notif"><span class="nt-ic">🔔</span><div><b>#${o.id}</b> — ${o.status}<div class="nt-sub">${o.lastUpdate}</div></div></div>`).join('');
+    const nt=alive.filter(o=>o.lastUpdate).slice(0,5).map(o=>`<div class="notif"><span class="nt-ic">🔔</span><div><b>#${o.id}</b> — ${o.status}<div class="nt-sub">${o.lastUpdate}</div></div></div>`).join('');
     document.getElementById('prof-notifs').innerHTML = nt ? '<div class="section-t">Recent updates</div>'+nt : '';
   },300);
 }
@@ -1900,6 +1970,16 @@ function backToProfile(){ document.getElementById('v-credit').classList.add('hid
   restorePersisted();
   initHowBuy();
   bootApp();
+  // Coming back to the app after paying/claiming elsewhere should never show
+  // stale stock or stale orders.
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'){
+      if(Date.now()-(STATE.invTs||0)>60000) loadStore();
+      ORDERS_CACHE=null;
+      if(!document.getElementById('v-orders').classList.contains('hidden')) loadOrders(true);
+      loadOverview();
+    }
+  });
 })();
 
 /* ============ ZOOM VIEWER ============ */
