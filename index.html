@@ -842,7 +842,7 @@ button.busy{position:relative;color:transparent!important}
 <div class="sheet" id="shipAddrSheet">
   <div class="sh-hd"><h2>🚚 Ship my parcel</h2><button class="rm" onclick="closeShipAddr()">✕</button></div>
   <div class="body" style="padding-bottom:20px">
-    <p class="note" style="margin:0 0 10px">We'll generate a <span id="sa-fee"></span> PayNow QR for shipping. Where should it go?</p>
+    <p class="note" style="margin:0 0 10px">Where should we send it? If your parcel qualifies for free shipping there'll be nothing to pay.</p>
     <div class="field"><label>Name for delivery</label><input id="sa-name" placeholder="Full name"></div>
     <div class="field"><label>Mailing address</label><input id="sa-addr" placeholder="Block, street, unit, postal code"></div>
     <div class="field"><label>Phone (optional)</label><input id="sa-phone" placeholder="For delivery issues"></div>
@@ -1065,7 +1065,7 @@ function go(tab){
   ['overview','store','orders','buyback','support','profile','credit'].forEach(t=>{const el=document.getElementById('v-'+t); if(el) el.classList.toggle('hidden',t!==tab);});
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-  if(tab==='store'&&!STATE.inventory.length) loadStore();
+  if(tab==='store'&&(!STATE.inventory.length||Date.now()-(STATE.invTs||0)>60000)) loadStore();
   if(tab==='orders') loadOrders();
   if(tab==='profile') loadProfile();
   window.scrollTo(0,0);
@@ -1082,7 +1082,7 @@ async function bootApp(){
   const r=await api('boot');
   if(r&&r.ok){
     if(r.overview&&r.overview.ok) applyOverview(r.overview);
-    if(r.inventory&&r.inventory.ok){ STATE.inventory=r.inventory.items||[]; renderCatTabs(); renderStore(); }
+    if(r.inventory&&r.inventory.ok){ STATE.inventory=r.inventory.items||[]; STATE.invTs=Date.now(); renderCatTabs(); renderStore(); }
     try{ localStorage.setItem('fm_boot',JSON.stringify({overview:r.overview,inventory:(r.inventory&&r.inventory.items)||[]})); }catch(e){}
   } else { loadOverview(); loadStore(); }
 }
@@ -1199,7 +1199,7 @@ async function loadStore(){
   document.getElementById('storeGrid').innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
   const r = await api('inventory');
   STATE.inventory = r.items||[];
- 
+  STATE.invTs = Date.now();
   renderCatTabs(); renderStore();
 }
 function renderStore(){
@@ -1411,7 +1411,9 @@ async function confirmShip(){
   STATE.ship={name,address:addr,phone}; persistShip();
   const r=await api('parcelDelivery',{mode:'ship',parcelId:STATE.pendingParcel,shipName:name,shipAddress:addr,shipPhone:phone});
   closeShipAddr();
-  if(r.ok&&r.shipOrderId){ ORDERS_CACHE=null; await loadOrders(true); resumePayment(r.shipOrderId); }
+  if(r.ok&&r.freeShipping){ ORDERS_CACHE=null; await loadOrders(true);
+    (tg&&tg.showAlert?tg.showAlert:alert)('🎉 Free shipping! Your parcel is over the threshold, so there\'s nothing to pay. We\'re packing it now — tracking follows.'); }
+  else if(r.ok&&r.shipOrderId){ ORDERS_CACHE=null; await loadOrders(true); resumePayment(r.shipOrderId); }
     else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||('Could not start shipping ('+(r.error||JSON.stringify(r).slice(0,120))+')'));
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
@@ -1432,6 +1434,7 @@ async function checkout(){
     } else {
       showInvoice(r);
       loadOverview();
+      loadStore();          // the cards just bought must leave the shelf immediately
     }
   } else if(r.error==='unavailable'){
     const gone=(r.cards||[]).map(String);
@@ -1564,9 +1567,16 @@ function renderParcelCard(p){
   else if(shipInv) foot=`<div class="parcel-ship-inv"><div class="psi-t">🚚 Shipping fee — $${shipInv.fee.toFixed(2)}</div><div class="psi-s">Pay this to send your whole parcel out.</div><button class="cta" onclick="resumePayment('${shipInv.id}')">💳 Pay shipping ($${shipInv.fee.toFixed(2)})</button></div>`;
   else if(p.feeVerifying) foot=`<div class="parcel-done">⏳ Shipping payment received — we're verifying it now. Your parcel ships once confirmed.</div>`;
   else if(paidCards.length>0 && anyPending) foot=`<div class="parcel-hint">⏳ Some orders in this parcel are still being verified. Once they're all confirmed, you'll be able to ship or self-pickup everything together.</div>`;
-  else if(canDeliver) foot=`<div class="parcel-choose"><div class="pc-t">Ready to receive your cards? Choose how:</div><div class="pc-btns">
-      <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('ship','${p.id}'))">🚚 Ship to me<span>$${(STATE.shipFlat||3).toFixed(2)}</span></button>
+  else if(canDeliver){
+    const fee=(p.shipFee!=null?p.shipFee:(STATE.shipFlat||3));
+    const need=(p.freeShipMin||0)-(p.merchValue||0);
+    foot=`<div class="parcel-choose"><div class="pc-t">Ready to receive your cards? Choose how:</div>
+      ${fee<=0?`<div class="parcel-save">🎉 Free shipping unlocked — your parcel is over $${(p.freeShipMin||0).toFixed(2)}</div>`
+             :(need>0&&need<=15?`<div class="parcel-hint">Add $${need.toFixed(2)} more to this parcel and shipping is free 🚚</div>`:'')}
+      <div class="pc-btns">
+      <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('ship','${p.id}'))">🚚 Ship to me<span>${fee<=0?'FREE':'$'+fee.toFixed(2)}</span></button>
       <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('pickup','${p.id}'))">🤝 Self-pickup<span>FREE</span></button></div></div>`;
+  }
   else foot=`<div class="parcel-hint">Once we verify your payment, you'll be able to ship or self-pickup here.</div>`;
   return `<div class="parcel">
     <div class="parcel-hd"><span>${PARCEL_TITLE[p.status]||'🧺 Parcel'} <span style="font-size:11px;opacity:.6">${p.id}</span></span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${nCards} card${nCards>1?'s':''}</span></div>
@@ -1587,7 +1597,9 @@ function paintOrders(){
   const parcels=STATE.parcels||[];
   const activeIds=new Set(parcels.map(p=>p.id));
   const isSH=o=>String(o.id).indexOf('SH')===0;
-  const normal=STATE.orders.filter(o=>!isSH(o)&&!activeIds.has(o.parcelId));
+  const dead=o=>(o.status||'').indexOf('Cancelled')===0;
+  const normal=STATE.orders.filter(o=>!isSH(o)&&!activeIds.has(o.parcelId))
+    .sort((a,b)=>(dead(a)?1:0)-(dead(b)?1:0));   // cancelled sink to the bottom
   const rank={shipping_paid:0,pickup_ready:0,ship_awaiting_fee:1,open:2};
   const cards=parcels.slice().sort((a,b)=>(rank[a.status]??3)-(rank[b.status]??3)).map(renderParcelCard).filter(Boolean);
   const ppane=document.getElementById('parcelPane');
@@ -1809,7 +1821,7 @@ async function sendSupport(btn){
 // View a past order as a full invoice
 function resumePayment(id){
   const o=STATE.orders.find(x=>x.id===id); if(!o) return;
-  const mins=(STATE.payInfo&&STATE.payInfo.mins)||10;
+  const mins=o.payWindowMins||(STATE.payInfo&&STATE.payInfo.mins)||10;
   const elapsed=o.createdMs?Math.floor((Date.now()-o.createdMs)/1000):0;
   const remain=Math.max(0, mins*60 - elapsed);
   if(remain<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('This order\'s payment window has expired. Please re-order.'); return; }
@@ -1822,26 +1834,31 @@ function resumePayment(id){
 function viewInvoice(id){
   const o=STATE.orders.find(x=>x.id===id); if(!o) return;
   if(o.status==='Awaiting Payment'){ closeCardView&&closeCardView(); resumePayment(id); return; }
-  const sub=o.items.reduce((s,i)=>s+i.price,0);
+  const sub=o.items.filter(i=>!i.refunded).reduce((s,i)=>s+i.price,0);
+  const refunded=o.items.filter(i=>i.refunded).reduce((s,i)=>s+i.price,0);
   const findImg=(it)=>{ if(it.image) return imgUrl(it.image,200); const c=STATE.inventory.find(x=>x.name===it.name); return c&&c.image?imgUrl(c.image,200):''; };
     document.getElementById('cardViewBody').innerHTML=`
       <div class="inv-card">
         <button class="inv-c-close" onclick="closeCardView()">✕</button>
         <div class="inv-c-hd">
-        <div><div class="inv-c-oid">🧾 ${o.id}</div><div class="inv-c-date">${o.created?new Date(o.created).toLocaleDateString():''}</div></div>
+                <div><div style="font-family:'Fraunces',serif;font-size:13px;color:var(--fawn-deep);letter-spacing:.5px">FLUFFMART TCG</div>
+          <div class="inv-c-oid">🧾 ${o.id}</div>
+          <div class="inv-c-date">${o.created?new Date(o.created).toLocaleString():''}${o.parcelId?' · 🧺 '+o.parcelId:''}</div></div>
         <div class="badge ${(o.status||'').toLowerCase().includes('ship')?'b-shipped':(o.status||'').toLowerCase().includes('deliver')?'b-delivered':'b-packed'}">${o.status}</div>
       </div>
       <div class="inv-c-items">
-        ${o.items.map(i=>{const im=findImg(i); return `<div class="inv-c-row"><div class="inv-c-thumb">${im?`<img src="${im}">`:(EMOJI[i.tier]||'🃏')}</div><div class="inv-c-nm">${i.name}<div class="inv-c-tier">${TIER_NAME[i.tier]||i.tier}</div></div><div class="inv-c-pr">$${i.price.toFixed(2)}</div></div>`;}).join('')}
+        ${o.items.map(i=>{const im=findImg(i); const rf=!!i.refunded; return `<div class="inv-c-row" style="${rf?'opacity:.55':''}"><div class="inv-c-thumb">${im?`<img src="${im}">`:(EMOJI[i.tier]||'🃏')}</div><div class="inv-c-nm" style="${rf?'text-decoration:line-through':''}">${i.name}<div class="inv-c-tier">${rf?('↩️ Refunded'+(i.refundMethod?' · '+i.refundMethod:'')):(TIER_NAME[i.tier]||i.tier)}</div></div><div class="inv-c-pr" style="${rf?'text-decoration:line-through':''}">$${i.price.toFixed(2)}</div></div>`;}).join('')}
       </div>
       <div class="inv-c-tot">
         <div class="inv-row"><span>Subtotal</span><span>$${sub.toFixed(2)}</span></div>
+        ${refunded>0?`<div class="inv-row" style="color:#c2405e"><span>Refunded</span><span>−$${refunded.toFixed(2)}</span></div>`:''}
         <div class="inv-row"><span>Shipping</span><span>${o.shipping===0?'FREE':'$'+o.shipping.toFixed(2)}</span></div>
         ${o.creditUsed>0?`<div class="inv-row" style="color:var(--mint)"><span>Credit</span><span>−$${o.creditUsed.toFixed(2)}</span></div>`:''}
         <div class="inv-row inv-total"><span>Total</span><span>$${o.total.toFixed(2)}</span></div>
       </div>
       ${o.tracking?`<a class="inv-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${o.tracking} ↗</a>`:''}
       ${o.shipAddress?`<div class="inv-c-ship">Ship to: ${o.shipName}, ${o.shipAddress}</div>`:''}
+      <div class="inv-c-ship" style="margin-top:8px;opacity:.8">Paid by PayNow · Fluffmart TCG, Singapore<br>Questions about this invoice? Help &amp; Support, quoting ${o.id}.</div>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
