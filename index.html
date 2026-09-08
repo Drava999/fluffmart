@@ -971,6 +971,32 @@ const API_URL = "https://fluffmart-api.shrimaniac.workers.dev/api"; // new modul
 /* ================================ */
 
 function imgUrl(u,w){ if(!u) return u; return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
+/* The same card can exist as several Inventory rows — one per portfolio/consignor —
+   so costs and payouts stay per-owner. Buyers should see ONE listing. Rows merge only
+   when they're the same card, condition, grade, variance AND price; the server
+   allocates across the group at checkout, tapped row first. */
+function mergeInventory(items){
+  const key=c=>{
+    const g=String(c.grade||'').trim().toLowerCase();
+    return [c.name,c.set,c.number,c.condition,(g==='ungraded'?'':g),c.variance,
+            Number(c.price||0).toFixed(2)]
+      .map(v=>String(v==null?'':v).trim().toLowerCase()).join('|');
+  };
+  const out=[], byKey={};
+  (items||[]).forEach(c=>{
+    const k=key(c), g=byKey[k];
+    if(g){
+      g.qty += Number(c.qty)||0;
+      g.ids.push(c.id);
+      if(!g.image && c.image) g.image=c.image;
+      if(!g.imageBack && c.imageBack) g.imageBack=c.imageBack;
+    } else {
+      const n=Object.assign({}, c, {qty:Number(c.qty)||0, ids:[c.id]});
+      byKey[k]=n; out.push(n);
+    }
+  });
+  return out;
+}
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function money(n){ return '$'+Number(n||0).toFixed(2); }
 
@@ -1230,13 +1256,13 @@ async function bootApp(){
   // 1) paint instantly from the last snapshot (stale-while-revalidate)
   try{ const c=JSON.parse(localStorage.getItem('fm_boot')||'null');
     if(c&&c.overview){ applyOverview(c.overview); }
-    if(c&&c.inventory){ STATE.inventory=c.inventory; renderCatTabs(); renderStore(); }
+    if(c&&c.inventory){ STATE.inventory=mergeInventory(c.inventory); renderCatTabs(); renderStore(); }
   }catch(e){}
   // 2) one round trip refreshes both
   const r=await api('boot');
   if(r&&r.ok){
     if(r.overview&&r.overview.ok) applyOverview(r.overview);
-    if(r.inventory&&r.inventory.ok){ STATE.inventory=r.inventory.items||[]; STATE.invTs=Date.now(); renderCatTabs(); renderStore(); }
+    if(r.inventory&&r.inventory.ok){ STATE.inventory=mergeInventory(r.inventory.items||[]); STATE.invTs=Date.now(); renderCatTabs(); renderStore(); }
     try{ localStorage.setItem('fm_boot',JSON.stringify({overview:r.overview,inventory:(r.inventory&&r.inventory.items)||[]})); }catch(e){}
   } else { loadOverview(); loadStore(); }
 }
@@ -1353,7 +1379,7 @@ async function loadStore(){
   const grid=document.getElementById('storeGrid');
   if(!STATE.inventory.length) grid.innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
   const r = await api('inventory');
-  STATE.inventory = r.items||[];
+  STATE.inventory = mergeInventory(r.items||[]);
   STATE.invTs = Date.now();
   renderCatTabs(); renderStore();
 }
