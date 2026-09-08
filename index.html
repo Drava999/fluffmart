@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>Fluffmart TCG</title>
+<title>FloofMart TCG</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,11 +14,11 @@
   color:var(--fawn-deep);font-weight:800;font-size:12.5px}
 .oseg-refresh:active{transform:scale(.98)}
 :root{
-  /* Fluffmart palette — cream base, pink primary, rose secondary, yellow accent */
-  --fawn:#D58EBF; --fawn-deep:#B25C93; --cream:#F1DFD3; --ruff:#F0D9CB;
-  --berry:#D58EBF; --berry-deep:#B25C93; --rose:#E2A8BE; --mint:#3FB68B;
-  --yellow:#F9D326; --ink:#5A3A4E;
-  --bg:#F1DFD3;
+  /* FloofMart palette — cream base, pink primary, rose secondary, yellow accent */
+  --fawn:#D98EC0; --fawn-deep:#B4589A; --cream:#FBEFE6; --ruff:#F6E1D6;
+  --berry:#D98EC0; --berry-deep:#B4589A; --rose:#F0B9CF; --mint:#7FC9B0;
+  --mint-deep:#4FA98C; --sky:#AEDCE8; --yellow:#FBD44E; --ink:#5A3A4E;
+  --bg:#FBEFE6;
   --card:#FFFFFF;
   --text:#5A3A4E;
   --hint:#a98da0;
@@ -76,9 +76,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
 /* header */
 .top{display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
-.mascot{width:42px;height:42px;border-radius:50%;background:var(--ruff);
-  display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
-  border:2px solid var(--fawn)}
+.mascot{width:46px;height:46px;border-radius:50%;overflow:hidden;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:23px;
+  background:radial-gradient(circle at 50% 38%,#fff 0%,var(--sky) 70%,#9fd0dd 100%);
+  border:2px solid var(--mint);box-shadow:0 2px 8px rgba(127,201,176,.35)}
+.mascot img{width:100%;height:100%;object-fit:cover;display:block}
 .top .brand{font-size:20px;color:var(--fawn-deep);letter-spacing:.2px}
 .top .sub{font-size:12px;color:var(--hint);margin-top:-2px}
 
@@ -359,7 +361,7 @@ html{scroll-behavior:smooth}
 .cta:disabled{opacity:.55;filter:grayscale(.3)}
 .tier{transition:transform .2s}
 .pcard:hover .tier{transform:scale(1.05)}
-.skelcard{background:linear-gradient(100deg,var(--card) 30%,var(--ruff) 50%,var(--card) 70%);
+.skelcard{background:linear-gradient(100deg,var(--card) 30%,#f3e4dc 50%,var(--card) 70%);
   background-size:200% 100%;animation:shimmer 1.3s linear infinite;border:1px solid var(--line);
   border-radius:var(--radius);height:230px}
 /* ── stock urgency ── */
@@ -435,15 +437,23 @@ html{scroll-behavior:smooth}
   border-top:1px solid var(--line);line-height:1.7}
 
 /* ── design polish ── */
-.pcard{box-shadow:0 2px 10px rgba(178,92,147,.07);transition:transform .18s ease,box-shadow .18s ease}
-.pcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(178,92,147,.14)}
-.hero{background:linear-gradient(135deg,var(--fawn) 0%,var(--rose) 100%);box-shadow:0 8px 24px rgba(213,142,191,.35)}
-.hero:after{content:"✦";position:absolute;left:14px;bottom:10px;color:rgba(255,255,255,.25);font-size:15px}
+.pcard{box-shadow:0 2px 12px rgba(180,88,154,.08);transition:transform .18s ease,box-shadow .18s ease;border-radius:18px}
+.pcard:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(180,88,154,.16)}
+.pcard .img{border-radius:18px 18px 0 0}
+.hero{background:linear-gradient(135deg,var(--fawn) 0%,var(--rose) 55%,#f6d6a8 100%);
+  box-shadow:0 10px 28px rgba(213,142,191,.3)}
+.hero:after{content:"☁";position:absolute;left:16px;bottom:8px;color:rgba(255,255,255,.35);font-size:18px}
+.hero:before{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;
+  background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%);border-radius:50%}
 .cta{box-shadow:0 6px 18px rgba(178,92,147,.28)}
 .nav button{border-radius:14px;margin:0 2px;transition:background .18s ease}
 .nav button.on{background:var(--ruff)}
+.nav button.on .ni{transform:translateY(-1px)}
+.nav button{transition:background .18s ease,color .18s ease}
 .order,.panel,.feat{box-shadow:0 1px 6px rgba(178,92,147,.06)}
-.section-t{text-transform:uppercase;letter-spacing:.8px;font-size:12px;font-weight:800}
+.section-t{text-transform:uppercase;letter-spacing:.9px;font-size:12px;font-weight:800;
+  display:inline-block;padding-bottom:3px;
+  border-bottom:2.5px solid var(--mint);border-radius:2px}
 .sheet{box-shadow:0 -12px 40px rgba(90,58,78,.18)}
 .sheet .sh-hd:before{content:"";display:block;position:absolute;top:8px;left:50%;transform:translateX(-50%);
   width:38px;height:4px;border-radius:3px;background:var(--line)}
@@ -669,10 +679,10 @@ button.busy{position:relative;color:transparent!important}
 
 <div id="app">
 <div class="top" onclick="go('store')" style="cursor:pointer">
-  <div class="mascot">🦊</div>
+  <div class="mascot"><img src="logo.png" alt="FloofMart" onerror="this.replaceWith(document.createTextNode('🐑'))"></div>
   <div>
-    <div class="brand">FluffMart TCG</div>
-    <div class="sub" id="greeting">Pokémon TCG · Singapore</div>
+    <div class="brand">FloofMart TCG</div>
+    <div class="sub" id="greeting">Pokémon TCG · Singapore ☁️</div>
   </div>
 </div>
 
@@ -681,8 +691,8 @@ button.busy{position:relative;color:transparent!important}
   <!-- OVERVIEW -->
   <div class="view" id="v-overview">
     <div class="hero">
-      <h2>Welcome back! 🌟</h2>
-      <p>Claim singles, track parcels, and turn spare cards into store credit.</p>
+      <h2>Welcome back! ☁️</h2>
+      <p>Claim singles, join live drops, and turn spare cards into store credit.</p>
       <div class="stats">
         <div class="stat"><div class="n" id="ov-credit">$0.00</div><div class="l">Store credit</div></div>
         <div class="stat"><div class="n" id="ov-transit">0</div><div class="l">Cards on the way</div></div>
@@ -712,7 +722,7 @@ button.busy{position:relative;color:transparent!important}
         <div class="howto-i"><span>🛍️</span><div><b>Shop</b> — browse &amp; claim singles, sealed, merch</div></div>
         <div class="howto-i"><span>💰</span><div><b>Sell</b> — turn your cards into cash or credit</div></div>
         <div class="howto-i"><span>📦</span><div><b>Orders</b> — parcels, tracking &amp; your binder</div></div>
-        <div class="howto-i"><span>🦊</span><div><b>Me</b> — credit, wishlist, address &amp; invoices</div></div>
+        <div class="howto-i"><span>🐑</span><div><b>Me</b> — credit, wishlist, address &amp; invoices</div></div>
       </div>
     </div>
     <div id="ov-loyalty" style="margin-top:14px"></div>
@@ -779,7 +789,7 @@ button.busy{position:relative;color:transparent!important}
   <!-- PROFILE -->
   <div class="view hidden" id="v-profile">
     <div class="prof-hd">
-      <div><div class="prof-name">FluffMart Member</div><div class="prof-sub" id="prof-sub">Collector 🐾</div></div>
+      <div><div class="prof-name">FloofMart Member</div><div class="prof-sub" id="prof-sub">Collector 🐾</div></div>
     </div>
     <div class="prof-stats">
       <div class="pstat"><div class="pn" id="p-credit">$0</div><div class="pl">Store credit</div></div>
@@ -954,7 +964,7 @@ function payNowPayload(proxy,amount,ref,merchant){
   let p='';p+=tlv('00','01')+tlv('01','12')+tlv('26',acct)+tlv('52','0000')+tlv('53','702');
   if(hasAmt)p+=tlv('54',Number(amount).toFixed(2));
   // 59 = merchant name, shown by the bank app as the payee. Max 25 chars, ASCII.
-  const nm=String(merchant||'Fluffmart').replace(/[^\x20-\x7E]/g,'').slice(0,25)||'Fluffmart';
+  const nm=String(merchant||'FloofMart').replace(/[^\x20-\x7E]/g,'').slice(0,25)||'FloofMart';
   p+=tlv('58','SG')+tlv('59',nm)+tlv('60','Singapore');
   if(ref)p+=tlv('62',tlv('01',ref));
   p+='6304';return p+crc16(p);
@@ -1054,7 +1064,7 @@ const DEMO_INV = [
   {id:'5',name:'Gardevoir ex',set:'Scarlet & Violet',number:'',tier:'Double Rare',price:8,qty:1,condition:'NM'},
   {id:'6',name:'Snorlax',set:'Vivid Voltage',number:'',tier:'Holo',price:5,qty:3,condition:'LP'},
   {id:'7',name:'Sylveon ex',set:'Prismatic',number:'',tier:'EX',price:6,qty:1,condition:'NM'},
-  {id:'8',name:'Fluffmart Playmat',set:'Merch',number:'',tier:'Merch',price:18,qty:5,condition:'New'},
+  {id:'8',name:'FloofMart Playmat',set:'Merch',number:'',tier:'Merch',price:18,qty:5,condition:'New'},
 ];
 const DEMO_ORDERS = [
   {id:'EF8XK2',status:'In Transit',tracking:'SP123456789SG',total:46,created:'2026-08-28T09:00:00Z',lastUpdate:'Departed Singapore Regional eCommerce Hub',items:[{name:'Mimikyu ex',tier:'AR',price:12},{name:'Snorlax',tier:'Holo',price:5},{name:'Sylveon ex',tier:'EX',price:6}]},
@@ -1091,14 +1101,14 @@ async function api(action, payload={}){
   }
 }
 function mock(action,p){
-  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:40,shipFlat:3,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping — free over S$40',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FluffmartBot?start=ref_1',openParcel:null,unpaidOrders:0};
+  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:40,shipFlat:3,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping — free over S$40',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FloofMartBot?start=ref_1',openParcel:null,unpaidOrders:0};
   if(action==='inventory') return {ok:true,items:DEMO_INV};
   if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
   if(action==='boot'){ return {ok:true,overview:mock('overview'),inventory:mock('inventory')}; }
   if(action==='shipParcel') return {ok:true,orders:2};
-  if(action==='parcelDelivery') return p.mode==='pickup'?{ok:true,mode:'pickup',pickupNote:'Meet at Bishan MRT, message to arrange.'}:{ok:true,mode:'ship',shipOrderId:'SH'+Math.random().toString(36).slice(2,7).toUpperCase(),fee:3,paynowMobile:'+6598755180',paynowName:'FluffMart TCG',paymentWindowMins:10};
+  if(action==='parcelDelivery') return p.mode==='pickup'?{ok:true,mode:'pickup',pickupNote:'Meet at Bishan MRT, message to arrange.'}:{ok:true,mode:'ship',shipOrderId:'SH'+Math.random().toString(36).slice(2,7).toUpperCase(),fee:3,paynowMobile:'+6598755180',paynowName:'FloofMart TCG',paymentWindowMins:10};
   if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
-  if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:0,creditUsed:0,total:sub,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowMobile:'+6598755180',paynowName:'FluffMart TCG'}; }
+  if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:0,creditUsed:0,total:sub,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowMobile:'+6598755180',paynowName:'FloofMart TCG'}; }
   if(action==='submitPayment') return {ok:true};
   if(action==='makeOffer') return {ok:true,message:'Offer sent! (demo)'};
   if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review — we\'ll confirm your offer in chat shortly.'};
@@ -1189,7 +1199,7 @@ function renderLoyalty(r){
 }
 function shareReferral(link){
   try{
-    if(tg&&tg.openTelegramLink){ tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Come collect Pokémon cards at FluffMart TCG! 🦊')); return; }
+    if(tg&&tg.openTelegramLink){ tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Come collect Pokémon cards at FloofMart TCG! 🐑')); return; }
   }catch(e){}
   try{ navigator.clipboard.writeText(link); (tg&&tg.showAlert?tg.showAlert:alert)('Referral link copied! Share it with a friend 🐾'); }
   catch(e){ (tg&&tg.showAlert?tg.showAlert:alert)(link); }
@@ -1402,7 +1412,7 @@ function closeCart(){ document.getElementById('scrim').classList.remove('show');
 function renderCart(){
   const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
   if(!STATE.cart.length){
-    body.innerHTML=`<div class="empty"><div class="e-ic">🦊</div><p>Your cart's empty!<br>Go claim some cute cards 🐾</p></div>`;
+    body.innerHTML=`<div class="empty"><div class="e-ic">🐑</div><p>Your cart's empty!<br>Go claim some cute cards 🐾</p></div>`;
     foot.innerHTML=''; return;
   }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
@@ -1527,7 +1537,7 @@ function showInvoice(inv){
     <div class="paynow">
       <div class="pn-title">Scan to pay by PayNow</div>
       <div class="pn-qr" id="pnQr"></div>
-      <div class="pn-num">Paying: <b>${inv.paynowName||'Fluffmart TCG'}</b><br>
+      <div class="pn-num">Paying: <b>${inv.paynowName||'FloofMart TCG'}</b><br>
         <span style="font-size:11.5px;color:#c2405e;font-weight:800">⚠️ Before you send, check your bank app shows this exact name.</span><br>
         <span style="font-size:11px;color:var(--hint)">Reference: ${inv.orderId}</span></div>
       <div class="pn-note">The QR fills in the amount ($${inv.total.toFixed(2)}) and reference for you. Confirm the payee name matches, pay, then upload your screenshot below.</div>
@@ -1934,7 +1944,7 @@ function resumePayment(id){
   const items=(o.items||[]).filter(i=>!i.refunded);
   const inv={ orderId:o.id, items:items, subtotal:items.reduce((s,i)=>s+i.price,0),
     shipping:o.shipping, creditUsed:o.creditUsed, total:o.total,
-    paynowMobile:(STATE.payInfo&&STATE.payInfo.mobile)||'', paynowName:(STATE.payInfo&&STATE.payInfo.name)||'Fluffmart TCG',
+    paynowMobile:(STATE.payInfo&&STATE.payInfo.mobile)||'', paynowName:(STATE.payInfo&&STATE.payInfo.name)||'FloofMart TCG',
     paymentWindowMins:mins, _resumeSecs:remain };
   showInvoice(inv);
 }
@@ -1972,7 +1982,7 @@ function viewInvoice(id){
     <div class="doc">
       <button class="doc-close" onclick="closeCardView()">✕</button>
       <div class="doc-hd">
-        <div class="doc-brand">FLUFFMART TCG</div>
+        <div class="doc-brand">FLOOFMART TCG</div>
         <div class="doc-brandsub">Pokémon TCG · Singapore</div>
         <div class="doc-oid">🧾 ${esc(o.id)}</div>
         <div class="doc-meta">${o.created?new Date(o.created).toLocaleString():''}${o.parcelId&&!cancelled?'<br>Parcel '+esc(o.parcelId):''}${o.delivery?'<br>'+(o.delivery==='pickup'?'🤝 Self-pickup':'🚚 Delivery'):''}</div>
@@ -1993,7 +2003,7 @@ function viewInvoice(id){
         ${trail?`<div class="doc-sec">Handled by</div><div class="doc-trail">${trail}</div>`:''}
         ${o.shipAddress?`<div class="doc-sec">Ship to</div><div class="doc-trail">${esc(o.shipName||'')}<br>${esc(o.shipAddress)}</div>`:''}
         ${o.tracking?`<a class="doc-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${esc(o.tracking)} ↗</a>`:''}
-        <div class="doc-ft">Paid by PayNow · Fluffmart TCG, Singapore<br>
+        <div class="doc-ft">Paid by PayNow · FloofMart TCG, Singapore<br>
           Questions about this invoice? Help &amp; Support, quoting ${esc(o.id)}.<br>
           Refunds return store credit instantly; cash refunds are sent by hand.</div>
       </div>
