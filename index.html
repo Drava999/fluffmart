@@ -10,25 +10,23 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 <style>
-.oseg-refresh{width:100%;margin:2px 0 14px;padding:12px 14px;border-radius:14px;
-  background:linear-gradient(135deg,var(--ruff),#fbe7db);color:var(--fawn-deep);font-weight:800;
-  font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;
-  border:1.5px solid var(--line);box-shadow:0 2px 8px rgba(180,88,154,.1);
-  transition:box-shadow .25s,background .25s;overflow:hidden;position:relative}
-.oseg-refresh:active{background:linear-gradient(135deg,#fbe7db,var(--ruff))}
-.oseg-refresh .ri{width:22px;height:22px;font-size:17px;line-height:22px;display:inline-block;
-  object-fit:contain;will-change:transform;vertical-align:middle}
-/* the Wooloo gif rolls by itself; on tap give it a springy bounce */
-.oseg-refresh.pop .ri{animation:refreshPop .6s cubic-bezier(.34,1.56,.64,1)}
-@keyframes refreshPop{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-12deg)}70%{transform:scale(1.1) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
-/* while loading, a gentle continuous bob so it reads as "working" */
-.oseg-refresh.loading .ri{animation:refreshBob .7s ease-in-out infinite}
-@keyframes refreshBob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-2px) rotate(6deg)}}
+/* ── pull-to-refresh ── */
+.ptr{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:25;
+  display:flex;align-items:center;justify-content:center;
+  width:52px;height:52px;border-radius:50%;background:var(--card);
+  box-shadow:0 4px 16px rgba(180,88,154,.22);border:1.5px solid var(--line);
+  opacity:0;pointer-events:none;transition:opacity .15s}
+.ptr.show{opacity:1}
+.ptr img{width:34px;height:34px;object-fit:contain}
+.ptr.armed{border-color:var(--mint);box-shadow:0 4px 18px rgba(127,201,176,.4)}
+.ptr.loading img{animation:ptrSpin .7s linear infinite}
+@keyframes ptrSpin{to{transform:rotate(360deg)}}
+.pull-hint{text-align:center;font-size:11px;font-weight:700;color:var(--hint);
+  opacity:.6;margin:-2px 0 12px;letter-spacing:.3px}
+@media (min-width:600px){.pull-hint::after{content:" · or tap the top of the list"}}
+50%{transform:translateY(-2px) rotate(6deg)}}
 /* a soft glow sweep across the pill when it succeeds */
-.oseg-refresh.done:after{content:"";position:absolute;inset:0;border-radius:14px;
-  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
-  transform:translateX(-100%);animation:refreshSweep .7s ease}
-@keyframes refreshSweep{to{transform:translateX(100%)}}
+}
 :root{
   /* FloofMart palette — cream base, pink primary, rose secondary, yellow accent */
   --fawn:#D98EC0; --fawn-deep:#B4589A; --cream:#FBEFE6; --ruff:#F6E1D6;
@@ -161,6 +159,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .pcard .body{display:flex;flex-direction:column;flex:1}
 .pcard .prow{margin-top:auto;padding-top:8px}
 .add{width:30px;height:30px;border-radius:10px;background:var(--fawn);color:#fff;font-size:19px;
+  border:1.5px solid var(--fawn-deep);
   display:flex;align-items:center;justify-content:center;line-height:1}
 .add:disabled{background:var(--line);color:#fff}
 .soldout{position:absolute;inset:0;background:rgba(74,53,36,.55);color:#fff;display:flex;
@@ -323,7 +322,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .asell .ainfo{flex:1;min-width:0}
 .asell .an{font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .asell .as{font-size:11px;color:var(--hint)}
-.asellbtn{background:var(--berry);color:#fff;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;flex-shrink:0}
+.asellbtn{background:var(--berry);color:#fff;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;flex-shrink:0;border:1.5px solid var(--berry-deep)}
 .rates{display:flex;gap:12px;margin:4px 0 4px}
 .rate{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 12px;text-align:center;position:relative}
 .rate:first-child{border-color:var(--berry)}
@@ -416,6 +415,7 @@ html{scroll-behavior:smooth}
 .empty .e-ic{animation:floaty 3s ease-in-out infinite}
 .empty .e-img{width:76px;height:76px;object-fit:contain;margin:0 auto 10px;display:block;
   animation:floaty 3s ease-in-out infinite}
+.empty .e-tip{font-size:11px;color:var(--hint);opacity:.6;margin-top:14px;font-weight:600}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
 .empty p{font-size:13px}
@@ -472,9 +472,9 @@ html{scroll-behavior:smooth}
 .hero:after{content:"☁";position:absolute;left:16px;bottom:8px;color:rgba(255,255,255,.35);font-size:18px}
 .hero:before{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;
   background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%);border-radius:50%}
-.cta{box-shadow:0 6px 18px rgba(178,92,147,.28)}
+.cta{box-shadow:0 6px 18px rgba(178,92,147,.28);border:1.5px solid var(--berry-deep)}
 .nav button{border-radius:14px;margin:0 2px;transition:background .18s ease}
-.nav button.on{background:var(--ruff)}
+.nav button.on{background:var(--ruff);box-shadow:inset 0 0 0 1.5px var(--mint)}
 .nav button.on .ni{transform:translateY(-1px)}
 .nav button{transition:background .18s ease,color .18s ease}
 .order,.panel,.feat{box-shadow:0 1px 6px rgba(178,92,147,.06)}
@@ -535,7 +535,7 @@ html{scroll-behavior:smooth}
 .wish-add input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;outline:none}
 .wish-add input:focus{border-color:var(--fawn)}
 .wish-sug{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.wsug{font-size:12px;font-weight:700;padding:6px 12px;border-radius:16px;background:var(--ruff);color:var(--fawn-deep)}
+.wsug{font-size:12px;font-weight:700;padding:6px 12px;border-radius:16px;background:var(--ruff);color:var(--fawn-deep);border:1px solid var(--line)}
 .wsug:active{transform:scale(.95)}
 .wrow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
 .wrow .wk{font-size:18px}
@@ -548,8 +548,8 @@ html{scroll-behavior:smooth}
 .as-cap{font-size:11px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.4px}
 .as-val{font-size:13.5px;font-weight:700;margin-top:3px;line-height:1.35}
 .as-val span{font-weight:500;color:var(--hint);font-size:12.5px}
-.as-edit{font-size:12px;font-weight:700;color:var(--fawn-deep);background:var(--ruff);padding:7px 12px;border-radius:10px;flex-shrink:0}
-.as-done{width:100%;margin-top:4px;background:var(--ruff);color:var(--fawn-deep);font-weight:700;font-size:13px;padding:10px;border-radius:11px}
+.as-edit{font-size:12px;font-weight:700;color:var(--fawn-deep);background:var(--ruff);padding:7px 12px;border-radius:10px;flex-shrink:0;border:1px solid var(--line)}
+.as-done{width:100%;margin-top:4px;background:var(--ruff);color:var(--fawn-deep);font-weight:700;font-size:13px;padding:10px;border-radius:11px;border:1px solid var(--line)}
 
 /* ── hold-to-combine ── */
 .cta-hold{width:100%;margin-top:8px;background:var(--card);border:1.5px solid var(--fawn);color:var(--fawn-deep);
@@ -577,7 +577,7 @@ html{scroll-behavior:smooth}
 .loyal-sub{font-size:11px;color:var(--hint);font-weight:600}
 .loyal-ref{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
 .loyal-reft{font-size:12px;color:var(--text);line-height:1.45;margin-bottom:8px}
-.loyal-refb{width:100%;background:var(--fawn);color:#fff;font-weight:800;font-size:13px;padding:10px;border-radius:12px}
+.loyal-refb{width:100%;background:var(--fawn);color:#fff;font-weight:800;font-size:13px;padding:10px;border-radius:12px;border:1.5px solid var(--fawn-deep)}
 .loyal-refb:active{transform:scale(.97)}
 
 /* ── unpaid banner ── */
@@ -653,7 +653,7 @@ html{scroll-behavior:smooth}
 .po-id{font-weight:800;font-size:12.5px}
 .po-items{font-size:11px;color:var(--hint);margin-top:2px}
 .po-amt{font-weight:800;font-size:13px;text-align:right}
-.po-pay{margin-top:4px;background:var(--fawn);color:#fff;font-weight:800;font-size:11.5px;padding:6px 12px;border-radius:10px}
+.po-pay{margin-top:4px;background:var(--fawn);color:#fff;font-weight:800;font-size:11.5px;padding:6px 12px;border-radius:10px;border:1.5px solid var(--fawn-deep)}
 .po-pay:active{transform:scale(.95)}
 .parcel-choose{margin-top:10px;border-top:1px dashed var(--line);padding-top:12px}
 .pc-t{font-size:12.5px;font-weight:700;color:var(--fawn-deep);margin-bottom:9px}
@@ -789,7 +789,7 @@ button.busy{position:relative;color:transparent!important}
       <button class="oseg-b on" data-oseg="parcel" onclick="orderSeg('parcel')">🧺 Parcel</button>
       <button class="oseg-b" data-oseg="orders" onclick="orderSeg('orders')">📦 Orders</button>
       <button class="oseg-b" data-oseg="binder" onclick="orderSeg('binder')">📖 Binder</button>
-      <button class="oseg-refresh" onclick="refreshOrders(this)"><img class="ri" src="wooloo-roll.gif" alt="↻" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ri',textContent:'↻'}))"><span>Refresh</span></button>
+      <div class="pull-hint">↓ pull to refresh</div>
     </div>
     <div id="oseg-parcel"><div id="parcelPane"></div></div>
     <div id="oseg-orders" class="hidden"><div class="ofilt" id="ordersFilter"></div><div id="ordersList"></div></div>
@@ -956,6 +956,7 @@ button.busy{position:relative;color:transparent!important}
     <div id="wishList"></div>
   </div>
 </div>
+<div class="ptr" id="ptr"><img src="wooloo-roll.gif" alt="↻" onerror="this.style.display='none';this.parentElement.textContent='↻'"></div>
 <div class="zoom-wrap" id="zoomWrap">
   <button class="zoom-close" onclick="closeZoom()">✕</button>
   <img class="zoom-img" id="zoomImg" alt="">
@@ -1157,7 +1158,10 @@ function go(tab){
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
   // Stock moves constantly (other buyers, claim drops, auctions). Anything older
   // than a minute is refetched, otherwise sold cards linger on the shelf.
-  if(tab==='store'&&(!STATE.inventory.length||Date.now()-(STATE.invTs||0)>60000)) loadStore();
+  if(tab==='store'){
+    if(!STATE.inventory.length||Date.now()-(STATE.invTs||0)>60000) loadStore();
+    else { renderCatTabs(); renderStore(); }   // re-render: boot painted it while hidden
+  }
   if(tab==='orders') loadOrders();
   if(tab==='profile') loadProfile();
   window.scrollTo(0,0);
@@ -1770,7 +1774,7 @@ function paintOrders(){
   const rank={shipping_paid:0,pickup_ready:0,ship_awaiting_fee:1,open:2};
   const cards=parcels.slice().sort((a,b)=>(rank[a.status]??3)-(rank[b.status]??3)).map(renderParcelCard).filter(Boolean);
   const ppane=document.getElementById('parcelPane');
-  if(ppane) ppane.innerHTML=cards.length?cards.join(''):`<div class="empty"><div class="e-ic">🧺</div><p>No open parcel yet.<br>Claim a card and check out to start one 🐾</p></div>`;
+  if(ppane) ppane.innerHTML=cards.length?cards.join(''):`<div class="empty"><div class="e-ic">🧺</div><p>No open parcel yet.<br>Claim a card and check out to start one 🐾</p><div class="e-tip">↓ pull down to refresh anytime</div></div>`;
   // Filter bar — counts come from the full set so an empty tab still shows 0.
   const all=[...live,...past];
   const fb=document.getElementById('ordersFilter');
@@ -1812,28 +1816,58 @@ function orderCardHtml(o){
       <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
     </div>`;
 }
-async function refreshOrders(btn){
-  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-  if(btn){
-    btn.classList.remove('done');
-    btn.classList.add('pop','loading');          // instant happy wobble, then spin
-    btn.disabled=true;
-  }
+async function doRefresh(){
+  const ptr=document.getElementById('ptr');
+  if(ptr){ ptr.classList.add('show','loading'); }
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
   const started=Date.now();
   try{ ORDERS_CACHE=null; await loadOrders(true); await loadOverview(); }
   finally{
-    if(btn){
-      // let the wobble finish, and let a fast load still show a beat of spin
-      const wait=Math.max(0,650-(Date.now()-started));
-      setTimeout(()=>{
-        btn.classList.remove('loading','pop');
-        btn.classList.add('done');                // glow sweep = "refreshed!"
-        btn.disabled=false;
-        if(tg&&tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        setTimeout(()=>btn&&btn.classList.remove('done'),700);
-      },wait);
-    }
+    const wait=Math.max(0,600-(Date.now()-started));
+    setTimeout(()=>{
+      if(ptr){ ptr.classList.remove('loading','armed'); }
+      if(tg&&tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      setTimeout(()=>ptr&&ptr.classList.remove('show'),250);
+    },wait);
   }
+}
+// Pull-to-refresh on the Orders view: drag down from the top of the page while
+// already scrolled to the top. The Wooloo descends with the pull; release past
+// the threshold to refresh.
+function attachPullRefresh(){
+  const ptr=document.getElementById('ptr');
+  let y0=null, pulling=false, dist=0;
+  const THRESH=70, MAX=110;
+  const onOrders=()=>!document.getElementById('v-orders').classList.contains('hidden');
+  document.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1) return;
+    if(!onOrders()) return;
+    if(window.scrollY>4) return;                  // only when at the very top
+    // don't hijack a pull that starts inside a sideways strip / sheet / zoom
+    let n=e.target; while(n&&n!==document.body){ if(n.classList&&(n.classList.contains('sheet')||n.classList.contains('zoom-wrap')||n.classList.contains('cardview'))) return; n=n.parentElement; }
+    y0=e.touches[0].clientY; pulling=true; dist=0;
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!pulling){ return; }
+    dist=e.touches[0].clientY-y0;
+    if(dist<=0){ pulling=false; if(ptr){ptr.classList.remove('show','armed');ptr.style.top='';} return; }
+    const d=Math.min(dist*0.5,MAX);
+    if(ptr){
+      ptr.classList.add('show');
+      ptr.style.top=(d-52)+'px';                  // Wooloo rides down with the finger
+      ptr.classList.toggle('armed',dist>=THRESH);
+      const img=ptr.querySelector('img'); if(img) img.style.transform='rotate('+(d*4)+'deg)';
+    }
+    if(dist>6) e.preventDefault();                // stop the page rubber-banding
+  },{passive:false});
+  document.addEventListener('touchend',()=>{
+    if(!pulling) return;
+    pulling=false;
+    const armed=dist>=THRESH;
+    if(ptr){ ptr.style.top=''; const img=ptr.querySelector('img'); if(img) img.style.transform=''; }
+    if(armed) doRefresh();
+    else if(ptr) ptr.classList.remove('show','armed');
+  },{passive:true});
 }
 const OSEGS=['parcel','orders','binder'];
 function orderSeg(which){
@@ -2156,6 +2190,7 @@ function backToProfile(){ document.getElementById('v-credit').classList.add('hid
   restorePersisted();
   initHowBuy();
   attachSwipe();
+  attachPullRefresh();
   bootApp();
   // Coming back to the app after paying/claiming elsewhere should never show
   // stale stock or stale orders.
