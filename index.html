@@ -937,14 +937,25 @@ function money(n){ return '$'+Number(n||0).toFixed(2); }
 // PayNow SGQR payload generator (amount + reference embedded)
 function crc16(s){let c=0xFFFF;for(let i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(let j=0;j<8;j++){c=(c&0x8000)?(c<<1)^0x1021:c<<1;c&=0xFFFF;}}return c.toString(16).toUpperCase().padStart(4,'0');}
 function tlv(id,v){return id+String(v.length).padStart(2,'0')+v;}
-function payNowPayload(mobile,amount,ref){
+// PayNow proxy type: 0 = mobile (+65…), 2 = NRIC/FIN (S1234567A). UEN also uses 2.
+// We detect from the value so the shop owner can register by IC and it just works.
+function payNowProxyType(v){
+  const x=String(v||'').trim().toUpperCase();
+  if(/^[STFGM]\d{7}[A-Z]$/.test(x)) return '2';   // NRIC / FIN
+  if(/^\d{8,10}[A-Z]$/.test(x))     return '2';   // UEN
+  return '0';                                       // mobile
+}
+function payNowPayload(proxy,amount,ref,merchant){
   const hasAmt = Number(amount) > 0;
-  // field 03 = amount editable: '0' (locked) only when an amount IS embedded;
-  // '1' (payer types it) otherwise — a locked QR with no amount is unpayable in most bank apps.
-  const acct=tlv('00','SG.PAYNOW')+tlv('01','0')+tlv('02',mobile)+tlv('03',hasAmt?'0':'1');
+  const type = payNowProxyType(proxy);
+  const val  = type==='2' ? String(proxy||'').trim().toUpperCase() : proxy;
+  // field 03 = amount editable: '0' (locked) only when an amount IS embedded.
+  const acct=tlv('00','SG.PAYNOW')+tlv('01',type)+tlv('02',val)+tlv('03',hasAmt?'0':'1');
   let p='';p+=tlv('00','01')+tlv('01','12')+tlv('26',acct)+tlv('52','0000')+tlv('53','702');
   if(hasAmt)p+=tlv('54',Number(amount).toFixed(2));
-  p+=tlv('58','SG')+tlv('59','Fluffmart')+tlv('60','Singapore');
+  // 59 = merchant name, shown by the bank app as the payee. Max 25 chars, ASCII.
+  const nm=String(merchant||'Fluffmart').replace(/[^\x20-\x7E]/g,'').slice(0,25)||'Fluffmart';
+  p+=tlv('58','SG')+tlv('59',nm)+tlv('60','Singapore');
   if(ref)p+=tlv('62',tlv('01',ref));
   p+='6304';return p+crc16(p);
 }
@@ -966,7 +977,7 @@ function renderPayQR(inv, isRetry){
     return;
   }
   try {
-    const payload=payNowPayload(mobile,inv.total,inv.orderId);
+    const payload=payNowPayload(mobile,inv.total,inv.orderId,inv.paynowName);
     box.innerHTML='';
     new QRCode(box,{text:payload,width:170,height:170,correctLevel:QRCode.CorrectLevel.M});
   } catch(e){ box.innerHTML='<div class="pn-qr-ph">QR unavailable —<br><span>pay to the number below</span></div>'; }
@@ -1516,8 +1527,10 @@ function showInvoice(inv){
     <div class="paynow">
       <div class="pn-title">Scan to pay by PayNow</div>
       <div class="pn-qr" id="pnQr"></div>
-      <div class="pn-num">${inv.paynowName}<br><b>${inv.paynowMobile||""}</b><br><span style="font-size:11px;color:var(--hint)">Ref: ${inv.orderId}</span></div>
-      <div class="pn-note">The QR has the exact amount ($${inv.total.toFixed(2)}) built in. Pay, then upload your screenshot below.</div>
+      <div class="pn-num">Paying: <b>${inv.paynowName||'Fluffmart TCG'}</b><br>
+        <span style="font-size:11.5px;color:#c2405e;font-weight:800">⚠️ Before you send, check your bank app shows this exact name.</span><br>
+        <span style="font-size:11px;color:var(--hint)">Reference: ${inv.orderId}</span></div>
+      <div class="pn-note">The QR fills in the amount ($${inv.total.toFixed(2)}) and reference for you. Confirm the payee name matches, pay, then upload your screenshot below.</div>
     </div>
     <label class="upl" id="uplLabel">📎 Upload payment screenshot
       <input type="file" accept="image/*" id="proofInput" style="display:none" onchange="onProof(event)">
