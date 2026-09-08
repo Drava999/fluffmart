@@ -11,19 +11,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 <style>
 /* ── pull-to-refresh ── */
+/* pull-to-refresh: just a lone Wooloo, no ring, no background */
 .ptr{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:25;
-  display:flex;align-items:center;justify-content:center;
-  width:52px;height:52px;border-radius:50%;background:var(--card);
-  box-shadow:0 4px 16px rgba(180,88,154,.22);border:1.5px solid var(--line);
-  opacity:0;pointer-events:none;transition:opacity .15s}
+  opacity:0;pointer-events:none;transition:opacity .2s;filter:drop-shadow(0 3px 6px rgba(90,58,78,.25))}
 .ptr.show{opacity:1}
-.ptr img{width:34px;height:34px;object-fit:contain}
-.ptr.armed{border-color:var(--mint);box-shadow:0 4px 18px rgba(127,201,176,.4)}
+.ptr img{width:40px;height:40px;object-fit:contain;display:block}
+.ptr.armed{transform:translateX(-50%) scale(1.12)}
 .ptr.loading img{animation:ptrSpin .7s linear infinite}
 @keyframes ptrSpin{to{transform:rotate(360deg)}}
-.pull-hint{text-align:center;font-size:11px;font-weight:700;color:var(--hint);
-  opacity:.6;margin:-2px 0 12px;letter-spacing:.3px}
-@media (min-width:600px){.pull-hint::after{content:" · or tap the top of the list"}}
+.pull-hint{display:none}
 :root{
   /* FloofMart palette — cream base, pink primary, rose secondary, yellow accent */
   --fawn:#D98EC0; --fawn-deep:#B4589A; --cream:#FBEFE6; --ruff:#F6E1D6;
@@ -322,7 +318,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .asell .ainfo{flex:1;min-width:0}
 .asell .an{font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .asell .as{font-size:11px;color:var(--hint)}
-.asellbtn{background:var(--berry);color:#fff;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;flex-shrink:0;border:1.5px solid var(--berry-deep)}
+.asellbtn{background:var(--berry);color:#fff;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px;flex-shrink:0}
 .rates{display:flex;gap:12px;margin:4px 0 4px}
 .rate{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 12px;text-align:center;position:relative}
 .rate:first-child{border-color:var(--berry)}
@@ -372,7 +368,7 @@ html{scroll-behavior:smooth}
 .view.slide-in-left{animation:slideInL .32s cubic-bezier(.33,1,.68,1)}
 @keyframes slideInR{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
 @keyframes slideInL{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
-.pcard{animation:fadeRise .4s cubic-bezier(.22,.61,.36,1) both}
+.pcard{animation:fadeRise .4s cubic-bezier(.22,.61,.36,1)}
 .pcard:active{animation:pop2 .3s ease}
 .feat{transition:transform .15s ease, box-shadow .15s ease}
 .feat:active{transform:scale(.98)}
@@ -477,9 +473,9 @@ html{scroll-behavior:smooth}
 .hero:after{content:"☁";position:absolute;left:16px;bottom:8px;color:rgba(255,255,255,.35);font-size:18px}
 .hero:before{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;
   background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%);border-radius:50%}
-.cta{box-shadow:0 6px 18px rgba(178,92,147,.28);border:1.5px solid var(--berry-deep)}
+.cta{box-shadow:0 6px 18px rgba(178,92,147,.28)}
 .nav button{border-radius:14px;margin:0 2px;transition:background .18s ease}
-.nav button.on{background:var(--ruff);box-shadow:inset 0 0 0 1.5px var(--mint)}
+.nav button.on{background:var(--ruff)}
 .nav button.on .ni{transform:translateY(-1px)}
 .nav button{transition:background .18s ease,color .18s ease}
 .order,.panel,.feat{box-shadow:0 1px 6px rgba(178,92,147,.06)}
@@ -540,7 +536,7 @@ html{scroll-behavior:smooth}
 .wish-add input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;outline:none}
 .wish-add input:focus{border-color:var(--fawn)}
 .wish-sug{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.wsug{font-size:12px;font-weight:700;padding:6px 12px;border-radius:16px;background:var(--ruff);color:var(--fawn-deep);border:1px solid var(--line)}
+.wsug{font-size:12px;font-weight:700;padding:6px 12px;border-radius:16px;background:var(--ruff);color:var(--fawn-deep)}
 .wsug:active{transform:scale(.95)}
 .wrow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
 .wrow .wk{font-size:18px}
@@ -553,8 +549,8 @@ html{scroll-behavior:smooth}
 .as-cap{font-size:11px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.4px}
 .as-val{font-size:13.5px;font-weight:700;margin-top:3px;line-height:1.35}
 .as-val span{font-weight:500;color:var(--hint);font-size:12.5px}
-.as-edit{font-size:12px;font-weight:700;color:var(--fawn-deep);background:var(--ruff);padding:7px 12px;border-radius:10px;flex-shrink:0;border:1px solid var(--line)}
-.as-done{width:100%;margin-top:4px;background:var(--ruff);color:var(--fawn-deep);font-weight:700;font-size:13px;padding:10px;border-radius:11px;border:1px solid var(--line)}
+.as-edit{font-size:12px;font-weight:700;color:var(--fawn-deep);background:var(--ruff);padding:7px 12px;border-radius:10px;flex-shrink:0}
+.as-done{width:100%;margin-top:4px;background:var(--ruff);color:var(--fawn-deep);font-weight:700;font-size:13px;padding:10px;border-radius:11px}
 
 /* ── hold-to-combine ── */
 .cta-hold{width:100%;margin-top:8px;background:var(--card);border:1.5px solid var(--fawn);color:var(--fawn-deep);
@@ -582,7 +578,7 @@ html{scroll-behavior:smooth}
 .loyal-sub{font-size:11px;color:var(--hint);font-weight:600}
 .loyal-ref{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
 .loyal-reft{font-size:12px;color:var(--text);line-height:1.45;margin-bottom:8px}
-.loyal-refb{width:100%;background:var(--fawn);color:#fff;font-weight:800;font-size:13px;padding:10px;border-radius:12px;border:1.5px solid var(--fawn-deep)}
+.loyal-refb{width:100%;background:var(--fawn);color:#fff;font-weight:800;font-size:13px;padding:10px;border-radius:12px}
 .loyal-refb:active{transform:scale(.97)}
 
 /* ── unpaid banner ── */
@@ -658,7 +654,7 @@ html{scroll-behavior:smooth}
 .po-id{font-weight:800;font-size:12.5px}
 .po-items{font-size:11px;color:var(--hint);margin-top:2px}
 .po-amt{font-weight:800;font-size:13px;text-align:right}
-.po-pay{margin-top:4px;background:var(--fawn);color:#fff;font-weight:800;font-size:11.5px;padding:6px 12px;border-radius:10px;border:1.5px solid var(--fawn-deep)}
+.po-pay{margin-top:4px;background:var(--fawn);color:#fff;font-weight:800;font-size:11.5px;padding:6px 12px;border-radius:10px}
 .po-pay:active{transform:scale(.95)}
 .parcel-choose{margin-top:10px;border-top:1px dashed var(--line);padding-top:12px}
 .pc-t{font-size:12.5px;font-weight:700;color:var(--fawn-deep);margin-bottom:9px}
@@ -794,7 +790,7 @@ button.busy{position:relative;color:transparent!important}
       <button class="oseg-b on" data-oseg="parcel" onclick="orderSeg('parcel')">🧺 Parcel</button>
       <button class="oseg-b" data-oseg="orders" onclick="orderSeg('orders')">📦 Orders</button>
       <button class="oseg-b" data-oseg="binder" onclick="orderSeg('binder')">📖 Binder</button>
-      <div class="pull-hint">↓ pull to refresh</div>
+
     </div>
     <div id="oseg-parcel"><div id="parcelPane"></div></div>
     <div id="oseg-orders" class="hidden"><div class="ofilt" id="ordersFilter"></div><div id="ordersList"></div></div>
