@@ -24,9 +24,6 @@
 .pull-hint{text-align:center;font-size:11px;font-weight:700;color:var(--hint);
   opacity:.6;margin:-2px 0 12px;letter-spacing:.3px}
 @media (min-width:600px){.pull-hint::after{content:" · or tap the top of the list"}}
-50%{transform:translateY(-2px) rotate(6deg)}}
-/* a soft glow sweep across the pill when it succeeds */
-}
 :root{
   /* FloofMart palette — cream base, pink primary, rose secondary, yellow accent */
   --fawn:#D98EC0; --fawn-deep:#B4589A; --cream:#FBEFE6; --ruff:#F6E1D6;
@@ -99,7 +96,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .top .sub{font-size:12px;color:var(--hint);margin-top:-2px}
 
 /* views */
-.view{padding-top:4px;animation:pop .22s ease}
+.view{padding-top:4px}
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* hero */
@@ -314,6 +311,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .oseg{display:flex;gap:6px;background:var(--ruff);padding:4px;border-radius:14px;margin-bottom:14px}
 .oseg-b{flex:1;padding:9px 4px;border-radius:11px;font-weight:800;font-size:12.5px;color:var(--hint);background:transparent}
 .oseg-b.on{background:var(--card);color:var(--fawn-deep);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+#oseg-parcel,#oseg-orders,#oseg-binder{will-change:transform,opacity}
+.oseg-slide-r{animation:slideInR .28s cubic-bezier(.33,1,.68,1)}
+.oseg-slide-l{animation:slideInL .28s cubic-bezier(.33,1,.68,1)}
 .asell{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
   border-radius:12px;padding:8px 10px;margin-bottom:8px}
 .asell .ci{width:34px;height:44px;border-radius:8px;background:var(--ruff);display:flex;align-items:center;
@@ -366,7 +366,12 @@ html{scroll-behavior:smooth}
 @keyframes pop2{0%{transform:scale(.92)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-.view{animation:fadeRise .35s cubic-bezier(.22,.61,.36,1)}
+.view{animation:none}
+/* directional glide between tabs — set by go() based on swipe/nav direction */
+.view.slide-in-right{animation:slideInR .32s cubic-bezier(.33,1,.68,1)}
+.view.slide-in-left{animation:slideInL .32s cubic-bezier(.33,1,.68,1)}
+@keyframes slideInR{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@keyframes slideInL{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
 .pcard{animation:fadeRise .4s cubic-bezier(.22,.61,.36,1) both}
 .pcard:active{animation:pop2 .3s ease}
 .feat{transition:transform .15s ease, box-shadow .15s ease}
@@ -1151,9 +1156,20 @@ function mock(action,p){
 
 /* ============ NAV ============ */
 const MAIN_TABS=['overview','store','orders','buyback','profile'];  // swipe order (skip cart/support/credit)
-function go(tab){
+function go(tab,dir){
+  // Infer glide direction from tab order when not told (so nav taps glide too).
+  if(dir===undefined){
+    const a=MAIN_TABS.indexOf(STATE.tab), b=MAIN_TABS.indexOf(tab);
+    dir = (a>=0&&b>=0) ? Math.sign(b-a) : 0;
+  }
   STATE.tab=tab;
-  ['overview','store','orders','buyback','support','profile','credit'].forEach(t=>{const el=document.getElementById('v-'+t); if(el) el.classList.toggle('hidden',t!==tab);});
+  ['overview','store','orders','buyback','support','profile','credit'].forEach(t=>{
+    const el=document.getElementById('v-'+t); if(!el) return;
+    el.classList.remove('slide-in-right','slide-in-left');
+    el.classList.toggle('hidden',t!==tab);
+  });
+  const cur=document.getElementById('v-'+tab);
+  if(cur&&dir!==0){ void cur.offsetWidth; cur.classList.add(dir>0?'slide-in-right':'slide-in-left'); }
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
   // Stock moves constantly (other buyers, claim drops, auctions). Anything older
@@ -1171,7 +1187,7 @@ function swipeMainTab(dir){
   if(cur<0) return;                     // on a non-swipe view (cart/credit/support)
   const next=cur+dir;
   if(next<0||next>=MAIN_TABS.length) return;
-  go(MAIN_TABS[next]);
+  go(MAIN_TABS[next],dir);
 }
 // One horizontal-swipe recogniser for the whole app. Ignores vertical scrolls,
 // ignores swipes that start on a horizontally-scrollable strip (chips, carousels)
@@ -1870,19 +1886,24 @@ function attachPullRefresh(){
   },{passive:true});
 }
 const OSEGS=['parcel','orders','binder'];
-function orderSeg(which){
+function orderSeg(which,dir){
+  if(dir===undefined){ const a=OSEGS.indexOf(STATE.oseg),b=OSEGS.indexOf(which); dir=(a>=0&&b>=0)?Math.sign(b-a):0; }
   STATE.oseg=which;
   OSEGS.forEach(k=>{
-    document.getElementById('oseg-'+k).classList.toggle('hidden',k!==which);
+    const el=document.getElementById('oseg-'+k);
+    el.classList.remove('oseg-slide-r','oseg-slide-l');
+    el.classList.toggle('hidden',k!==which);
     document.querySelector('.oseg-b[data-oseg="'+k+'"]').classList.toggle('on',k===which);
   });
+  const cur=document.getElementById('oseg-'+which);
+  if(cur&&dir!==0){ void cur.offsetWidth; cur.classList.add(dir>0?'oseg-slide-r':'oseg-slide-l'); }
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
 }
 function swipeOrderSeg(dir){
   const cur=OSEGS.indexOf(STATE.oseg||'parcel');
   const next=cur+dir;
   if(next<0||next>=OSEGS.length) return;
-  orderSeg(OSEGS[next]);
+  orderSeg(OSEGS[next],dir);
 }
 
 /* ============ BINDER (past purchases) ============ */
