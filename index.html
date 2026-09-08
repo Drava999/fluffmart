@@ -10,9 +10,25 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 <style>
-.oseg-refresh{width:100%;margin:-6px 0 12px;padding:9px;border-radius:11px;background:var(--ruff);
-  color:var(--fawn-deep);font-weight:800;font-size:12.5px}
-.oseg-refresh:active{transform:scale(.98)}
+.oseg-refresh{width:100%;margin:2px 0 14px;padding:12px 14px;border-radius:14px;
+  background:linear-gradient(135deg,var(--ruff),#fbe7db);color:var(--fawn-deep);font-weight:800;
+  font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;
+  border:1.5px solid var(--line);box-shadow:0 2px 8px rgba(180,88,154,.1);
+  transition:box-shadow .25s,background .25s;overflow:hidden;position:relative}
+.oseg-refresh:active{background:linear-gradient(135deg,#fbe7db,var(--ruff))}
+.oseg-refresh .ri{width:22px;height:22px;font-size:17px;line-height:22px;display:inline-block;
+  object-fit:contain;will-change:transform;vertical-align:middle}
+/* the Wooloo gif rolls by itself; on tap give it a springy bounce */
+.oseg-refresh.pop .ri{animation:refreshPop .6s cubic-bezier(.34,1.56,.64,1)}
+@keyframes refreshPop{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-12deg)}70%{transform:scale(1.1) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+/* while loading, a gentle continuous bob so it reads as "working" */
+.oseg-refresh.loading .ri{animation:refreshBob .7s ease-in-out infinite}
+@keyframes refreshBob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-2px) rotate(6deg)}}
+/* a soft glow sweep across the pill when it succeeds */
+.oseg-refresh.done:after{content:"";position:absolute;inset:0;border-radius:14px;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
+  transform:translateX(-100%);animation:refreshSweep .7s ease}
+@keyframes refreshSweep{to{transform:translateX(100%)}}
 :root{
   /* FloofMart palette — cream base, pink primary, rose secondary, yellow accent */
   --fawn:#D98EC0; --fawn-deep:#B4589A; --cream:#FBEFE6; --ruff:#F6E1D6;
@@ -363,7 +379,16 @@ html{scroll-behavior:smooth}
 .pcard:hover .tier{transform:scale(1.05)}
 .skelcard{background:linear-gradient(100deg,var(--card) 30%,#f3e4dc 50%,var(--card) 70%);
   background-size:200% 100%;animation:shimmer 1.3s linear infinite;border:1px solid var(--line);
-  border-radius:var(--radius);height:230px}
+  border-radius:18px;height:230px;position:relative}
+.skelcard:after{content:"";position:absolute;top:50%;left:50%;width:34px;height:34px;
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:linear-gradient(#f47c7c 0 50%,#fff 50% 100%);
+  box-shadow:inset 0 0 0 3px #3a2a33, 0 2px 6px rgba(0,0,0,.15);opacity:.55;
+  animation:pokewobble 1.1s ease-in-out infinite}
+.skelcard:before{content:"";position:absolute;top:50%;left:50%;width:11px;height:11px;
+  transform:translate(-50%,-50%);border-radius:50%;background:#fff;z-index:2;
+  box-shadow:inset 0 0 0 3px #3a2a33;animation:pokewobble 1.1s ease-in-out infinite}
+@keyframes pokewobble{0%,100%{margin-top:0}25%{margin-top:-3px}75%{margin-top:3px}}
 /* ── stock urgency ── */
 .stock-tag{position:absolute;top:8px;right:8px;font-size:10px;font-weight:800;padding:3px 8px;
   border-radius:8px;background:var(--yellow);color:#7a5a00;box-shadow:0 1px 4px rgba(0,0,0,.12);z-index:2}
@@ -389,6 +414,8 @@ html{scroll-behavior:smooth}
 .notif .nt-ic{font-size:16px}
 .notif .nt-sub{font-size:11px;color:var(--hint);margin-top:2px}
 .empty .e-ic{animation:floaty 3s ease-in-out infinite}
+.empty .e-img{width:76px;height:76px;object-fit:contain;margin:0 auto 10px;display:block;
+  animation:floaty 3s ease-in-out infinite}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
 .empty p{font-size:13px}
@@ -545,7 +572,8 @@ html{scroll-behavior:smooth}
 .loyal-hd{font-weight:800;color:var(--fawn-deep);font-size:15px;margin-bottom:8px}
 .loyal-row{font-size:13px;font-weight:600}
 .loyal-bar{height:9px;background:var(--ruff);border-radius:6px;overflow:hidden;margin:8px 0 5px}
-.loyal-fill{height:100%;background:linear-gradient(90deg,var(--fawn),var(--yellow));border-radius:6px;transition:width .5s}
+.loyal-fill{height:100%;background:linear-gradient(90deg,var(--fawn),var(--mint),var(--yellow));
+  background-size:200% 100%;animation:shimmer 3s linear infinite;border-radius:6px;transition:width .5s}
 .loyal-sub{font-size:11px;color:var(--hint);font-weight:600}
 .loyal-ref{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
 .loyal-reft{font-size:12px;color:var(--text);line-height:1.45;margin-bottom:8px}
@@ -761,7 +789,7 @@ button.busy{position:relative;color:transparent!important}
       <button class="oseg-b on" data-oseg="parcel" onclick="orderSeg('parcel')">🧺 Parcel</button>
       <button class="oseg-b" data-oseg="orders" onclick="orderSeg('orders')">📦 Orders</button>
       <button class="oseg-b" data-oseg="binder" onclick="orderSeg('binder')">📖 Binder</button>
-      <button class="oseg-refresh" onclick="loadOrders(true)">↻ Tap here to refresh the page.</button>
+      <button class="oseg-refresh" onclick="refreshOrders(this)"><img class="ri" src="wooloo-roll.gif" alt="↻" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ri',textContent:'↻'}))"><span>Refresh</span></button>
     </div>
     <div id="oseg-parcel"><div id="parcelPane"></div></div>
     <div id="oseg-orders" class="hidden"><div class="ofilt" id="ordersFilter"></div><div id="ordersList"></div></div>
@@ -1051,7 +1079,7 @@ const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit',
 let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], invTs:0, orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
 
 const TIERS = ['All','AR','SIR','SR','EX','Double Rare','Holo','Slab','Merch'];
-const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🔒',Sealed:'📦',Merch:'🎁'};
+const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🛡️',Sealed:'📦',Merch:'🎁'};
 const RARITY_RANK = {SIR:0,SR:1,AR:2,'Double Rare':3,EX:4,Slab:5,Holo:6,Sealed:7,Merch:8};
 const TIER_NAME = {AR:'Art Rare',SIR:'Special Illustration Rare',SR:'Super Rare',EX:'EX / V',Holo:'Holo Rare','Double Rare':'Double Rare',Slab:'Graded Slab',Sealed:'Sealed Product',Merch:'Merch',All:'All cards'};
 
@@ -1121,7 +1149,9 @@ function mock(action,p){
 }
 
 /* ============ NAV ============ */
+const MAIN_TABS=['overview','store','orders','buyback','profile'];  // swipe order (skip cart/support/credit)
 function go(tab){
+  STATE.tab=tab;
   ['overview','store','orders','buyback','support','profile','credit'].forEach(t=>{const el=document.getElementById('v-'+t); if(el) el.classList.toggle('hidden',t!==tab);});
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
@@ -1131,6 +1161,52 @@ function go(tab){
   if(tab==='orders') loadOrders();
   if(tab==='profile') loadProfile();
   window.scrollTo(0,0);
+}
+function swipeMainTab(dir){
+  const cur=MAIN_TABS.indexOf(STATE.tab||'overview');
+  if(cur<0) return;                     // on a non-swipe view (cart/credit/support)
+  const next=cur+dir;
+  if(next<0||next>=MAIN_TABS.length) return;
+  go(MAIN_TABS[next]);
+}
+// One horizontal-swipe recogniser for the whole app. Ignores vertical scrolls,
+// ignores swipes that start on a horizontally-scrollable strip (chips, carousels)
+// or inside the zoom viewer / an open sheet.
+function attachSwipe(){
+  let x0=null,y0=null,lock=null;
+  const bad=el=>{
+    for(let n=el;n&&n!==document.body;n=n.parentElement){
+      if(n.classList&&(n.classList.contains('chips')||n.classList.contains('ofilt')||
+        n.classList.contains('sheet')||n.classList.contains('zoom-wrap')||
+        n.classList.contains('cardview')||n.classList.contains('binder')||
+        n.classList.contains('dd-menu')||n.classList.contains('pocket-grid'))) return true;
+      // any element actually scrolling sideways
+      if(n.scrollWidth-n.clientWidth>6) return true;
+    }
+    return false;
+  };
+  document.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1||bad(e.target)){x0=null;return;}
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;lock=null;
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(x0===null)return;
+    const dx=e.touches[0].clientX-x0, dy=e.touches[0].clientY-y0;
+    if(lock===null&&(Math.abs(dx)>10||Math.abs(dy)>10)) lock=Math.abs(dx)>Math.abs(dy)?'h':'v';
+  },{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(x0===null||lock!=='h'){x0=null;return;}
+    const dx=e.changedTouches[0].clientX-x0;
+    x0=null;
+    if(Math.abs(dx)<55) return;
+    const dir=dx<0?1:-1;                 // swipe left -> next
+    // If we're on the Orders tab, swipe moves its SUB-tabs first.
+    if(STATE.tab==='orders'){
+      const cur=OSEGS.indexOf(STATE.oseg||'parcel');
+      if((dir>0&&cur<OSEGS.length-1)||(dir<0&&cur>0)){ swipeOrderSeg(dir); return; }
+    }
+    swipeMainTab(dir);
+  },{passive:true});
 }
 
 /* ============ OVERVIEW ============ */
@@ -1286,7 +1362,7 @@ function renderStore(){
     return ra-rb || b.price-a.price;
   });
   const grid = document.getElementById('storeGrid');
-  if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔍</div><p>No cards match. Try another tier or search.</p></div>`; return; }
+  if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔎</div><p>No cards match. Try another tier or search.</p></div>`; return; }
   grid.innerHTML = list.map(c=>{
     const inCart = STATE.cart.filter(x=>x.id===c.id).length;
     const soldOut = (c.qty - inCart) <= 0;
@@ -1412,7 +1488,7 @@ function closeCart(){ document.getElementById('scrim').classList.remove('show');
 function renderCart(){
   const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
   if(!STATE.cart.length){
-    body.innerHTML=`<div class="empty"><div class="e-ic">🐑</div><p>Your cart's empty!<br>Go claim some cute cards 🐾</p></div>`;
+    body.innerHTML=`<div class="empty"><img class="e-img" src="wooloo.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'e-ic',textContent:'🐑'}))"><p>Your cart's empty!<br>Go claim some cute cards 🐾</p></div>`;
     foot.innerHTML=''; return;
   }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
@@ -1736,11 +1812,43 @@ function orderCardHtml(o){
       <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
     </div>`;
 }
+async function refreshOrders(btn){
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  if(btn){
+    btn.classList.remove('done');
+    btn.classList.add('pop','loading');          // instant happy wobble, then spin
+    btn.disabled=true;
+  }
+  const started=Date.now();
+  try{ ORDERS_CACHE=null; await loadOrders(true); await loadOverview(); }
+  finally{
+    if(btn){
+      // let the wobble finish, and let a fast load still show a beat of spin
+      const wait=Math.max(0,650-(Date.now()-started));
+      setTimeout(()=>{
+        btn.classList.remove('loading','pop');
+        btn.classList.add('done');                // glow sweep = "refreshed!"
+        btn.disabled=false;
+        if(tg&&tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        setTimeout(()=>btn&&btn.classList.remove('done'),700);
+      },wait);
+    }
+  }
+}
+const OSEGS=['parcel','orders','binder'];
 function orderSeg(which){
-  ['parcel','orders','binder'].forEach(k=>{
+  STATE.oseg=which;
+  OSEGS.forEach(k=>{
     document.getElementById('oseg-'+k).classList.toggle('hidden',k!==which);
     document.querySelector('.oseg-b[data-oseg="'+k+'"]').classList.toggle('on',k===which);
   });
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+}
+function swipeOrderSeg(dir){
+  const cur=OSEGS.indexOf(STATE.oseg||'parcel');
+  const next=cur+dir;
+  if(next<0||next>=OSEGS.length) return;
+  orderSeg(OSEGS[next]);
 }
 
 /* ============ BINDER (past purchases) ============ */
@@ -1757,7 +1865,7 @@ function buildBinder(){
   if(sig===BINDER.sig && wrap.innerHTML) return;
   BINDER.sig=sig; BINDER.cards=cards;
   if(!cards.length){
-    wrap.innerHTML=`<div class="empty"><div class="e-ic">📖</div><p>Your binder's empty for now!<br>Cards you claim will live here forever 🐾</p></div>`;
+    wrap.innerHTML=`<div class="empty"><img class="e-img" src="wooloo.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'e-ic',textContent:'📖'}))"><p>Your binder's empty for now!<br>Cards you claim will live here forever 🐾</p></div>`;
     return;
   }
   const pages=Math.ceil(cards.length/9);
@@ -2047,6 +2155,7 @@ function backToProfile(){ document.getElementById('v-credit').classList.add('hid
   }
   restorePersisted();
   initHowBuy();
+  attachSwipe();
   bootApp();
   // Coming back to the app after paying/claiming elsewhere should never show
   // stale stock or stale orders.
