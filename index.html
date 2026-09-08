@@ -1488,7 +1488,7 @@ function showInvoice(inv){
   const mins=inv.paymentWindowMins||10;
   const long=mins>60;
   b.innerHTML=`
-    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge" id="payTimer">${inv._resumeSecs!=null?fmtLeft(inv._resumeSecs):fmtLeft(mins*60)}</div></div>
+    <div class="inv-head"><div class="inv-oid">${String(inv.orderId).indexOf('SH')===0?'🚚 Shipping · your parcel':'Invoice · '+inv.orderId}</div><div class="inv-badge" id="payTimer">${inv._resumeSecs!=null?fmtLeft(inv._resumeSecs):fmtLeft(mins*60)}</div></div>
     <div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>
     <div class="inv-items">
       ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
