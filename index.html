@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="preconnect" href="https://fluffmart-api.shrimaniac.workers.dev">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>FloofMart TCG</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -1604,18 +1605,22 @@ async function confirmShip(){
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 async function checkout(){
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
+  showInvoiceSkeleton();
   const r = await api('submitOrder',{cart:STATE.cart.map(c=>({id:c.id})),useCredit:STATE.useCredit?Math.min(STATE.credit, sub0):0,note:(STATE.note||'').trim()});
+  if(!r || !r.ok) closeInvoice();
   if(r.ok){
     STATE.cart=[]; STATE.useCredit=false; STATE.note=''; updateCartDot(); closeCart();
     ORDERS_CACHE=null;
     if(r.paidByCredit){
+      closeInvoice();
       const msg='\ud83c\udf89 Order '+r.orderId+' is fully covered by your store credit \u2014 nothing to pay! Once we verify, your cards go into your parcel \ud83e\uddf7';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       loadOverview(); loadStore();
     } else {
       showInvoice(r);
-      loadOverview();
-      loadStore();   // the cards just bought must leave the shelf immediately
+      // Let the QR paint first. The buyer is on the invoice, not the shop —
+      // the shelf can catch up a second and a half later.
+      setTimeout(()=>{ loadOverview(); loadStore(); },1500);
     }
   } else if(r.error==='unavailable'){
     const gone=(r.cards||[]).map(String);
@@ -1638,6 +1643,28 @@ async function checkout(){
   } else { (tg&&tg.showAlert?tg.showAlert:alert)('Checkout error: '+(r&&(r.error||r.raw)?JSON.stringify(r.error||r.raw).slice(0,200):'unknown')+'. Try again in a sec.'); }
 }
 let INVOICE=null, PAYPROOF=null;
+// The invoice's numbers are all known locally the moment checkout is tapped —
+// only the order id and QR need the server. Open the sheet now and let
+// showInvoice() overwrite it, so the buyer never waits on a closed sheet.
+function showInvoiceSkeleton(){
+  const sub=STATE.cart.reduce((s,c)=>s+c.price,0);
+  const cred=STATE.useCredit?Math.min(STATE.credit,sub):0;
+  const tot=sub-cred;
+  document.getElementById('invBody').innerHTML=`
+    <div class="inv-head"><div class="inv-oid">Invoice</div><div class="inv-badge">Reserving</div></div>
+    <div class="inv-items">
+      ${STATE.cart.map(c=>`<div class="inv-row"><span>${EMOJI[c.tier]||''} ${esc(c.name)}</span><span>$${c.price.toFixed(2)}</span></div>`).join('')}
+      ${cred>0?`<div class="inv-row" style="color:var(--mint)"><span>Store credit</span><span>−$${cred.toFixed(2)}</span></div>`:''}
+      <div class="inv-row inv-total"><span>Total to pay</span><span>$${tot.toFixed(2)}</span></div>
+    </div>
+    <div class="paynow">
+      <div class="pn-title">Scan to pay by PayNow</div>
+      <div class="pn-qr"><div class="pn-qr-ph">Holding your cards<br><span>your QR code lands here</span></div></div>
+    </div>
+    <div class="skelcard" style="height:52px"></div>`;
+  document.getElementById('invScrim').classList.add('show');
+  document.getElementById('invSheet').classList.add('show');
+}
 function showInvoice(inv){
   INVOICE=inv; PAYPROOF=null;
   const b=document.getElementById('invBody');
