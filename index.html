@@ -569,6 +569,9 @@ html{scroll-behavior:smooth}
 .parcel-save{background:#e2f5ec;color:#1c7a52;font-size:12px;font-weight:700;border-radius:10px;padding:7px 10px;margin-bottom:6px}
 .parcel-hint{font-size:11.5px;color:var(--hint);margin-bottom:10px}
 .parcel .cta{margin-top:2px}
+.parcel-explain{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:12px 14px;margin-bottom:12px;font-size:12.5px;line-height:1.55;color:var(--text)}
+.parcel-explain b{color:var(--fawn-deep)}
 
 /* ── loyalty / referral ── */
 .loyal{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
@@ -766,13 +769,14 @@ button.busy{position:relative;color:transparent!important}
     <div class="howbuy" id="howBuy">
       <button class="howbuy-hd" onclick="toggleHowBuy()"><span>🛍️ How buying works</span><span class="hb-chev" id="hbChev">▾</span></button>
       <div class="howbuy-b" id="hbBody">
-        <div class="hb-step"><span>1️⃣</span><div><b>Claim your cards</b> — tap + to add to cart. Cards are only reserved once you check out.</div></div>
-        <div class="hb-step"><span>2️⃣</span><div><b>Pay for your cards</b> — no shipping fee here. Scan the PayNow QR (10-min window) and upload your screenshot. Each order has its own invoice.</div></div>
-        <div class="hb-step"><span>3️⃣</span><div><b>We verify → into your parcel</b> — once we confirm payment, your cards are held safely in your <b>parcel</b> 🧺 (find it in the Orders tab).</div></div>
-        <div class="hb-step"><span>4️⃣</span><div><b>Keep shopping, one parcel</b> — everything you buy collects in the same parcel, so you pay shipping just once for the whole lot.</div></div>
-        <div class="hb-step"><span>5️⃣</span><div><b>Ship or self-pickup — your call</b> — when you're ready, open the Parcel tab and choose 🚚 Ship or 🤝 Self-pickup (free). Spend enough in one parcel and shipping is free too. Then track it in Orders 📦</div></div>
-        <div class="hb-step"><span>↩️</span><div><b>Changed your mind at any time?</b> Refunds are handled manually — head to Help &amp; Support with your order number and the card(s) you want to return, and we'll sort it out for you.</div></div>
-        <div class="hb-step"><span>💳</span><div><b>Store credit</b> — earn $3 back for every $100 you spend, plus referral bonuses. Credit applies automatically at checkout: you'll see it deducted on your invoice before you pay. If credit covers the whole order, there's nothing to PayNow — we just verify and it's yours. Refunds can be returned as store credit too.</div></div>
+        <div class="hb-step"><span>🧺</span><div><b>Your parcel is a box we keep for you</b> — every card you pay for goes in it and waits there safely. Nothing is sent until you say so, so you only pay postage once no matter how many times you shop.</div></div>
+        <div class="hb-step"><span>1️⃣</span><div><b>Add cards to your cart</b> — tap + on any card. Cards aren't held for you until you check out.</div></div>
+        <div class="hb-step"><span>2️⃣</span><div><b>Pay for the cards</b> — scan the PayNow QR, then send us your payment screenshot. You have 10 minutes. No postage is charged here.</div></div>
+        <div class="hb-step"><span>3️⃣</span><div><b>We check your payment</b> — once it's confirmed, your cards go into your parcel 🧺 Find it in the Orders tab.</div></div>
+        <div class="hb-step"><span>4️⃣</span><div><b>Keep shopping</b> — anything else you buy joins the same parcel, so it all travels together.</div></div>
+        <div class="hb-step"><span>5️⃣</span><div><b>Send it when you're ready</b> — open the Parcel tab and pick 🚚 delivery or 🤝 self-pickup (free). Spend enough in one parcel and delivery is free too. Track it in Orders 📦</div></div>
+        <div class="hb-step"><span>↩️</span><div><b>Changed your mind?</b> Message us in Help &amp; Support with your order number and which cards you'd like back. We handle refunds by hand.</div></div>
+        <div class="hb-step"><span>💳</span><div><b>Store credit</b> — you earn $3 back for every $100 you spend, plus referral bonuses. It comes off your total automatically at checkout, so if credit covers everything, there's nothing to pay.</div></div>
       </div>
     </div>
     <div class="cattabs" id="cattabs"></div>
@@ -1535,9 +1539,9 @@ function renderCart(){
     foot.innerHTML=''; return;
   }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
-  const nudge = STATE.openParcel
-    ? `<div class="nudge">🧺 These join your open parcel — pay per order now, choose shipping or pickup later from the Parcel tab.</div>`
-    : `<div class="nudge">🧺 This opens your parcel — pay for your cards now (no shipping yet). You'll pick ship or self-pickup later.</div>`;
+ const nudge = STATE.openParcel
+    ? `<div class="nudge">🧺 These join the parcel we're already holding for you. Pay for the cards now — choose delivery later, when you're done shopping.</div>`
+    : `<div class="nudge">🧺 This starts your parcel — a box we keep for you. Pay for the cards now; you'll choose delivery later.</div>`;
   body.innerHTML = STATE.cart.map((c,i)=>
     `<div class="crow"><div class="ci">${c.image?`<img src="${imgUrl(c.image,200)}" alt="">`:(EMOJI[c.tier]||'🃏')}</div>
       <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.number?c.number+' · ':''}${c.tier}</div></div>
@@ -1553,7 +1557,7 @@ function renderCart(){
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
     <button class="cta" onclick="guard(this,checkout)">Place order · $${total.toFixed(2)}</button>
-    <p class="hold-hint">No shipping charged here. Your paid cards go into your parcel 🧺 — choose ship ($${(STATE.shipFlat||3).toFixed(2)}${fsMin?', free over $'+fsMin.toFixed(2)+' per parcel':''}) or free self-pickup later from the Parcel tab.</p>`;
+<p class="hold-hint">No postage charged now. Your cards wait in your parcel 🧺 until you're ready — then it's $${(STATE.shipFlat||3).toFixed(2)} to deliver${fsMin?', free once a parcel passes $'+fsMin.toFixed(2):''}, or free if you collect it yourself.</p>`;
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
@@ -1839,7 +1843,7 @@ function renderParcelCard(p){
           :o.status==='Awaiting Payment'?'💳 Unpaid'
           :o.status}</span></div>
         <div class="po-items">${o.items.filter(i=>!i.refunded).slice(0,3).map(i=>i.name).join(', ')}${o.items.filter(i=>!i.refunded).length>3?' +'+(o.items.filter(i=>!i.refunded).length-3):''}</div></div>
-      <div class="po-r"><div class="po-amt">$${o.total.toFixed(2)}</div>${o.status==='Awaiting Payment'?`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button>`:''}</div></div>
+        <div class="po-r"><div class="po-amt">$${o.total.toFixed(2)}</div>${o.status==='Awaiting Payment'?`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button><button class="cancel-link" style="padding:4px 0 0;font-size:11px" onclick="event.stopPropagation();guard(this,()=>cancelUnpaid('${o.id}'))">Cancel</button>`:''}</div></div>
       <button class="po-more" onclick="togglePoCards('${o.id}')" id="pom-${o.id}">▾ Show all ${o.items.filter(i=>!i.refunded).length} card${o.items.filter(i=>!i.refunded).length>1?'s':''}</button>
       <div class="po-cards" id="poc-${o.id}">
        ${o.items.filter(i=>!i.refunded).map(i=>`<div class="po-card"><div class="po-thumb">${i.image?`<img src="${imgUrl(i.image,200)}">`:(EMOJI[i.tier]||'🃏')}</div><div class="po-cn">${i.name}${i.number?`<div style="font-size:10.5px;color:var(--hint);font-weight:600">${i.number}</div>`:''}</div><div class="po-cp">$${i.price.toFixed(2)}</div></div>`).join('')}
@@ -1869,13 +1873,14 @@ function paintOrders(){
   const activeIds=new Set(parcels.map(p=>p.id));
   const isSH=o=>String(o.id).indexOf('SH')===0;
   const dead=o=>!!o.cancelled;
-  const normal=STATE.orders.filter(o=>!isSH(o)&&!(activeIds.has(o.parcelId)&&!dead(o)));
+  const normal=STATE.orders.filter(o=>!isSH(o));
   const live=normal.filter(o=>!dead(o));
   const past=normal.filter(dead);
   const rank={shipping_paid:0,pickup_ready:0,ship_awaiting_fee:1,open:2};
   const cards=parcels.slice().sort((a,b)=>(rank[a.status]??3)-(rank[b.status]??3)).map(renderParcelCard).filter(Boolean);
   const ppane=document.getElementById('parcelPane');
-  if(ppane) ppane.innerHTML=cards.length?cards.join(''):`<div class="empty"><div class="e-ic">🧺</div><p>No open parcel yet.<br>Claim a card and check out to start one 🐾</p><div class="e-tip">↓ pull down to refresh anytime</div></div>`;
+  const explain=`<div class="parcel-explain">🧺 <b>Your parcel is a box we keep for you.</b> Every card you pay for goes in it and waits there safely. Nothing is sent until you say so — so however many times you shop, you only pay postage once.</div>`;
+  if(ppane) ppane.innerHTML=cards.length?explain+cards.join(''):`<div class="empty"><div class="e-ic">🧺</div><p>Your parcel is empty.<br>It's a box we keep here for you — buy a card and it goes straight in 🐾</p><div class="e-tip">↓ pull down to refresh anytime</div></div>`;
   // Filter bar — counts come from the full set so an empty tab still shows 0.
   const all=[...live,...past];
   const fb=document.getElementById('ordersFilter');
