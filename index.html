@@ -217,7 +217,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .sheet .sh-hd h2{font-size:18px;color:var(--fawn-deep)}
 .sheet .body{overflow-y:auto;padding:0 18px}
 .crow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
-.crow .ci{width:34px;height:44px;border-radius:8px;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.crow .ci{width:34px;height:44px;border-radius:8px;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden}
+.crow .ci img{width:100%;height:100%;object-fit:cover;display:block}
 .crow .cn{font-size:13px;font-weight:700;flex:1;line-height:1.2}
 .crow .cp{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;color:var(--fawn-deep)}
 .crow .rm{color:var(--hint);font-size:20px;padding:4px}
@@ -1509,8 +1510,7 @@ function addToCart(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
   const inCart = STATE.cart.filter(x=>x.id===id).length;
   if(inCart>=c.qty) return;
-  STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price});
-  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price,number:c.number||'',image:c.image||''});  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
   updateCartDot(); renderStore();
 }
 function removeFromCart(idx){ STATE.cart.splice(idx,1); updateCartDot(); renderCart(); renderStore(); }
@@ -1538,8 +1538,8 @@ function renderCart(){
     ? `<div class="nudge">🧺 These join your open parcel — pay per order now, choose shipping or pickup later from the Parcel tab.</div>`
     : `<div class="nudge">🧺 This opens your parcel — pay for your cards now (no shipping yet). You'll pick ship or self-pickup later.</div>`;
   body.innerHTML = STATE.cart.map((c,i)=>
-    `<div class="crow"><div class="ci">${EMOJI[c.tier]||'🃏'}</div>
-      <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.tier}</div></div>
+    `<div class="crow"><div class="ci">${c.image?`<img src="${imgUrl(c.image,200)}" alt="">`:(EMOJI[c.tier]||'🃏')}</div>
+      <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.number?c.number+' · ':''}${c.tier}</div></div>
       <span class="cp">$${c.price.toFixed(2)}</span>
       <button class="rm" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
     `<div class="field" style="margin:10px 0 4px"><label>Order note (optional)</label><input id="ord-note" value="${(STATE.note||'').replace(/"/g,'&quot;')}" maxlength="200" oninput="STATE.note=this.value" placeholder="e.g. double-sleeve please"></div>` +
@@ -1647,7 +1647,7 @@ function showInvoice(inv){
     <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge" id="payTimer">${inv._resumeSecs!=null?fmtLeft(inv._resumeSecs):fmtLeft(mins*60)}</div></div>
     <div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>
     <div class="inv-items">
-      ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
+      ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}${it.number?` <span style="color:var(--hint);font-size:11.5px">${it.number}</span>`:''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
       <div class="inv-row"><span>Shipping</span><span>${inv.shipping===0?'FREE':'$'+inv.shipping.toFixed(2)}</span></div>
       ${inv.creditUsed>0?`<div class="inv-row" style="color:var(--mint)"><span>Store credit</span><span>−$${inv.creditUsed.toFixed(2)}</span></div>`:''}
       <div class="inv-row inv-total"><span>Total to pay</span><span>$${inv.total.toFixed(2)}</span></div>
@@ -1692,15 +1692,51 @@ function fmtLeft(s){
   return h>0 ? (h+':'+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0')) : (m+':'+String(x).padStart(2,'0'));
 }
 function closeInvoice(){ clearInterval(PAY_TIMER); document.getElementById('invScrim').classList.remove('show'); document.getElementById('invSheet').classList.remove('show'); }
+/* A phone screenshot is 2–4 MB; base64 makes it ~5 MB, and that travels
+   phone → Worker → Apps Script → Telegram before anyone sees it. Downscaling to
+   1280px JPEG here usually lands under 250 KB with no loss of legibility, and
+   it's the difference between a payment upload feeling instant and feeling
+   broken on mobile data. Falls back to the raw file if anything goes wrong. */
+function shrinkImage(file, maxPx, quality){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>reject(new Error('read'));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('decode'));
+      img.onload=()=>{
+        try{
+          const scale=Math.min(1, maxPx/Math.max(img.width,img.height));
+          if(scale>=1 && fr.result.length<600000){ resolve(fr.result); return; }
+          const c=document.createElement('canvas');
+          c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+          const ctx=c.getContext('2d');
+          ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);   // flatten transparency for JPEG
+          ctx.drawImage(img,0,0,c.width,c.height);
+          const out=c.toDataURL('image/jpeg',quality||0.82);
+          resolve(out.length<fr.result.length?out:fr.result);
+        }catch(err){ reject(err); }
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
 function onProof(e){
   const f=e.target.files&&e.target.files[0]; if(!f) return;
-  const reader=new FileReader();
-  reader.onload=()=>{ PAYPROOF=reader.result;
+  const lbl=document.getElementById('uplLabel');
+  if(lbl) lbl.innerHTML='⏳ Preparing your screenshot…<input type="file" accept="image/*" id="proofInput" style="display:none" onchange="onProof(event)">';
+  const done=(dataUrl)=>{
+    PAYPROOF=dataUrl;
     document.getElementById('proofPreview').innerHTML=`<img class="proof-img" src="${PAYPROOF}" alt="proof">`;
     document.getElementById('uplLabel').innerHTML='✅ Screenshot attached (tap to change)<input type="file" accept="image/*" id="proofInput" style="display:none" onchange="onProof(event)">';
     const b=document.getElementById('invSubmit'); b.disabled=false; b.textContent='Confirm payment';
   };
-  reader.readAsDataURL(f);
+  shrinkImage(f,1280,0.82).then(done).catch(()=>{
+    const reader=new FileReader();
+    reader.onload=()=>done(reader.result);
+    reader.readAsDataURL(f);
+  });
 }
 async function submitProof(){
   if(!PAYPROOF||!INVOICE) return;
@@ -1779,7 +1815,7 @@ function renderParcelCard(p){
       <div class="po-r"><div class="po-amt">$${o.total.toFixed(2)}</div>${o.status==='Awaiting Payment'?`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button>`:''}</div></div>
       <button class="po-more" onclick="togglePoCards('${o.id}')" id="pom-${o.id}">▾ Show all ${o.items.filter(i=>!i.refunded).length} card${o.items.filter(i=>!i.refunded).length>1?'s':''}</button>
       <div class="po-cards" id="poc-${o.id}">
-        ${o.items.filter(i=>!i.refunded).map(i=>`<div class="po-card"><div class="po-thumb">${i.image?`<img src="${imgUrl(i.image,200)}">`:(EMOJI[i.tier]||'🃏')}</div><div class="po-cn">${i.name}</div><div class="po-cp">$${i.price.toFixed(2)}</div></div>`).join('')}
+       ${o.items.filter(i=>!i.refunded).map(i=>`<div class="po-card"><div class="po-thumb">${i.image?`<img src="${imgUrl(i.image,200)}">`:(EMOJI[i.tier]||'🃏')}</div><div class="po-cn">${i.name}${i.number?`<div style="font-size:10.5px;color:var(--hint);font-weight:600">${i.number}</div>`:''}</div><div class="po-cp">$${i.price.toFixed(2)}</div></div>`).join('')}
         <button class="po-inv" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
       </div>`).join('')}</div>
     ${unpaid.length?`<div class="parcel-hint">⏳ Pay the ${unpaid.length} pending order${unpaid.length>1?'s':''} above — unpaid orders auto-release after the payment window.</div>`:''}
@@ -1846,7 +1882,7 @@ function orderCardHtml(o){
       ${track}
       ${o.lastUpdate&&!cancelled?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
       ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
-      <div class="oitems">${(cancelled?o.items:live).map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}${it.refunded?' ↩️':''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
+        <div class="oitems">${(cancelled?o.items:live).map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}${it.number?` <span style="opacity:.7">${it.number}</span>`:''}${it.refunded?' ↩️':''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
         ${anyRefund&&!cancelled?`<div class="oitem" style="color:#c2405e">↩️ ${o.items.filter(i=>i.refunded).length} card(s) refunded — see invoice</div>`:''}
         <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>${cancelled?'Charged':'Total'}</span><span>$${(cancelled?0:o.total).toFixed(2)}</span></div></div>
       ${o.status==='Awaiting Payment'?`<button class="cta" style="margin-top:8px" onclick="resumePayment('${o.id}')">💳 Complete payment</button>
@@ -2155,7 +2191,7 @@ function viewInvoice(id){
     :{t:o.status||'',c:'b-ordered'};
   const line=(it,void_)=>`<div class="doc-line ${void_?'doc-void':''}">
       <div class="doc-thumb">${findImg(it)?`<img src="${findImg(it)}">`:(EMOJI[it.tier]||'🃏')}</div>
-      <div class="doc-nm">${esc(it.name)}<div class="doc-tag">${void_?('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):'')):(TIER_NAME[it.tier]||it.tier||'')}</div></div>
+      <div class="doc-nm">${esc(it.name)}<div class="doc-tag">${void_?('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):'')):[esc(it.number||''),(TIER_NAME[it.tier]||it.tier||'')].filter(Boolean).join(' · ')}</div></div>
       <div class="doc-amt">${money(it.price)}</div></div>`;
   const trail=[
     o.verifiedBy?`<b>Payment verified</b> · ${esc(o.verifiedBy)}`:'',
