@@ -145,7 +145,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .pcard .nm{font-size:13px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px}
 .pcard .meta{font-size:11px;color:var(--hint);margin-top:2px}
 .tier{position:absolute;top:8px;left:8px;font-size:10px;font-weight:800;letter-spacing:.4px;
-  padding:3px 7px;border-radius:8px;background:#fff;color:var(--berry-deep);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+  padding:3px 7px;border-radius:8px;background:#fff;color:var(--berry-deep);box-shadow:0 1px 4px rgba(0,0,0,.12);
+  max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prow{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
 .price{font-family:'Plus Jakarta Sans';font-size:16px;font-weight:600;color:var(--fawn-deep)}
 .was{font-size:11px;color:var(--hint);font-weight:600;text-decoration:line-through;margin-left:5px}
@@ -1120,10 +1121,45 @@ async function guardGroup(selector, btn, fn){
 const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered','Refunded':'b-cancelled'};
 let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], invTs:0, orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
 
-const TIERS = ['All','AR','SIR','SR','EX','Double Rare','Holo','Slab','Merch'];
-const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🛡️',Sealed:'📦',Merch:'🎁',Bundle:'📚'};
-const RARITY_RANK = {SIR:0,SR:1,AR:2,'Double Rare':3,EX:4,Slab:5,Holo:6,Sealed:7,Merch:8};
-const TIER_NAME = {AR:'Art Rare',SIR:'Special Illustration Rare',SR:'Super Rare',EX:'EX / V',Holo:'Holo Rare','Double Rare':'Double Rare',Slab:'Graded Slab',Sealed:'Sealed Product',Merch:'Merch',Bundle:'Bundle',All:'All cards'};
+const TIERS = ['All'];   // legacy, no longer rendered
+const EMOJI = {Sealed:'📦',Merch:'🎁',Bundle:'📚'};   // placeholder only, for cards with no photo
+const TIER_NAME = {Sealed:'Sealed Product',Merch:'Merch',Bundle:'Bundle',All:'All cards'};
+
+/* DISPLAY ORDER ONLY. Not a mapping: nothing here renames a card, merges two
+   rarities, or decides what anything is — the shop always prints the exact
+   string from Collectr. This list just says which of those strings appears
+   first when sorting by rarity. Reorder it freely.
+   Illustration Rare / Art Rare and Ultra Rare / Super Rare are the EN and JP
+   names for the same rarity, so they're placed adjacent and browse together.
+   Anything not listed sorts to the bottom, by price. */
+const RARITY_ORDER = [
+  'Special Art Rare',
+  'Secret Rare',
+  'Mega Attack Rare',
+  'Ultra Rare',
+  'Super Rare',
+  'Illustration Rare',
+  'Art Rare',
+  'ACE SPEC Rare',
+  'Ace Spec',
+  'Double Rare',
+  'Promo',
+  'Rare',
+  'Uncommon',
+  'Common'
+];
+const RARITY_POS = {};
+RARITY_ORDER.forEach((r,i) => { RARITY_POS[r.toLowerCase()] = i; });
+
+// The words on the card. tier now holds Collectr's rarity; rarity is the same
+// value straight from the API. Either is fine — prefer whichever is present.
+function rarityLabel(c){
+  return String((c && (c.rarity || c.tier)) || '').trim();
+}
+function rarityRank(c){
+  const p = RARITY_POS[rarityLabel(c).toLowerCase()];
+  return p === undefined ? 999 : p;
+}
 
 /* demo data so the app is previewable before the backend is wired */
 const DEMO_INV = [
@@ -1346,14 +1382,14 @@ function toggleSort(e){
   if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
   const pool=STATE.inventory.filter(c=>(c.category||'single').toLowerCase()===STATE.cat);
   const sets=[...new Set(pool.map(c=>c.set).filter(Boolean))].sort();
-  const tiers=[...new Set(pool.map(c=>c.tier).filter(Boolean))]
-    .sort((a,b)=>(RARITY_RANK[a]??99)-(RARITY_RANK[b]??99));
+  const tiers=[...new Set(pool.map(c=>rarityLabel(c)).filter(Boolean))]
+    .sort((a,b)=>rarityRank({rarity:a})-rarityRank({rarity:b})||a.localeCompare(b));
   let html='<div class="dd-lbl">Sort by</div>';
   html+=SORTS.map(s=>`<button class="dd-item ${s.v===STATE.sort&&STATE.tier==='All'&&!STATE.set?'on':''}" onclick="pickSort('${s.v}','${s.l}')">${s.l}</button>`).join('');
   if(tiers.length){
     html+='<div class="dd-lbl">Rarity</div>';
     html+=`<button class="dd-item ${STATE.tier==='All'?'on':''}" onclick="pickTier('All')">All rarities</button>`;
-    html+=tiers.map(t=>`<button class="dd-item ${STATE.tier===t?'on':''}" onclick="pickTier('${t}')">${EMOJI[t]||''} ${TIER_NAME[t]||t}</button>`).join('');
+    html+=tiers.map(t=>`<button class="dd-item ${STATE.tier===t?'on':''}" onclick='pickTier(${JSON.stringify(t)})'>${esc(t)}</button>`).join('');
   }
   if(sets.length){
     html+='<div class="dd-lbl">Set</div>';
@@ -1365,7 +1401,7 @@ function toggleSort(e){
 }
 function ddLabel(){
   let parts=[];
-  if(STATE.tier!=='All') parts.push(TIER_NAME[STATE.tier]||STATE.tier);
+  if(STATE.tier!=='All') parts.push(STATE.tier);
   if(STATE.set) parts.push(STATE.set);
   if(!parts.length){ const s=SORTS.find(x=>x.v===STATE.sort); parts.push(s?s.l:'All cards'); }
   document.getElementById('sortLabel').textContent=parts.join(' \u00B7 ');
@@ -1400,7 +1436,7 @@ async function loadStore(){
 function renderStore(){
   const q = (document.getElementById('q').value||'').toLowerCase();
   let list = STATE.inventory.filter(c=>{
-    const okTier = STATE.tier==='All'||c.tier===STATE.tier;
+    const okTier = STATE.tier==='All'||rarityLabel(c)===STATE.tier;
     const okSet = !STATE.set || c.set===STATE.set;
     const cc = (c.category||'single').toLowerCase();
     const okCat = cc===STATE.cat;
@@ -1414,8 +1450,8 @@ function renderStore(){
     if(s==='set') return (a.set||'').localeCompare(b.set||'')||a.name.localeCompare(b.name);
     if(s==='name') return a.name.localeCompare(b.name);
     // rarity: rarest first, then price high
-    const ra=RARITY_RANK[a.tier]??99, rb=RARITY_RANK[b.tier]??99;
-    return ra-rb || b.price-a.price;
+    // rarity: display order first, then price high
+    return rarityRank(a)-rarityRank(b) || b.price-a.price;
   });
   const grid = document.getElementById('storeGrid');
   if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔎</div><p>No cards match. Try another tier or search.</p></div>`; return; }
@@ -1424,7 +1460,7 @@ function renderStore(){
     const soldOut = (c.qty - inCart) <= 0;
     const front = c.image?`<img src="${imgUrl(c.image,400)}" loading="lazy" alt="">`:(EMOJI[c.tier]||'🃏');
     return `<div class="pcard" onclick="openCardView('${c.id}')">
-      <div class="tier">${EMOJI[c.tier]||''} ${c.tier}</div>
+      <div class="tier">${esc(rarityLabel(c))}</div>
       ${c.qty===1?'<div class="stock-tag">Only 1!</div>':(c.qty<=3&&c.qty>1?`<div class="stock-tag">${c.qty} left</div>`:'')}
       <div class="img">${front}
         ${c.imageBack?'<div class="flip-hint">⤾ flip</div>':''}
@@ -1433,7 +1469,7 @@ function renderStore(){
       <div class="body">
         <div class="nm">${c.name}</div>
         <div class="meta">${c.set}${c.number?' · '+c.number:''}</div>
-        <div class="desc">${TIER_NAME[c.tier]||c.tier}${c.variance?' · '+c.variance:''} · ${c.grade?('Graded '+c.grade):(c.condition||'NM')}</div>
+        <div class="desc">${esc(rarityLabel(c))}${c.variance?' · '+esc(c.variance):''} · ${c.grade?('Graded '+esc(c.grade)):esc(c.condition||'NM')}</div>
         <div class="prow">
           <span class="price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="was">$${c.marketPrice.toFixed(2)}</span>`:''}</span>
           <button class="add" ${soldOut?'disabled':''} onclick="event.stopPropagation();addToCart('${c.id}')">+</button>
@@ -1471,8 +1507,8 @@ function openCardView(id){
         <div class="cv-name">${c.name}</div>
         <div class="cv-sub">${c.set}${c.number?' · '+c.number:''}</div>
         <div class="cv-tags">
-          <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
-          ${c.variance?`<span class="cv-tag">${c.variance}</span>`:''}
+<span class="cv-tag">${esc(rarityLabel(c))}</span>
+          ${c.variance?`<span class="cv-tag">${esc(c.variance)}</span>`:''}
           <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
         </div>
         <button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups — we'll send them in chat</span><span class="ap-go">Ask ›</span></button>
@@ -1556,7 +1592,7 @@ function renderCart(){
     : `<div class="nudge">🧺 This starts your parcel — a box we keep for you. Pay for the cards now; you'll choose delivery later.</div>`;
   body.innerHTML = STATE.cart.map((c,i)=>
     `<div class="crow"><div class="ci">${c.image?`<img src="${imgUrl(c.image,200)}" alt="">`:(EMOJI[c.tier]||'🃏')}</div>
-      <div class="cn">${c.name}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.number?c.number+' · ':''}${c.tier}</div></div>
+      <div class="cn">${esc(c.name)}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.number?esc(c.number)+' · ':''}${esc(rarityLabel(c))}</div></div>
       <span class="cp">$${c.price.toFixed(2)}</span>
       <button class="rm" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
     `<div class="field" style="margin:10px 0 4px"><label>Order note (optional)</label><input id="ord-note" value="${(STATE.note||'').replace(/"/g,'&quot;')}" maxlength="200" oninput="STATE.note=this.value" placeholder="e.g. double-sleeve please"></div>` +
@@ -2123,7 +2159,7 @@ function openBinderCard(idx){
       <div class="cv-meta">
         <div class="cv-name">${c.name}</div>
         <div class="cv-tags">
-          <span class="cv-tag">${TIER_NAME[c.tier]||c.tier}</span>
+          <span class="cv-tag">${esc(rarityLabel(c))}</span>
           <span class="cv-tag">Claimed for $${Number(c.price).toFixed(2)}</span>
         </div>
         <div class="cv-hint">Order #${c.orderId}${c.date?' · '+new Date(c.date).toLocaleDateString():''}<br>${c.status||''}</div>
@@ -2267,7 +2303,7 @@ function viewInvoice(id){
     :{t:o.status||'',c:'b-ordered'};
   const line=(it,void_)=>`<div class="doc-line ${void_?'doc-void':''}">
       <div class="doc-thumb">${findImg(it)?`<img src="${findImg(it)}">`:(EMOJI[it.tier]||'🃏')}</div>
-      <div class="doc-nm">${esc(it.name)}<div class="doc-tag">${void_?('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):'')):[esc(it.number||''),(TIER_NAME[it.tier]||it.tier||'')].filter(Boolean).join(' · ')}</div></div>
+      <div class="doc-nm">${esc(it.name)}<div class="doc-tag">${void_?('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):'')):[esc(it.number||''),esc(rarityLabel(it))].filter(Boolean).join(' · ')}</div></div>
       <div class="doc-amt">${money(it.price)}</div></div>`;
   const trail=[
     o.verifiedBy?`<b>Payment verified</b> · ${esc(o.verifiedBy)}`:'',
