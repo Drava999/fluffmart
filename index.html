@@ -1121,9 +1121,9 @@ const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit',
 let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], invTs:0, orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
 
 const TIERS = ['All','AR','SIR','SR','EX','Double Rare','Holo','Slab','Merch'];
-const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🛡️',Sealed:'📦',Merch:'🎁'};
+const EMOJI = {AR:'🎨',SIR:'✨',SR:'🌟',EX:'⚡',Holo:'🌈','Double Rare':'💫',Slab:'🛡️',Sealed:'📦',Merch:'🎁',Bundle:'📚'};
 const RARITY_RANK = {SIR:0,SR:1,AR:2,'Double Rare':3,EX:4,Slab:5,Holo:6,Sealed:7,Merch:8};
-const TIER_NAME = {AR:'Art Rare',SIR:'Special Illustration Rare',SR:'Super Rare',EX:'EX / V',Holo:'Holo Rare','Double Rare':'Double Rare',Slab:'Graded Slab',Sealed:'Sealed Product',Merch:'Merch',All:'All cards'};
+const TIER_NAME = {AR:'Art Rare',SIR:'Special Illustration Rare',SR:'Super Rare',EX:'EX / V',Holo:'Holo Rare','Double Rare':'Double Rare',Slab:'Graded Slab',Sealed:'Sealed Product',Merch:'Merch',Bundle:'Bundle',All:'All cards'};
 
 /* demo data so the app is previewable before the backend is wired */
 const DEMO_INV = [
@@ -1373,7 +1373,7 @@ function ddLabel(){
 function pickSort(v,l){ STATE.sort=v; closeDD(); ddLabel(); renderStore(); }
 function pickTier(t){ STATE.tier=t; closeDD(); ddLabel(); renderStore(); }
 function pickSet(s){ STATE.set=s; closeDD(); ddLabel(); renderStore(); }
-const CATS=[{c:'single',l:'🃏 Singles'},{c:'sealed',l:'📦 Sealed'},{c:'merch',l:'🎁 Merch'}];
+const CATS=[{c:'single',l:'🃏 Singles'},{c:'sealed',l:'📦 Sealed'},{c:'bundle',l:'📚 Bundles'},{c:'merch',l:'🎁 Merch'}];
 function renderCatTabs(){
   const have={}; STATE.inventory.forEach(x=>{ have[(x.category||'single').toLowerCase()]=true; });
   const avail=CATS.filter(x=>have[x.c]);
