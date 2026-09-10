@@ -750,7 +750,7 @@ button.busy{position:relative;color:transparent!important}
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('buyback')">
-      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>~80% cash · ~85% store credit (est.)</p></div>
+      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>~85% cash · ~90% store credit (est.)</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('support')">
@@ -1478,7 +1478,7 @@ function openCardView(id){
         <button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups — we'll send them in chat</span><span class="ap-go">Ask ›</span></button>
         <div class="cv-price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="cv-was">$${c.marketPrice.toFixed(2)}</span>`:''}</div>
         <button class="cta" ${soldOut?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">${soldOut?'In your cart':'Add to cart'}</button>
-        <button class="cta-alt" onclick="makeOffer('${c.id}','${(c.name||'').replace(/'/g,'')}',${c.price})">💬 Make an offer</button>
+        <button class="cta-alt" onclick="makeOfferById('${c.id}')">💬 Make an offer</button>
       </div>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
@@ -1499,6 +1499,10 @@ function makeOffer(id,name,listed){
   document.getElementById('offerScrim').classList.add('show');
   document.getElementById('offerSheet').classList.add('show');
   setTimeout(()=>document.getElementById('offerInput').focus(),100);
+}
+function makeOfferById(id){
+  const c=STATE.inventory.find(x=>x.id===id);
+  if(c) makeOffer(c.id, c.name, c.price);
 }
 // Zooms whichever face of the store card is currently showing.
 function zoomCard(id){
@@ -1680,11 +1684,14 @@ function showInvoiceSkeleton(){
 function showInvoice(inv){
   INVOICE=inv; PAYPROOF=null;
   const b=document.getElementById('invBody');
-  const mins=inv.paymentWindowMins||10;
+ const mins=(inv.paymentWindowMins===0)?0:(inv.paymentWindowMins||10);
   const long=mins>60;
+  const noDeadline=!(mins>0);
   b.innerHTML=`
-    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge" id="payTimer">${inv._resumeSecs!=null?fmtLeft(inv._resumeSecs):fmtLeft(mins*60)}</div></div>
-    <div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>
+    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge" id="payTimer">${noDeadline?'🧺 Held':(inv._resumeSecs!=null?fmtLeft(inv._resumeSecs):fmtLeft(mins*60))}</div></div>
+    ${noDeadline
+      ?`<div class="pay-warn" style="background:#e2f5ec;color:#1c7a52">🧺 <b>No deadline</b> — this card is held for you. Pay whenever you're ready.</div>`
+      :`<div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>`}
     <div class="inv-items">
       ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}${it.number?` <span style="color:var(--hint);font-size:11.5px">${it.number}</span>`:''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
       <div class="inv-row"><span>Shipping</span><span>${inv.shipping===0?'FREE':'$'+inv.shipping.toFixed(2)}</span></div>
@@ -1712,7 +1719,7 @@ function showInvoice(inv){
   // countdown
   let left=inv._resumeSecs!=null?inv._resumeSecs:mins*60;
   clearInterval(PAY_TIMER);
-  PAY_TIMER=setInterval(()=>{
+  if(!noDeadline) PAY_TIMER=setInterval(()=>{
     left--;
     const el=document.getElementById('payTimer');
     if(!el){ clearInterval(PAY_TIMER); return; }
@@ -2174,20 +2181,27 @@ async function removeWish(kind,target){
   STATE.wishes=STATE.wishes.filter(w=>!(w.kind===kind&&w.target===target));
   renderWishlist();
 }
+function removeWishAt(i){
+  const w=STATE.wishes[i];
+  return w ? removeWish(w.kind, w.target) : null;
+}
 function renderWishlist(){
   const el=document.getElementById('wishList');
   const sub=document.getElementById('p-wish-sub');
   if(sub) sub.textContent=STATE.wishes.length?`Watching ${STATE.wishes.length} — we'll ping you`:'Get pinged when cards restock';
   if(!STATE.wishes.length){ el.innerHTML=`<div class="empty" style="padding:24px"><div class="e-ic">🔔</div><p>Nothing on your wishlist yet.<br>Add a Pokémon or set above 🐾</p></div>`; return; }
-  el.innerHTML=STATE.wishes.map(w=>
+  el.innerHTML=STATE.wishes.map((w,i)=>
     `<div class="wrow"><span class="wk">${w.kind==='set'?'📚':'⭐'}</span>
-      <div class="wn">${w.label||w.target}<div class="ws">${w.kind==='set'?'Set':'Pokémon'}</div></div>
-      <button class="rm" onclick="guard(this,()=>removeWish('${w.kind}','${(w.target||'').replace(/'/g,'')}'))">✕</button></div>`).join('');
+      <div class="wn">${esc(w.label||w.target)}<div class="ws">${w.kind==='set'?'Set':'Pokémon'}</div></div>
+      <button class="rm" onclick="guard(this,()=>removeWishAt(${i}))">✕</button></div>`).join('');
 }
 
 /* ============ BUYBACK / SELL REQUEST ============ */
 function updateRateLabels(){
   const rc=document.getElementById('rate-credit'), rk=document.getElementById('rate-cash');
+  const ovr=document.getElementById('ov-rates');
+  if(ovr) ovr.textContent='~'+Math.round(STATE.config.cashRate*100)+'% cash · ~'
+    +Math.round(STATE.config.creditRate*100)+'% store credit (est.)';
   if(rc) rc.textContent=Math.round(STATE.config.creditRate*100)+'%';
   if(rk) rk.textContent=Math.round(STATE.config.cashRate*100)+'%';
 }
@@ -2217,9 +2231,9 @@ async function sendSupport(btn){
 function resumePayment(id){
   const o=STATE.orders.find(x=>x.id===id); if(!o) return;
   // Claim + auction invoices carry their own, much longer window.
-  const mins=o.payWindowMins||(STATE.payInfo&&STATE.payInfo.mins)||10;
+  const mins=(o.payWindowMins===0)?0:(o.payWindowMins||(STATE.payInfo&&STATE.payInfo.mins)||10);
   const elapsed=o.createdMs?Math.floor((Date.now()-o.createdMs)/1000):0;
-  const remain=Math.max(0, mins*60 - elapsed);
+  const remain=(mins<=0)?Infinity:Math.max(0, mins*60 - elapsed);
   if(remain<=0){
     (tg&&tg.showAlert?tg.showAlert:alert)('This order\'s payment window expired, so the cards went back on sale. Nothing was charged — order again any time.');
     ORDERS_CACHE=null; loadOrders(true); loadStore(); return;
