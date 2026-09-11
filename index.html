@@ -1388,8 +1388,7 @@ function toggleSort(e){
   html+=SORTS.map(s=>`<button class="dd-item ${s.v===STATE.sort&&STATE.tier==='All'&&!STATE.set?'on':''}" onclick="pickSort('${s.v}','${s.l}')">${s.l}</button>`).join('');
   if(tiers.length){
     html+='<div class="dd-lbl">Rarity</div>';
-    html+=`<button class="dd-item ${STATE.tier==='All'?'on':''}" onclick="pickTier('All')">All rarities</button>`;
-    html+=tiers.map(t=>`<button class="dd-item ${STATE.tier===t?'on':''}" onclick='pickTier(${JSON.stringify(t)})'>${esc(t)}</button>`).join('');
+    html+=`<button class="dd-item ${STATE.tier==='All'?'on':''}" onclick="pickTier('All')">All rarities</button>`;    html+=tiers.map(t=>`<button class="dd-item ${STATE.tier===t?'on':''}" onclick='pickTier(${JSON.stringify(t)})'>${esc(t)}</button>`).join('');
   }
   if(sets.length){
     html+='<div class="dd-lbl">Set</div>';
@@ -1507,7 +1506,7 @@ function openCardView(id){
         <div class="cv-name">${c.name}</div>
         <div class="cv-sub">${c.set}${c.number?' · '+c.number:''}</div>
         <div class="cv-tags">
-<span class="cv-tag">${esc(rarityLabel(c))}</span>
+          <span class="cv-tag">${esc(rarityLabel(c))}</span>
           ${c.variance?`<span class="cv-tag">${esc(c.variance)}</span>`:''}
           <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
         </div>
