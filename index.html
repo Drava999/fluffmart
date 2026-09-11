@@ -751,7 +751,7 @@ button.busy{position:relative;color:transparent!important}
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('buyback')">
-      <div class="ic">💰</div><div><h3>Sell cards to us</h3><p>~85% cash · ~90% store credit (est.)</p></div>
+            <div class="ic">💰</div><div><h3>Sell cards to us</h3><p id="ov-rates">~85% cash · ~90% store credit (est.)</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('support')">
@@ -1199,12 +1199,21 @@ async function api(action, payload={}){
     method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({action, initData, ...payload})
   });
-  const raw = await res.text();
-  try { return JSON.parse(raw); }
+    const raw = await res.text();
+  let out;
+  try { out = JSON.parse(raw); }
   catch(e){
     // Not JSON — surface the first slice so we can see what actually came back.
     return { ok:false, error:'nonjson', status:res.status, raw:String(raw).slice(0,400) };
   }
+  if(out && out.error==='auth_failed') onAuthExpired();
+  return out;
+}
+let AUTH_WARNED=false;
+function onAuthExpired(){
+  if(AUTH_WARNED) return; AUTH_WARNED=true;
+  const m='Your session expired — close the shop and reopen it from the bot to refresh it. Nothing was lost 🐾';
+  (tg&&tg.showAlert)?tg.showAlert(m):alert(m);
 }
 function mock(action,p){
   if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:40,shipFlat:3,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping — free over S$40',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FloofMartBot?start=ref_1',openParcel:null,unpaidOrders:0};
@@ -1344,7 +1353,7 @@ function renderUnpaidBanner(){
   const el=document.getElementById('ov-unpaid'); if(!el) return;
   el.innerHTML=(STATE.unpaidOrders>0)?`<button class="unpaid-banner" onclick="go('orders')">
       <span class="ub-ic">💳</span>
-      <span class="ub-t"><b>You have ${STATE.unpaidOrders>1?STATE.unpaidOrders+' unpaid orders':'an unpaid order'}!</b><br>Complete payment before your cards are released.</span>
+            <span class="ub-t"><b>You have ${STATE.unpaidOrders>1?STATE.unpaidOrders+' unpaid orders':'an unpaid order'}!</b><br>Tap to pay — shop orders are released if they time out.</span>
       <span class="ub-go">Pay ›</span>
     </button>`:'';
 }
@@ -1649,8 +1658,15 @@ async function confirmShip(){
   if(r.ok&&r.freeShipping){
     ORDERS_CACHE=null; await loadOrders(true);
     (tg&&tg.showAlert?tg.showAlert:alert)('🎉 Free shipping! Your parcel is over the threshold, so there\'s nothing to pay. We\'re packing it now — tracking follows.');
+  }  else if(r.ok&&r.shipOrderId){
+    ORDERS_CACHE=null; loadOrders(true);   // refresh underneath, don't wait on it
+    showInvoice({ orderId:r.shipOrderId,
+      items:[{name:'Shipping — parcel '+(STATE.pendingParcel||''),tier:'',price:Number(r.fee||0)}],
+      subtotal:Number(r.fee||0), shipping:0, creditUsed:0, total:Number(r.fee||0),
+      paynowMobile:r.paynowMobile||(STATE.payInfo&&STATE.payInfo.mobile)||'',
+      paynowName:r.paynowName||(STATE.payInfo&&STATE.payInfo.name)||'FloofMart TCG',
+      paymentWindowMins:Number(r.paymentWindowMins||10) });
   }
-  else if(r.ok&&r.shipOrderId){ ORDERS_CACHE=null; await loadOrders(true); resumePayment(r.shipOrderId); }
   else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||('Could not start shipping ('+(r.error||JSON.stringify(r).slice(0,120))+')'));
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
@@ -1920,8 +1936,7 @@ function renderParcelCard(p){
       <div class="po-cards" id="poc-${o.id}">
        ${o.items.filter(i=>!i.refunded).map(i=>`<div class="po-card"><div class="po-thumb">${i.image?`<img src="${imgUrl(i.image,200)}">`:(EMOJI[i.tier]||'🃏')}</div><div class="po-cn">${i.name}${i.number?`<div style="font-size:10.5px;color:var(--hint);font-weight:600">${i.number}</div>`:''}</div><div class="po-cp">$${i.price.toFixed(2)}</div></div>`).join('')}
         <button class="po-inv" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
-      </div>`).join('')}</div>
-    ${unpaid.length?`<div class="parcel-hint">⏳ Pay the ${unpaid.length} pending order${unpaid.length>1?'s':''} above — unpaid orders auto-release after the payment window.</div>`:''}
+      </div>`).join('')}</div>    ${unpaid.length?`<div class="parcel-hint">⏳ Pay the ${unpaid.length} pending order${unpaid.length>1?'s':''} above — your parcel can't be sent until they're settled. Shop orders release themselves if they time out; claim wins are held for you.</div>`:''}
     ${foot}</div>`;
 }
 const OFILTERS=[
@@ -2225,12 +2240,11 @@ function renderWishlist(){
   const sub=document.getElementById('p-wish-sub');
   if(sub) sub.textContent=STATE.wishes.length?`Watching ${STATE.wishes.length} — we'll ping you`:'Get pinged when cards restock';
   if(!STATE.wishes.length){ el.innerHTML=`<div class="empty" style="padding:24px"><div class="e-ic">🔔</div><p>Nothing on your wishlist yet.<br>Add a Pokémon or set above 🐾</p></div>`; return; }
-  el.innerHTML=STATE.wishes.map((w,i)=>
+    el.innerHTML=STATE.wishes.map((w,i)=>
     `<div class="wrow"><span class="wk">${w.kind==='set'?'📚':'⭐'}</span>
       <div class="wn">${esc(w.label||w.target)}<div class="ws">${w.kind==='set'?'Set':'Pokémon'}</div></div>
       <button class="rm" onclick="guard(this,()=>removeWishAt(${i}))">✕</button></div>`).join('');
 }
-
 /* ============ BUYBACK / SELL REQUEST ============ */
 function updateRateLabels(){
   const rc=document.getElementById('rate-credit'), rk=document.getElementById('rate-cash');
