@@ -985,7 +985,38 @@ button.busy{position:relative;color:transparent!important}
 const API_URL = "https://fluffmart-api.shrimaniac.workers.dev/api"; // new modules-format Worker
 /* ================================ */
 
-function imgUrl(u,w){ if(!u) return u; return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
+function imgUrl(u,w){ if(!u) return u; u=String(u).split('|')[0].trim(); return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
+
+/* A bundle with no photo of its own shows its cards instead: image holds the
+   first, image_back holds the rest joined with "|". Only bundles do this, so
+   backOf() keeps a real back scan working everywhere else. */
+function isBundle(c){ return String((c&&c.category)||'').toLowerCase()==='bundle'; }
+function faceList(c){
+  if(!c) return [];
+  const extra=String(c.imageBack||'').split('|').map(s=>s.trim()).filter(Boolean);
+  if(!isBundle(c)) return c.image?[c.image]:[];
+  return [c.image].concat(extra).filter(Boolean);
+}
+function backOf(c){ return isBundle(c)?'':String((c&&c.imageBack)||''); }
+
+/* One timer walks every fanning tile on the page. Re-rendering the grid throws
+   the old elements away, so renderStore re-arms it rather than tracking each. */
+let FAN_TIMER=null;
+function armFans(){
+  if(FAN_TIMER){ clearInterval(FAN_TIMER); FAN_TIMER=null; }
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if(!document.querySelector('[data-fan]')) return;
+  FAN_TIMER=setInterval(()=>{
+    document.querySelectorAll('[data-fan]').forEach(el=>{
+      let list; try{ list=JSON.parse(el.dataset.fan); }catch(e){ return; }
+      if(!Array.isArray(list)||list.length<2) return;
+      const i=((Number(el.dataset.fi)||0)+1)%list.length;
+      el.dataset.fi=i;
+      el.style.opacity='0';
+      setTimeout(()=>{ el.src=imgUrl(list[i],400); el.style.opacity='1'; },180);
+    });
+  },2200);
+}
 /* The same card can exist as several Inventory rows — one per portfolio/consignor —
    so costs and payouts stay per-owner. Buyers should see ONE listing. Rows merge only
    when they're the same card, condition, grade, variance AND price; the server
@@ -1466,12 +1497,15 @@ function renderStore(){
   grid.innerHTML = list.map(c=>{
     const inCart = STATE.cart.filter(x=>x.id===c.id).length;
     const soldOut = (c.qty - inCart) <= 0;
-    const front = c.image?`<img src="${imgUrl(c.image,400)}" loading="lazy" alt="">`:(EMOJI[c.tier]||'🃏');
+    const faces = faceList(c);
+    const front = faces.length
+      ? `<img src="${imgUrl(faces[0],400)}" loading="lazy" alt="" style="transition:opacity .18s"${faces.length>1?` data-fan='${esc(JSON.stringify(faces))}' data-fi="0"`:''}>`
+      : (EMOJI[c.tier]||'🃏');
     return `<div class="pcard" onclick="openCardView('${c.id}')">
       <div class="tier">${esc(rarityLabel(c))}</div>
       ${c.qty===1?'<div class="stock-tag">Only 1!</div>':(c.qty<=3&&c.qty>1?`<div class="stock-tag">${c.qty} left</div>`:'')}
       <div class="img">${front}
-        ${c.imageBack?'<div class="flip-hint">⤾ flip</div>':''}
+        ${backOf(c)?'<div class="flip-hint">⤾ flip</div>':''}${faces.length>1?`<div class="flip-hint">🖼 ${faces.length}</div>`:''}
         ${c.imageType==='stock'?'<div class="stockflag">stock image</div>':''}
         ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
       <div class="body">
@@ -1482,8 +1516,9 @@ function renderStore(){
           <span class="price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="was">$${c.marketPrice.toFixed(2)}</span>`:''}</span>
           <button class="add" ${soldOut?'disabled':''} onclick="event.stopPropagation();addToCart('${c.id}')">+</button>
         </div>
-      </div></div>`;
+            </div></div>`;
   }).join('');
+  armFans();
 }
 
 async function askPics(id){
@@ -1495,8 +1530,9 @@ async function askPics(id){
 }
 function openCardView(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
+  const cvFaces = faceList(c);
   const front = c.image?`<img src="${imgUrl(c.image,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo yet</span></div>`;
-  const hasBack = !!c.imageBack;
+  const hasBack = !!backOf(c);
   const soldOut=(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0;
   document.getElementById('cardViewBody').innerHTML = `
     <div class="cv-panel">
@@ -1505,7 +1541,7 @@ function openCardView(id){
         <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="this.classList.toggle('flipped')"`:''}>
           <div class="cv-inner">
             <div class="cv-face cv-front">${front}</div>
-            ${hasBack?`<div class="cv-face cv-back"><img src="${imgUrl(c.imageBack,800)}" alt="back"></div>`:''}
+            ${hasBack?`<div class="cv-face cv-back"><img src="${imgUrl(backOf(c),800)}" alt="back"></div>`:''}
           </div>
           ${c.image?`<button class="cv-zoom" onclick="event.stopPropagation();zoomCard('${c.id}')">🔍</button>`:''}
         </div>
@@ -1552,8 +1588,8 @@ function makeOfferById(id){
 function zoomCard(id){
   const c=STATE.inventory.find(x=>x.id===id); if(!c) return;
   const el=document.getElementById('cvCard');
-  const back = el && el.classList.contains('flipped') && c.imageBack;
-  openZoom(imgUrl(back?c.imageBack:c.image,1600));
+  const back = el && el.classList.contains('flipped') && backOf(c);
+  openZoom(imgUrl(back?backOf(c):c.image,1600));
 }
 function closeOffer(){ document.getElementById('offerScrim').classList.remove('show'); document.getElementById('offerSheet').classList.remove('show'); }
 async function sendOffer(){
