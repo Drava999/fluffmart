@@ -141,6 +141,26 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .flip-back{transform:rotateY(180deg);background:linear-gradient(135deg,#d9c4a0,#c9ae82)}
 .flip-hint{position:absolute;bottom:6px;right:6px;background:rgba(74,53,36,.6);color:#fff;font-size:10px;
   font-weight:800;padding:2px 7px;border-radius:8px;z-index:2;pointer-events:none}
+
+/* A bundle fans its cards out like a hand, so you can see every one at a glance.
+   Higher specificity than ".pcard .img img", which would stretch them to fill. */
+.bfan{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.pcard .img .bfan img, .bfan img{
+  position:absolute;width:auto;height:64%;max-width:none;object-fit:contain;
+  border-radius:5px;box-shadow:0 3px 10px rgba(0,0,0,.30);
+  transform-origin:50% 92%;transition:transform .35s cubic-bezier(.3,.8,.4,1);
+  background:#fff}
+.pcard:hover .bfan img{transform:var(--spread,none)}
+.bmore{position:absolute;bottom:6px;left:6px;z-index:9;background:rgba(74,53,36,.72);color:#fff;
+  font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;pointer-events:none}
+@media (prefers-reduced-motion:reduce){ .bfan img{transition:none} }
+
+/* Thumbnail strip under the big card view — tap one to bring it to the front. */
+.cv-strip{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.cv-strip img{width:44px;height:62px;object-fit:cover;border-radius:5px;cursor:pointer;
+  border:2px solid transparent;opacity:.6;transition:opacity .15s,border-color .15s}
+.cv-strip img.on{opacity:1;border-color:var(--berry,#B4589A)}
+.cv-strip img:hover{opacity:1}
 .pcard .body{padding:9px 10px 11px}
 .pcard .nm{font-size:13px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px}
 .pcard .meta{font-size:11px;color:var(--hint);margin-top:2px}
@@ -999,6 +1019,37 @@ function faceList(c){
 }
 function backOf(c){ return isBundle(c)?'':String((c&&c.imageBack)||''); }
 
+/* Lay the faces out like a hand of cards: each one offset and tilted a little
+   further right, stacking front-to-back, so every card's left edge shows. Four
+   is the most that stays readable in a tile; the rest become a "+2". The sizes
+   are computed here rather than in CSS because they have to shrink as the fan
+   widens, or the outer cards run off the tile. */
+function fanHtml(faces,w){
+  const show=faces.slice(0,4), n=show.length, extra=faces.length-n;
+  const mid=(n-1)/2;
+  const step = n<=2 ? 40 : n===3 ? 30 : 26;   // % of a card's own width
+  const tilt = n<=2 ? 7  : n===3 ? 9  : 7;    // degrees
+  const h    = n<=2 ? 68 : n===3 ? 62 : 54;   // % of the tile's height
+  const cards=show.map((u,i)=>{
+    const off=i-mid;
+    const t=`translateX(${(off*step).toFixed(1)}%) rotate(${(off*tilt).toFixed(1)}deg)`;
+    const s=`translateX(${(off*step*1.3).toFixed(1)}%) rotate(${(off*tilt*1.2).toFixed(1)}deg)`;
+    return `<img src="${imgUrl(u,w)}" loading="lazy" alt="" `+
+           `style="height:${h}%;transform:${t};--spread:${s};z-index:${i+1}">`;
+  }).join('');
+  return `<div class="bfan">${cards}</div>`+(extra>0?`<span class="bmore">+${extra}</span>`:'');
+}
+
+/* The card view keeps the full set, however many there are. */
+let CV_FACES=[];
+function cvFace(el,i){
+  const img=document.querySelector('#cvCard .cv-front img');
+  if(!img||!CV_FACES[i]) return;
+  img.src=imgUrl(CV_FACES[i],800);
+  document.querySelectorAll('.cv-strip img').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+}
+
 /* One timer walks every fanning tile on the page. Re-rendering the grid throws
    the old elements away, so renderStore re-arms it rather than tracking each. */
 let FAN_TIMER=null;
@@ -1498,14 +1549,14 @@ function renderStore(){
     const inCart = STATE.cart.filter(x=>x.id===c.id).length;
     const soldOut = (c.qty - inCart) <= 0;
     const faces = faceList(c);
-    const front = faces.length
-      ? `<img src="${imgUrl(faces[0],400)}" loading="lazy" alt="" style="transition:opacity .18s"${faces.length>1?` data-fan='${esc(JSON.stringify(faces))}' data-fi="0"`:''}>`
+    const front = faces.length>1 ? fanHtml(faces,400)
+      : faces.length ? `<img src="${imgUrl(faces[0],400)}" loading="lazy" alt="">`
       : (EMOJI[c.tier]||'🃏');
     return `<div class="pcard" onclick="openCardView('${c.id}')">
       <div class="tier">${esc(rarityLabel(c))}</div>
       ${c.qty===1?'<div class="stock-tag">Only 1!</div>':(c.qty<=3&&c.qty>1?`<div class="stock-tag">${c.qty} left</div>`:'')}
       <div class="img">${front}
-        ${backOf(c)?'<div class="flip-hint">⤾ flip</div>':''}${faces.length>1?`<div class="flip-hint">🖼 ${faces.length}</div>`:''}
+        ${backOf(c)?'<div class="flip-hint">⤾ flip</div>':''}
         ${c.imageType==='stock'?'<div class="stockflag">stock image</div>':''}
         ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
       <div class="body">
@@ -1531,6 +1582,7 @@ async function askPics(id){
 function openCardView(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
   const cvFaces = faceList(c);
+  CV_FACES = cvFaces;
   const front = c.image?`<img src="${imgUrl(c.image,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo yet</span></div>`;
   const hasBack = !!backOf(c);
   const soldOut=(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0;
@@ -1546,6 +1598,7 @@ function openCardView(id){
           ${c.image?`<button class="cv-zoom" onclick="event.stopPropagation();zoomCard('${c.id}')">🔍</button>`:''}
         </div>
         ${hasBack?'<div class="cv-flip-hint">tap card to flip ⤾ · 🔍 to zoom</div>':(c.image?'<div class="cv-flip-hint">🔍 tap to zoom in</div>':'')}
+        ${cvFaces.length>1?`<div class="cv-strip">${cvFaces.map((u,i)=>`<img src="${imgUrl(u,200)}" alt="" class="${i===0?'on':''}" onclick="event.stopPropagation();cvFace(this,${i})">`).join('')}</div>`:''}
       </div>
       <div class="cv-meta">
         <div class="cv-name">${c.name}</div>
