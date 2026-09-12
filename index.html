@@ -160,7 +160,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .cv-strip img{width:44px;height:62px;object-fit:cover;border-radius:5px;cursor:pointer;
   border:2px solid transparent;opacity:.6;transition:opacity .15s,border-color .15s}
 .cv-strip img.on{opacity:1;border-color:var(--berry,#B4589A)}
-.cv-strip img:hover{opacity:1}
+/* Touch webviews keep :hover stuck on whatever you last tapped, so every
+   thumbnail you'd touched stayed lit and looked selected. Mouse only. */
+@media (hover:hover){ .cv-strip img:hover{opacity:1} }
 .pcard .body{padding:9px 10px 11px}
 .pcard .nm{font-size:13px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px}
 .pcard .meta{font-size:11px;color:var(--hint);margin-top:2px}
@@ -1092,6 +1094,11 @@ function fanHtml(faces,w){
    BOTH faces of the big card, so each card in a bundle flips to its own back. */
 let CV_FACES=[], CV_CUR=0;
 function cvFace(el,i){
+  // Clear the highlight FIRST, and only within this strip. Doing it at the end
+  // meant an early return could leave two thumbnails marked selected.
+  const strip=(el&&el.closest)?el.closest('.cv-strip'):document.querySelector('.cv-strip');
+  if(strip) strip.querySelectorAll('img').forEach(x=>x.classList.remove('on'));
+  if(el&&el.classList) el.classList.add('on');
   const f=CV_FACES[i]; if(!f) return;
   CV_CUR=i;
   const card=document.getElementById('cvCard');
@@ -1105,8 +1112,6 @@ function cvFace(el,i){
   }
   const hint=document.querySelector('.cv-flip-hint');
   if(hint) hint.textContent=f.b?'tap card to flip ⤾ · 🔍 to zoom':'🔍 tap to zoom in';
-  document.querySelectorAll('.cv-strip img').forEach(x=>x.classList.remove('on'));
-  if(el&&el.classList) el.classList.add('on');
 }
 
 /* One timer walks every fanning tile on the page. Re-rendering the grid throws
