@@ -166,7 +166,42 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .pcard .meta{font-size:11px;color:var(--hint);margin-top:2px}
 .tier{position:absolute;top:8px;left:8px;font-size:10px;font-weight:800;letter-spacing:.4px;
   padding:3px 7px;border-radius:8px;background:#fff;color:var(--berry-deep);box-shadow:0 1px 4px rgba(0,0,0,.12);
-  max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  z-index:2}
+
+/* Rarity you can read at arm's length. Three bands, picked from the same
+   RARITY_ORDER list that drives sorting — so adding a rarity to that list
+   styles it too, with no second place to keep in step. */
+.tier.holo{color:#4a2b3f;box-shadow:0 1px 7px rgba(0,0,0,.2);
+  background:linear-gradient(110deg,#ffdff4 0%,#dfeaff 22%,#dcffe9 44%,#fff3cc 66%,#ffdff4 88%);
+  background-size:260% 100%;animation:holoshift 7s linear infinite}
+@keyframes holoshift{to{background-position:260% 0}}
+.tier.hi{background:var(--berry);color:#fff}
+.tier.mid{background:var(--ruff);color:var(--berry-deep)}
+.pcard.top-rarity{box-shadow:0 2px 14px rgba(180,88,154,.22)}
+.pcard.top-rarity:hover{box-shadow:0 10px 30px rgba(180,88,154,.32)}
+@media (prefers-reduced-motion:reduce){ .tier.holo{animation:none} }
+
+/* "Just in" rail on the home screen — the shop's front window. */
+.jrail-hd{display:flex;align-items:baseline;justify-content:space-between;margin:20px 4px 10px}
+.jrail-hd .jt{font-size:12px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--fawn-deep);border-bottom:2.5px solid var(--mint);padding-bottom:3px}
+.jrail-hd .ja{font-size:12px;font-weight:700;color:var(--hint)}
+.jrail{display:flex;gap:10px;overflow-x:auto;padding:2px 4px 8px;scrollbar-width:none;
+  scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.jrail::-webkit-scrollbar{display:none}
+.jcard{flex:0 0 92px;scroll-snap-align:start;text-align:left;background:none;padding:0}
+.jimg{height:118px;border-radius:11px;overflow:hidden;position:relative;
+  background:linear-gradient(135deg,var(--ruff),#e9d3ad);display:flex;align-items:center;
+  justify-content:center;font-size:26px;box-shadow:0 2px 10px rgba(180,88,154,.14)}
+.jimg img{width:100%;height:100%;object-fit:cover;display:block}
+.jcard:active .jimg{transform:scale(.96)}
+.jimg{transition:transform .15s ease}
+.jnm{font-size:11.5px;font-weight:700;line-height:1.25;margin-top:5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.jpr{font-size:12px;font-weight:800;color:var(--fawn-deep);margin-top:1px}
+.jnew{position:absolute;top:5px;right:5px;font-size:8.5px;font-weight:800;letter-spacing:.3px;
+  background:var(--yellow);color:#7a5a00;padding:2px 5px;border-radius:6px}
 .prow{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
 .price{font-family:'Plus Jakarta Sans';font-size:16px;font-weight:600;color:var(--fawn-deep)}
 .was{font-size:11px;color:var(--hint);font-weight:600;text-decoration:line-through;margin-left:5px}
@@ -761,6 +796,7 @@ button.busy{position:relative;color:transparent!important}
         <div class="stat"><div class="n" id="ov-transit">0</div><div class="l">Cards on the way</div></div>
       </div>
     </div>
+    <div id="ov-justin"></div>
     <div class="section-t">What you can do</div>
     <button class="feat" onclick="go('store')">
       <div class="ic">🛍️</div><div><h3>Browse the store</h3><p>Cards available to claim right now</p></div>
@@ -1258,6 +1294,18 @@ function rarityRank(c){
   const p = RARITY_POS[rarityLabel(c).toLowerCase()];
   return p === undefined ? 999 : p;
 }
+/* Which of the three visual bands this rarity sits in. Driven by position in
+   RARITY_ORDER, so reordering that list restyles the grid automatically.
+   0–2 Special Art / Secret / Mega Attack · 3–6 the Ultra→Art Rare band ·
+   7–9 ACE SPEC and Double Rare · everything below stays plain. */
+function rarityClass(c){
+  const p = RARITY_POS[rarityLabel(c).toLowerCase()];
+  if(p === undefined) return '';
+  if(p <= 2) return ' holo';
+  if(p <= 6) return ' hi';
+  if(p <= 9) return ' mid';
+  return '';
+}
 
 /* demo data so the app is previewable before the backend is wired */
 const DEMO_INV = [
@@ -1472,6 +1520,34 @@ function renderLoyalty(r){
       </div>`:''}
     </div>`;
 }
+/* The shop's front window: the newest singles, tappable straight into the card
+   view. Falls back to rarest-then-dearest when nothing carries a date, so a
+   sheet that predates the date_added column still shows something. */
+function renderJustIn(){
+  const el=document.getElementById('ov-justin'); if(!el) return;
+  const pool=(STATE.inventory||[]).filter(c=>(c.category||'single').toLowerCase()!=='merch' && Number(c.qty)>0);
+  if(pool.length<3){ el.innerHTML=''; return; }
+  const dated=pool.filter(c=>Number(c.dateAdded)>0);
+  const list=(dated.length>=3
+      ? dated.slice().sort((a,b)=>Number(b.dateAdded)-Number(a.dateAdded))
+      : pool.slice().sort((a,b)=>rarityRank(a)-rarityRank(b)||b.price-a.price)
+    ).slice(0,8);
+  const newest=Number(list[0]&&list[0].dateAdded)||0;
+  const DAY=86400000;
+  el.innerHTML=`
+    <div class="jrail-hd"><span class="jt">${dated.length>=3?'Just in':'Top picks'}</span>
+      <button class="ja" onclick="go('store')">See all ›</button></div>
+    <div class="jrail">${list.map(c=>{
+      const faces=faceList(c);
+      const im=faces.length?`<img src="${imgUrl(faces[0].f,300)}" loading="lazy" alt="">`:(EMOJI[c.tier]||'🃏');
+      const fresh=newest && Number(c.dateAdded) && (newest-Number(c.dateAdded))<3*DAY;
+      return `<button class="jcard" onclick="openCardView('${c.id}')">
+        <div class="jimg">${im}${fresh?'<span class="jnew">NEW</span>':''}</div>
+        <div class="jnm">${esc(c.name)}</div>
+        <div class="jpr">$${Number(c.price).toFixed(2)}</div>
+      </button>`;
+    }).join('')}</div>`;
+}
 function shareReferral(link){
   try{
     if(tg&&tg.openTelegramLink){ tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Come collect Pokémon cards at FloofMart TCG! 🐑')); return; }
@@ -1559,8 +1635,7 @@ function renderStore(){
     // rarity: display order first, then price high
     return rarityRank(a)-rarityRank(b) || b.price-a.price;
   });
-  const grid = document.getElementById('storeGrid');
-  if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔎</div><p>No cards match. Try another tier or search.</p></div>`; return; }
+  const grid = document.getElementById('storeGrid');  if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔎</div><p>Nothing matching that yet.<br>Try another rarity — or add it to your wishlist and we'll ping you 🐾</p><button class="cta-alt" style="max-width:220px;margin:12px auto 0" onclick="openWishlist()">🔔 Watch for it</button></div>`; return; }
   grid.innerHTML = list.map(c=>{
     const inCart = STATE.cart.filter(x=>x.id===c.id).length;
     const soldOut = (c.qty - inCart) <= 0;
@@ -1568,17 +1643,17 @@ function renderStore(){
     const front = faces.length>1 ? fanHtml(faces,400)
       : faces.length ? `<img src="${imgUrl(faces[0].f,400)}" loading="lazy" alt="">`
       : (EMOJI[c.tier]||'🃏');
-    return `<div class="pcard" onclick="openCardView('${c.id}')">
-      <div class="tier">${esc(rarityLabel(c))}</div>
+      return `<div class="pcard${rarityClass(c)===' holo'?' top-rarity':''}" onclick="openCardView('${c.id}')">
+      <div class="tier${rarityClass(c)}">${esc(rarityLabel(c))}</div>
       ${c.qty===1?'<div class="stock-tag">Only 1!</div>':(c.qty<=3&&c.qty>1?`<div class="stock-tag">${c.qty} left</div>`:'')}
       <div class="img">${front}
         ${backOf(c)?'<div class="flip-hint">⤾ flip</div>':''}
         ${c.imageType==='stock'?'<div class="stockflag">stock image</div>':''}
         ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
       <div class="body">
-        <div class="nm">${c.name}</div>
-        <div class="meta">${c.set}${c.number?' · '+c.number:''}</div>
-        <div class="desc">${esc(rarityLabel(c))}${c.variance?' · '+esc(c.variance):''} · ${c.grade?('Graded '+esc(c.grade)):esc(c.condition||'NM')}</div>
+                <div class="nm">${esc(c.name)}</div>
+        <div class="meta">${esc(c.set||'')}${c.number?' · '+esc(c.number):''}</div>
+        <div class="desc">${[c.variance?esc(c.variance):'', c.grade?('Graded '+esc(c.grade)):esc(c.condition||'NM')].filter(Boolean).join(' · ')}</div>
         <div class="prow">
           <span class="price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="was">$${c.marketPrice.toFixed(2)}</span>`:''}</span>
           <button class="add" ${soldOut?'disabled':''} onclick="event.stopPropagation();addToCart('${c.id}')">+</button>
@@ -1586,6 +1661,7 @@ function renderStore(){
             </div></div>`;
   }).join('');
   armFans();
+  renderJustIn()
 }
 
 async function askPics(id){
