@@ -1067,7 +1067,7 @@ function faceList(c){
   const cover=String(c.image||'').trim();
   return cover?[{f:cover,b:''}]:[];
 }
-}ion backOf(c){ return isBundle(c)?'':String((c&&c.imageBack)||''); }
+function backOf(c){ return isBundle(c)?'':String((c&&c.imageBack)||''); }
 
 /* Lay the faces out like a hand of cards: each one offset and tilted a little
    further right, stacking front-to-back, so every card's left edge shows. Four
