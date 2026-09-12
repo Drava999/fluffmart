@@ -1618,7 +1618,7 @@ function openCardView(id){
           ${c.image?`<button class="cv-zoom" onclick="event.stopPropagation();zoomCard('${c.id}')">🔍</button>`:''}
         </div>
         ${hasBack?'<div class="cv-flip-hint">tap card to flip ⤾ · 🔍 to zoom</div>':(c.image?'<div class="cv-flip-hint">🔍 tap to zoom in</div>':'')}
-        ${cvFaces.length>1?`<div class="cv-strip">${cvFaces.map((u,i)=>`<img src="${imgUrl(u,200)}" alt="" class="${i===0?'on':''}" onclick="event.stopPropagation();cvFace(this,${i})">`).join('')}</div>`:''}
+        ${cvFaces.length>1?`<div class="cv-strip">${cvFaces.map((u,i)=>`<img src="${imgUrl(u.f,200)}" alt="" class="${i===0?'on':''}" onclick="event.stopPropagation();cvFace(this,${i})">`).join('')}</div>`:''}
       </div>
       <div class="cv-meta">
         <div class="cv-name">${c.name}</div>
@@ -1661,9 +1661,11 @@ function makeOfferById(id){
 function zoomCard(id){
   const c=STATE.inventory.find(x=>x.id===id); if(!c) return;
   const el=document.getElementById('cvCard');
-  const back = el && el.classList.contains('flipped') && backOf(c);
-  openZoom(imgUrl(back?backOf(c):c.image,1600));
-}
+  const flipped = !!(el && el.classList.contains('flipped'));
+  // Zoom whichever card is actually on screen, not always the row's own image —
+  // in a bundle that's whichever face the strip last selected.
+  const cur = (typeof CV_FACES!=='undefined' && CV_FACES[CV_CUR]) || {f:c.image, b:backOf(c)};
+  openZoom(imgUrl(flipped && cur.b ? cur.b : cur.f, 1600));
 function closeOffer(){ document.getElementById('offerScrim').classList.remove('show'); document.getElementById('offerSheet').classList.remove('show'); }
 async function sendOffer(){
   if(!OFFER_CARD) return;
