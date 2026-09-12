@@ -1005,17 +1005,22 @@ button.busy{position:relative;color:transparent!important}
 const API_URL = "https://fluffmart-api.shrimaniac.workers.dev/api"; // new modules-format Worker
 /* ================================ */
 
-function imgUrl(u,w){ if(!u) return u; u=String(u).split('|')[0].trim(); return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
+function imgUrl(u,w){ if(!u) return u; u=String(u).split('|')[0].split('~')[0].trim(); return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
 
 /* A bundle with no photo of its own shows its cards instead: image holds the
    first, image_back holds the rest joined with "|". Only bundles do this, so
    backOf() keeps a real back scan working everywhere else. */
 function isBundle(c){ return String((c&&c.category)||'').toLowerCase()==='bundle'; }
+/* For a bundle, imageBack is the whole set, one entry per card, each written
+   "front" or "front~back". Everything else has a single front and maybe a back. */
 function faceList(c){
   if(!c) return [];
-  const extra=String(c.imageBack||'').split('|').map(s=>s.trim()).filter(Boolean);
-  if(!isBundle(c)) return c.image?[c.image]:[];
-  return [c.image].concat(extra).filter(Boolean);
+  if(!isBundle(c)) return c.image?[{f:c.image,b:String(c.imageBack||'')}]:[];
+  const out=String(c.imageBack||'').split('|').map(s=>s.trim()).filter(Boolean)
+    .map(s=>{ const p=s.split('~'); return {f:(p[0]||'').trim(), b:(p[1]||'').trim()}; })
+    .filter(x=>x.f);
+  if(!out.length && c.image) return [{f:c.image,b:''}];
+  return out;
 }
 function backOf(c){ return isBundle(c)?'':String((c&&c.imageBack)||''); }
 
@@ -1034,20 +1039,31 @@ function fanHtml(faces,w){
     const off=i-mid;
     const t=`translateX(${(off*step).toFixed(1)}%) rotate(${(off*tilt).toFixed(1)}deg)`;
     const s=`translateX(${(off*step*1.3).toFixed(1)}%) rotate(${(off*tilt*1.2).toFixed(1)}deg)`;
-    return `<img src="${imgUrl(u,w)}" loading="lazy" alt="" `+
+        return `<img src="${imgUrl(u.f,w)}" loading="lazy" alt="" `+
            `style="height:${h}%;transform:${t};--spread:${s};z-index:${i+1}">`;
   }).join('');
   return `<div class="bfan">${cards}</div>`+(extra>0?`<span class="bmore">+${extra}</span>`:'');
 }
 
-/* The card view keeps the full set, however many there are. */
-let CV_FACES=[];
+/* The card view keeps the full set, however many there are. Selecting one swaps
+   BOTH faces of the big card, so each card in a bundle flips to its own back. */
+let CV_FACES=[], CV_CUR=0;
 function cvFace(el,i){
-  const img=document.querySelector('#cvCard .cv-front img');
-  if(!img||!CV_FACES[i]) return;
-  img.src=imgUrl(CV_FACES[i],800);
+  const f=CV_FACES[i]; if(!f) return;
+  CV_CUR=i;
+  const card=document.getElementById('cvCard');
+  const fi=card&&card.querySelector('.cv-front img');
+  const bi=card&&card.querySelector('.cv-back img');
+  if(fi) fi.src=imgUrl(f.f,800);
+  if(card) card.classList.remove('flipped');
+  if(bi){
+    if(f.b){ bi.src=imgUrl(f.b,800); if(card) card.classList.remove('noflip'); }
+    else { bi.removeAttribute('src'); if(card) card.classList.add('noflip'); }
+  }
+  const hint=document.querySelector('.cv-flip-hint');
+  if(hint) hint.textContent=f.b?'tap card to flip ⤾ · 🔍 to zoom':'🔍 tap to zoom in';
   document.querySelectorAll('.cv-strip img').forEach(x=>x.classList.remove('on'));
-  el.classList.add('on');
+  if(el&&el.classList) el.classList.add('on');
 }
 
 /* One timer walks every fanning tile on the page. Re-rendering the grid throws
@@ -1582,9 +1598,13 @@ async function askPics(id){
 function openCardView(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
   const cvFaces = faceList(c);
-  CV_FACES = cvFaces;
-  const front = c.image?`<img src="${imgUrl(c.image,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo yet</span></div>`;
-  const hasBack = !!backOf(c);
+  CV_FACES = cvFaces; CV_CUR = 0;
+  const f0 = cvFaces[0] || {f:c.image||'', b:''};
+  // A bundle flips if ANY of its cards has a back — cvFace swaps the back face
+  // in as you pick each one, so the card has to be built flippable up front.
+  const anyBack = cvFaces.some(x=>x.b);
+  const front = f0.f?`<img src="${imgUrl(f0.f,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo yet</span></div>`;
+  const hasBack = anyBack;
   const soldOut=(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0;
   document.getElementById('cardViewBody').innerHTML = `
     <div class="cv-panel">
@@ -1593,7 +1613,7 @@ function openCardView(id){
         <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="this.classList.toggle('flipped')"`:''}>
           <div class="cv-inner">
             <div class="cv-face cv-front">${front}</div>
-            ${hasBack?`<div class="cv-face cv-back"><img src="${imgUrl(backOf(c),800)}" alt="back"></div>`:''}
+            ${hasBack?`<div class="cv-face cv-back"><img src="${f0.b?imgUrl(f0.b,800):''}" alt="back"></div>`:''}
           </div>
           ${c.image?`<button class="cv-zoom" onclick="event.stopPropagation();zoomCard('${c.id}')">🔍</button>`:''}
         </div>
