@@ -1566,7 +1566,7 @@ function renderStore(){
     const soldOut = (c.qty - inCart) <= 0;
     const faces = faceList(c);
     const front = faces.length>1 ? fanHtml(faces,400)
-      : faces.length ? `<img src="${imgUrl(faces[0],400)}" loading="lazy" alt="">`
+      : faces.length ? `<img src="${imgUrl(faces[0].f,400)}" loading="lazy" alt="">`
       : (EMOJI[c.tier]||'🃏');
     return `<div class="pcard" onclick="openCardView('${c.id}')">
       <div class="tier">${esc(rarityLabel(c))}</div>
@@ -1618,7 +1618,7 @@ function openCardView(id){
           ${c.image?`<button class="cv-zoom" onclick="event.stopPropagation();zoomCard('${c.id}')">🔍</button>`:''}
         </div>
         ${hasBack?'<div class="cv-flip-hint">tap card to flip ⤾ · 🔍 to zoom</div>':(c.image?'<div class="cv-flip-hint">🔍 tap to zoom in</div>':'')}
-        ${cvFaces.length>1?`<div class="cv-strip">${cvFaces.map((u,i)=>`<img src="${imgUrl(u.f,200)}" alt="" class="${i===0?'on':''}" onclick="event.stopPropagation();cvFace(this,${i})">`).join('')}</div>`:''}
+                ${cvFaces.length>1?`<div class="cv-strip">${cvFaces.map((u,i)=>`<img src="${imgUrl(u.f,200)}" alt="" class="${i===0?'on':''}" onclick="event.stopPropagation();cvFace(this,${i})">`).join('')}</div>`:''}
       </div>
       <div class="cv-meta">
         <div class="cv-name">${c.name}</div>
