@@ -1294,6 +1294,36 @@ function rarityRank(c){
   const p = RARITY_POS[rarityLabel(c).toLowerCase()];
   return p === undefined ? 999 : p;
 }
+
+/* Condition vocabulary — the same table the bot uses, so a card reads the same
+   in the shop as it does in the drop post. NM is spelled out in full on the
+   card page; the grid tile keeps the short code so it fits. */
+const CONDITIONS = [
+  {c:'GEM', full:'Gem Mint',          re:/^(gem[\s_-]*mint|gem|gm)$/i,  blurb:'flawless — perfectly centred, razor corners'},
+  {c:'M',   full:'Mint',              re:/^(mint|m)$/i,                  blurb:'as it left the pack — no wear at all'},
+  {c:'NM',  full:'Near Mint',         re:/^(near[\s_-]*mint|nm|nm[\s_-]*m|n\/m)$/i, blurb:'pack-fresh — at most a tiny edge nick under bright light'},
+  {c:'EX',  full:'Excellent',         re:/^(excellent|exc|nm[\s_-]*ex)$/i, blurb:'very light handling, still displays beautifully'},
+  {c:'LP',  full:'Lightly Played',    re:/^(lightly[\s_-]*played|light[\s_-]*play|slightly[\s_-]*played|lp|sp)$/i, blurb:'minor edge or surface wear — no creases, no bends'},
+  {c:'MP',  full:'Moderately Played', re:/^(moderately[\s_-]*played|moderate[\s_-]*play|played|mp|pl)$/i, blurb:'visible whitening or a light scratch — sleeves up fine'},
+  {c:'HP',  full:'Heavily Played',    re:/^(heavily[\s_-]*played|heavy[\s_-]*play|hp)$/i, blurb:'heavy whitening and scuffs, possibly a small crease'},
+  {c:'DMG', full:'Damaged',           re:/^(damaged|damage|dmg|dm|poor|pr)$/i, blurb:'creased, torn, water-marked or otherwise damaged'},
+  {c:'',    full:'Sealed · brand new',re:/^(sealed|factory[\s_-]*sealed|new|brand[\s_-]*new|bnib|bn)$/i, blurb:'never opened'}
+];
+function condEntry(v){
+  const s = String(v == null ? '' : v).trim();
+  if(!s) return null;
+  return CONDITIONS.find(x => x.re.test(s)) || null;
+}
+function condFull(v){
+  const e = condEntry(v);
+  if(e) return e.full + (e.c ? ' (' + e.c + ')' : '');
+  return String(v == null ? '' : v).trim() || 'Near Mint (NM)';
+}
+function condShort(v){
+  const e = condEntry(v);
+  return e ? (e.c || 'Sealed') : (String(v || '').trim() || 'NM');
+}
+function condBlurb(v){ const e = condEntry(v); return e ? e.blurb : ''; }
 /* Which of the three visual bands this rarity sits in. Driven by position in
    RARITY_ORDER, so reordering that list restyles the grid automatically.
    0–2 Special Art / Secret / Mega Attack · 3–6 the Ultra→Art Rare band ·
@@ -1653,7 +1683,7 @@ function renderStore(){
       <div class="body">
                 <div class="nm">${esc(c.name)}</div>
         <div class="meta">${esc(c.set||'')}${c.number?' · '+esc(c.number):''}</div>
-        <div class="desc">${[c.variance?esc(c.variance):'', c.grade?('Graded '+esc(c.grade)):esc(c.condition||'NM')].filter(Boolean).join(' · ')}</div>
+                <div class="desc">${[c.variance?esc(c.variance):'', c.grade?('Graded '+esc(c.grade)):esc(condShort(c.condition))].filter(Boolean).join(' · ')}</div>
         <div class="prow">
           <span class="price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="was">$${c.marketPrice.toFixed(2)}</span>`:''}</span>
           <button class="add" ${soldOut?'disabled':''} onclick="event.stopPropagation();addToCart('${c.id}')">+</button>
@@ -1702,8 +1732,9 @@ function openCardView(id){
         <div class="cv-tags">
           <span class="cv-tag">${esc(rarityLabel(c))}</span>
           ${c.variance?`<span class="cv-tag">${esc(c.variance)}</span>`:''}
-          <span class="cv-tag">${c.grade?('Graded '+c.grade):(c.condition||'NM')}</span>
+          <span class="cv-tag">${c.grade?('Graded '+esc(c.grade)):esc(condFull(c.condition))}</span>
         </div>
+        ${c.grade?'':(condBlurb(c.condition||'NM')?`<div class="cv-hint" style="margin-top:0">${esc(condBlurb(c.condition||'NM'))}</div>`:'')}
         <button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups — we'll send them in chat</span><span class="ap-go">Ask ›</span></button>
         <div class="cv-price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="cv-was">$${c.marketPrice.toFixed(2)}</span>`:''}</div>
         <button class="cta" ${soldOut?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">${soldOut?'In your cart':'Add to cart'}</button>
