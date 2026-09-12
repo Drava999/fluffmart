@@ -1049,13 +1049,20 @@ function imgUrl(u,w){ if(!u) return u; u=String(u).split('|')[0].split('~')[0].t
 function isBundle(c){ return String((c&&c.category)||'').toLowerCase()==='bundle'; }
 /* For a bundle, imageBack is the whole set, one entry per card, each written
    "front" or "front~back". Everything else has a single front and maybe a back. */
+/* For a bundle, imageBack is the whole set, one entry per card, each written
+   "front" or "front~back". Everything else has a single front and maybe a back.
+   A bundle can ALSO carry a cover of its own, set with /photo B001601 — that
+   cover isn't one of the component faces, so it has to be put in front of them
+   by hand or the shop would never show it. */
 function faceList(c){
   if(!c) return [];
   if(!isBundle(c)) return c.image?[{f:c.image,b:String(c.imageBack||'')}]:[];
   const out=String(c.imageBack||'').split('|').map(s=>s.trim()).filter(Boolean)
     .map(s=>{ const p=s.split('~'); return {f:(p[0]||'').trim(), b:(p[1]||'').trim()}; })
     .filter(x=>x.f);
-  if(!out.length && c.image) return [{f:c.image,b:''}];
+  const cover=String(c.image||'').trim();
+  if(cover && !out.some(x=>x.f===cover)) out.unshift({f:cover,b:''});
+  if(!out.length && cover) return [{f:cover,b:''}];
   return out;
 }
 function backOf(c){ return isBundle(c)?'':String((c&&c.imageBack)||''); }
