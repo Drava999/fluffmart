@@ -1066,6 +1066,7 @@ function faceList(c){
   if(out.length) return out;
   const cover=String(c.image||'').trim();
   return cover?[{f:cover,b:''}]:[];
+}
 }ion backOf(c){ return isBundle(c)?'':String((c&&c.imageBack)||''); }
 
 /* Lay the faces out like a hand of cards: each one offset and tilted a little
