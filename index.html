@@ -1666,6 +1666,7 @@ function zoomCard(id){
   // in a bundle that's whichever face the strip last selected.
   const cur = (typeof CV_FACES!=='undefined' && CV_FACES[CV_CUR]) || {f:c.image, b:backOf(c)};
   openZoom(imgUrl(flipped && cur.b ? cur.b : cur.f, 1600));
+}
 function closeOffer(){ document.getElementById('offerScrim').classList.remove('show'); document.getElementById('offerSheet').classList.remove('show'); }
 async function sendOffer(){
   if(!OFFER_CARD) return;
