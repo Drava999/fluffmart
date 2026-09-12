@@ -2163,7 +2163,7 @@ function renderParcelCard(p){
   }
   else foot=`<div class="parcel-hint">Once we verify your payment, you'll be able to ship or self-pickup here.</div>`;
   return `<div class="parcel">
-    <div class="parcel-hd"><span>${PARCEL_TITLE[p.status]||'🧺 Parcel'} <span style="font-size:11px;opacity:.6">${p.id}</span></span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${nCards} card${nCards>1?'s':''}</span></div>
+    <div class="parcel-hd"><span>${PARCEL_TITLE[p.status]||'🧺 Parcel'} <span style="font-size:11px;opacity:.6">${p.id}</span></span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${itemsLabel(allItems)}</span></div>
     <div class="parcel-orders">${inParcel.map(o=>`
       <div class="po-row"><div class="po-l">
         <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-ordered'}">${
@@ -2637,6 +2637,14 @@ function backToProfile(){ document.getElementById('v-credit').classList.add('hid
   attachSwipe();
   attachPullRefresh();
   bootApp();
+  // Invoice DMs link in with ?pay=<orderId>, so drop the buyer straight onto
+  // the payment screen instead of leaving them to find it. Telegram appends
+  // its own data in the URL fragment, which is why this rides on the query
+  // string rather than the hash.
+  try {
+    const wantPay=new URLSearchParams(location.search).get('pay');
+    if(wantPay){ go('orders'); loadOrders(true).then(()=>resumePayment(wantPay)); }
+  } catch(e){}
   // Coming back to the app after paying/claiming elsewhere should never show
   // stale stock or stale orders.
   document.addEventListener('visibilitychange',()=>{
