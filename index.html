@@ -1001,6 +1001,23 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
    Your zoom viewer is the intended way to look closely. */
 .pcard .img img,.bfan img,.cv-face img,.pocket.filled img,.jimg img{
   -webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+/* ══ GUIDES ═══════════════════════════════════════════════════════════════ */
+.gd-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.gd-track::-webkit-scrollbar{display:none}
+.gd-slide{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;
+  padding:10px 22px 22px;text-align:center}
+.gd-ic{font-size:54px;line-height:1;display:block;margin:10px 0 16px;
+  animation:floaty 3s ease-in-out infinite}
+.gd-t{font-family:'Plus Jakarta Sans';font-weight:800;font-size:18px;
+  color:var(--fawn-deep);margin-bottom:9px;letter-spacing:-.01em}
+.gd-b{font-size:13.5px;line-height:1.65;color:var(--text)}
+.gd-b b{color:var(--fawn-deep)}
+.gd-dots{display:flex;gap:6px;justify-content:center;margin-bottom:13px}
+.gd-dot{width:7px;height:7px;border-radius:50%;background:var(--line);transition:.25s}
+.gd-dot.on{background:var(--fawn);width:22px;border-radius:4px}
+.gd-step{font-size:11px;font-weight:800;color:var(--hint);letter-spacing:.6px;
+  text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -1054,6 +1071,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <div class="howto-i"><span>🐑</span><div><b>Me</b> — credit, wishlist, address &amp; invoices</div></div>
       </div>
     </div>
+    <div class="howto" style="margin-top:14px">
+      <div class="howto-t">New here? 🐑</div>
+      <div class="howto-g">
+        <button class="feat" style="margin:0 0 8px" onclick="openGuide('buy')"><div class="ic">🛍️</div><div><h3>How buying works</h3><p>Cart, payment, your box</p></div><span class="chev">›</span></button>
+        <button class="feat" style="margin:0 0 8px" onclick="openGuide('claim')"><div class="ic">🎯</div><div><h3>How drops work</h3><p>Claiming cards in the channel</p></div><span class="chev">›</span></button>
+        <button class="feat" style="margin:0" onclick="openGuide('credit')"><div class="ic">💳</div><div><h3>Store credit</h3><p>Earning it and spending it</p></div><span class="chev">›</span></button>
+      </div>
+    </div>
     <div id="ov-loyalty" style="margin-top:14px"></div>
     <div id="ov-policies" style="margin-top:14px"></div>
     <p class="note" id="ov-tip" style="margin-top:12px"></p>
@@ -1062,7 +1087,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <!-- STORE -->
   <div class="view hidden" id="v-store">
     <div class="howbuy" id="howBuy">
-      <button class="howbuy-hd" onclick="toggleHowBuy()"><span>🛍️ How buying works</span><span class="hb-chev" id="hbChev">▾</span></button>
+      <button class="howbuy-hd" onclick="openGuide('buy')"><span>🛍️ How buying works</span><span class="hb-chev">›</span></button>
       <div class="howbuy-b" id="hbBody">
                 <div class="hb-step"><span>🧺</span><div><b>We keep a box for you.</b> Every card you buy goes in it and waits. You pay postage once, when you're ready to send it — not once per order.</div></div>
         <div class="hb-step"><span>1️⃣</span><div><b>Add cards to your cart.</b> Tapping + doesn't hold a card — checking out does.</div></div>
@@ -1222,7 +1247,8 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <div class="cr-hd"><div class="cr-cap">Store credit balance</div><div class="cr-bal" id="creditBal">$0.00</div>
   <p class="note" style="margin:6px 0 0">Toggle "Use store credit" at checkout to subsidise your total with this balance.</p></div>
 
-  <div class="section-t" style="margin:16px 4px 8px">How store credit works</div>
+  <button class="feat" style="margin:16px 0 8px" onclick="openGuide('credit')"><div class="ic">💡</div><div><h3>How store credit works</h3><p>Four quick cards</p></div><span class="chev">›</span></button>
+  <div class="section-t hidden" style="margin:16px 4px 8px">How store credit works</div>
   <div class="hb-body" style="padding:0 4px">
     <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> $3 back for every $100 you spend. Refer a friend and you get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
     <div class="hb-step"><span>🛒</span><div><b>How you spend it.</b> Toggle "Use store credit" at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6. If it covers everything, there's nothing to pay at all.</div></div>
@@ -1323,6 +1349,17 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div id="wishList"></div>
   </div>
 </div>
+<div class="scrim" id="guideScrim" onclick="closeGuide()"></div>
+<div class="sheet" id="guideSheet">
+  <div class="sh-hd"><h2 id="gdTitle">Guide</h2><button class="rm" onclick="closeGuide()">✕</button></div>
+  <div class="body" style="padding:0"><div class="gd-track" id="gdTrack"></div></div>
+  <div class="sh-ft">
+    <div class="gd-dots" id="gdDots"></div>
+    <button class="cta" id="gdNext" onclick="guideNext()">Next</button>
+  </div>
+</div>
+
+<div class="ptr" id="ptr">
 <div class="ptr" id="ptr"><img src="wooloo-roll.gif" alt="↻" onerror="this.style.display='none';this.parentElement.textContent='↻'"></div>
 <audio id="bgm" loop preload="none"><source src="bgm.mp3" type="audio/mpeg"></audio>
 <div class="zoom-wrap" id="zoomWrap">
@@ -3103,6 +3140,82 @@ function gateHaptics(){
     H._gated=true;
   }catch(e){}
 }
+/* ============ GUIDES ============ */
+const GUIDES={
+  start:{title:'Welcome to FloofMart',steps:[
+    {ic:'🐑',t:'Hello!',b:'FloofMart is a Pokémon card shop that lives inside Telegram. Browsing, paying and tracking all happen right here — there is no other website to visit.'},
+    {ic:'🧺',t:'We keep a box for you',b:'Every card you buy goes into your box and waits there. You pay postage <b>once</b>, whenever you decide to send it — not once per order.'},
+    {ic:'🎯',t:'Drops',b:'We post cards in the channel and the first person to comment <b>claim</b> wins it. Press Start on the bot first, or we can’t send you the invoice.'},
+    {ic:'💳',t:'You earn credit',b:'$3 back for every $100 you spend. It comes off your total automatically at checkout — nothing to remember.'},
+    {ic:'🆘',t:'Stuck at any point?',b:'Help &amp; Support is in the menu. A real person reads it.'}
+  ]},
+  buy:{title:'How buying works',steps:[
+    {ic:'🛒',t:'Add to cart',b:'Tapping <b>+</b> doesn’t hold a card for you — checking out does. If someone beats you to it, we’ll tell you before you pay.'},
+    {ic:'💳',t:'Pay for the cards',b:'Scan the PayNow QR, then send us the screenshot. You get 10 minutes. <b>No postage is charged here.</b>'},
+    {ic:'✅',t:'We check it',b:'Once your payment is confirmed, your cards move into your box 🧺 — it’s in the Orders tab.'},
+    {ic:'🧺',t:'Keep shopping',b:'Anything else you buy joins the same box. That’s the point — one postage fee however many times you shop.'},
+    {ic:'🚚',t:'Send it when you’re ready',b:'Choose 🚚 delivery or 🤝 collect it yourself for free. Spend enough in one box and delivery is free too.'},
+    {ic:'↩️',t:'Changed your mind?',b:'Help &amp; Support, with your order number and which cards. We handle refunds by hand.'}
+  ]},
+  claim:{title:'How drops work',steps:[
+    {ic:'🎯',t:'What a drop is',b:'We post a card in the claims channel with a set price. First person to claim it gets it — no bidding, no waiting.'},
+    {ic:'▶️',t:'Press Start first',b:'Telegram won’t let a bot message you until you’ve messaged it once. <b>Press Start on the bot before you claim</b>, or your invoice can’t reach you.'},
+    {ic:'💬',t:'Comment “claim”',b:'Just the word, in the comments under the card. We’ll reply to confirm you’re in — and tell you if you’re in the queue behind someone.'},
+    {ic:'🧾',t:'Your invoice arrives',b:'When the drop closes we send it straight to your Telegram. Tap it to pay in the app, same as any order.'},
+    {ic:'⏰',t:'Pay within the window',b:'Claim wins have a deadline on them. Miss it and the card passes to the next person in the queue — so pay when you see it.'}
+  ]},
+  credit:{title:'Store credit',steps:[
+    {ic:'🎁',t:'How you earn it',b:'$3 back for every $100 you spend. Refer a friend and you get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.'},
+    {ic:'🛒',t:'How you spend it',b:'Toggle <b>Use store credit</b> at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6.'},
+    {ic:'↩️',t:'Refunds',b:'Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.'},
+    {ic:'ℹ️',t:'Good to know',b:'Credit never expires, but it can’t be cashed out. If an order is cancelled or times out, any credit you used comes straight back.'}
+  ]}
+};
+let GD={key:'',i:0,n:0};
+
+function openGuide(key){
+  const g=GUIDES[key]; if(!g) return;
+  GD={key:key,i:0,n:g.steps.length};
+  document.getElementById('gdTitle').textContent=g.title;
+  document.getElementById('gdTrack').innerHTML=g.steps.map((s,k)=>
+    `<div class="gd-slide">
+       <div class="gd-step">${k+1} of ${g.steps.length}</div>
+       <span class="gd-ic">${s.ic}</span>
+       <div class="gd-t">${s.t}</div>
+       <div class="gd-b">${s.b}</div>
+     </div>`).join('');
+  document.getElementById('gdDots').innerHTML=g.steps.map((_,k)=>
+    `<span class="gd-dot${k===0?' on':''}"></span>`).join('');
+  const t=document.getElementById('gdTrack');
+  t.scrollLeft=0;
+  t.onscroll=gdSync;
+  gdSync();
+  document.getElementById('guideScrim').classList.add('show');
+  document.getElementById('guideSheet').classList.add('show');
+  try{ localStorage.setItem('fm_guide_'+key,'1'); }catch(e){}
+}
+function gdSync(){
+  const t=document.getElementById('gdTrack'); if(!t) return;
+  const i=Math.round(t.scrollLeft/Math.max(1,t.clientWidth));
+  if(i!==GD.i && typeof sfx==='function') sfx('pop');
+  GD.i=Math.max(0,Math.min(GD.n-1,i));
+  document.querySelectorAll('#gdDots .gd-dot').forEach((d,k)=>d.classList.toggle('on',k===GD.i));
+  const b=document.getElementById('gdNext');
+  if(b) b.textContent=(GD.i>=GD.n-1)?'Got it 🐾':'Next';
+}
+function guideNext(){
+  const t=document.getElementById('gdTrack'); if(!t) return;
+  if(GD.i>=GD.n-1){ closeGuide(); return; }
+  t.scrollTo({left:(GD.i+1)*t.clientWidth,behavior:'smooth'});
+}
+function closeGuide(){
+  document.getElementById('guideScrim').classList.remove('show');
+  document.getElementById('guideSheet').classList.remove('show');
+}
+// First visit only — never nags anyone twice.
+function maybeFirstRun(){
+  try{ if(!localStorage.getItem('fm_guide_start')) setTimeout(()=>openGuide('start'),900); }catch(e){}
+}
 /* ============ INIT ============ */
 (function init(){
   if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#C98B5E');
@@ -3111,6 +3224,7 @@ function gateHaptics(){
   }
   restorePersisted();
   loadPrefs();
+  maybeFirstRun();
   renderSettings();
   initHowBuy();
   attachSwipe();
