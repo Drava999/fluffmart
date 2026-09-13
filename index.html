@@ -898,6 +898,9 @@ button:disabled:active{transform:none!important}
 .rng::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--fawn);
   border:2px solid var(--card);cursor:pointer}
 #v-settings{padding-bottom:40px}
+/* .back-btn is a <button> — inline-block — and .section-t is inline-block too,
+   so "Appearance" sat beside "‹ Back" instead of under it. */
+.back-btn{display:block;text-align:left}
 /* ══ WOOLOO ═══════════════════════════════════════════════════════════════
    Two bugs: `top` wasn't transitioned, so on release it snapped; and it parked
    at top:0, which sits under the status bar on a notched phone. */
