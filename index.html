@@ -911,11 +911,12 @@ button:disabled:active{transform:none!important}
 /* …and the reward: once the refresh lands, Wooloo rolls off to the right. */
 @keyframes woolooRoll{
   0%   {transform:translateX(-50%) rotate(0deg)}
-  15%  {transform:translateX(-50%) rotate(-25deg)}
-  100% {transform:translateX(70vw) rotate(1080deg)}
+  12%  {transform:translateX(-78%) rotate(-32deg)}    /* winds back, like a run-up */
+  100% {transform:translateX(92vw) rotate(1260deg)}   /* clean off the right edge */
 }
-.ptr.rolling{animation:woolooRoll .95s cubic-bezier(.45,.05,.75,.95) forwards}
-.ptr.rolling img{animation:none!important;transform:none!important}
+.ptr.rolling{
+  animation:woolooRoll 1.05s cubic-bezier(.5,.02,.72,.9) forwards;
+  opacity:1!important;transition:none!important}      /* no fade — he leaves on his own legs */
 
 /* ══ LITTLE THINGS ════════════════════════════════════════════════════════ */
 /* Cart badge kicks when something lands in it. */
@@ -993,7 +994,7 @@ button:disabled:active{transform:none!important}
       <div class="howto-g">
         <div class="howto-i"><span>🛍️</span><div><b>Shop</b> — browse &amp; claim singles, sealed, merch</div></div>
         <div class="howto-i"><span>💰</span><div><b>Sell</b> — turn your cards into cash or credit</div></div>
-        <div class="howto-i"><span>📦</span><div><b>Orders</b> — parcels, tracking &amp; your binder</div></div>
+        <div class="howto-i"><span>📦</span><div><b>Orders</b> — your box, tracking &amp; your binder</div></div>
         <div class="howto-i"><span>🐑</span><div><b>Me</b> — credit, wishlist, address &amp; invoices</div></div>
       </div>
     </div>
@@ -1007,14 +1008,14 @@ button:disabled:active{transform:none!important}
     <div class="howbuy" id="howBuy">
       <button class="howbuy-hd" onclick="toggleHowBuy()"><span>🛍️ How buying works</span><span class="hb-chev" id="hbChev">▾</span></button>
       <div class="howbuy-b" id="hbBody">
-        <div class="hb-step"><span>🧺</span><div><b>Your parcel is a box we keep for you</b> — every card you pay for goes in it and waits there safely. Nothing is sent until you say so, so you only pay postage once no matter how many times you shop.</div></div>
-        <div class="hb-step"><span>1️⃣</span><div><b>Add cards to your cart</b> — tap + on any card. Cards aren't held for you until you check out.</div></div>
-        <div class="hb-step"><span>2️⃣</span><div><b>Pay for the cards</b> — scan the PayNow QR, then send us your payment screenshot. You have 10 minutes. No postage is charged here.</div></div>
-        <div class="hb-step"><span>3️⃣</span><div><b>We check your payment</b> — once it's confirmed, your cards go into your parcel 🧺 Find it in the Orders tab.</div></div>
-        <div class="hb-step"><span>4️⃣</span><div><b>Keep shopping</b> — anything else you buy joins the same parcel, so it all travels together.</div></div>
-        <div class="hb-step"><span>5️⃣</span><div><b>Send it when you're ready</b> — open the Parcel tab and pick 🚚 delivery or 🤝 self-pickup (free). Spend enough in one parcel and delivery is free too. Track it in Orders 📦</div></div>
-        <div class="hb-step"><span>↩️</span><div><b>Changed your mind?</b> Message us in Help &amp; Support with your order number and which cards you'd like back. We handle refunds by hand.</div></div>
-        <div class="hb-step"><span>💳</span><div><b>Store credit</b> — you earn $3 back for every $100 you spend, plus referral bonuses. It comes off your total automatically at checkout, so if credit covers everything, there's nothing to pay.</div></div>
+                <div class="hb-step"><span>🧺</span><div><b>We keep a box for you.</b> Every card you buy goes in it and waits. You pay postage once, when you're ready to send it — not once per order.</div></div>
+        <div class="hb-step"><span>1️⃣</span><div><b>Add cards to your cart.</b> Tapping + doesn't hold a card — checking out does.</div></div>
+        <div class="hb-step"><span>2️⃣</span><div><b>Pay for the cards.</b> Scan the PayNow QR, then send us the screenshot. You get 10 minutes. No postage yet.</div></div>
+        <div class="hb-step"><span>3️⃣</span><div><b>We check it</b>, and your cards go in your box 🧺 It's in the Orders tab.</div></div>
+        <div class="hb-step"><span>4️⃣</span><div><b>Keep shopping.</b> Everything joins the same box.</div></div>
+        <div class="hb-step"><span>5️⃣</span><div><b>Send it when you're ready.</b> 🚚 Delivery, or 🤝 collect it yourself for free. Spend enough in one box and delivery is free too.</div></div>
+        <div class="hb-step"><span>↩️</span><div><b>Changed your mind?</b> Help &amp; Support, with your order number. We handle refunds by hand.</div></div>
+        <div class="hb-step"><span>💳</span><div><b>Store credit.</b> $3 back for every $100 you spend. It comes off your total automatically — if it covers everything, there's nothing to pay.</div></div>
       </div>
     </div>
     <div class="cattabs" id="cattabs"></div>
@@ -1031,7 +1032,7 @@ button:disabled:active{transform:none!important}
   <!-- ORDERS -->
   <div class="view hidden" id="v-orders">
     <div class="oseg">
-      <button class="oseg-b on" data-oseg="parcel" onclick="orderSeg('parcel')">🧺 Parcel</button>
+      <button class="oseg-b on" data-oseg="parcel" onclick="orderSeg('parcel')">🧺 My box</button>
       <button class="oseg-b" data-oseg="orders" onclick="orderSeg('orders')">📦 Orders</button>
       <button class="oseg-b" data-oseg="binder" onclick="orderSeg('binder')">📖 Binder</button>
 
@@ -1047,8 +1048,7 @@ button:disabled:active{transform:none!important}
     <div class="rates">
       <div class="rate"><div class="rate-cap">~ est.</div><div class="rate-n" id="rate-credit">85%</div><div class="rate-l">store credit</div><div class="rate-b">best value</div></div>
       <div class="rate"><div class="rate-cap">~ est.</div><div class="rate-n" id="rate-cash">80%</div><div class="rate-l">cash</div></div>
-    </div>
-    <p class="note" style="text-align:left;margin:2px 4px 14px">These are our <b>estimated</b> rates — the final offer depends on the card's condition and current market value. Tell us what you've got below and we'll message you back to confirm an offer.</p>
+    </div>    <p class="note" style="text-align:left;margin:2px 4px 14px">These are <b>estimates</b>. The real offer depends on condition and what the card is going for right now. Tell us what you've got and we'll message you back — no commitment either way.</p>
     <div class="panel">
       <div class="field">
         <label>What are you selling?</label>
@@ -1084,10 +1084,23 @@ button:disabled:active{transform:none!important}
   <div class="view hidden" id="v-support">
     <div class="section-t">Help &amp; support</div>
     <div class="panel">
-            <p class="note" style="text-align:left;margin:0 0 12px">Got a question about an order, payment, or a card? Send us a message and we'll reply in Telegram.<br><br><b>Want a refund?</b> Tell us your order number and which card(s) you'd like to return. We handle refunds manually — you'll get store credit or a cash refund depending on how you paid.</p>
+            <p class="note" style="text-align:left;margin:0 0 12px">A question about an order, a payment, or a card? Send us a message and we'll reply in Telegram.<br><br><b>Want a refund?</b> Give us your order number and which cards — we handle refunds by hand. Policies are at the bottom of this page.</p>
       <div class="field"><label>Order number (optional)</label><input id="sup-order" placeholder="e.g. EF1A2B3C"></div>
       <div class="field"><label>Your message</label><textarea id="sup-msg" rows="5" placeholder="Tell us how we can help…"></textarea></div>
       <button class="cta" id="sup-send" onclick="sendSupport(this)">Send message</button>
+    </div>
+
+    <div class="howbuy" style="margin-top:14px">
+      <button class="howbuy-hd" onclick="togglePolicy()"><span>📋 Our policies</span><span id="polChev">▾</span></button>
+      <div class="howbuy-b" id="polBody">
+        <div class="hb-step"><span>🛡️</span><div><b>Authenticity, forever.</b> Every card is genuine. If one is ever shown not to be, you get a full refund whenever you find out — no time limit.</div></div>
+        <div class="hb-step"><span>🎥</span><div><b>Film the opening.</b> For anything missing from a packet or damaged in transit, we need an unbroken unboxing video. It protects both of us.</div></div>
+        <div class="hb-step"><span>📸</span><div><b>48 hours.</b> Message us with photos or videos within 48 hours of delivery and we'll refund or replace it.</div></div>
+        <div class="hb-step"><span>📮</span><div><b>Normal mail travels at your risk.</b> It's cheaper but it isn't tracked, so we can't cover it if it goes astray. Tracked postage is covered.</div></div>
+        <div class="hb-step"><span>🔄</span><div><b>Changed your mind?</b> Free to cancel before you pay. Excessive or fradulent refunds will result in warnings or a ban.</div></div>
+        <div class="hb-step"><span>🏆</span><div><b>Assume cards are binder condition.</b> We can send as many photos as you need on request, but we can't refund a grade you didn't like.</div></div>
+        <div class="hb-step"><span>💳</span><div><b>How refunds come back.</b> Whatever you paid with credit returns as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
+      </div>
     </div>
   </div>
 
@@ -1155,10 +1168,10 @@ button:disabled:active{transform:none!important}
 
   <div class="section-t" style="margin:16px 4px 8px">How store credit works</div>
   <div class="hb-body" style="padding:0 4px">
-    <div class="hb-step"><span>🎁</span><div><b>How you earn it</b> — $3 back for every $100 you spend, automatically. Refer a friend and you get $3 once they spend $15+. Sell us cards and you can take store credit instead of cash (we pay a better rate for credit).</div></div>
-    <div class="hb-step"><span>🛒</span><div><b>How you spend it</b> — at checkout, toggle "Use store credit" and it comes off your total before you PayNow. Partial is fine: if credit covers $4 of a $10 order, you just pay $6. If it covers everything, there's nothing to pay — we verify and your cards go straight into your parcel.</div></div>
-    <div class="hb-step"><span>↩️</span><div><b>Refunds</b> — whatever you paid with credit comes back as credit, and whatever you paid by PayNow can come back as either. Credit lands instantly; cash refunds are sent by hand — just ask in Help &amp; Support.</div></div>
-    <div class="hb-step"><span>ℹ️</span><div><b>Good to know</b> — credit never expires, but it can't be withdrawn as cash. If an order is cancelled or times out, any credit you used on it comes straight back to your balance.</div></div>
+    <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> $3 back for every $100 you spend. Refer a friend and you get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
+    <div class="hb-step"><span>🛒</span><div><b>How you spend it.</b> Toggle "Use store credit" at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6. If it covers everything, there's nothing to pay at all.</div></div>
+    <div class="hb-step"><span>↩️</span><div><b>Refunds.</b> Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
+    <div class="hb-step"><span>ℹ️</span><div><b>Good to know.</b> Credit never expires, but it can't be cashed out. If an order is cancelled or times out, any credit you used comes straight back.</div></div>
   </div>
 
   <div class="section-t" style="margin:16px 4px 8px">History</div>
@@ -1630,6 +1643,12 @@ function toggleHowBuy(){
   const open=b.classList.toggle('open'); c.textContent=open?'▴':'▾';
   try{ localStorage.setItem('fm_seen_guide','1'); }catch(e){}
 }
+function togglePolicy(){
+  const b=document.getElementById('polBody'), c=document.getElementById('polChev');
+  if(!b) return;
+  const open=b.classList.toggle('open');
+  if(c) c.textContent=open?'▴':'▾';
+}
 function initHowBuy(){
   try{ if(!localStorage.getItem('fm_seen_guide')){ document.getElementById('hbBody').classList.add('open'); document.getElementById('hbChev').textContent='▴'; } }catch(e){}
 }
@@ -1783,7 +1802,7 @@ function applyOverview(r){
   document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
   if(r.holdPolicy||r.shippingPolicy||r.policyExtra){
     const el=document.getElementById('ov-policies');
-    if(el) el.innerHTML = `<div class="feat" style="cursor:default"><div class="ic">🚚</div><div><h3>Store info</h3><p>${[r.shippingPolicy,r.holdPolicy,r.policyExtra].filter(Boolean).join('<br>')}</p></div></div>`;
+    if(el) el.innerHTML = `<button class="feat" onclick="go('support')"><div class="ic">🚚</div><div><h3>Store info</h3><p>${[r.shippingPolicy,r.holdPolicy,r.policyExtra].filter(Boolean).join('<br>')}<br><span style="color:var(--fawn-deep);font-weight:700">Refunds &amp; policies ›</span></p></div><span class="chev">›</span></button>`;
   }
   if(r.welcome){ const h=document.querySelector('.hero p'); if(h) h.textContent=r.welcome; }
   { const t=document.getElementById('ov-tip'); if(t) t.textContent='✨ Did you know? '+pokeFact(); }
@@ -1796,7 +1815,7 @@ function renderUnpaidBanner(){
   const el=document.getElementById('ov-unpaid'); if(!el) return;
   el.innerHTML=(STATE.unpaidOrders>0)?`<button class="unpaid-banner" onclick="go('orders')">
       <span class="ub-ic">💳</span>
-            <span class="ub-t"><b>You have ${STATE.unpaidOrders>1?STATE.unpaidOrders+' unpaid orders':'an unpaid order'}!</b><br>Tap to pay — shop orders are released if they time out.</span>
+            <span class="ub-t"><b>${STATE.unpaidOrders>1?STATE.unpaidOrders+' orders waiting to be paid':'One order waiting to be paid'}</b><br>Shop orders release themselves when the timer runs out.</span>
       <span class="ub-go">Pay ›</span>
     </button>`:'';
 }
@@ -2083,13 +2102,13 @@ function closeCart(){ document.getElementById('scrim').classList.remove('show');
 function renderCart(){
   const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
   if(!STATE.cart.length){
-    body.innerHTML=`<div class="empty"><img class="e-img" src="wooloo.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'e-ic',textContent:'🐑'}))"><p>Your cart's empty!<br>Go claim some cute cards 🐾</p></div>`;
+    body.innerHTML=`<div class="empty"><img class="e-img" src="wooloo.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'e-ic',textContent:'🐑'}))"><p>Nothing in your cart yet.<br>Go find something good 🐾</p></div>`;
     foot.innerHTML=''; return;
   }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
  const nudge = STATE.openParcel
-    ? `<div class="nudge">🧺 These join the parcel we're already holding for you. Pay for the cards now — choose delivery later, when you're done shopping.</div>`
-    : `<div class="nudge">🧺 This starts your parcel — a box we keep for you. Pay for the cards now; you'll choose delivery later.</div>`;
+    ? `<div class="nudge">🧺 These join the box we're already holding for you — no extra postage.</div>`
+    : `<div class="nudge">🧺 This starts your box. Pay for the cards now, choose delivery whenever you're ready.</div>`;
   body.innerHTML = STATE.cart.map((c,i)=>
     `<div class="crow"><div class="ci">${c.image?`<img src="${imgUrl(c.image,200)}" alt="">`:(EMOJI[c.tier]||'🃏')}</div>
       <div class="cn">${esc(c.name)}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.number?esc(c.number)+' · ':''}${esc(rarityLabel(c))}</div></div>
@@ -2105,7 +2124,7 @@ function renderCart(){
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
     <button class="cta" onclick="guard(this,checkout)">Place order · $${total.toFixed(2)}</button>
-<p class="hold-hint">No postage charged now. Your cards wait in your parcel 🧺 until you're ready — then it's $${(STATE.shipFlat||3).toFixed(2)} to deliver${fsMin?', free once a parcel passes $'+fsMin.toFixed(2):''}, or free if you collect it yourself.</p>`;
+<p class="hold-hint">No postage now. Your cards wait in your box 🧺 until you say send — then $${(STATE.shipFlat||3).toFixed(2)} to deliver${fsMin?', or free once your box passes $'+fsMin.toFixed(2):''}. Collecting it yourself is always free.</p>`;
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
@@ -2390,7 +2409,7 @@ async function loadOrders(force){
   try{ localStorage.setItem('fm_orders',JSON.stringify(r)); }catch(e){}
   paintOrders();
 }
-const PARCEL_TITLE={open:'🧺 Your parcel',ship_awaiting_fee:'🧺 Your parcel',shipping_paid:'🚚 Parcel being packed',pickup_ready:'🤝 Pickup arranged'};
+const PARCEL_TITLE={open:'🧺 Your box',ship_awaiting_fee:'🧺 Your box',shipping_paid:'🚚 Packing your box',pickup_ready:'🤝 Pickup arranged'};
 /* The server sweeps expired unpaid orders on its own schedule, so between the
    deadline passing and that sweep an order still reads "Awaiting Payment" —
    which is how a dead invoice kept a live Pay button. Work it out here too. */
@@ -2411,22 +2430,22 @@ function renderParcelCard(p){
   const canDeliver=paidCards.length>0 && !anyPending && (p.status==='open'||p.status==='ship_awaiting_fee');
   const shipInv=p.shipInvoice;
   let foot='';
-  if(p.status==='shipping_paid') foot=`<div class="parcel-done">🚚 On its way — we're packing this parcel now. You'll get tracking soon.</div>`;
+  if(p.status==='shipping_paid') foot=`<div class="parcel-done">🚚 Packing your box now. Tracking follows shortly.</div>`;
   else if(p.status==='pickup_ready') foot=`<div class="parcel-done">🤝 Self-pickup arranged — ${(STATE.pickupNote||'we\'ll message you with details')}.</div>`;
-  else if(p.feeVerifying) foot=`<div class="parcel-done">⏳ Shipping payment received — we're verifying it now. Your parcel ships once confirmed.</div>`;
-  else if(shipInv) foot=`<div class="parcel-ship-inv"><div class="psi-t">🚚 Shipping fee — $${shipInv.fee.toFixed(2)}</div><div class="psi-s">Pay this to send your whole parcel out.</div><button class="cta" onclick="resumePayment('${shipInv.id}')">💳 Pay shipping ($${shipInv.fee.toFixed(2)})</button></div>`;
-  else if(paidCards.length>0 && anyPending) foot=`<div class="parcel-hint">⏳ Some orders in this parcel are still being verified. Once they're all confirmed, you'll be able to ship or self-pickup everything together.</div>`;
+  else if(p.feeVerifying) foot=`<div class="parcel-done">⏳ Got your postage payment. Checking it now — your box goes out once it's confirmed.</div>`;
+  else if(shipInv) foot=`<div class="parcel-ship-inv"><div class="psi-t">🚚 Postage — $${shipInv.fee.toFixed(2)}</div><div class="psi-s">One fee, whole box.</div><button class="cta" onclick="resumePayment('${shipInv.id}')">💳 Pay postage ($${shipInv.fee.toFixed(2)})</button></div>`;
+  else if(paidCards.length>0 && anyPending) foot=`<div class="parcel-hint">⏳ We're still checking some payments. Once they're all through you can send the whole box at once.</div>`;
   else if(canDeliver){
     const fee=(p.shipFee!=null?p.shipFee:(STATE.shipFlat||3));
     const need=(p.freeShipMin||0)-(p.merchValue||0);
-    foot=`<div class="parcel-choose"><div class="pc-t">Ready to receive your cards? Choose how:</div>
+    foot=`<div class="parcel-choose"><div class="pc-t">Ready for your cards?</div>
       ${fee<=0?`<div class="parcel-save">🎉 Free shipping unlocked — this parcel is over $${(p.freeShipMin||0).toFixed(2)}</div>`
              :(need>0&&need<=15?`<div class="parcel-hint">Add $${need.toFixed(2)} more to this parcel and shipping is free 🚚</div>`:'')}
       <div class="pc-btns">
       <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('ship','${p.id}'))">🚚 Ship to me<span>${fee<=0?'FREE':'$'+fee.toFixed(2)}</span></button>
       <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('pickup','${p.id}'))">🤝 Self-pickup<span>FREE</span></button></div></div>`;
   }
-  else foot=`<div class="parcel-hint">Once we verify your payment, you'll be able to ship or self-pickup here.</div>`;
+  else foot=`<div class="parcel-hint">Once your payment's confirmed, you can send your box from here.</div>`;
   return `<div class="parcel">
     <div class="parcel-hd"><span>${PARCEL_TITLE[p.status]||'🧺 Parcel'} <span style="font-size:11px;opacity:.6">${p.id}</span></span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${itemsLabel(allItems)}</span></div>
     <div class="parcel-orders">${inParcel.map(o=>`
@@ -2443,7 +2462,7 @@ function renderParcelCard(p){
       <div class="po-cards" id="poc-${o.id}">
        ${o.items.filter(i=>!i.refunded).map(i=>`<div class="po-card"><div class="po-thumb">${i.image?`<img src="${imgUrl(i.image,200)}">`:(EMOJI[i.tier]||'🃏')}</div><div class="po-cn">${i.name}${i.number?`<div style="font-size:10.5px;color:var(--hint);font-weight:600">${i.number}</div>`:''}</div><div class="po-cp">$${i.price.toFixed(2)}</div></div>`).join('')}
         <button class="po-inv" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
-      </div>`).join('')}</div>    ${unpaid.length?`<div class="parcel-hint">⏳ Pay the ${unpaid.length} pending order${unpaid.length>1?'s':''} above — your parcel can't be sent until they're settled. Shop orders release themselves if they time out; claim wins are held for you.</div>`:''}
+      </div>`).join('')}</div>    ${unpaid.length?`<div class="parcel-hint">⏳ ${unpaid.length} order${unpaid.length>1?'s':''} above still to pay. Your box can't go out until they're settled — unpaid shop orders release themselves after the timer, claim wins are held.</div>`:''}
     ${foot}</div>`;
 }
 const OFILTERS=[
@@ -2473,8 +2492,15 @@ function paintOrders(){
   const rank={shipping_paid:0,pickup_ready:0,ship_awaiting_fee:1,open:2};
   const cards=parcels.slice().sort((a,b)=>(rank[a.status]??3)-(rank[b.status]??3)).map(renderParcelCard).filter(Boolean);
   const ppane=document.getElementById('parcelPane');
-  const explain=`<div class="parcel-explain">🧺 <b>Your parcel is a box we keep for you.</b> Every card you pay for goes in it and waits there safely. Nothing is sent until you say so — so however many times you shop, you only pay postage once.</div>`;
-  if(ppane) ppane.innerHTML=cards.length?explain+cards.join(''):`<div class="empty"><div class="e-ic">🧺</div><p>Your parcel is empty.<br>It's a box we keep here for you — buy a card and it goes straight in 🐾</p><div class="e-tip">↓ pull down to refresh anytime</div></div>`;
+  // Lead with what it saves them, not how it works. The sum is the explanation.
+  const flat=Number(STATE.shipFlat||3);
+  const nOrd=(STATE.orders||[]).filter(o=>o.parcelId&&!o.cancelled&&o.status!=='Refunded'&&String(o.id).indexOf('SH')!==0).length;
+  const wouldBe=nOrd*flat, actualFee=flat, saved=Math.max(0,wouldBe-actualFee);
+  const explain=(nOrd>1&&saved>0)
+    ? `<div class="parcel-explain">🧺 <b>We keep a box for you.</b> Everything you buy goes in it and waits.
+       <div class="parcel-save" style="margin-top:10px">Sending your ${nOrd} orders separately would've cost <b>$${wouldBe.toFixed(2)}</b>. You'll pay <b>$${actualFee.toFixed(2)}</b> — one postage fee for the lot.</div></div>`
+    : `<div class="parcel-explain">🧺 <b>We keep a box for you.</b> Everything you buy goes in it and waits — and you pay postage once, whenever you're ready to send it. Not once per order.</div>`;
+  if(ppane) ppane.innerHTML=cards.length?explain+cards.join(''):`<div class="empty"><div class="e-ic">🧺</div><p>Your box is empty.<br>Buy a card and it goes straight in — then you pay postage once, when you're ready 🐾</p><div class="e-tip">↓ pull down to refresh</div></div>`;
   // Filter bar — counts come from the full set so an empty tab still shows 0.
   const all=[...live,...past];
   const fb=document.getElementById('ordersFilter');
@@ -2528,7 +2554,12 @@ async function doRefresh(){
   }
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
   const started=Date.now();
-  try{ ORDERS_CACHE=null; await loadOrders(true); await loadOverview(); }
+  try{
+    const t=STATE.tab||'overview';
+    if(t==='store'){ await loadStore(); }
+    else { ORDERS_CACHE=null; await loadOrders(true); }
+    await loadOverview();
+  }
   finally{
     const wait=Math.max(0,600-(Date.now()-started));
     setTimeout(()=>{
@@ -2540,7 +2571,10 @@ async function doRefresh(){
         ptr.classList.remove('loading','armed');
         const im=ptr.querySelector('img'); if(im) im.style.transform='';
         ptr.classList.add('rolling');              // and off he goes
-        setTimeout(()=>{ ptr.classList.remove('rolling','show'); ptr.style.top=''; },950);
+        const rolled=()=>{ ptr.classList.remove('rolling','show'); ptr.style.top='';
+                           ptr.removeEventListener('animationend',rolled); };
+        ptr.addEventListener('animationend',rolled);
+        setTimeout(rolled,1500);                   // in case the animation never fires
       }
       if(tg&&tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
       sfx('ok');
@@ -2554,7 +2588,9 @@ function attachPullRefresh(){
   const ptr=document.getElementById('ptr');
   let y0=null, pulling=false, dist=0;
   const THRESH=70, MAX=110;
-  const onOrders=()=>!document.getElementById('v-orders').classList.contains('hidden');
+  // The shelf moves as fast as the order list — other buyers, drops, auctions.
+  // Same name so the two call sites below don't change.
+  const onOrders=()=>['orders','store','overview'].indexOf(STATE.tab||'overview')>=0;
   document.addEventListener('touchstart',e=>{
     if(e.touches.length!==1) return;
     if(!onOrders()) return;
@@ -2620,7 +2656,7 @@ function buildBinder(){
   if(sig===BINDER.sig && wrap.innerHTML) return;
   BINDER.sig=sig; BINDER.cards=cards;
   if(!cards.length){
-    wrap.innerHTML=`<div class="empty"><img class="e-img" src="wooloo.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'e-ic',textContent:'📖'}))"><p>Your binder's empty for now!<br>Cards you claim will live here forever 🐾</p></div>`;
+    wrap.innerHTML=`<div class="empty"><img class="e-img" src="wooloo.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'e-ic',textContent:'📖'}))"><p>Your binder is empty.<br>Every card you buy lands here and stays 🐾</p></div>`;
     return;
   }
   const pages=Math.ceil(cards.length/9);
