@@ -958,6 +958,49 @@ button:disabled:active{transform:none!important}
 :root[data-motion="reduced"] *::after{
   animation-duration:.01ms!important;animation-iteration-count:1!important;
   transition-duration:.01ms!important;scroll-behavior:auto!important}
+/* ══ QoL ═════════════════════════════════════════════════════════════════ */
+
+/* Search + sort stay put while you scroll the shelf. Filtering a long list
+   currently means scrolling back to the top first. */
+.tools{position:sticky;top:0;z-index:12;background:var(--bg);
+  margin-inline:-16px;padding:8px 16px 10px}
+@media (min-width:600px){ .tools{margin-inline:-20px;padding-inline:20px} }
+
+/* Same bug as the body padding: the nav grows by the home-indicator inset,
+   the cart bar didn't, so on a notched phone it sat on top of the nav. */
+.cartbar{bottom:calc(78px + env(safe-area-inset-bottom))}
+
+/* A flex child won't shrink below its content unless you say so. A long card
+   name in the cart pushed the price and the ✕ off the row. */
+.crow .cn,.oitem span,.po-l,.set-l,.asell .ainfo,.wrow .wn{min-width:0}
+.crow .cn{overflow-wrap:anywhere}
+
+/* Horizontal strips look like they end at the screen edge. A soft fade says
+   "there's more over here" without adding a scrollbar. */
+.chips,.ofilt,.jrail{
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);
+  mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+
+/* The header can sit under the status bar once the app is expanded. */
+.top{padding-top:calc(16px + env(safe-area-inset-top))}
+
+/* Number spinners are ugly and nobody uses them to enter an offer. */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+
+/* Rows that do something should feel like it. Orders and cart rows had no
+   press feedback at all, so a tap read as "nothing happened". */
+.order,.crow,.po-row,.wrow,.cr-row{transition:background .15s}
+.order:active,.po-row:active{background:var(--ruff)}
+
+/* Brand touch on text selection. */
+::selection{background:var(--fawn);color:#fff}
+
+/* Long-pressing a card scan offers "Save image" and pops a callout mid-swipe.
+   Your zoom viewer is the intended way to look closely. */
+.pcard .img img,.bfan img,.cv-face img,.pocket.filled img,.jimg img{
+  -webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 </style>
 </head>
 <body>
