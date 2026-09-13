@@ -789,10 +789,10 @@ button.busy{position:relative;color:transparent!important}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
 /* ── tap targets ────────────────────────────────────────────────────────── */
-/* The + on a card tile is the most-tapped control in the app and it's 30px —
-   well under the 44px minimum. This grows the HIT area without changing how
-   anything looks. */
-.add,.crow .rm,.cv-close,.cv-zoom,.zoom-close,.po-pay,.po-inv,.as-edit{position:relative}
+/* Only statically-positioned elements need this. .cv-close, .cv-zoom and
+   .zoom-close are already position:absolute — forcing them to relative dropped
+   them out of their corners. Their ::after below still works. */
+.add,.crow .rm,.po-pay,.po-inv,.as-edit{position:relative}
 .add:after,.crow .rm:after,.cv-close:after,.cv-zoom:after,
 .zoom-close:after,.po-pay:after,.po-inv:after,.as-edit:after{
   content:"";position:absolute;inset:-8px;border-radius:inherit}
@@ -882,6 +882,19 @@ button:disabled:active{transform:none!important}
 :root[data-theme="dark"] .pn-qr,
 :root[data-theme="dark"] .pocket.filled,
 :root[data-theme="dark"] .cv-face{background:#fff}
+/* ── dark: inline colours the tokens can't reach ─────────────────────────── */
+/* #c2405e (crimson), #1c7a52 (forest) and #fdf0f0 (blush) are hardcoded inside
+   JS template literals. Match on the style attribute rather than rewriting
+   twenty template strings. */
+:root[data-theme="dark"] [style*="c2405e"]{color:#FF8FA6!important}
+:root[data-theme="dark"] [style*="1c7a52"]{color:#8FE0B8!important}
+:root[data-theme="dark"] [style*="fdf0f0"]{background:#3A2020!important}
+:root[data-theme="dark"] .doc-void .doc-tag,
+:root[data-theme="dark"] .cr-amt.neg{color:#FF8FA6}
+:root[data-theme="dark"] .cr-amt.pos{color:#8FE0B8}
+:root[data-theme="dark"] .inv-badge{background:#3D2F16;color:#F0C86A}
+/* The QR box stays white, so its placeholder text has to stay dark. */
+:root[data-theme="dark"] .pn-qr-ph{color:#5A3A4E}
 /* ══ SETTINGS ═════════════════════════════════════════════════════════════ */
 .set-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
 .set-row:last-child{border-bottom:none}
@@ -1841,7 +1854,7 @@ function renderLoyalty(r){
    sheet that predates the date_added column still shows something. */
 function renderJustIn(){
   const el=document.getElementById('ov-justin'); if(!el) return;
-  const pool=(STATE.inventory||[]).filter(c=>(c.category||'single').toLowerCase()!=='merch' && Number(c.qty)>0);
+  const pool=(STATE.inventory||[]).filter(c=>(c.category||'single').toLowerCase()!=='merch' && Number(c.qty)>0 && faceList(c).length);
   if(pool.length<3){ el.innerHTML=''; return; }
   const dated=pool.filter(c=>Number(c.dateAdded)>0);
   const list=(dated.length>=3
@@ -1933,13 +1946,18 @@ async function loadStore(){
 }
 function renderStore(){
   const q = (document.getElementById('q').value||'').toLowerCase();
+  // A card with no photo looks broken in the grid, so buyers don't see it.
+  // You do — with a count, so stock doesn't quietly go missing from the shop.
+  let hiddenNoPic = 0;
   let list = STATE.inventory.filter(c=>{
     const okTier = STATE.tier==='All'||rarityLabel(c)===STATE.tier;
     const okSet = !STATE.set || c.set===STATE.set;
     const cc = (c.category||'single').toLowerCase();
     const okCat = cc===STATE.cat;
     const okQ = !q || (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().includes(q);
-    return okTier && okSet && okCat && okQ;
+    if(!(okTier && okSet && okCat && okQ)) return false;
+    if(!faceList(c).length){ hiddenNoPic++; return !!STATE.isAdmin; }
+    return true;
   });
   const s = STATE.sort;
   list.sort((a,b)=>{
@@ -1952,7 +1970,10 @@ function renderStore(){
     return rarityRank(a)-rarityRank(b) || b.price-a.price;
   });
   const grid = document.getElementById('storeGrid');  if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔎</div><p>Nothing matching that yet.<br>Try another rarity — or add it to your wishlist and we'll ping you 🐾</p><button class="cta-alt" style="max-width:220px;margin:12px auto 0" onclick="openWishlist()">🔔 Watch for it</button></div>`; return; }
-  grid.innerHTML = list.map(c=>{
+  const adminNote = (STATE.isAdmin && hiddenNoPic)
+    ? `<div style="grid-column:1/-1;background:var(--ruff);color:var(--fawn-deep);border-radius:12px;padding:9px 12px;font-size:12px;font-weight:700">👁️ ${hiddenNoPic} card${hiddenNoPic===1?'':'s'} with no photo — hidden from buyers, shown to you</div>`
+    : '';
+  grid.innerHTML = adminNote + list.map(c=>{
     const inCart = STATE.cart.filter(x=>x.id===c.id).length;
     const soldOut = (c.qty - inCart) <= 0;
     const faces = faceList(c);
@@ -1965,6 +1986,7 @@ function renderStore(){
       <div class="img">${front}
         ${backOf(c)?'<div class="flip-hint">⤾ flip</div>':''}
         ${c.imageType==='stock'?'<div class="stockflag">stock image</div>':''}
+        ${faceList(c).length?'':'<div class="stockflag" style="background:#c2405e">no photo</div>'}
         ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
       <div class="body">
                 <div class="nm">${esc(c.name)}</div>
