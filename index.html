@@ -23,13 +23,15 @@
 .pull-hint{display:none}
 :root{
   /* FloofMart palette — cream base, pink primary, rose secondary, yellow accent */
-  --fawn:#D98EC0; --fawn-deep:#B4589A; --cream:#FBEFE6; --ruff:#F6E1D6;
-  --berry:#D98EC0; --berry-deep:#B4589A; --rose:#F0B9CF; --mint:#7FC9B0;
+  --fawn:#D98EC0; --fawn-deep:#A84E8E; --cream:#FBEFE6; --ruff:#F6E1D6;
+  --berry:#D98EC0; --berry-deep:#A84E8E; --rose:#F0B9CF; --mint:#7FC9B0;
   --mint-deep:#4FA98C; --sky:#AEDCE8; --yellow:#FBD44E; --ink:#5A3A4E;
   --bg:#FBEFE6;
   --card:#FFFFFF;
   --text:#5A3A4E;
-  --hint:#a98da0;
+  /* was #a98da0 — about 2.8:1 on white, under the 4.5:1 minimum. This is
+     ~4.7:1 and reads the same at a glance. */
+  --hint:#8a6b80;
   --link:#B25C93;
   --line:rgba(178,92,147,.16);
   --radius:16px;
@@ -38,7 +40,7 @@
 html,body{margin:0;padding:0}
 body{
   font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);
-  padding-bottom:88px;line-height:1.55;overflow-x:hidden;
+  padding-bottom:calc(88px + env(safe-area-inset-bottom));line-height:1.55;overflow-x:hidden;
 }
 /* On desktop, present the app as a centered phone-width column with a backdrop,
    and align all fixed overlays (nav, sheets, card view) to that same column. */
@@ -780,6 +782,165 @@ button.busy{position:relative;color:transparent!important}
   #v-credit{width:520px;min-height:100vh;background:var(--bg);
     padding-left:20px;padding-right:20px;box-shadow:0 0 60px rgba(74,53,36,.22)}
 }
+/* ── hygiene ────────────────────────────────────────────────────────────── */
+/* The palette is deliberately light. Say so, or a dark-mode client renders
+   native inputs and autofill dark-on-cream. */
+:root{color-scheme:light}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+
+/* ── tap targets ────────────────────────────────────────────────────────── */
+/* The + on a card tile is the most-tapped control in the app and it's 30px —
+   well under the 44px minimum. This grows the HIT area without changing how
+   anything looks. */
+.add,.crow .rm,.cv-close,.cv-zoom,.zoom-close,.po-pay,.po-inv,.as-edit{position:relative}
+.add:after,.crow .rm:after,.cv-close:after,.cv-zoom:after,
+.zoom-close:after,.po-pay:after,.po-inv:after,.as-edit:after{
+  content:"";position:absolute;inset:-8px;border-radius:inherit}
+
+/* ── focus ──────────────────────────────────────────────────────────────── */
+/* There were no focus styles at all: a keyboard or switch user had no way to
+   tell where they were. :focus-visible means mouse and touch see nothing. */
+:where(button,a,input,select,textarea,.chip,.cattab,.dd-item,.wtab):focus-visible{
+  outline:2.5px solid var(--fawn-deep);outline-offset:2px;border-radius:8px}
+
+/* ── sheets ─────────────────────────────────────────────────────────────── */
+/* Scrolling to the end of the cart used to carry on into the page behind it. */
+.sheet .body,.cv-panel,.doc,.dd.open .dd-menu{overscroll-behavior:contain}
+/* vh counts the browser chrome; dvh doesn't. Fallback stays first. */
+.sheet{max-height:82vh;max-height:82dvh}
+.cv-panel{max-height:90vh;max-height:90dvh}
+@media (min-width:600px){ #app{min-height:100vh;min-height:100dvh} }
+
+/* ── motion ─────────────────────────────────────────────────────────────── */
+/* The fan and the holo shimmer were already guarded; the skeleton shimmer,
+   pokéball wobble, floating empty-states, pulsing unpaid banner and tab
+   glides weren't. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* ── small things ───────────────────────────────────────────────────────── */
+/* A long set name in a tight tile currently overflows rather than wrapping. */
+.pcard .meta,.desc,.po-items,.oitem span,.cv-sub{overflow-wrap:anywhere}
+/* Disabled buttons still showed the press animation. */
+button:disabled:active{transform:none!important}
+/* ══ DARK ══════════════════════════════════════════════════════════════════
+   Same FloofMart identity — pink on plum instead of pink on cream. Driven by
+   data-theme on <html>; "auto" resolves to light or dark in applyPrefs(). */
+:root[data-theme="dark"]{
+  --bg:#1E1219;
+  --card:#2A1C25;
+  --ruff:#3A2632;
+  --text:#F3E4EE;
+  --hint:#B69AAC;            /* ~6.3:1 on --card */
+  --line:rgba(240,185,207,.18);
+  --fawn:#D98EC0;
+  --fawn-deep:#F0A8D2;       /* lighter than the light-mode value — on dark, accents go UP */
+  --berry:#D98EC0;
+  --berry-deep:#F0A8D2;
+  --rose:#C97FA8;
+  --link:#F0A8D2;
+  color-scheme:dark;
+}
+
+/* Hardcoded light values that the tokens don't reach. */
+:root[data-theme="dark"] .pcard .img,
+:root[data-theme="dark"] .jimg,
+:root[data-theme="dark"] .cv-noimg{background:linear-gradient(135deg,#3A2632,#2A1C25)}
+:root[data-theme="dark"] .flip-back{background:linear-gradient(135deg,#3A2632,#241822)}
+:root[data-theme="dark"] .hero{background:linear-gradient(135deg,#8E4A74 0%,#A8548C 55%,#6D3358 100%);
+  box-shadow:0 10px 28px rgba(0,0,0,.45)}
+:root[data-theme="dark"] .cv-top,
+:root[data-theme="dark"] .doc-hd{background:linear-gradient(160deg,#3A2632,#2A1C25)}
+:root[data-theme="dark"] .doc{background:var(--card)}
+:root[data-theme="dark"] .skelcard{background:linear-gradient(100deg,#2A1C25 30%,#3A2632 50%,#2A1C25 70%);
+  background-size:200% 100%}
+:root[data-theme="dark"] .parcel{background:linear-gradient(150deg,#2F1F29,#3A2632)}
+:root[data-theme="dark"] .order.dead{background:#241820}
+:root[data-theme="dark"] .pay-warn{background:#3D3316;color:#F5D97A}
+:root[data-theme="dark"] .unpaid-banner{background:linear-gradient(135deg,#3A1F28,#42232F);border-color:#8E4257}
+:root[data-theme="dark"] .unpaid-banner .ub-t b,
+:root[data-theme="dark"] .unpaid-banner .ub-go{color:#FF9FB4}
+:root[data-theme="dark"] .parcel-save,
+:root[data-theme="dark"] .parcel-done{background:#1C3A2C;color:#8FE0B8}
+:root[data-theme="dark"] .b-ordered{background:#3D2F16;color:#F0C86A}
+:root[data-theme="dark"] .b-packed,
+:root[data-theme="dark"] .b-shipped{background:#1E2C42;color:#9DC2F0}
+:root[data-theme="dark"] .b-transit{background:#3A2030;color:#F0A8D2}
+:root[data-theme="dark"] .b-delivered{background:#1C3A2C;color:#8FE0B8}
+:root[data-theme="dark"] .b-cancelled{background:#3A2020;color:#F0A0A0}
+:root[data-theme="dark"] .sortsel{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23B69AAC' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>")}
+@media (min-width:600px){
+  :root[data-theme="dark"] body{background:#140C11}
+  :root[data-theme="dark"] #app{box-shadow:0 0 60px rgba(0,0,0,.6)}
+}
+/* These stay light on purpose: a QR needs the contrast, and a card scan wants a
+   neutral mount rather than a plum one. */
+:root[data-theme="dark"] #pnQr,
+:root[data-theme="dark"] .pn-qr,
+:root[data-theme="dark"] .pocket.filled,
+:root[data-theme="dark"] .cv-face{background:#fff}
+/* ══ SETTINGS ═════════════════════════════════════════════════════════════ */
+.set-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.set-row:last-child{border-bottom:none}
+.set-l{flex:1;min-width:0}
+.set-t{font-size:14px;font-weight:700}
+.set-s{font-size:11.5px;color:var(--hint);margin-top:2px;line-height:1.4}
+.seg3{display:flex;gap:6px;background:var(--ruff);padding:4px;border-radius:14px;margin-top:4px}
+.seg3-b{flex:1;padding:10px 4px;border-radius:11px;font-weight:800;font-size:12.5px;color:var(--hint);background:transparent;transition:.18s}
+.seg3-b.on{background:var(--card);color:var(--fawn-deep);box-shadow:0 2px 6px rgba(0,0,0,.10)}
+.rng{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:4px;
+  background:var(--ruff);outline:none}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--fawn);border:2px solid var(--card);box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer}
+.rng::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--fawn);
+  border:2px solid var(--card);cursor:pointer}
+#v-settings{padding-bottom:40px}
+/* ══ WOOLOO ═══════════════════════════════════════════════════════════════
+   Two bugs: `top` wasn't transitioned, so on release it snapped; and it parked
+   at top:0, which sits under the status bar on a notched phone. */
+.ptr{transition:opacity .2s, top .3s cubic-bezier(.34,1.4,.64,1)}
+.ptr img{transition:transform .15s linear}
+.ptr.armed img{filter:drop-shadow(0 0 8px rgba(251,212,78,.8))}
+
+/* …and the reward: once the refresh lands, Wooloo rolls off to the right. */
+@keyframes woolooRoll{
+  0%   {transform:translateX(-50%) rotate(0deg)}
+  15%  {transform:translateX(-50%) rotate(-25deg)}
+  100% {transform:translateX(70vw) rotate(1080deg)}
+}
+.ptr.rolling{animation:woolooRoll .95s cubic-bezier(.45,.05,.75,.95) forwards}
+.ptr.rolling img{animation:none!important;transform:none!important}
+
+/* ══ LITTLE THINGS ════════════════════════════════════════════════════════ */
+/* Cart badge kicks when something lands in it. */
+@keyframes dotPop{0%{transform:scale(1)}40%{transform:scale(1.45)}100%{transform:scale(1)}}
+.cart-dot.kick{animation:dotPop .34s cubic-bezier(.3,1.6,.5,1)}
+@keyframes barNudge{0%,100%{transform:translateX(-50%) translateY(0)}35%{transform:translateX(-50%) translateY(-5px)}}
+.cartbar.show.kick{animation:barNudge .32s ease}
+
+/* A card priced under market gets a slow sweep across the price. */
+.price:has(.was){background:linear-gradient(100deg,var(--fawn-deep) 40%,var(--yellow) 50%,var(--fawn-deep) 60%);
+  background-size:280% 100%;-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;animation:shimmer 4.5s linear infinite}
+
+/* Nav icon hops to the tab you picked. */
+@keyframes navHop{0%{transform:translateY(0)}45%{transform:translateY(-5px)}100%{transform:translateY(-1px)}}
+.nav button.on .ni{animation:navHop .3s cubic-bezier(.3,1.5,.5,1)}
+
+/* Tiles settle in rather than appearing. */
+.pcard:active{transform:scale(.97)}
+.jcard:active .jimg{transform:scale(.94) rotate(-1.5deg)}
+.feat:active .ic{transform:scale(1.12) rotate(-6deg)}
+.feat .ic{transition:transform .18s cubic-bezier(.3,1.5,.5,1)}
+/* ══ MOTION ═══════════════════════════════════════════════════════════════ */
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after{
+  animation-duration:.01ms!important;animation-iteration-count:1!important;
+  transition-duration:.01ms!important;scroll-behavior:auto!important}
 </style>
 </head>
 <body>
@@ -911,6 +1072,7 @@ button.busy{position:relative;color:transparent!important}
       <button class="feat" onclick="openAddrEdit()"><div class="ic">📦</div><div><h3>Delivery address</h3><p id="p-addr-sub">Saved for faster checkout</p></div><span class="chev">›</span></button>
       <button class="feat" onclick="loadCredit()"><div class="ic">💳</div><div><h3>Store credit history</h3><p id="p-credit-sub">See your credit ledger</p></div><span class="chev">›</span></button>
       <button class="feat" onclick="go('support')"><div class="ic">🆘</div><div><h3>Help &amp; support</h3><p>Message us</p></div><span class="chev">›</span></button>
+      <button class="feat" onclick="go('settings')"><div class="ic">⚙️</div><div><h3>Settings</h3><p id="p-set-sub">Theme, sound &amp; motion</p></div><span class="chev">›</span></button>
     </div>
     <div id="prof-notifs"></div>
   </div>
@@ -924,6 +1086,58 @@ button.busy{position:relative;color:transparent!important}
       <div class="field"><label>Your message</label><textarea id="sup-msg" rows="5" placeholder="Tell us how we can help…"></textarea></div>
       <button class="cta" id="sup-send" onclick="sendSupport(this)">Send message</button>
     </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view hidden" id="v-settings">
+    <button class="back-btn" onclick="go('profile')">‹ Back</button>
+
+    <div class="section-t">Appearance</div>
+    <div class="panel" style="margin-bottom:14px">
+      <div class="set-row" style="border-bottom:none;padding-bottom:2px">
+        <div class="set-l"><div class="set-t">Theme</div>
+          <div class="set-s">Auto follows your Telegram</div></div>
+      </div>
+      <div class="seg3" id="setTheme">
+        <button class="seg3-b" data-v="auto"  onclick="setPref('theme','auto')">✨ Auto</button>
+        <button class="seg3-b" data-v="light" onclick="setPref('theme','light')">☀️ Light</button>
+        <button class="seg3-b" data-v="dark"  onclick="setPref('theme','dark')">🌙 Dark</button>
+      </div>
+    </div>
+
+    <div class="section-t">Sound</div>
+    <div class="panel" style="margin-bottom:14px">
+      <div class="set-row">
+        <div class="set-l"><div class="set-t">Sound effects</div>
+          <div class="set-s">Soft pops when you tap things</div></div>
+        <button class="switch" id="setSfx" onclick="togglePref('sfx')"></button>
+      </div>
+      <div class="set-row">
+        <div class="set-l"><div class="set-t">Background music</div>
+          <div class="set-s">Quiet shop music while you browse</div></div>
+        <button class="switch" id="setMusic" onclick="togglePref('music')"></button>
+      </div>
+      <div id="setVolWrap" class="hidden" style="padding:10px 0 2px">
+        <input type="range" id="setVol" class="rng" min="0" max="100" step="5" oninput="setVol(this.value)">
+        <div class="set-s" style="text-align:center;margin-top:6px">Volume</div>
+      </div>
+    </div>
+
+    <div class="section-t">Motion &amp; feel</div>
+    <div class="panel" style="margin-bottom:14px">
+      <div class="set-row">
+        <div class="set-l"><div class="set-t">Animations</div>
+          <div class="set-s">Turn off if movement bothers you</div></div>
+        <button class="switch" id="setAnim" onclick="togglePref('anim')"></button>
+      </div>
+      <div class="set-row">
+        <div class="set-l"><div class="set-t">Haptics</div>
+          <div class="set-s">A small buzz on taps</div></div>
+        <button class="switch" id="setHaptics" onclick="togglePref('haptics')"></button>
+      </div>
+    </div>
+
+    <p class="note">Saved to your Telegram account, so it follows you to your other devices 🐑</p>
   </div>
 
 </div>
@@ -1038,6 +1252,7 @@ button.busy{position:relative;color:transparent!important}
   </div>
 </div>
 <div class="ptr" id="ptr"><img src="wooloo-roll.gif" alt="↻" onerror="this.style.display='none';this.parentElement.textContent='↻'"></div>
+<audio id="bgm" loop preload="none"><source src="bgm.mp3" type="audio/mpeg"></audio>
 <div class="zoom-wrap" id="zoomWrap">
   <button class="zoom-close" onclick="closeZoom()">✕</button>
   <img class="zoom-img" id="zoomImg" alt="">
@@ -1469,7 +1684,7 @@ function go(tab,dir){
     dir = (a>=0&&b>=0) ? Math.sign(b-a) : 0;
   }
   STATE.tab=tab;
-  ['overview','store','orders','buyback','support','profile','credit'].forEach(t=>{
+  ['overview','store','orders','buyback','support','profile','credit','settings'].forEach(t=>{
     const el=document.getElementById('v-'+t); if(!el) return;
     el.classList.remove('slide-in-right','slide-in-left');
     el.classList.toggle('hidden',t!==tab);
@@ -1839,8 +2054,14 @@ function addToCart(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
   const inCart = STATE.cart.filter(x=>x.id===id).length;
   if(inCart>=c.qty) return;
-  STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price,number:c.number||'',image:c.image||''});  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price,number:c.number||'',image:c.image||''});
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  sfx('add');
   updateCartDot(); renderStore();
+  ['cartDot','cartBar'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.classList.remove('kick'); void el.offsetWidth; el.classList.add('kick');
+  });
 }
 function removeFromCart(idx){ STATE.cart.splice(idx,1); updateCartDot(); renderCart(); renderStore(); }
 function updateCartDot(){
@@ -2133,6 +2354,7 @@ async function submitProof(){
   const r=await api('submitPayment',{orderId:INVOICE.orderId,image:PAYPROOF});
   if(r.ok){
     clearInterval(PAY_TIMER);
+    sfx('chime');
     closeInvoice();
     const msg='Payment submitted for '+INVOICE.orderId+'! 🎉 We\'re verifying it now — you\'ll get an update once confirmed. Track it in Orders.';
     tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
@@ -2296,7 +2518,11 @@ function orderCardHtml(o){
 }
 async function doRefresh(){
   const ptr=document.getElementById('ptr');
-  if(ptr){ ptr.classList.add('show','loading'); }
+  if(ptr){
+    ptr.classList.remove('rolling');
+    ptr.style.top='calc(16px + env(safe-area-inset-top))';   // park clear of the notch
+    ptr.classList.add('show','loading');
+  }
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
   const started=Date.now();
   try{ ORDERS_CACHE=null; await loadOrders(true); await loadOverview(); }
@@ -2306,6 +2532,15 @@ async function doRefresh(){
       if(ptr){ ptr.classList.remove('loading','armed'); }
       if(tg&&tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
       setTimeout(()=>ptr&&ptr.classList.remove('show'),250);
+    },wait);    setTimeout(()=>{
+      if(ptr){
+        ptr.classList.remove('loading','armed');
+        const im=ptr.querySelector('img'); if(im) im.style.transform='';
+        ptr.classList.add('rolling');              // and off he goes
+        setTimeout(()=>{ ptr.classList.remove('rolling','show'); ptr.style.top=''; },950);
+      }
+      if(tg&&tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      sfx('ok');
     },wait);
   }
 }
@@ -2332,7 +2567,7 @@ function attachPullRefresh(){
     const d=Math.min(dist*0.5,MAX);
     if(ptr){
       ptr.classList.add('show');
-      ptr.style.top=(d-52)+'px';                  // Wooloo rides down with the finger
+      ptr.style.top='calc(' + (d-44) + 'px + env(safe-area-inset-top))';   // rides down, clear of the notch
       ptr.classList.toggle('armed',dist>=THRESH);
       const img=ptr.querySelector('img'); if(img) img.style.transform='rotate('+(d*4)+'deg)';
     }
@@ -2673,7 +2908,97 @@ async function loadCredit(){
     : `<div class="empty" style="padding:30px"><div class="e-ic">💳</div><p>No store credit transactions yet.<br>Sell us cards or earn rewards to start! 🐾</p></div>`;
 }
 function backToProfile(){ document.getElementById('v-credit').classList.add('hidden'); document.getElementById('v-profile').classList.remove('hidden'); }
+/* ============ PREFERENCES ============ */
+const PREF_DEFAULTS={theme:'auto',sfx:true,music:false,musicVol:30,anim:true,haptics:true};
+let PREFS=Object.assign({},PREF_DEFAULTS);
 
+function loadPrefs(){
+  try{ const raw=localStorage.getItem('fm_prefs');
+    if(raw) PREFS=Object.assign({},PREF_DEFAULTS,JSON.parse(raw)); }catch(e){}
+  applyPrefs();
+  // CloudStorage answers later and wins — that's what carries settings between devices.
+  _load('fm_prefs',v=>{ try{ PREFS=Object.assign({},PREF_DEFAULTS,JSON.parse(v)); applyPrefs(); renderSettings(); }catch(e){} });
+  gateHaptics();
+  // Browsers won't start audio until the user has touched something.
+  document.addEventListener('pointerdown',()=>{ applyMusic(); },{once:true});
+}
+function savePrefs(){ _store('fm_prefs',JSON.stringify(PREFS)); applyPrefs(); }
+
+function applyPrefs(){
+  const root=document.documentElement;
+  let t=PREFS.theme;
+  if(t==='auto'){
+    const tgDark=!!(tg&&tg.colorScheme==='dark');
+    const osDark=!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+    t=(tgDark||osDark)?'dark':'light';
+  }
+  root.setAttribute('data-theme',t);
+  // Someone who turned motion off in their OS gets that respected even on default.
+  const osReduced=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+  root.setAttribute('data-motion',(PREFS.anim&&!osReduced)?'full':'reduced');
+  try{ if(tg&&tg.setHeaderColor) tg.setHeaderColor(t==='dark'?'#1E1219':'#C98B5E'); }catch(e){}
+  applyMusic();
+}
+
+function setPref(k,v){ PREFS[k]=v; savePrefs(); renderSettings(); sfx('pop'); }
+function togglePref(k){
+  const was=PREFS[k]; PREFS[k]=!was; savePrefs(); renderSettings();
+  if(k!=='sfx'||PREFS.sfx) sfx(PREFS[k]?'ok':'pop');
+}
+function setVol(v){ PREFS.musicVol=Number(v); savePrefs(); }
+function renderSettings(){
+  const seg=document.getElementById('setTheme');
+  if(seg) seg.querySelectorAll('.seg3-b').forEach(b=>b.classList.toggle('on',b.dataset.v===PREFS.theme));
+  const sw=(id,on)=>{const e=document.getElementById(id); if(e) e.classList.toggle('on',!!on);};
+  sw('setSfx',PREFS.sfx); sw('setMusic',PREFS.music); sw('setAnim',PREFS.anim); sw('setHaptics',PREFS.haptics);
+  const w=document.getElementById('setVolWrap'); if(w) w.classList.toggle('hidden',!PREFS.music);
+  const v=document.getElementById('setVol'); if(v) v.value=PREFS.musicVol;
+  const s=document.getElementById('p-set-sub');
+  if(s) s.textContent=(PREFS.theme==='auto'?'Auto':PREFS.theme==='dark'?'Dark':'Light')+
+    ' · sound '+(PREFS.sfx?'on':'off')+(PREFS.music?' · music on':'');
+}
+
+/* Music. Nothing plays until a real tap, and a missing bgm.mp3 fails silently. */
+function applyMusic(){
+  const a=document.getElementById('bgm'); if(!a) return;
+  a.volume=Math.max(0,Math.min(1,Number(PREFS.musicVol||30)/100));
+  if(PREFS.music){ const p=a.play(); if(p&&p.catch) p.catch(()=>{}); } else { try{a.pause();}catch(e){} }
+}
+
+/* Sound effects are synthesised, so there are no files to host and nothing to
+   download. Two oscillators is plenty for a pop and a chime. */
+let AC=null;
+function sfx(kind){
+  if(!PREFS.sfx) return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended') AC.resume();
+    const notes={pop:[[660,.07]],add:[[880,.06]],ok:[[659.25,.09],[987.77,.14]],
+                 chime:[[783.99,.10],[1046.50,.10],[1318.51,.20]],err:[[196,.16]]}[kind]||[[660,.07]];
+    let t=AC.currentTime;
+    notes.forEach(([f,d])=>{
+      const o=AC.createOscillator(),g=AC.createGain();
+      o.type=(kind==='err')?'square':'sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t);
+      g.gain.exponentialRampToValueAtTime(.16,t+.012);
+      g.gain.exponentialRampToValueAtTime(.0001,t+d);
+      o.connect(g); g.connect(AC.destination);
+      o.start(t); o.stop(t+d+.02); t+=d*.75;
+    });
+  }catch(e){}
+}
+
+/* Honour the haptics switch without editing forty call sites. */
+function gateHaptics(){
+  try{
+    const H=tg&&tg.HapticFeedback; if(!H||H._gated) return;
+    ['impactOccurred','notificationOccurred','selectionChanged'].forEach(k=>{
+      const fn=H[k]; if(typeof fn!=='function') return;
+      H[k]=function(){ if(PREFS.haptics){ try{ return fn.apply(H,arguments); }catch(e){} } };
+    });
+    H._gated=true;
+  }catch(e){}
+}
 /* ============ INIT ============ */
 (function init(){
   if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#C98B5E');
@@ -2681,6 +3006,8 @@ function backToProfile(){ document.getElementById('v-credit').classList.add('hid
     if(u){ STATE.user={id:String(u.id),name:[u.first_name,u.last_name].filter(Boolean).join(' '),username:u.username||''}; }
   }
   restorePersisted();
+  loadPrefs();
+  renderSettings();
   initHowBuy();
   attachSwipe();
   attachPullRefresh();
