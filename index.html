@@ -150,7 +150,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   border-radius:5px;box-shadow:0 3px 10px rgba(0,0,0,.30);
   transform-origin:50% 92%;transition:transform .35s cubic-bezier(.3,.8,.4,1);
   background:#fff}
-.pcard:hover .bfan img{transform:var(--spread,none)}
+@media (hover:hover){ .pcard:hover .bfan img{transform:var(--spread,none)} }
 .bmore{position:absolute;bottom:6px;left:6px;z-index:9;background:rgba(74,53,36,.72);color:#fff;
   font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;pointer-events:none}
 @media (prefers-reduced-motion:reduce){ .bfan img{transition:none} }
@@ -180,8 +180,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 @keyframes holoshift{to{background-position:260% 0}}
 .tier.hi{background:var(--berry);color:#fff}
 .tier.mid{background:var(--ruff);color:var(--berry-deep)}
-.pcard.top-rarity{box-shadow:0 2px 14px rgba(180,88,154,.22)}
-.pcard.top-rarity:hover{box-shadow:0 10px 30px rgba(180,88,154,.32)}
+.pcard.top-rarity{box-shadow:0 2px 14px rgba(180,88,154,.22)}@media (hover:hover){ .pcard.top-rarity:hover{box-shadow:0 10px 30px rgba(180,88,154,.32)} }
 @media (prefers-reduced-motion:reduce){ .tier.holo{animation:none} }
 
 /* "Just in" rail on the home screen — the shop's front window. */
@@ -403,7 +402,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .dd.open .dd-menu{max-height:60vh;overflow-y:auto;margin-top:6px;border:1px solid var(--line);padding:6px}
 .dd-item{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:10px;font-size:13px;
   font-weight:600;color:var(--text);white-space:normal;overflow-wrap:anywhere; word-break:break-word}
-.dd-item:hover{background:var(--bg)}
+@media (hover:hover){ .dd-item:hover{background:var(--bg)} }
 .dd-item.on{background:var(--ruff);color:var(--fawn-deep);font-weight:800}
 .dd-lbl{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;
   padding:8px 12px 4px;border-top:1px solid var(--line);margin-top:4px}
@@ -435,8 +434,7 @@ html{scroll-behavior:smooth}
 .cta,.add,.asellbtn,.chip,.cattab,.dd-btn{transition:transform .12s ease,filter .15s ease,background .15s ease}
 .cta:active,.add:active{transform:scale(.96)}
 .cta:disabled{opacity:.55;filter:grayscale(.3)}
-.tier{transition:transform .2s}
-.pcard:hover .tier{transform:scale(1.05)}
+.tier{transition:transform .2s}@media (hover:hover){ .pcard:hover .tier{transform:scale(1.05)} }
 .skelcard{background:linear-gradient(100deg,var(--card) 30%,#f3e4dc 50%,var(--card) 70%);
   background-size:200% 100%;animation:shimmer 1.3s linear infinite;border:1px solid var(--line);
   border-radius:18px;height:230px;position:relative}
@@ -525,8 +523,7 @@ html{scroll-behavior:smooth}
   border-top:1px solid var(--line);line-height:1.7}
 
 /* ── design polish ── */
-.pcard{box-shadow:0 2px 12px rgba(180,88,154,.08);transition:transform .18s ease,box-shadow .18s ease;border-radius:18px}
-.pcard:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(180,88,154,.16)}
+.pcard{box-shadow:0 2px 12px rgba(180,88,154,.08);transition:transform .18s ease,box-shadow .18s ease;border-radius:18px}@media (hover:hover){ .pcard:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(180,88,154,.16)} }
 .pcard .img{border-radius:18px 18px 0 0}
 .hero{background:linear-gradient(135deg,var(--fawn) 0%,var(--rose) 55%,#f6d6a8 100%);
   box-shadow:0 10px 28px rgba(213,142,191,.3)}
@@ -773,6 +770,16 @@ button.busy{position:relative;color:transparent!important}
 .po-cp{font-size:12px;font-weight:800;color:var(--fawn-deep)}
 .po-inv{font-size:11px;font-weight:700;color:var(--fawn-deep);background:var(--ruff);padding:5px 10px;border-radius:9px;margin-top:4px}
 .past-hd{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.7px;margin:18px 4px 8px}
+
+/* #v-credit sits OUTSIDE #app and .wrap in the markup, so it gets none of the
+   page gutter and none of the desktop column. Give it both here rather than
+   moving the whole block. */
+#v-credit{max-width:520px;margin:0 auto;padding-left:16px;padding-right:16px;padding-bottom:100px}
+#v-credit .hb-body{padding-left:0;padding-right:0}
+@media (min-width:600px){
+  #v-credit{width:520px;min-height:100vh;background:var(--bg);
+    padding-left:20px;padding-right:20px;box-shadow:0 0 60px rgba(74,53,36,.22)}
+}
 </style>
 </head>
 <body>
@@ -1160,6 +1167,20 @@ function mergeInventory(items){
 }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function money(n){ return '$'+Number(n||0).toFixed(2); }
+
+/* Buyers see a callsign, never an admin's real Telegram name. Key = exactly what
+   lands in the Orders tab's verified_by / packed_by / shipped_by columns; run
+   /activity or open an order to see the exact spelling. Anyone missing falls
+   back to the generic label, so a forgotten entry leaks nothing. */
+const CALLSIGNS = {
+  // "Bryan Lee": "Wooloo",
+  // "@b_ry_anlee": "Wooloo",
+};
+function crew(n){
+  const s=String(n||'').trim();
+  if(!s) return '';
+  return CALLSIGNS[s] || 'FloofMart crew';
+}
 
 // An order line can be a single card or a whole bundle, so "1 card" was wrong
 // for a 3-card Kanto bundle. Name the lines by what they actually are.
@@ -1738,7 +1759,7 @@ function openCardView(id){
     <div class="cv-panel">
       <button class="cv-close" onclick="closeCardView()">✕</button>
       <div class="cv-top">
-        <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="this.classList.toggle('flipped')"`:''}>
+        <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="if(!this.classList.contains('noflip'))this.classList.toggle('flipped')"`:''}>
           <div class="cv-inner">
             <div class="cv-face cv-front">${front}</div>
             ${hasBack?`<div class="cv-face cv-back"><img src="${f0.b?imgUrl(f0.b,800):''}" alt="back"></div>`:''}
@@ -1986,7 +2007,10 @@ function showInvoice(inv){
       :`<div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>`}
     <div class="inv-items">
       ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}${it.number?` <span style="color:var(--hint);font-size:11.5px">${it.number}</span>`:''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
-      <div class="inv-row"><span>Shipping</span><span>${inv.shipping===0?'FREE':'$'+inv.shipping.toFixed(2)}</span></div>
+      ${inv.shipping>0
+        ?`<div class="inv-row"><span>Shipping</span><span>$${inv.shipping.toFixed(2)}</span></div>`
+        :(String(inv.orderId||'').indexOf('SH')===0?''
+          :`<div class="inv-row" style="color:var(--hint)"><span>Postage</span><span>not charged yet</span></div>`)}
       ${inv.creditUsed>0?`<div class="inv-row" style="color:var(--mint)"><span>Store credit</span><span>−$${inv.creditUsed.toFixed(2)}</span></div>`:''}
       <div class="inv-row inv-total"><span>Total to pay</span><span>$${inv.total.toFixed(2)}</span></div>
     </div>
@@ -2400,16 +2424,18 @@ function binderFlip(dir){
 function openBinderCard(idx){
   const c=BINDER.cards[idx]; if(!c) return;
   const front=c.image?`<img src="${imgUrl(c.image,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo</span></div>`;
-  const back=c.imageBack?`<div class="cv-face cv-back"><img src="${imgUrl(c.imageBack,800)}" alt="back"></div>`:'';
+  // A bundle's imageBack is the whole face set ("front~back|front2~back2"),
+  // not a back scan — imgUrl would return another FRONT. Only singles flip.
+  const _bk=String(c.imageBack||''), _isSet=_bk.indexOf('|')>=0||_bk.indexOf('~')>=0;
+  const back=(_bk&&!_isSet)?`<div class="cv-face cv-back"><img src="${imgUrl(_bk,800)}" alt="back"></div>`:'';
   document.getElementById('cardViewBody').innerHTML=`
     <div class="cv-panel">
       <button class="cv-close" onclick="closeCardView()">✕</button>
-      <div class="cv-top">
-        <div class="cv-card ${c.imageBack?'':'noflip'}" ${c.imageBack?`onclick="this.classList.toggle('flipped')"`:''}>
+      <div class="cv-top">        <div class="cv-card ${back?'':'noflip'}" ${back?`onclick="this.classList.toggle('flipped')"`:''}>
           <div class="cv-inner"><div class="cv-face cv-front">${front}</div>${back}</div>
           ${c.image?`<button class="cv-zoom" onclick="event.stopPropagation();openZoom('${imgUrl(c.image,1600)}')">🔍</button>`:''}
         </div>
-        ${c.imageBack?'<div class="cv-flip-hint">tap card to flip ⤾ · 🔍 to zoom</div>':(c.image?'<div class="cv-flip-hint">🔍 tap to zoom in</div>':'')}
+        ${back?'<div class="cv-flip-hint">tap card to flip ⤾ · 🔍 to zoom</div>':(c.image?'<div class="cv-flip-hint">🔍 tap to zoom in</div>':'')}
       </div>
       <div class="cv-meta">
         <div class="cv-name">${c.name}</div>
@@ -2560,9 +2586,9 @@ function viewInvoice(id){
       <div class="doc-nm">${esc(it.name)}<div class="doc-tag">${void_?('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):'')):[esc(it.number||''),esc(rarityLabel(it))].filter(Boolean).join(' · ')}</div></div>
       <div class="doc-amt">${money(it.price)}</div></div>`;
   const trail=[
-    o.verifiedBy?`<b>Payment verified</b> · ${esc(o.verifiedBy)}`:'',
-    o.packedBy?`<b>Packed</b> · ${esc(o.packedBy)}`:'',
-    o.shippedBy?`<b>Shipped</b> · ${esc(o.shippedBy)}`:''
+    o.verifiedBy?`<b>Payment verified</b> · ${esc(crew(o.verifiedBy))}`:'',
+    o.packedBy?`<b>Packed</b> · ${esc(crew(o.packedBy))}`:'',
+    o.shippedBy?`<b>Shipped</b> · ${esc(crew(o.shippedBy))}`:''
   ].filter(Boolean).join('<br>');
 
   document.getElementById('cardViewBody').innerHTML=`
@@ -2583,7 +2609,9 @@ function viewInvoice(id){
           <div class="doc-row"><span>Subtotal${cancelled?' (not charged)':''}</span><span>${money(cancelled?0:sub)}</span></div>
           ${refunded>0?`<div class="doc-row" style="color:#c2405e"><span>Refunded</span><span>−${money(refunded)}</span></div>`:''}
           ${o.creditUsed>0?`<div class="doc-row" style="color:var(--mint)"><span>Store credit applied</span><span>−${money(o.creditUsed)}</span></div>`:''}
-          <div class="doc-row muted"><span>Shipping</span><span>${o.shipping?money(o.shipping):'FREE'}</span></div>
+          <div class="doc-row muted"><span>${o.shipping?'Shipping':'Postage'}</span><span>${
+            o.shipping?money(o.shipping)
+            :(String(o.id).indexOf('SH')===0?'—':'billed when the parcel ships')}</span></div>
           <div class="doc-row grand"><span>${cancelled?'Charged':'Total'}</span><span>${money(cancelled?0:o.total)}</span></div>
         </div>
         ${o.note?`<div class="doc-note">📝 ${esc(o.note)}</div>`:''}
