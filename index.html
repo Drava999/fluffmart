@@ -183,6 +183,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 @keyframes holoshift{to{background-position:260% 0}}
 .tier.hi{background:var(--berry);color:#fff}
 .tier.mid{background:var(--ruff);color:var(--berry-deep)}
+/* A long rarity ("Mega Attack Rare") reached across the tile and ran under the
+   stock flag in the opposite corner. .tight is added by renderStore ONLY when
+   there is a flag, so a card without one still gets the full width. Wrapping
+   rather than ellipsising because the shop prints Collectr's string verbatim —
+   "Mega Attack Ra…" would be worse than two lines. */
+.tier.tight{max-width:calc(100% - 92px);white-space:normal;text-overflow:clip;line-height:1.22}
 .pcard.top-rarity{box-shadow:0 2px 14px rgba(180,88,154,.22)}@media (hover:hover){ .pcard.top-rarity:hover{box-shadow:0 10px 30px rgba(180,88,154,.32)} }
 @media (prefers-reduced-motion:reduce){ .tier.holo{animation:none} }
 
@@ -224,6 +230,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .order .hd{display:flex;justify-content:space-between;align-items:center}
 .oid{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:14px}
 .badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px}
+/* A two-word status wrapped mid-pill. It never needs to. */
+.badge{white-space:nowrap;flex-shrink:0}
+/* Order number on its own line, the box it's sitting in underneath it. */
+.order .hd{align-items:flex-start;gap:10px}
+.oid-l{min-width:0;flex:1}
+.obox{font-size:11px;color:var(--hint);font-weight:700;margin-top:4px;
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .b-ordered{background:#fdeede;color:#a56a13}.b-packed{background:#e7eefb;color:#2a5aa5}
 .b-shipped{background:#e7eefb;color:#2a5aa5}.b-transit{background:#fce9f0;color:var(--berry-deep)}
 .b-delivered{background:#e2f5ec;color:#1c7a52}.b-cancelled{background:#f0e6e6;color:#7a2f2f}
@@ -738,6 +751,33 @@ html{scroll-behavior:smooth}
 .psi-s{font-size:11.5px;color:var(--hint);margin:2px 0 8px}
 .parcel-done{margin-top:10px;background:#e2f5ec;color:#1c7a52;font-size:12.5px;font-weight:700;border-radius:12px;padding:10px 12px}
 
+/* ── store info card (home) ── */
+.sinfo{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:14px;box-shadow:0 1px 6px rgba(178,92,147,.06)}
+.sinfo-hd{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;
+  color:var(--fawn-deep);margin-bottom:10px}
+.sinfo-r{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}
+.sinfo-r:first-of-type{border-top:none;padding-top:0}
+.sinfo-ic{width:28px;height:28px;border-radius:9px;background:var(--ruff);color:var(--fawn-deep);
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sinfo-l{min-width:0;flex:1}
+.sinfo-k{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.5px}
+.sinfo-v{font-size:12.5px;line-height:1.45;margin-top:1px;overflow-wrap:anywhere}
+.sinfo-go{display:flex;align-items:center;justify-content:space-between;width:100%;
+  margin-top:10px;padding-top:11px;border-top:1px dashed var(--line);
+  font-size:12.5px;font-weight:800;color:var(--fawn-deep);background:transparent}
+.sinfo-go:active{transform:scale(.99)}
+
+/* ── paid confirmation + haul share ── */
+.paid-ok{text-align:center;padding:6px 4px 14px}
+.paid-ok .pk-ic{font-size:42px;line-height:1}
+.paid-ok .pk-t{font-family:'Plus Jakarta Sans';font-weight:800;font-size:17px;
+  color:var(--fawn-deep);margin-top:6px}
+.paid-ok .pk-s{font-size:12.5px;color:var(--hint);line-height:1.5;margin-top:6px}
+.haul-prev{margin:0 0 12px;display:flex;justify-content:center}
+.haul-img{width:100%;max-width:300px;height:auto;border-radius:14px;display:block;
+  box-shadow:0 8px 26px rgba(90,58,78,.22)}
+
 /* ── homepage how-to ── */
 .howto{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
 .howto-t{font-weight:800;color:var(--fawn-deep);font-size:14px;margin-bottom:9px}
@@ -1056,11 +1096,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div id="ov-justin"></div>
     <div class="section-t">What you can do</div>
     <button class="feat" onclick="go('store')">
-      <div class="ic">🛍️</div><div><h3>Browse the store</h3><p>Cards available to claim right now</p></div>
+      <div class="ic">🛍️</div><div><h3>Browse the store</h3><p>Singles, sealed &amp; merch — claim them now</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('orders')">
-      <div class="ic">📦</div><div><h3>Track your orders</h3><p>Live SingPost status &amp; past orders</p></div>
+      <div class="ic">📦</div><div><h3>Track your orders</h3><p>Your box 🧺, live tracking &amp; your binder</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('buyback')">
@@ -1071,16 +1111,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <div class="ic">🆘</div><div><h3>Help &amp; support</h3><p>Message us about an order or anything else</p></div>
       <span class="chev">›</span>
     </button>
+    <button class="feat" onclick="go('profile')">
+      <div class="ic">🐑</div><div><h3>My account</h3><p>Store credit, wishlist, address &amp; invoices</p></div>
+      <span class="chev">›</span>
+    </button>
     <div id="ov-unpaid"></div>
-    <div class="howto">
-      <div class="howto-t">Getting around 🗺️</div>
-      <div class="howto-g">
-        <div class="howto-i"><span>🛍️</span><div><b>Shop</b> — browse &amp; claim singles, sealed, merch</div></div>
-        <div class="howto-i"><span>💰</span><div><b>Sell</b> — turn your cards into cash or credit</div></div>
-        <div class="howto-i"><span>📦</span><div><b>Orders</b> — your box, tracking &amp; your binder</div></div>
-        <div class="howto-i"><span>🐑</span><div><b>Me</b> — credit, wishlist, address &amp; invoices</div></div>
-      </div>
-    </div>
     <div class="howto" style="margin-top:14px">
       <div class="howto-t">New here? 🐑</div>
       <div class="howto-g">
@@ -1906,14 +1941,27 @@ function applyOverview(r){
   updateRateLabels();
   document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
   document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
-  if(r.holdPolicy||r.shippingPolicy||r.policyExtra){
+  {
+    // One labelled row per policy instead of three lines of hint text crammed
+    // into a .feat subtitle. Cleared (not left stale) when Config empties out.
     const el=document.getElementById('ov-policies');
-    if(el) el.innerHTML = `<button class="feat" onclick="go('support')"><div class="ic">🚚</div><div><h3>Store info</h3><p>${[r.shippingPolicy,r.holdPolicy,r.policyExtra].filter(Boolean).join('<br>')}<br><span style="color:var(--fawn-deep);font-weight:700">Refunds &amp; policies ›</span></p></div><span class="chev">›</span></button>`;
+    const rows=[
+      {ic:'🚚', k:'Delivery', v:r.shippingPolicy},
+      {ic:'🧺', k:'Your box', v:r.holdPolicy},
+      {ic:'ℹ️', k:'Also',     v:r.policyExtra}
+    ].filter(x=>x.v);
+    if(el) el.innerHTML = rows.length ? `<div class="sinfo">
+      <div class="sinfo-hd">🏪 Store info</div>
+      ${rows.map(x=>`<div class="sinfo-r"><div class="sinfo-ic">${x.ic}</div>
+        <div class="sinfo-l"><div class="sinfo-k">${x.k}</div><div class="sinfo-v">${esc(x.v)}</div></div></div>`).join('')}
+      <button class="sinfo-go" onclick="go('support')"><span>Refunds &amp; full policies</span><span>›</span></button>
+    </div>` : '';
   }
   if(r.welcome){ const h=document.querySelector('.hero p'); if(h) h.textContent=r.welcome; }
   { const t=document.getElementById('ov-tip'); if(t) t.textContent='✨ Did you know? '+pokeFact(); }
   if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
   STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.openParcel=r.openParcel||null; STATE.holdDays=r.holdExpiryDays||21;
+  STATE.refLink = r.referralLink || STATE.refLink || '';
   renderUnpaidBanner();
   renderLoyalty(r);
 }
@@ -2073,9 +2121,11 @@ function renderStore(){
     const front = faces.length>1 ? fanHtml(faces,400)
       : faces.length ? `<img src="${imgUrl(faces[0].f,400)}" loading="lazy" alt="">`
       : (EMOJI[c.tier]||'🃏');
+    // Worked out once, so the rarity pill knows whether a flag is in its way.
+    const stockTag = c.qty===1 ? 'Only 1!' : (c.qty<=3&&c.qty>1 ? c.qty+' left' : '');
       return `<div class="pcard${rarityClass(c)===' holo'?' top-rarity':''}" onclick="openCardView('${c.id}')">
-      <div class="tier${rarityClass(c)}">${esc(rarityLabel(c))}</div>
-      ${c.qty===1?'<div class="stock-tag">Only 1!</div>':(c.qty<=3&&c.qty>1?`<div class="stock-tag">${c.qty} left</div>`:'')}
+      <div class="tier${rarityClass(c)}${stockTag?' tight':''}">${esc(rarityLabel(c))}</div>
+      ${stockTag?`<div class="stock-tag">${stockTag}</div>`:''}
       <div class="img">${front}
         ${backOf(c)?'<div class="flip-hint">⤾ flip</div>':''}
         ${c.imageType==='stock'?'<div class="stockflag">stock image</div>':''}
@@ -2314,6 +2364,9 @@ async function checkout(){
   const tot0=sub0-cred0;
   const rid=STATE.resvId||await ensureReservedId();
   const snap=STATE.cart.slice();
+  // Kept for the haul image: the order payload drops the scans, and by the time
+  // it comes back the cards are out of STATE.inventory.
+  if(rid) STATE.lastHaul={orderId:rid, items:snap.map(c=>({name:c.name,number:c.number||'',price:c.price,image:c.image||''}))};
   const pay=STATE.payInfo||{};
   const shownQr=!!(rid && tot0>0 && pay.mobile);
   const warn=shownQr?'⚠️ DON\'T pay that QR — this order didn\'t go through and nothing was charged.\n\n':'';
@@ -2322,7 +2375,7 @@ async function checkout(){
   // still being written. The upload button stays locked until it confirms.
   if(rid && tot0>0 && pay.mobile){
     showInvoice({ orderId:rid,
-      items:snap.map(c=>({name:c.name,tier:c.tier,price:c.price,number:c.number||''})),
+      items:snap.map(c=>({name:c.name,tier:c.tier,price:c.price,number:c.number||'',image:c.image||''})),
       subtotal:sub0, shipping:0, creditUsed:cred0, total:tot0,
       paynowMobile:pay.mobile, paynowName:pay.name||'FloofMart TCG',
       paymentWindowMins:Number(pay.mins||10), _pending:true });
@@ -2540,9 +2593,7 @@ async function submitProof(){
   if(r.ok){
     clearInterval(PAY_TIMER);
     sfx('chime');
-    closeInvoice();
-    const msg='Payment submitted for '+INVOICE.orderId+'! 🎉 We\'re verifying it now — you\'ll get an update once confirmed. Track it in Orders.';
-    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    showPaidHaul(INVOICE);
     ORDERS_CACHE=null; loadOverview(); loadOrders(true);
   } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Upload failed, try again.'); }
 }
@@ -2583,6 +2634,23 @@ function payExpired(o){
   if(!o.createdMs) return false;
   return (Date.now()-o.createdMs) >= mins*60*1000;
 }
+/* The Orders tab printed the raw sheet status, so "Awaiting Payment" wrapped
+   inside its pill and read like a database field. The parcel card already had
+   friendlier wording — this is that wording, in one place, for both. */
+function statusLabel(o){
+  const s=String((o&&o.status)||'');
+  if(s.indexOf('Merged into')===0) return '🧺 In your box';
+  if(o&&o.cancelled)               return '✕ Cancelled';
+  if(s==='Awaiting Payment')       return payExpired(o)?'⌛ Timed out':'💳 Unpaid';
+  if(s==='Awaiting Verification')  return '⏳ Checking';
+  if(s==='Payment Verified')       return '✓ Paid';
+  if(s==='Packed')                 return '📦 Packed';
+  if(s==='Shipped')                return '🚚 Shipped';
+  if(s==='In Transit')             return '🚚 On the way';
+  if(s==='Delivered')              return '✅ Delivered';
+  if(s==='Refunded')               return '↩️ Refunded';
+  return s;
+}
 function renderParcelCard(p){
   const inParcel=STATE.orders.filter(o=>o.parcelId===p.id && String(o.id).indexOf('SH')!==0 && !o.cancelled && o.status!=='Refunded');
   if(!inParcel.length) return '';
@@ -2613,11 +2681,7 @@ function renderParcelCard(p){
     <div class="parcel-hd"><span>${PARCEL_TITLE[p.status]||'🧺 Parcel'} <span style="font-size:11px;opacity:.6">${p.id}</span></span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${itemsLabel(allItems)}</span></div>
     <div class="parcel-orders">${inParcel.map(o=>`
       <div class="po-row"><div class="po-l">
-        <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-ordered'}">${
-          o.status==='Payment Verified'?'✓ In parcel'
-          :o.status==='Awaiting Verification'?'⏳ Checking payment'
-          :o.status==='Awaiting Payment'?(payExpired(o)?'⌛ Timed out':'💳 Unpaid')
-          :o.status}</span></div>
+        <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-ordered'}">${o.status==='Payment Verified'?'✓ In parcel':statusLabel(o)}</span></div>
         <div class="po-items">${o.items.filter(i=>!i.refunded).slice(0,3).map(i=>i.name).join(', ')}${o.items.filter(i=>!i.refunded).length>3?' +'+(o.items.filter(i=>!i.refunded).length-3):''}</div></div></div><div class="po-r"><div class="po-amt">$${o.total.toFixed(2)}</div>${o.status==='Awaiting Payment'?(payExpired(o)
           ?`<span style="font-size:11.5px;font-weight:800;color:#c2405e">⌛ Timed out</span><button class="cancel-link" onclick="event.stopPropagation();guard(this,()=>cancelUnpaid('${o.id}'))">Clear it</button>`
           :`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button><button class="cancel-link" onclick="event.stopPropagation();guard(this,()=>cancelUnpaid('${o.id}'))">Cancel</button>`):''}</div></div>
@@ -2693,7 +2757,10 @@ function orderCardHtml(o){
   const anyRefund=o.items.some(i=>i.refunded);
   const live=o.items.filter(i=>!i.refunded);
   return `<div class="order ${cancelled?'dead':''}">
-      <div class="hd"><span class="oid">#${o.id}${o.delivery==='pickup'?' <span class="ptag">🤝 pickup</span>':(o.parcelId&&!cancelled?` <span class="ptag">🧺 ${o.parcelId}</span>`:'')}</span><span class="badge ${bcls}">${o.status}</span></div>
+      <div class="hd"><div class="oid-l"><span class="oid">#${o.id}</span>${
+        o.delivery==='pickup' ? '<div class="obox"><span class="ptag">🤝 pickup</span></div>'
+        : (o.parcelId&&!cancelled ? `<div class="obox">Box <span class="ptag">🧺 ${o.parcelId}</span></div>` : '')
+      }</div><span class="badge ${bcls}">${statusLabel(o)}</span></div>
       ${track}
       ${o.lastUpdate&&!cancelled?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
       ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
@@ -2706,6 +2773,8 @@ function orderCardHtml(o){
         :`<button class="cta" style="margin-top:8px" onclick="resumePayment('${o.id}')">💳 Complete payment</button>
       <button class="cancel-link" onclick="guard(this,()=>cancelUnpaid('${o.id}'))">Cancel this order</button>`):''}
       <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
+      ${!cancelled&&['Payment Verified','Packed','Shipped','In Transit','Delivered'].includes(o.status)
+        ?`<button class="pics" style="margin-top:8px" onclick="guard(this,()=>shareHaul('${o.id}'))">📸 Share my haul</button>`:''}
     </div>`;
 }
 async function doRefresh(){
@@ -2803,6 +2872,245 @@ function swipeOrderSeg(dir){
   const next=cur+dir;
   if(next<0||next>=OSEGS.length) return;
   orderSeg(OSEGS[next],dir);
+}
+
+/* ============ SHARE MY HAUL ============
+ * Draws the cards onto one branded image. Card scans are third-party (Drive),
+ * so they're loaded crossOrigin — if the host won't allow it the canvas is
+ * tainted and toBlob() throws, which would kill the whole image. So a scan that
+ * won't load becomes a named placeholder tile instead. Set HAUL_IMG_PROXY to a
+ * Worker route that re-serves Drive with an Access-Control-Allow-Origin header
+ * and every scan comes through properly.
+ * ====================================================================== */
+const HAUL_IMG_PROXY = '';   // e.g. 'https://fluffmart-api.shrimaniac.workers.dev/img?u='
+
+let HAUL = null;
+
+function haulSrc(u, w){
+  const s = imgUrl(u, w);
+  return (HAUL_IMG_PROXY && s) ? HAUL_IMG_PROXY + encodeURIComponent(s) : s;
+}
+function loadCors(src){
+  return new Promise(res => {
+    if(!src) return res(null);
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    const t = setTimeout(() => res(null), 6000);   // a stalled scan can't hold up the share
+    im.onload  = () => { clearTimeout(t); res(im); };
+    im.onerror = () => { clearTimeout(t); res(null); };
+    im.src = src;
+  });
+}
+function rrect(x, l, t, w, h, r){
+  x.beginPath();
+  x.moveTo(l + r, t);
+  x.arcTo(l + w, t,     l + w, t + h, r);
+  x.arcTo(l + w, t + h, l,     t + h, r);
+  x.arcTo(l,     t + h, l,     t,     r);
+  x.arcTo(l,     t,     l + w, t,     r);
+  x.closePath();
+}
+function wrapText(x, text, cx, cy, maxW, lh, maxLines){
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let cur = '';
+  words.forEach(w => {
+    const t = cur ? cur + ' ' + w : w;
+    if(x.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else { cur = t; }
+  });
+  if(cur) lines.push(cur);
+  const use = lines.slice(0, maxLines);
+  if(lines.length > maxLines) use[maxLines - 1] = use[maxLines - 1].replace(/.{2}$/, '…');
+  const top = cy - ((use.length - 1) * lh) / 2;
+  use.forEach((l, i) => x.fillText(l, cx, top + i * lh));
+}
+function shopHandle(){
+  const m = String(STATE.refLink || '').match(/t\.me\/([A-Za-z0-9_]+)/);
+  return m ? ('t.me/' + m[1]) : 'FloofMart TCG';
+}
+
+async function buildHaulCanvas(h){
+  const W = 1080, H = 1350;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  // Fraunces and Plus Jakarta Sans are webfonts — canvas silently falls back to
+  // a system face if they aren't decoded yet.
+  try { if(document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
+
+  x.fillStyle = '#FBEFE6'; x.fillRect(0, 0, W, H);
+
+  const g = x.createLinearGradient(0, 0, W, 210);
+  g.addColorStop(0, '#D98EC0'); g.addColorStop(.55, '#F0B9CF'); g.addColorStop(1, '#F6D6A8');
+  x.fillStyle = g; x.fillRect(0, 0, W, 210);
+  x.fillStyle = 'rgba(255,255,255,.18)';
+  x.beginPath(); x.arc(W - 70, -30, 170, 0, Math.PI * 2); x.fill();
+
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.fillStyle = '#fff';
+  x.font = "600 60px Fraunces, Georgia, serif";
+  x.fillText('FloofMart TCG', 56, 110);
+  x.font = "700 30px 'Plus Jakarta Sans', system-ui, sans-serif";
+  x.fillStyle = 'rgba(255,255,255,.95)';
+  x.fillText('today’s haul 🐑', 58, 158);
+
+  const items = (h.items || []).filter(i => !i.refunded);
+  const shown = items.slice(0, 9), extra = items.length - shown.length;
+  const cols = shown.length <= 1 ? 1 : shown.length <= 4 ? 2 : 3;
+  const rows = Math.ceil(shown.length / cols) || 1;
+  const padX = 56, gap = 26, areaTop = 262, areaH = 920;
+  const cw = Math.floor((W - padX * 2 - gap * (cols - 1)) / cols);
+  const ch = Math.min(Math.floor(cw * 1.4), Math.floor((areaH - gap * (rows - 1)) / rows));
+  const gridW = cw * cols + gap * (cols - 1), gridH = ch * rows + gap * (rows - 1);
+  const gx = Math.floor((W - gridW) / 2), gy = areaTop + Math.floor((areaH - gridH) / 2);
+
+  const imgs = await Promise.all(shown.map(i => loadCors(haulSrc(i.image, 600))));
+
+  // A partial last row (3 cards in a 2-wide grid, 5 in a 3-wide) left a hole in
+  // the corner. Centre whatever is on each row instead.
+  const rowX = r => {
+    const count = Math.min(cols, shown.length - r * cols);
+    return Math.floor((W - (count * cw + (count - 1) * gap)) / 2);
+  };
+  shown.forEach((it, k) => {
+    const cxp = rowX(Math.floor(k / cols)) + (k % cols) * (cw + gap);
+    const cyp = gy + Math.floor(k / cols) * (ch + gap);
+    x.save();
+    x.shadowColor = 'rgba(120,60,95,.28)'; x.shadowBlur = 22; x.shadowOffsetY = 10;
+    x.fillStyle = '#fff'; rrect(x, cxp, cyp, cw, ch, 18); x.fill();
+    x.restore();
+
+    x.save();
+    rrect(x, cxp + 8, cyp + 8, cw - 16, ch - 16, 13); x.clip();
+    const im = imgs[k];
+    if(im){
+      const s = Math.max((cw - 16) / im.width, (ch - 16) / im.height);
+      const dw = im.width * s, dh = im.height * s;
+      x.drawImage(im, cxp + 8 + ((cw - 16) - dw) / 2, cyp + 8 + ((ch - 16) - dh) / 2, dw, dh);
+    } else {
+      const pg = x.createLinearGradient(cxp, cyp, cxp + cw, cyp + ch);
+      pg.addColorStop(0, '#F6E1D6'); pg.addColorStop(1, '#E9D3AD');
+      x.fillStyle = pg; x.fillRect(cxp + 8, cyp + 8, cw - 16, ch - 16);
+      x.fillStyle = '#A84E8E';
+      x.font = "800 22px 'Plus Jakarta Sans', system-ui, sans-serif";
+      x.textAlign = 'center';
+      wrapText(x, it.name || 'Card', cxp + cw / 2, cyp + ch / 2, cw - 44, 27, 3);
+      x.textAlign = 'left';
+    }
+    x.restore();
+  });
+
+  if(extra > 0){
+    const t = '+' + extra + ' more';
+    x.font = "800 28px 'Plus Jakarta Sans', system-ui, sans-serif";
+    const tw = x.measureText(t).width;
+    x.fillStyle = 'rgba(90,58,78,.82)';
+    const chipX = Math.min(W - padX - tw - 36, gx + gridW - tw - 36);
+    rrect(x, chipX, gy + gridH - 58, tw + 36, 46, 23); x.fill();
+    x.fillStyle = '#fff';
+    x.fillText(t, chipX + 18, gy + gridH - 26);
+  }
+
+  const n = items.length;
+  x.fillStyle = '#5A3A4E';
+  x.font = "800 34px 'Plus Jakarta Sans', system-ui, sans-serif";
+  x.fillText(n + ' card' + (n === 1 ? '' : 's'), padX, H - 104);
+  x.fillStyle = '#8a6b80';
+  x.font = "700 26px 'Plus Jakarta Sans', system-ui, sans-serif";
+  x.fillText(new Date().toLocaleDateString('en-SG', {day:'numeric', month:'short', year:'numeric'}), padX, H - 62);
+
+  x.textAlign = 'right';
+  x.fillStyle = '#A84E8E';
+  x.font = "800 30px 'Plus Jakarta Sans', system-ui, sans-serif";
+  x.fillText(shopHandle(), W - padX, H - 104);
+  x.fillStyle = '#8a6b80';
+  x.font = "700 24px 'Plus Jakarta Sans', system-ui, sans-serif";
+  x.fillText('Pokémon TCG · Singapore', W - padX, H - 62);
+  x.textAlign = 'left';
+
+  return cv;
+}
+
+/* Prefers the orders payload (it carries scans), then the snapshot checkout
+   kept, because by the time the order comes back the cards are out of the shop. */
+function haulFor(orderId){
+  const o = (STATE.orders || []).find(x => String(x.id) === String(orderId));
+  if(o && (o.items || []).length) return {orderId:o.id, items:o.items.filter(i => !i.refunded)};
+  if(STATE.lastHaul && String(STATE.lastHaul.orderId) === String(orderId)) return STATE.lastHaul;
+  if(HAUL && String(HAUL.orderId) === String(orderId)) return HAUL;
+  return null;
+}
+
+async function shareHaul(orderId){
+  const h = haulFor(orderId);
+  if(!h || !h.items.length){
+    (tg && tg.showAlert ? tg.showAlert : alert)('Nothing to share from that order yet.');
+    return;
+  }
+  const link = STATE.refLink || '';
+  const text = 'My FloofMart haul 🐑' + (link ? ' ' + link : '');
+
+  let blob = null;
+  try {
+    const cv = await buildHaulCanvas(h);
+    blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+  } catch(e){ blob = null; }
+
+  if(blob){
+    const file = new File([blob], 'floofmart-haul.png', {type:'image/png'});
+    try {
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], text:text});
+        sfx('ok');
+        return;
+      }
+    } catch(e){ if(e && e.name === 'AbortError') return; }   // they backed out; not an error
+    // No share sheet (desktop, or an older webview) — hand them the file.
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'floofmart-haul.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      (tg && tg.showAlert ? tg.showAlert : alert)('Saved your haul image 📸 Post it anywhere — tag us!');
+      return;
+    } catch(e){}
+  }
+  // Last resort: share the words without the picture.
+  try {
+    if(tg && tg.openTelegramLink){
+      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link || 'https://t.me/') +
+                          '&text=' + encodeURIComponent(text));
+      return;
+    }
+  } catch(e){}
+  (tg && tg.showAlert ? tg.showAlert : alert)('Couldn’t build the image on this device — screenshot your binder instead 🐾');
+}
+
+/* Replaces the bare alert after a payment upload. The sheet stays open, so the
+   share sits in the payment flow rather than somewhere they have to go find. */
+function showPaidHaul(inv){
+  const isShip = String(inv.orderId || '').indexOf('SH') === 0;
+  const items = (inv.items || []).filter(i => !i.refunded);
+  HAUL = {orderId: inv.orderId, items: items.slice()};
+  const n = items.length;
+  document.getElementById('invBody').innerHTML = `
+    <div class="paid-ok">
+      <div class="pk-ic">🎉</div>
+      <div class="pk-t">Payment sent for ${inv.orderId}</div>
+      <div class="pk-s">${isShip
+        ? 'We’re checking it now — your box goes out once it’s confirmed, and tracking follows here.'
+        : `We’re checking it now. Once it’s confirmed your ${n} card${n===1?'':'s'} go${n===1?'es':''} into your box 🧺`}</div>
+    </div>
+    ${isShip ? '' : `<div class="haul-prev" id="haulPrev"></div>
+    <button class="cta" onclick="guard(this,()=>shareHaul('${inv.orderId}'))">📸 Share my haul</button>`}
+    <button class="cta-alt" style="margin-top:8px" onclick="closeInvoice();go('orders')">Go to my orders</button>`;
+  if(isShip) return;
+  // Preview is nice-to-have: if it can't be drawn, the share button still works.
+  buildHaulCanvas(HAUL).then(cv => {
+    const box = document.getElementById('haulPrev');
+    if(box && cv){ cv.className = 'haul-img'; box.innerHTML = ''; box.appendChild(cv); }
+  }).catch(() => {});
 }
 
 /* ============ BINDER (past purchases) ============ */
