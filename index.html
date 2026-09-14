@@ -2316,6 +2316,8 @@ async function checkout(){
   const rid=STATE.resvId||await ensureReservedId();
   const snap=STATE.cart.slice();
   const pay=STATE.payInfo||{};
+  const shownQr=!!(rid && tot0>0 && pay.mobile);
+  const warn=shownQr?'⚠️ DON\'T pay that QR — this order didn\'t go through and nothing was charged.\n\n':'';
   // Everything the QR needs is already here: payee, amount, and the reference
   // we reserved while they were reading the cart. Draw it now; the order is
   // still being written. The upload button stays locked until it confirms.
