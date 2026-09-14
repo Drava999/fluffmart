@@ -7,7 +7,7 @@
 <title>FloofMart TCG</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script defer src="qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
@@ -1566,8 +1566,7 @@ function renderPayQR(inv, isRetry){
   // If the CDN script didn't load (flaky network inside the Telegram webview), pull it again once.
   if(typeof QRCode==='undefined'){
     if(isRetry){ box.innerHTML='<div class="pn-qr-ph">QR unavailable —<br><span>pay to the number below</span></div>'; return; }
-    const s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    const s=document.createElement('script');    s.src='qrcode.min.js';
     s.onload=()=>renderPayQR(inv,true);
     s.onerror=()=>renderPayQR(inv,true);
     document.head.appendChild(s);
