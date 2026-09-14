@@ -3029,8 +3029,7 @@ function viewInvoice(id){
         ${trail?`<div class="doc-sec">Handled by</div><div class="doc-trail">${trail}</div>`:''}
         ${o.shipAddress?`<div class="doc-sec">Ship to</div><div class="doc-trail">${esc(o.shipName||'')}<br>${esc(o.shipAddress)}</div>`:''}
         ${o.tracking?`<a class="doc-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${esc(o.tracking)} ↗</a>`:''}
-        <button class="pics" style="margin-top:10px" onclick="getPdf('${o.id}',this)">📄 Send me a PDF invoice</button>
-        <button class="pics" style="margin-top:6px" onclick="window.print()">🖨️ Print / Save as PDF</button>
+        <button class="pics" style="margin-top:10px" onclick="getPdf('${o.id}',this)">📄 Send me a PDF invoice</button>        ${(!tg||!tg.platform||/^(tdesktop|web|weba|webk|macos)$/.test(tg.platform))?`<button class="pics" style="margin-top:6px" onclick="window.print()">🖨️ Print / Save as PDF</button>`:''}
         <div class="doc-ft">Paid by PayNow · FloofMart TCG, Singapore<br>
           Questions about this invoice? Help &amp; Support, quoting ${esc(o.id)}.<br>
           Refunds return store credit instantly; cash refunds are sent by hand.</div>
@@ -3042,8 +3041,8 @@ function viewInvoice(id){
 async function getPdf(id,btn){
   await guard(btn, async()=>{
     const r=await api('invoicePdf',{orderId:id});
-    const m=(r&&r.ok)?(r.message||'Sent to your Telegram 📄')
-                     :((r&&r.message)||'Couldn\'t send that right now — try again in a moment.');
+    const m=(r&&r.ok)?(r.message||'Sent to your Telegram 📄')                     
+      :('Couldn\'t send that: '+((r&&(r.message||r.error))||'no response'));
     (tg&&tg.showAlert?tg.showAlert:alert)(m);
   });
 }
