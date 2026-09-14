@@ -1881,8 +1881,10 @@ async function bootApp(){
     if(c&&c.overview){ applyOverview(c.overview); }
     if(c&&c.inventory){ STATE.inventory=mergeInventory(c.inventory); renderCatTabs(); renderStore(); }
   }catch(e){}
-  // 2) one round trip refreshes both
-  const r=await api('boot');
+  // 2) one round trip refreshes both  // 'boot' is served by Apps Script; 'inventory' comes from D1 at the edge.
+  // Two parallel calls beat one round trip to the Sheet.
+  const [ov,invr]=await Promise.all([api('overview'),api('inventory')]);
+  const r={ok:true,overview:ov,inventory:invr};
   if(r&&r.ok){
     if(r.overview&&r.overview.ok) applyOverview(r.overview);
     if(r.inventory&&r.inventory.ok){ STATE.inventory=mergeInventory(r.inventory.items||[]); STATE.invTs=Date.now(); renderCatTabs(); renderStore(); }
