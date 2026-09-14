@@ -6,7 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>FloofMart TCG</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
@@ -1018,6 +1019,15 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .gd-dot.on{background:var(--fawn);width:22px;border-radius:4px}
 .gd-step{font-size:11px;font-weight:800;color:var(--hint);letter-spacing:.6px;
   text-transform:uppercase}
+@media print{
+  body *{visibility:hidden}
+  .doc,.doc *{visibility:visible}
+  .doc{position:absolute;left:0;top:0;width:100%;max-width:none;max-height:none;
+    box-shadow:none;border-radius:0;overflow:visible}
+  .doc-close,.doc-track,.pics{display:none!important}
+  .nav,.cartbar,.scrim,.cv-scrim{display:none!important}
+  @page{margin:14mm}
+}
 </style>
 </head>
 <body>
@@ -2425,8 +2435,9 @@ async function shrinkImage(file, maxPx, quality){
     fr.onload=()=>res(fr.result);
     fr.readAsDataURL(blob);
   });
-  // Already small enough — don't decode or re-encode it at all.
-  if(file.size<400000) return toDataUrl(file);
+  // Already small enough — don't decode or re-encode it at all.  // A 380KB PNG screenshot was going up untouched; as WebP it's about 60KB.
+  // Only skip what's genuinely small AND already compressed.
+  if(file.size<120000 && /jpe?g/i.test(file.type||'')) return toDataUrl(file);
   let bmp=null, src=null, w=0, h=0, url='';
   try{ if(window.createImageBitmap) bmp=await createImageBitmap(file); }catch(e){}
   if(bmp){ src=bmp; w=bmp.width; h=bmp.height; }
@@ -2447,8 +2458,12 @@ async function shrinkImage(file, maxPx, quality){
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);   // flatten transparency for JPEG
   ctx.drawImage(src,0,0,c.width,c.height);
   if(bmp&&bmp.close) bmp.close();
-  if(url) URL.revokeObjectURL(url);
-  const out=await new Promise(res=>c.toBlob(res,'image/jpeg',quality||0.82));
+  if(url) URL.revokeObjectURL(url);  
+  // A bank screenshot is flat colour and text — it survives hard compression,
+  // and WebP runs 30-40% smaller than JPEG at the same legibility.
+  let out=null;
+  try{ out=await new Promise(res=>c.toBlob(res,'image/webp',0.72)); }catch(e){}
+  if(!out || out.size===0){ out=await new Promise(res=>c.toBlob(res,'image/jpeg',quality||0.75)); }
   if(!out) return toDataUrl(file);
   return toDataUrl(out.size<file.size?out:file);
 }
@@ -2466,8 +2481,8 @@ function onProof(e){
     URL.revokeObjectURL(preview);
     document.getElementById('uplLabel').innerHTML='✅ Screenshot attached (tap to change)'+INPUT;
     const b=document.getElementById('invSubmit'); b.disabled=false; b.textContent='Confirm payment';
-  };
-  shrinkImage(f,1280,0.82).then(done).catch(()=>{
+  };  
+    shrinkImage(f,1000,0.75).then(done).catch(()=>{
     const reader=new FileReader();
     reader.onload=()=>done(reader.result);
     reader.readAsDataURL(f);
@@ -3014,6 +3029,8 @@ function viewInvoice(id){
         ${trail?`<div class="doc-sec">Handled by</div><div class="doc-trail">${trail}</div>`:''}
         ${o.shipAddress?`<div class="doc-sec">Ship to</div><div class="doc-trail">${esc(o.shipName||'')}<br>${esc(o.shipAddress)}</div>`:''}
         ${o.tracking?`<a class="doc-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${esc(o.tracking)} ↗</a>`:''}
+        <button class="pics" style="margin-top:10px" onclick="getPdf('${o.id}',this)">📄 Send me a PDF invoice</button>
+        <button class="pics" style="margin-top:6px" onclick="window.print()">🖨️ Print / Save as PDF</button>
         <div class="doc-ft">Paid by PayNow · FloofMart TCG, Singapore<br>
           Questions about this invoice? Help &amp; Support, quoting ${esc(o.id)}.<br>
           Refunds return store credit instantly; cash refunds are sent by hand.</div>
@@ -3022,7 +3039,14 @@ function viewInvoice(id){
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
 }
-
+async function getPdf(id,btn){
+  await guard(btn, async()=>{
+    const r=await api('invoicePdf',{orderId:id});
+    const m=(r&&r.ok)?(r.message||'Sent to your Telegram 📄')
+                     :((r&&r.message)||'Couldn\'t send that right now — try again in a moment.');
+    (tg&&tg.showAlert?tg.showAlert:alert)(m);
+  });
+}
 function loadProfile(){
   const pc=document.getElementById('p-credit'); if(pc) pc.textContent = '$'+(STATE.credit||0).toFixed(0);
   loadOrders(); // ensures ORDERS_CACHE
