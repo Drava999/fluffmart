@@ -1901,6 +1901,9 @@ function applyOverview(r){
   STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,freeShipMin:r.freeShipMin||r.freeShipThreshold||25,shipFlat:r.shipFlat!=null?r.shipFlat:3};
   STATE.credit = r.credit||0;
   STATE.isAdmin = !!r.isAdmin;
+  if (r.paynowMobile && !STATE.payInfo) {
+    STATE.payInfo = { mobile: r.paynowMobile, name: r.paynowName, mins: Number(r.paymentWindowMins || 10) };
+  }
   updateRateLabels();
   document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
   document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
@@ -2210,7 +2213,19 @@ function updateCartDot(){
     bar.classList.toggle('show', n>0);
   }
 }
-function openCart(){ renderCart(); document.getElementById('scrim').classList.add('show'); document.getElementById('cartSheet').classList.add('show'); }
+// Fetched while they're reading their cart — dead time we're already spending.
+// Cached on STATE so reopening the cart reuses the same number.
+async function ensureReservedId(){
+  if(STATE.resvId) return STATE.resvId;
+  try{ const r=await api('reserveOrderId'); if(r&&r.ok&&r.orderId) STATE.resvId=r.orderId; }catch(e){}
+  return STATE.resvId;
+}
+function openCart(){
+  renderCart();
+  document.getElementById('scrim').classList.add('show');
+  document.getElementById('cartSheet').classList.add('show');
+  if(STATE.cart.length) ensureReservedId();     // fire and forget
+}
 function closeCart(){ document.getElementById('scrim').classList.remove('show'); document.getElementById('cartSheet').classList.remove('show'); }
 function renderCart(){
   const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
@@ -2296,8 +2311,24 @@ async function confirmShip(){
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 async function checkout(){
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
-  showInvoiceSkeleton();
-  const r = await api('submitOrder',{cart:STATE.cart.map(c=>({id:c.id})),useCredit:STATE.useCredit?Math.min(STATE.credit, sub0):0,note:(STATE.note||'').trim()});
+  const cred0=STATE.useCredit?Math.min(STATE.credit,sub0):0;
+  const tot0=sub0-cred0;
+  const rid=STATE.resvId||await ensureReservedId();
+  const snap=STATE.cart.slice();
+  const pay=STATE.payInfo||{};
+  // Everything the QR needs is already here: payee, amount, and the reference
+  // we reserved while they were reading the cart. Draw it now; the order is
+  // still being written. The upload button stays locked until it confirms.
+  if(rid && tot0>0 && pay.mobile){
+    showInvoice({ orderId:rid,
+      items:snap.map(c=>({name:c.name,tier:c.tier,price:c.price,number:c.number||''})),
+      subtotal:sub0, shipping:0, creditUsed:cred0, total:tot0,
+      paynowMobile:pay.mobile, paynowName:pay.name||'FloofMart TCG',
+      paymentWindowMins:Number(pay.mins||10), _pending:true });
+  } else {
+    showInvoiceSkeleton();
+  }
+  const r = await api('submitOrder',{cart:snap.map(c=>({id:c.id})),useCredit:cred0,note:(STATE.note||'').trim(),orderId:rid||''});
   if(!r || !r.ok) closeInvoice();
   if(r.ok){
     STATE.cart=[]; STATE.useCredit=false; STATE.note=''; updateCartDot(); closeCart();
@@ -2308,7 +2339,15 @@ async function checkout(){
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       loadOverview(); loadStore();
     } else {
-      showInvoice(r);
+      STATE.resvId=null;                        // consumed
+      // Already on screen with the right number and QR — just unlock the upload
+      // rather than redrawing and restarting the countdown.
+      if(INVOICE && INVOICE._pending && String(INVOICE.orderId)===String(r.orderId)){
+        INVOICE._pending=false;
+        const rb=document.getElementById('resvNote'); if(rb) rb.remove();
+      } else {
+        showInvoice(r);
+      }
       // Let the QR paint first. The buyer is on the invoice, not the shop —
       // the shelf can catch up a second and a half later.
       setTimeout(()=>{ loadOverview(); loadStore(); },1500);
@@ -2367,6 +2406,7 @@ function showInvoice(inv){
     ${noDeadline
       ?`<div class="pay-warn" style="background:#e2f5ec;color:#1c7a52">🧺 <b>No deadline</b> — this card is held for you. Pay whenever you're ready.</div>`
       :`<div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>`}
+    ${inv._pending?`<div class="pay-warn" id="resvNote" style="background:#e8f0fb;color:#2a5aa5">🔒 Reserving your cards…</div>`:''}
     <div class="inv-items">
       ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}${it.number?` <span style="color:var(--hint);font-size:11.5px">${it.number}</span>`:''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
       ${inv.shipping>0
@@ -2491,6 +2531,10 @@ function onProof(e){
 }
 async function submitProof(){
   if(!PAYPROOF||!INVOICE) return;
+  if(INVOICE._pending){
+    (tg&&tg.showAlert?tg.showAlert:alert)('One moment — still reserving your cards. Try again in a second.');
+    return;
+  }
   const r=await api('submitPayment',{orderId:INVOICE.orderId,image:PAYPROOF});
   if(r.ok){
     clearInterval(PAY_TIMER);
