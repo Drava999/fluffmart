@@ -3166,6 +3166,36 @@ function driveId(u){
    serves the same file WITH the header, so try that first. HAUL_IMG_PROXY, if
    set, wins over both. Each step falls through to the next, so a card only ends
    up a name plate when nothing at all will load. */
+/* ── Bundles in the haul ──────────────────────────────────────────────────────
+   An order item for a bundle carries the BUNDLE's cover in .image and the whole
+   set of component faces in .imageBack, written "front~back|front2~back2".
+   Two things went wrong with that:
+
+     · the cover is a photo OF the bundle, set with /photo — not a card scan.
+       Drawn into a card-shaped frame it became the small card floating in an
+       empty slot.
+     · a bundle counted as ONE card, so four singles plus a three-card bundle
+       announced itself as "5 cards" when the buyer actually got seven.
+
+   Detected from the face set rather than .category, because an order item has
+   no category field — the same test openBinderCard already uses to decide
+   whether a card can flip. */
+function haulFaces(it){
+  const pick = v => String(v || '').split('|')
+    .map(x => x.split('~')[0].trim()).filter(Boolean);
+  const back = String((it && it.imageBack) || '');
+  if(back.indexOf('|') >= 0 || back.indexOf('~') >= 0){
+    const faces = pick(back);
+    if(faces.length) return faces;
+  }
+  return pick(it && it.image);
+}
+// The face to draw in this item's slot: a real card scan, never the cover.
+function haulArtFor(it){ return haulFaces(it)[0] || ''; }
+// Cards, not line items. A bundle counts as everything inside it.
+function haulCardCount(items){
+  return (items || []).reduce((n, it) => n + Math.max(1, haulFaces(it).length), 0);
+}
 async function loadHaulArt(u, w){
   if(!u) return null;
   let im;
@@ -3326,7 +3356,7 @@ async function buildHaulCanvas(h){
   const extra = items.length - shown.length;
 
   const [logo, ...arts] = await Promise.all(
-    [loadCors('logo.png')].concat(shown.map(i => loadHaulArt(i.image, 700)))
+    [loadCors('logo.png')].concat(shown.map(i => loadHaulArt(haulArtFor(i), 700)))
   );
 
   /* ---- ground ---- */
@@ -3438,13 +3468,14 @@ async function buildHaulCanvas(h){
   [[215,470,14],[880,520,12],[650,930,15]].forEach(s => sparkle(x, s[0], s[1], s[2], .7));
 
   /* ---- footer ---- */
-  const n = items.length;
+  const n = items.length;                  // lines in the name list below
+  const nCards = haulCardCount(items);     // real cards — a bundle is all of its
   x.strokeStyle = 'rgba(168,78,142,.20)'; x.lineWidth = 2;
   x.beginPath(); x.moveTo(56, 1136); x.lineTo(W - 56, 1136); x.stroke();
 
   x.fillStyle = '#5A3A4E';
   x.font = "800 40px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText(n + ' card' + (n === 1 ? '' : 's') + ' haul!', 56, 1196);
+  x.fillText(nCards + ' card' + (nCards === 1 ? '' : 's') + ' haul!', 56, 1196);
 
   const names = items.slice(0, 2).map(i => {
     const s = String(i.name || '');
