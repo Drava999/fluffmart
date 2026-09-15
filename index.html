@@ -1836,7 +1836,16 @@ function mock(action,p){
   if(action==='shipParcel') return {ok:true,orders:2};
   if(action==='parcelDelivery') return p.mode==='pickup'?{ok:true,mode:'pickup',pickupNote:'Meet at Bishan MRT, message to arrange.'}:{ok:true,mode:'ship',shipOrderId:'SH'+Math.random().toString(36).slice(2,7).toUpperCase(),fee:3,paynowMobile:'+6598755180',paynowName:'FloofMart TCG',paymentWindowMins:10};
   if(action==='credit') return {ok:true,balance:12.50,ledger:[]};
-  if(action==='submitOrder'){ const sub=p.cart.reduce((s,c)=>s+c.price,0); return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),subtotal:sub,shipping:0,creditUsed:0,total:sub,items:p.cart.map(c=>({name:c.name,tier:c.tier,price:c.price})),paynowMobile:'+6598755180',paynowName:'FloofMart TCG'}; }
+  if(action==='submitOrder'){
+    // checkout sends ids only, so echoing p.cart back gave every line an
+    // undefined price and showInvoice threw on .toFixed(). Look them up.
+    const picked=(p.cart||[]).map(c=>DEMO_INV.find(x=>String(x.id)===String(c.id))).filter(Boolean);
+    const sub=picked.reduce((s,c)=>s+Number(c.price||0),0);
+    const cred=Math.min(Number(p.useCredit||0),sub);
+    return {ok:true,orderId:'EF'+Math.random().toString(36).slice(2,7).toUpperCase(),
+      subtotal:sub,shipping:0,creditUsed:cred,total:sub-cred,paidByCredit:(sub-cred)<=0,
+      items:picked.map(c=>({name:c.name,tier:c.tier,price:Number(c.price||0),number:c.number||'',image:c.image||''})),
+      paynowMobile:'+6598755180',paynowName:'FloofMart TCG',paymentWindowMins:10}; }
   if(action==='submitPayment') return {ok:true};
   if(action==='makeOffer') return {ok:true,message:'Offer sent! (demo)'};
   if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review — we\'ll confirm your offer in chat shortly.'};
@@ -2315,7 +2324,7 @@ function renderCart(){
   foot.innerHTML = `<div class="totline"><span>Subtotal (${STATE.cart.length} card${STATE.cart.length>1?'s':''})</span><span>$${subtotal.toFixed(2)}</span></div>
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
-    <button class="cta" onclick="guard(this,checkout)">Place order · $${total.toFixed(2)}</button>
+    <button class="cta" ${STATE.placing?'disabled':''} onclick="guard(this,checkout)">${STATE.placing?'Placing your order…':'Place order · $'+total.toFixed(2)}</button>
 <p class="hold-hint">No postage now. Your cards wait in your box 🧺 until you say send — then $${(STATE.shipFlat||3).toFixed(2)} to deliver${fsMin?', or free once your box passes $'+fsMin.toFixed(2):''}. Collecting it yourself is always free.</p>`;
 }
 async function cancelUnpaid(id){
@@ -2374,6 +2383,23 @@ async function confirmShip(){
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 async function checkout(){
+  /* ONE order in flight at a time, tracked on STATE — not on the button.
+     guard() only disables the button it was handed, and renderCart() builds a
+     brand new, enabled one every time the cart is opened or edited. So the old
+     sequence was: QR appears instantly → they close it → they tap the cart to
+     check → fresh "Place order" → second submit. That second submit reuses the
+     same reserved id, which the server honours exactly once, so it minted a
+     NEW order, found the cards already gone — taken by their OWN first order —
+     and reported "claimed by someone else", while the real order sat in
+     Awaiting Payment. Hence the cart closing itself and the bogus message. */
+  if(STATE.placing){
+    if(INVOICE && INVOICE._pending) reopenPendingInvoice();
+    else (tg&&tg.showAlert?tg.showAlert:alert)('Your order is still going through — one moment 🐾');
+    return;
+  }
+  STATE.placing=true;
+  renderCart();                      // shows the disabled "Placing your order…"
+  try {
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
   const cred0=STATE.useCredit?Math.min(STATE.credit,sub0):0;
   const tot0=sub0-cred0;
@@ -2397,13 +2423,30 @@ async function checkout(){
   } else {
     showInvoiceSkeleton();
   }
-  const r = await api('submitOrder',{cart:snap.map(c=>({id:c.id})),useCredit:cred0,note:(STATE.note||'').trim(),orderId:rid||''});
-  if(!r || !r.ok) closeInvoice();
+  let r=null;
+  // A thrown fetch used to leave the QR on screen with "Reserving your cards…"
+  // forever, and the next line threw on r.ok.
+  try { r = await api('submitOrder',{cart:snap.map(c=>({id:c.id})),useCredit:cred0,note:(STATE.note||'').trim(),orderId:rid||''}); }
+  catch(e){ r = null; }
+  if(!r){
+    closeInvoice();
+    (tg&&tg.showAlert?tg.showAlert:alert)('We lost the connection before we heard back. Check Orders in a moment — if it isn\'t there, nothing was charged and you can try again 🐾');
+    ORDERS_CACHE=null; loadOrders(true);
+    return;
+  }
+  // Whether they dismissed the QR while we were writing the order. Read it
+  // BEFORE the branches below start clearing _pending.
+  const wasClosed=!!(INVOICE && INVOICE._closed && String(INVOICE.orderId)===String(r.orderId));
+  if(!r.ok) closeInvoice();
   if(r.ok){
     STATE.cart=[]; STATE.useCredit=false; STATE.note=''; updateCartDot(); closeCart();
     ORDERS_CACHE=null;
     if(r.paidByCredit){
       closeInvoice();
+      STATE.resvId=null;   // consumed — same as the PayNow path below. Leaving it
+                           // set meant the NEXT checkout still quoted a spent
+                           // reservation number, which the idempotency check
+                           // downstream could then mistake for a retry.
       const msg='\ud83c\udf89 Order '+r.orderId+' is fully covered by your store credit \u2014 nothing to pay! Once we verify, your cards go into your parcel \ud83e\uddf7';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       loadOverview(); loadStore();
@@ -2414,8 +2457,16 @@ async function checkout(){
       if(INVOICE && INVOICE._pending && String(INVOICE.orderId)===String(r.orderId)){
         INVOICE._pending=false;
         const rb=document.getElementById('resvNote'); if(rb) rb.remove();
-      } else {
+      } else if(!wasClosed){
         showInvoice(r);
+      }
+      if(wasClosed){
+        // They chose to shut the QR. Don't force it back up — say where the
+        // order went, and let the unpaid banner carry it from here.
+        const mins=Number((INVOICE&&INVOICE.paymentWindowMins)||0);
+        (tg&&tg.showAlert?tg.showAlert:alert)('🧺 Order '+r.orderId+' is holding your cards'+
+          (mins>0?' — about '+mins+' minutes to pay':'')+'. It\'s waiting in Orders whenever you\'re ready.');
+        loadOrders(true);
       }
       // Let the QR paint first. The buyer is on the invoice, not the shop —
       // the shelf can catch up a second and a half later.
@@ -2440,6 +2491,11 @@ async function checkout(){
   } else if(r.error==='cart_too_big'){
     (tg&&tg.showAlert?tg.showAlert:alert)('That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');
   } else { (tg&&tg.showAlert?tg.showAlert:alert)('Checkout error: '+(r&&(r.error||r.raw)?JSON.stringify(r.error||r.raw).slice(0,200):'unknown')+'. Try again in a sec.'); }
+  } finally {
+    STATE.placing=false;
+    const cs=document.getElementById('cartSheet');
+    if(cs && cs.classList.contains('show')) renderCart();
+  }
 }
 let INVOICE=null, PAYPROOF=null;
 // The invoice's numbers are all known locally the moment checkout is tapped —
@@ -2525,7 +2581,22 @@ function fmtLeft(s){
   const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
   return h>0 ? (h+':'+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0')) : (m+':'+String(x).padStart(2,'0'));
 }
-function closeInvoice(){ clearInterval(PAY_TIMER); document.getElementById('invScrim').classList.remove('show'); document.getElementById('invSheet').classList.remove('show'); }
+function closeInvoice(){
+  clearInterval(PAY_TIMER);
+  // Dismissing the QR while the order is still being written is allowed, but
+  // checkout() has to know it happened — otherwise the reply lands and yanks
+  // the sheet back up, or worse, silently empties the cart under them.
+  if(INVOICE && INVOICE._pending) INVOICE._closed = true;
+  document.getElementById('invScrim').classList.remove('show');
+  document.getElementById('invSheet').classList.remove('show');
+}
+// Put the in-flight invoice back on screen, for when they shut it by accident
+// and immediately went looking for it in the cart.
+function reopenPendingInvoice(){
+  if(!INVOICE) return;
+  INVOICE._closed = false;
+  showInvoice(INVOICE);
+}
 /* A phone screenshot is 2–4 MB; base64 makes it ~5 MB, and that travels
    phone → Worker → Apps Script → Telegram before anyone sees it. Downscaling to
    1280px JPEG here usually lands under 250 KB with no loss of legibility, and
