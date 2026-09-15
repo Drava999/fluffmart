@@ -965,6 +965,12 @@ button:disabled:active{transform:none!important}
 .set-l{flex:1;min-width:0}
 .set-t{font-size:14px;font-weight:700}
 .set-s{font-size:11.5px;color:var(--hint);margin-top:2px;line-height:1.4}
+/* The drawn icon set. currentColor does the stroke, so a glyph inherits
+   whatever colour its slot already had in either theme; only the soft fill and
+   the single accent need tokens, and only those flip for dark. */
+:root{--ic-soft:#FBE4F2;--ic-accent:#7FC9B0}
+:root[data-theme="dark"]{--ic-soft:rgba(216,142,192,.22);--ic-accent:#8FE0B8}
+.icg{display:inline-block;vertical-align:-.14em;overflow:visible}
 .seg3{display:flex;gap:6px;background:var(--ruff);padding:4px;border-radius:14px;margin-top:4px}
 .seg3-b{flex:1;padding:10px 4px;border-radius:11px;font-weight:800;font-size:12.5px;color:var(--hint);background:transparent;transition:.18s}
 .seg3-b.on{background:var(--card);color:var(--fawn-deep);box-shadow:0 2px 6px rgba(0,0,0,.10)}
@@ -1198,19 +1204,19 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
     <div id="ov-justin"></div>
     <div class="section-t">What you can do</div>
     <button class="feat" onclick="go('store')">
-      <div class="ic">🛍️</div><div><h3>Browse the store</h3><p>Singles, sealed &amp; merch — claim them now</p></div>
+      <div class="ic" data-ic="store">🛍️</div><div><h3>Browse the store</h3><p>Singles, sealed &amp; merch — claim them now</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('orders')">
-      <div class="ic">📦</div><div><h3>Track your orders</h3><p>Your box 🧺, live tracking &amp; your binder</p></div>
+      <div class="ic" data-ic="orders">📦</div><div><h3>Track your orders</h3><p>Your box 🧺, live tracking &amp; your binder</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('buyback')">
-            <div class="ic">💰</div><div><h3>Sell cards to us</h3><p id="ov-rates">~85% cash · ~90% store credit (est.)</p></div>
+            <div class="ic" data-ic="sell">💰</div><div><h3>Sell cards to us</h3><p id="ov-rates">~85% cash · ~90% store credit (est.)</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('support')">
-      <div class="ic">🆘</div><div><h3>Help &amp; support</h3><p>Message us about an order or anything else</p></div>
+      <div class="ic" data-ic="help">🆘</div><div><h3>Help &amp; support</h3><p>Message us about an order or anything else</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('profile')">
@@ -1347,6 +1353,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <button class="seg3-b" data-v="light" onclick="setPref('theme','light')">☀️ Light</button>
         <button class="seg3-b" data-v="dark"  onclick="setPref('theme','dark')">🌙 Dark</button>
       </div>
+      <div class="set-row" style="border-bottom:none;padding-bottom:2px;margin-top:10px">
+        <div class="set-l"><div class="set-t">Icons</div>
+          <div class="set-s">Emoji are drawn by your phone, so they differ between devices</div></div>
+      </div>
+      <div class="seg3" id="setIcons">
+        <button class="seg3-b" data-v="emoji" onclick="setPref('icons','emoji')">😀 Emoji</button>
+        <button class="seg3-b" data-v="floof" onclick="setPref('icons','floof')">🎴 FloofMart</button>
+      </div>
     </div>
 
     <div class="section-t">Sound</div>
@@ -1408,12 +1422,12 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 </div>
 
 <div class="nav" id="nav">
-  <button class="on" data-t="overview" onclick="go('overview')"><span class="ni">🏠</span>Home</button>
-  <button data-t="orders" onclick="go('orders')"><span class="ni">📦</span>Orders</button>
-  <button data-t="store" onclick="go('store')"><span class="ni">🛍️</span>Store</button>
-  <button data-t="cart" onclick="openCart()"><span class="ni">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
-  <button data-t="buyback" onclick="go('buyback')"><span class="ni">💰</span>Sell</button>
-  <button data-t="profile" onclick="go('profile')"><span class="ni">👤</span>Me</button>
+  <button class="on" data-t="overview" onclick="go('overview')"><span class="ni" data-ic="home">🏠</span>Home</button>
+  <button data-t="orders" onclick="go('orders')"><span class="ni" data-ic="orders">📦</span>Orders</button>
+  <button data-t="store" onclick="go('store')"><span class="ni" data-ic="store">🛍️</span>Store</button>
+  <button data-t="cart" onclick="openCart()"><span class="ni" data-ic="cart">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
+  <button data-t="buyback" onclick="go('buyback')"><span class="ni" data-ic="sell">💰</span>Sell</button>
+  <button data-t="profile" onclick="go('profile')"><span class="ni" data-ic="me">👤</span>Me</button>
 </div>
 
 <div class="cartbar" id="cartBar" onclick="openCart()">
@@ -3453,6 +3467,24 @@ async function buildHaulCanvas(h){
   return cv;
 }
 
+/* The copy that travels through the Worker to Apps Script and on to Telegram.
+   The full-size canvas at q0.88 came to roughly a quarter of a megabyte once
+   base64 had inflated it by a third, which is far more than Telegram needs —
+   it re-compresses every photo anyway — and it is the only request in the app
+   big enough to run into a body-size limit on either hop. 1080px wide at q0.72
+   lands around 60–80KB and is still sharper than anything Telegram will show. */
+function haulUploadJpeg(cv){
+  const MAX_W = 1080;
+  if(cv.width <= MAX_W) return cv.toDataURL('image/jpeg', 0.72);
+  const s = MAX_W / cv.width;
+  const c = document.createElement('canvas');
+  c.width = MAX_W; c.height = Math.round(cv.height * s);
+  const x = c.getContext('2d');
+  x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  x.drawImage(cv, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.72);
+}
+
 /* Prefers the orders payload (it carries the scans), then the snapshot checkout
    kept, because by the time an order comes back its cards have left the shop. */
 function haulItemsFor(orderId){
@@ -3472,7 +3504,7 @@ async function prepareHaul(orderId){
   const cv = await buildHaulCanvas({orderId, items});
   const dataUrl = cv.toDataURL('image/png');
   const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
-  const jpeg = cv.toDataURL('image/jpeg', 0.88);   // ~4x smaller for the upload
+  const jpeg = haulUploadJpeg(cv);
   HAUL = {orderId: String(orderId), items, dataUrl, blob, jpeg};
   return HAUL;
 }
@@ -3579,13 +3611,26 @@ function saveHaul(){
 
 /* The reliable one inside Telegram: the bot sends them the photo, and from
    there it's a normal Telegram picture they can save or forward anywhere. */
+/* "nonjson" on its own says nothing useful. api() already keeps the HTTP status
+   and the first 400 characters of whatever came back instead of JSON — which is
+   almost always an HTML error page from the Worker or from Apps Script — so put
+   it on screen rather than hiding the one clue there is. */
+function haulSendError(r){
+  if(!r) return 'Couldn’t send that — try again in a sec.';
+  if(r.error === 'nonjson'){
+    const raw = String(r.raw || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0,170);
+    return 'The server didn’t reply with JSON (HTTP ' + (r.status || '?') + ').' +
+           (raw ? '\n\n' + raw : '\n\nEmpty response.');
+  }
+  return r.message || r.error || 'Couldn’t send that — try again in a sec.';
+}
 async function sendHaulToTelegram(btn){
   if(!HAUL || !HAUL.jpeg) return;
   await guard(btn, async () => {
     const r = await api('haulImage', {orderId: HAUL.orderId, image: HAUL.jpeg});
     const m = (r && r.ok)
       ? (r.message || 'Sent it to you on Telegram 📸 Forward it anywhere from there!')
-      : ((r && (r.message || r.error)) || 'Couldn’t send that — try again in a sec.');
+      : haulSendError(r);
     (tg && tg.showAlert ? tg.showAlert : alert)(m);
     if(r && r.ok) sfx('ok');
   });
@@ -3974,8 +4019,82 @@ async function loadCredit(){
     : `<div class="empty" style="padding:30px"><div class="e-ic">💳</div><p>No store credit transactions yet.<br>Sell us cards or earn rewards to start! 🐾</p></div>`;
 }
 function backToProfile(){ document.getElementById('v-credit').classList.add('hidden'); document.getElementById('v-profile').classList.remove('hidden'); }
+/* ── ICON SET ─────────────────────────────────────────────────────────────────
+   Two icon sets over one set of markup. Every holder carries data-ic="<key>"
+   and keeps its emoji in the HTML as the shipped default, so if this whole
+   block were deleted the app still renders exactly as before.
+
+   There is deliberately no separate dark version. The glyphs stroke in
+   currentColor and take their soft fill and accent from CSS variables, so they
+   inherit whatever colour the theme already decided that slot should be — which
+   also means a nav glyph dims when its tab is inactive and goes plum when it is
+   active, something an emoji cannot do. Sized in em, so the holder's existing
+   font-size drives them (21px in the nav, 19px in a feat row). */
+const IC_EMOJI = {home:'🏠',orders:'📦',store:'🛍️',cart:'🛒',sell:'💰',me:'👤',
+  help:'🆘',card:'🃏',sealed:'📦',bundle:'📚',spark:'✨',bell:'🔔',credit:'💳',
+  ship:'🚚',hands:'🤝',chat:'💬',invoice:'🧾'};
+
+function _ic(body,soft,accent){
+  return '<svg class="icg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" '
+    + 'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '
+    + 'aria-hidden="true">'
+    + (soft?'<g fill="var(--ic-soft)" stroke="none">'+soft+'</g>':'')
+    + body
+    + (accent?'<g fill="var(--ic-accent)" stroke="none">'+accent+'</g>':'')
+    + '</svg>';
+}
+const IC_SVG = {
+  home: _ic('<path d="M4 11.5 12 5l8 6.5"/><path d="M6 11v7.2a1.3 1.3 0 0 0 1.3 1.3h9.4a1.3 1.3 0 0 0 1.3-1.3V11"/><path d="M10 19.5v-4a2 2 0 0 1 4 0v4"/>',
+            '<path d="M6 11.6 12 6.8l6 4.8V18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"/>'),
+  orders: _ic('<path d="M4.5 9h15l-1.2 9.2a1.4 1.4 0 0 1-1.4 1.2H7.1a1.4 1.4 0 0 1-1.4-1.2z"/><path d="M3.6 6.4h16.8a.8.8 0 0 1 .8.9l-.2 1.7H3l-.2-1.7a.8.8 0 0 1 .8-.9z"/><path d="M9.6 12.2v3.4M14.4 12.2v3.4"/>',
+              '<path d="M5.6 9.6h12.8l-1.1 8.4H6.7z"/>'),
+  store: _ic('<path d="M5 10.4v8.1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8.1"/><path d="M3.4 10.4 5 5.5h14l1.6 4.9z"/><path d="M9.7 19.5v-4.4h4.6v4.4"/>',
+             '<path d="M5.8 10.9h12.4v7.8H5.8z"/>'),
+  cart: _ic('<path d="M3.5 5.5h2.2l2.2 8.6h9.3"/><path d="M7 8.3h13l-1.9 5.8H8.3"/><circle cx="9.4" cy="18.2" r="1.5"/><circle cx="16.6" cy="18.2" r="1.5"/>',
+            '<path d="M7.6 8.9h11.6l-1.6 4.6H8.9z"/>'),
+  sell: _ic('<circle cx="12" cy="12" r="7.2"/><path d="M14.4 9.4c-.6-.8-1.5-1.2-2.5-1.2-1.4 0-2.3.7-2.3 1.8 0 1 .8 1.5 2.4 1.8 1.7.3 2.5.9 2.5 2 0 1.2-1 1.9-2.5 1.9-1.1 0-2.1-.4-2.7-1.2"/><path d="M12 6.6v10.8"/>',
+            null,'<circle cx="12" cy="12" r="7.2" opacity=".2"/>'),
+  me: _ic('<circle cx="12" cy="9.2" r="3.3"/><path d="M5.6 19.4c.5-3.2 3.2-5.2 6.4-5.2s5.9 2 6.4 5.2"/>',
+          '<circle cx="12" cy="9.2" r="3.3"/>'),
+  help: _ic('<circle cx="12" cy="12" r="8"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2-2.4 3.4"/><path d="M12 17.1h.01"/>',
+            null,'<circle cx="12" cy="12" r="8" opacity=".18"/>'),
+  card: _ic('<path d="M7.2 3.8h7.2l4 4v12.4a1 1 0 0 1-1 1H7.2a1 1 0 0 1-1-1V4.8a1 1 0 0 1 1-1z"/><path d="M14.4 3.8v4h4"/>',
+            null,'<circle cx="12" cy="13" r="2.6" opacity=".5"/>'),
+  sealed: _ic('<path d="M6 6.8h12a1 1 0 0 1 1 1v11.4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.8a1 1 0 0 1 1-1z"/><path d="M5 10.2h14"/><path d="M9.4 4.2l1.2 2.6M14.6 4.2l-1.2 2.6"/>',
+              '<path d="M5.6 10.8h12.8v8.6H5.6z"/>'),
+  bundle: _ic('<path d="M8.4 7.4h9.4a1 1 0 0 1 1 1v9.8a1 1 0 0 1-1 1H8.4a1 1 0 0 1-1-1V8.4a1 1 0 0 1 1-1z"/><path d="M5.6 16.6V5.8a1 1 0 0 1 1-1h9"/>',
+              null,'<circle cx="13.1" cy="13.3" r="2.4" opacity=".5"/>'),
+  spark: _ic('<path d="M12 4.2l1.9 4.7 4.7 1.9-4.7 1.9L12 17.4l-1.9-4.7-4.7-1.9 4.7-1.9z"/>',
+             null,'<path d="M12 5.8l1.4 3.5 3.5 1.4-3.5 1.4L12 15.6l-1.4-3.5L7.1 10.7l3.5-1.4z" opacity=".6"/>'),
+  bell: _ic('<path d="M12 4.6a5 5 0 0 0-5 5c0 3.4-1.2 4.6-1.9 5.3a.6.6 0 0 0 .4 1h13a.6.6 0 0 0 .4-1c-.7-.7-1.9-1.9-1.9-5.3a5 5 0 0 0-5-5z"/><path d="M10.2 18.2a1.9 1.9 0 0 0 3.6 0"/>',
+            '<path d="M12 5.6a4 4 0 0 1 4 4c0 2.9.9 4.3 1.6 5.2H6.4C7.1 13.9 8 12.5 8 9.6a4 4 0 0 1 4-4z"/>'),
+  credit: _ic('<path d="M4.4 7h15.2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M3.4 10.6h17.2"/><path d="M6.6 14h3.2"/>',
+              null,'<rect x="3.9" y="10.9" width="16.2" height="1.6" opacity=".5"/>'),
+  ship: _ic('<path d="M3.4 8.2h9.2v8.4H3.4z"/><path d="M12.6 11h3.8l2.6 2.8v2.8h-6.4z"/><circle cx="7" cy="17.8" r="1.5"/><circle cx="16.2" cy="17.8" r="1.5"/>',
+            '<path d="M4 8.8h8v7.2H4z"/>'),
+  hands: _ic('<path d="M3.6 12.4l3.2-2.6 4 1.4 2.4-.6"/><path d="M20.4 12.4l-3.2-2.6-3.6 1.2"/><path d="M6.8 9.8 12 13l5.2-3.2"/><path d="M8.6 15.6h6.8"/>',
+             null,'<circle cx="12" cy="13" r="1.6" opacity=".5"/>'),
+  chat: _ic('<path d="M12 4.8c-4.2 0-7.6 2.7-7.6 6.1 0 1.9 1.1 3.6 2.8 4.7l-.7 3.1 3.4-1.7c.7.1 1.4.2 2.1.2 4.2 0 7.6-2.7 7.6-6.3S16.2 4.8 12 4.8z"/>',
+            null,'<path d="M12 8.6c1 0 1.8.8 1.8 1.8 0 1.4-1.8 2.6-1.8 2.6s-1.8-1.2-1.8-2.6c0-1 .8-1.8 1.8-1.8z" opacity=".75"/>'),
+  invoice: _ic('<path d="M6.4 3.8h11.2a1 1 0 0 1 1 1v14.6l-2.2-1.2-2.2 1.2-2.2-1.2-2.2 1.2-2.2-1.2-2.2 1.2V4.8a1 1 0 0 1 1-1z"/><path d="M8.8 8h6.4M8.8 11.4h6.4M8.8 14.6h3.8"/>',
+               '<path d="M7 4.6h10v13.2l-1.6-.8-1.7.8-1.7-.8-1.7.8-1.6-.8-1.7.8z"/>')
+};
+
+/* Called from applyPrefs, so it runs on boot and on every change. Unknown keys
+   fall back to the emoji rather than rendering an empty box. */
+function applyIcons(){
+  const drawn = PREFS.icons === 'floof';
+  document.querySelectorAll('[data-ic]').forEach(el=>{
+    const k = el.getAttribute('data-ic');
+    const svg = IC_SVG[k];
+    const html = (drawn && svg) ? svg : (IC_EMOJI[k] || el.textContent);
+    if(el.getAttribute('data-ic-now') === (drawn && svg ? 'svg' : 'emoji')) return;
+    el.innerHTML = html;
+    el.setAttribute('data-ic-now', drawn && svg ? 'svg' : 'emoji');
+  });
+}
 /* ============ PREFERENCES ============ */
-const PREF_DEFAULTS={theme:'auto',sfx:true,music:false,musicVol:30,anim:true,haptics:true};
+const PREF_DEFAULTS={theme:'auto',sfx:true,music:false,musicVol:30,anim:true,haptics:true,icons:'emoji'};
 let PREFS=Object.assign({},PREF_DEFAULTS);
 
 function loadPrefs(){
@@ -4002,6 +4121,7 @@ function applyPrefs(){
   // Someone who turned motion off in their OS gets that respected even on default.
   const osReduced=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
   root.setAttribute('data-motion',(PREFS.anim&&!osReduced)?'full':'reduced');
+  applyIcons();
   try{ if(tg&&tg.setHeaderColor) tg.setHeaderColor(t==='dark'?'#1E1219':'#C98B5E'); }catch(e){}
   applyMusic();
 }
@@ -4015,6 +4135,8 @@ function setVol(v){ PREFS.musicVol=Number(v); savePrefs(); }
 function renderSettings(){
   const seg=document.getElementById('setTheme');
   if(seg) seg.querySelectorAll('.seg3-b').forEach(b=>b.classList.toggle('on',b.dataset.v===PREFS.theme));
+  const ics=document.getElementById('setIcons');
+  if(ics) ics.querySelectorAll('.seg3-b').forEach(b=>b.classList.toggle('on',b.dataset.v===PREFS.icons));
   const sw=(id,on)=>{const e=document.getElementById(id); if(e) e.classList.toggle('on',!!on);};
   sw('setSfx',PREFS.sfx); sw('setMusic',PREFS.music); sw('setAnim',PREFS.anim); sw('setHaptics',PREFS.haptics);
   const w=document.getElementById('setVolWrap'); if(w) w.classList.toggle('hidden',!PREFS.music);
