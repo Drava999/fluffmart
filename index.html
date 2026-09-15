@@ -507,10 +507,12 @@ html{scroll-behavior:smooth}
 .doc-hd{padding:18px 18px 15px;background:linear-gradient(160deg,var(--ruff),#fbeef6);border-radius:18px 18px 0 0}
 .doc-brand{font-family:'Fraunces',serif;font-size:15px;color:var(--fawn-deep);letter-spacing:.4px}
 .doc-brandsub{font-size:10px;color:var(--hint);margin-top:0}
-.doc-oid{font-family:'Plus Jakarta Sans';font-weight:800;font-size:19px;margin-top:12px;letter-spacing:-.02em;\n  padding-right:120px}
+.doc-oid{font-family:'Plus Jakarta Sans';font-weight:800;font-size:19px;margin-top:12px;letter-spacing:-.02em;
+  padding-right:120px}
 .doc-meta{font-size:11.5px;color:var(--hint);margin-top:3px;line-height:1.6}
 .doc-stamp{position:absolute;top:52px;right:16px;font-size:10px;font-weight:800;letter-spacing:.6px;
-  padding:5px 10px;border-radius:8px;text-transform:uppercase;max-width:116px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  padding:5px 10px;border-radius:8px;text-transform:uppercase;
+  max-width:116px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .doc-body{padding:6px 18px 18px}
 .doc-sec{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.7px;margin:16px 0 4px}
 .doc-line{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -1074,85 +1076,6 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .gd-dot.on{background:var(--fawn);width:22px;border-radius:4px}
 .gd-step{font-size:11px;font-weight:800;color:var(--hint);letter-spacing:.6px;
   text-transform:uppercase}
-/* ══ CARD FIT ═════════════════════════════════════════════════════════════
-   The scans are cropped tight to the card now, so a 3/4 (0.750) box against a
-   0.727 image was trimming the edge off every card under object-fit:cover.
-   Everywhere a CARD is shown: the box takes the real card ratio (63/88) and
-   the image is CONTAINED, never cropped, on a white mount. Non-card images —
-   the bundle fan, the QR, payment proofs, the mascot, Wooloo — are untouched.
-   :has(>img) is what keeps the white mount off tiles that have no photo (and
-   off the fan, whose images are nested inside .bfan), so the cream gradient
-   placeholder still shows through where there's nothing to mount. */
-/* ══ CARD FIT, PART 2 ══════════════════════════════════════════════════════
-   contain fits the scan to the box exactly, so the scan's square corners now
-   land on the box's rounded ones and overflow:hidden bites a piece out of each
-   card. Inset the scan instead and let the white mount draw the rounded corner
-   — the card sits in a thin white frame with all four of its own corners
-   intact. :has(>img) keeps all of this off the bundle fan and off tiles with
-   no photo, exactly as in part 1. */
-
-/* --- store tile --- */
-.pcard .img:has(>img){padding:6px}
-/* Absolutely-positioned children sit against the PADDING box, so "Claimed"
-   would stop 6px short of the tile edge and leave a white ring. */
-.pcard .img:has(>img)>.soldout{inset:-6px}
-
-/* --- "Just in" rail --- */
-.jimg:has(>img){padding:4px}
-
-/* --- the big card view --- */
-.cv-face:has(>img){padding:7px}
-
-/* --- thumbnails --- */
-.cv-strip img{padding:2px}
-.crow .ci:has(img),.asell .ci:has(img),
-.doc-thumb:has(img),.po-thumb:has(img){padding:2px}
-
-/* --- binder pockets --- */
-.pocket.filled{padding:4px}
-.pocket.filled:after{inset:-4px}
-
-/* ══ "JUST IN" RAIL — LEVEL TOPS ═══════════════════════════════════════════
-   .jcard is a <button>, and a button centres its own contents. The rail
-   stretches every button to the tallest one, so a card with a one-line name
-   got its whole stack centred in that height and its picture pushed down,
-   while a two-line name sat high. Stop the stretch, and give the name the same
-   two-line floor the store tiles already have so the prices line up too. */
-.jrail{align-items:flex-start}
-.jnm{min-height:29px}
-/* --- store tile --- */
-.pcard .img{aspect-ratio:63/88}
-.pcard .img>img{width:100%;height:100%;object-fit:contain}
-.pcard .img:has(>img){background:#fff}
-:root[data-theme="dark"] .pcard .img:has(>img){background:#fff}
-
-/* --- "Just in" rail on the home screen --- */
-.jimg{height:auto;aspect-ratio:63/88}
-.jimg>img{width:100%;height:100%;object-fit:contain}
-.jimg:has(>img){background:#fff}
-:root[data-theme="dark"] .jimg:has(>img){background:#fff}
-
-/* --- the big card view --- */
-.cv-card{aspect-ratio:63/88}
-.cv-face img{width:100%;height:100%;object-fit:contain}
-
-/* --- thumbnail strip under the big card --- */
-.cv-strip img{width:44px;height:auto;aspect-ratio:63/88;object-fit:contain;background:#fff}
-
-/* --- binder pockets --- */
-.pocket{aspect-ratio:63/88}
-.pocket.filled img{width:100%;height:100%;object-fit:contain}
-
-/* --- cart rows, sell rows, invoice lines, order lines --- */
-.crow .ci,.asell .ci{width:34px;height:auto;aspect-ratio:63/88}
-.crow .ci img,.asell .ci img{width:100%;height:100%;object-fit:contain}
-.crow .ci:has(img),.asell .ci:has(img){background:#fff}
-.doc-thumb{width:34px;height:auto;aspect-ratio:63/88}
-.doc-thumb img{width:100%;height:100%;object-fit:contain}
-.doc-thumb:has(img){background:#fff}
-.po-thumb{width:30px;height:auto;aspect-ratio:63/88}
-.po-thumb img{width:100%;height:100%;object-fit:contain}
-.po-thumb:has(img){background:#fff}
 @media print{
   body *{visibility:hidden}
   .doc,.doc *{visibility:visible}
@@ -3077,6 +3000,12 @@ function driveId(u){
   const m = s.match(/[?&]id=([\w-]{10,})/) || s.match(/\/d\/([\w-]{10,})/);
   return m ? m[1] : '';
 }
+/* Why the cards came out as name plates: drive.google.com/thumbnail serves NO
+   Access-Control-Allow-Origin header, so a crossOrigin load of it fails outright
+   and drawHaulCard falls back to the placeholder. lh3.googleusercontent.com
+   serves the same file WITH the header, so try that first. HAUL_IMG_PROXY, if
+   set, wins over both. Each step falls through to the next, so a card only ends
+   up a name plate when nothing at all will load. */
 async function loadHaulArt(u, w){
   if(!u) return null;
   let im;
@@ -3115,13 +3044,6 @@ function rrect(x, l, t, w, h, r){
 // object-fit: cover, for a canvas.
 function coverDraw(x, im, l, t, w, h){
   const s = Math.max(w / im.width, h / im.height);
-  const dw = im.width * s, dh = im.height * s;
-  x.drawImage(im, l + (w - dw) / 2, t + (h - dh) / 2, dw, dh);
-}
-// object-fit: contain, for a canvas. Cards use this one: the scans are cropped
-// tight to the card, so cover would shave the edge off every one of them.
-function containDraw(x, im, l, t, w, h){
-  const s = Math.min(w / im.width, h / im.height);
   const dw = im.width * s, dh = im.height * s;
   x.drawImage(im, l + (w - dw) / 2, t + (h - dh) / 2, dw, dh);
 }
@@ -3188,7 +3110,7 @@ function drawHaulCard(x, im, cx, cy, w, h, deg, name){
   x.save();
   rrect(x, -w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2, Math.round(r * .75)); x.clip();
   if(im){
-    containDraw(x, im, -w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2);
+    coverDraw(x, im, -w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2);
   } else {
     const pg = x.createLinearGradient(-w/2, -h/2, w/2, h/2);
     pg.addColorStop(0, '#F6E1D6'); pg.addColorStop(1, '#E4C9A8');
@@ -3412,9 +3334,14 @@ function canShareHaulFile(){
   try { return !!(f && navigator.canShare && navigator.canShare({files:[f]})); }
   catch(e){ return false; }
 }
-// Telegram's own webview is where <a download> goes nowhere.
-function inTelegramMobile(){
-  return !!(tg && /^(android|ios|android_x)$/.test(String(tg.platform || '')));
+/* Telegram's webview cannot take a blob download on ANY platform: <a download>
+   is inert, and tg.downloadFile only accepts an https URL carrying
+   Content-Disposition headers, which a blob URL will never be. So Save is only
+   offered outside Telegram; inside it, press-and-hold on the <img> is the save
+   route, and the bot DM is the reliable one. */
+function inTelegram(){
+  const p = String((tg && tg.platform) || '');
+  return !!(p && p !== 'unknown');
 }
 
 /* NOT async, and nothing is awaited before navigator.share — that is the whole
@@ -3515,15 +3442,15 @@ async function sendHaulToTelegram(btn){
    a share sheet where files can be shared, a download where downloads work,
    and the bot DM everywhere (it needs no browser capability at all). */
 function haulActionsHtml(){
-  const canShare = canShareHaulFile();
-  const tgMobile = inTelegramMobile();
+  const canShare = canShareHaulFile();   // false in Telegram: not a share target
+  const inTg = inTelegram();
   return (canShare
       ? `<button class="cta" onclick="shareHaulNow()">📸 Share my haul</button>`
       : '') +
-    `<button class="${canShare ? 'cta-alt' : 'cta'}" onclick="guard(this,()=>sendHaulToTelegram(this))">📩 Send it to me on Telegram</button>` +
+    `<button class="${canShare ? 'cta-alt' : 'cta'}" onclick="sendHaulToTelegram(this)">📩 Send it to me on Telegram</button>` +
     (inviteLink() ? `<button class="cta-alt" onclick="copyInvite(this)">🔗 Copy my invite link</button>` : '') +
-    (tgMobile
-      ? `<p class="note" style="margin-top:10px">Or press and hold the picture to save it straight to your photos.</p>`
+    (inTg
+      ? `<p class="note" style="margin-top:10px">Press and hold the picture above to save it straight to your photos.</p>`
       : `<button class="cta-alt" onclick="saveHaul()">⬇️ Save the image</button>`);
 }
 
@@ -3810,6 +3737,9 @@ function viewInvoice(id){
   const gone=items.filter(i=>i.refunded);
   const sub=live.reduce((s,i)=>s+i.price,0);
   const refunded=gone.reduce((s,i)=>s+i.price,0);
+  // The old fallback printed the raw status, so "Awaiting Verification" (and
+  // "Awaiting Payment") ran left out of the corner and over the order number.
+  // statusLabel is the same short vocabulary the Orders tab uses.
   const stamp={t:statusLabel(o), c:cancelled?'b-cancelled':(BADGE[o.status]||'b-ordered')};
   const line=(it,void_)=>`<div class="doc-line ${void_?'doc-void':''}">
       <div class="doc-thumb">${findImg(it)?`<img src="${findImg(it)}">`:(EMOJI[it.tier]||'🃏')}</div>
