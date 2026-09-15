@@ -774,9 +774,24 @@ html{scroll-behavior:smooth}
 .paid-ok .pk-t{font-family:'Plus Jakarta Sans';font-weight:800;font-size:17px;
   color:var(--fawn-deep);margin-top:6px}
 .paid-ok .pk-s{font-size:12.5px;color:var(--hint);line-height:1.5;margin-top:6px}
-.haul-prev{margin:0 0 12px;display:flex;justify-content:center}
+.haul-prev{margin:0 0 14px;display:flex;justify-content:center}
+/* A real <img>, never the <canvas> — long-press offers "Save image" on an img
+   and does nothing at all on a canvas. Which makes this the one save route
+   that works inside Telegram, so the callout must NOT be suppressed here. */
 .haul-img{width:100%;max-width:300px;height:auto;border-radius:14px;display:block;
-  box-shadow:0 8px 26px rgba(90,58,78,.22)}
+  box-shadow:0 8px 26px rgba(90,58,78,.22);
+  -webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
+.haul-panel{max-width:360px}
+.haul-wrap{padding:20px 18px calc(18px + env(safe-area-inset-bottom))}
+.haul-hd{font-family:'Plus Jakarta Sans';font-weight:800;font-size:17px;
+  color:var(--fawn-deep);text-align:center;margin-bottom:14px}
+.haul-wrap .note{margin-top:8px}
+.haul-invite{background:var(--ruff);border-radius:14px;padding:11px 13px;margin-bottom:12px;text-align:center}
+.hi-t{font-size:12.5px;font-weight:700;color:var(--fawn-deep);line-height:1.4}
+.hi-l{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:800;color:var(--link);
+  word-break:break-all;text-decoration:underline;text-underline-offset:2px}
+.hi-c{margin-top:8px;display:block;width:100%;font-size:12px;font-weight:800;color:var(--fawn-deep);
+  background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px}
 
 /* ── homepage how-to ── */
 .howto{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
@@ -2774,7 +2789,7 @@ function orderCardHtml(o){
       <button class="cancel-link" onclick="guard(this,()=>cancelUnpaid('${o.id}'))">Cancel this order</button>`):''}
       <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
       ${!cancelled&&['Payment Verified','Packed','Shipped','In Transit','Delivered'].includes(o.status)
-        ?`<button class="pics" style="margin-top:8px" onclick="guard(this,()=>shareHaul('${o.id}'))">📸 Share my haul</button>`:''}
+        ?`<button class="pics" style="margin-top:8px" onclick="openHaulSheet('${o.id}')">📸 Share my haul</button>`:''}
     </div>`;
 }
 async function doRefresh(){
@@ -2875,15 +2890,31 @@ function swipeOrderSeg(dir){
 }
 
 /* ============ SHARE MY HAUL ============
- * Draws the cards onto one branded image. Card scans are third-party (Drive),
- * so they're loaded crossOrigin — if the host won't allow it the canvas is
- * tainted and toBlob() throws, which would kill the whole image. So a scan that
- * won't load becomes a named placeholder tile instead. Set HAUL_IMG_PROXY to a
- * Worker route that re-serves Drive with an Access-Control-Allow-Origin header
- * and every scan comes through properly.
+ * Draws the cards onto one branded image, then hands it to the phone.
+ *
+ * Two things this has to get right, both learned the hard way:
+ *
+ * 1. navigator.share() needs a LIVE user gesture. Building the canvas first
+ *    (decoding scans, waiting on webfonts) spends that gesture, and the share
+ *    then throws NotAllowedError and nothing happens. So the image is always
+ *    built BEFORE the share button appears, and the button itself does nothing
+ *    but hand over the finished blob — synchronously, no await before it.
+ *
+ * 2. Telegram's webview silently ignores <a download>. So a download is only
+ *    offered where it actually works, and inside Telegram we rely on the bot
+ *    DMing the picture, plus press-and-hold on the preview (which is why the
+ *    preview is a real <img>, never the <canvas> — long-press does nothing on
+ *    a canvas).
+ *
+ * Card scans are third-party (Drive) and load crossOrigin: if the host won't
+ * allow it the canvas is tainted and export throws, so a scan that won't load
+ * becomes a named placeholder tile instead of killing the whole image. Set
+ * HAUL_IMG_PROXY to a Worker route that re-serves Drive with an
+ * Access-Control-Allow-Origin header and every scan comes through.
  * ====================================================================== */
 const HAUL_IMG_PROXY = '';   // e.g. 'https://fluffmart-api.shrimaniac.workers.dev/img?u='
 
+// {orderId, items, dataUrl, blob, jpeg} — the finished picture, ready to hand over.
 let HAUL = null;
 
 function haulSrc(u, w){
@@ -2902,6 +2933,7 @@ function loadCors(src){
   });
 }
 function rrect(x, l, t, w, h, r){
+  r = Math.min(r, w/2, h/2);
   x.beginPath();
   x.moveTo(l + r, t);
   x.arcTo(l + w, t,     l + w, t + h, r);
@@ -2909,6 +2941,12 @@ function rrect(x, l, t, w, h, r){
   x.arcTo(l,     t + h, l,     t,     r);
   x.arcTo(l,     t,     l + w, t,     r);
   x.closePath();
+}
+// object-fit: cover, for a canvas.
+function coverDraw(x, im, l, t, w, h){
+  const s = Math.max(w / im.width, h / im.height);
+  const dw = im.width * s, dh = im.height * s;
+  x.drawImage(im, l + (w - dw) / 2, t + (h - dh) / 2, dw, dh);
 }
 function wrapText(x, text, cx, cy, maxW, lh, maxLines){
   const words = String(text).split(/\s+/);
@@ -2924,167 +2962,418 @@ function wrapText(x, text, cx, cy, maxW, lh, maxLines){
   const top = cy - ((use.length - 1) * lh) / 2;
   use.forEach((l, i) => x.fillText(l, cx, top + i * lh));
 }
+// A four-point sparkle. Cheaper and prettier than a five-point star at this size.
+function sparkle(x, cx, cy, r, alpha){
+  x.save();
+  x.globalAlpha = alpha;
+  x.fillStyle = '#fff';
+  x.beginPath();
+  x.moveTo(cx, cy - r);
+  x.quadraticCurveTo(cx + r * .18, cy - r * .18, cx + r, cy);
+  x.quadraticCurveTo(cx + r * .18, cy + r * .18, cx, cy + r);
+  x.quadraticCurveTo(cx - r * .18, cy + r * .18, cx - r, cy);
+  x.quadraticCurveTo(cx - r * .18, cy - r * .18, cx, cy - r);
+  x.fill();
+  x.restore();
+}
+// Trim to fit a hard width. The names line used to run under the handle.
+function fitText(x, s, maxW){
+  s = String(s == null ? '' : s);
+  if(x.measureText(s).width <= maxW) return s;
+  while(s.length > 1 && x.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+  return s.replace(/[\s·]+$/, '') + '…';
+}
+/* One line, used by the share sheet, the Telegram fallback and the panel's own
+   link row — so what they tap and what gets posted always say the same thing. */
+function haulInviteText(){
+  return 'Come join me on FloofMart TCG 🐑 — Pokémon singles, drops and claims in Singapore';
+}
+function inviteLink(){ return STATE.refLink || ''; }
 function shopHandle(){
   const m = String(STATE.refLink || '').match(/t\.me\/([A-Za-z0-9_]+)/);
   return m ? ('t.me/' + m[1]) : 'FloofMart TCG';
 }
+
+/* One card: white mount, shadow, cover-fitted scan, a diagonal gloss so it
+   reads as a sleeved card rather than a flat rectangle. */
+function drawHaulCard(x, im, cx, cy, w, h, deg, name){
+  x.save();
+  x.translate(cx, cy);
+  x.rotate(deg * Math.PI / 180);
+  const r = Math.round(w * .055), pad = Math.max(6, Math.round(w * .035));
+
+  x.save();
+  x.shadowColor = 'rgba(96,44,74,.34)'; x.shadowBlur = 34; x.shadowOffsetY = 14;
+  x.fillStyle = '#fff';
+  rrect(x, -w/2, -h/2, w, h, r); x.fill();
+  x.restore();
+
+  x.save();
+  rrect(x, -w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2, Math.round(r * .75)); x.clip();
+  if(im){
+    coverDraw(x, im, -w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2);
+  } else {
+    const pg = x.createLinearGradient(-w/2, -h/2, w/2, h/2);
+    pg.addColorStop(0, '#F6E1D6'); pg.addColorStop(1, '#E4C9A8');
+    x.fillStyle = pg; x.fillRect(-w/2, -h/2, w, h);
+    x.fillStyle = '#A84E8E';
+    x.font = '800 ' + Math.round(w * .085) + "px 'Plus Jakarta Sans', system-ui, sans-serif";
+    x.textAlign = 'center';
+    wrapText(x, name || 'Card', 0, 0, w - pad * 6, Math.round(w * .105), 3);
+    x.textAlign = 'left';
+  }
+  const gl = x.createLinearGradient(-w/2, -h/2, w/2, h/2);
+  gl.addColorStop(0,   'rgba(255,255,255,.34)');
+  gl.addColorStop(.34, 'rgba(255,255,255,.03)');
+  gl.addColorStop(1,   'rgba(90,40,70,.10)');
+  x.fillStyle = gl;
+  x.fillRect(-w/2 + pad, -h/2 + pad, w - pad*2, h - pad*2);
+  x.restore();
+
+  x.restore();
+}
+
+/* Up to six cards fan out like a hand held open — that's the shot people
+   actually post. Seven or more stops reading as a fan, so those go into a
+   grid with a little rotation on each so it still looks handled, not filed. */
+const FAN = {
+  1: {h:740, step:  0, tilt: 0,  dip: 0},
+  2: {h:680, step:268, tilt: 8,  dip: 10},
+  3: {h:632, step:240, tilt:11,  dip: 12},
+  4: {h:580, step:205, tilt:13,  dip: 11},
+  5: {h:552, step:162, tilt:15,  dip: 10},
+  6: {h:508, step:136, tilt:16,  dip:  9}
+};
 
 async function buildHaulCanvas(h){
   const W = 1080, H = 1350;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const x = cv.getContext('2d');
-  // Fraunces and Plus Jakarta Sans are webfonts — canvas silently falls back to
-  // a system face if they aren't decoded yet.
+  // Fraunces and Plus Jakarta Sans are webfonts — canvas falls back to a system
+  // face, silently, if they aren't decoded yet.
   try { if(document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
 
-  x.fillStyle = '#FBEFE6'; x.fillRect(0, 0, W, H);
-
-  const g = x.createLinearGradient(0, 0, W, 210);
-  g.addColorStop(0, '#D98EC0'); g.addColorStop(.55, '#F0B9CF'); g.addColorStop(1, '#F6D6A8');
-  x.fillStyle = g; x.fillRect(0, 0, W, 210);
-  x.fillStyle = 'rgba(255,255,255,.18)';
-  x.beginPath(); x.arc(W - 70, -30, 170, 0, Math.PI * 2); x.fill();
-
-  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
-  x.fillStyle = '#fff';
-  x.font = "600 60px Fraunces, Georgia, serif";
-  x.fillText('FloofMart TCG', 56, 110);
-  x.font = "700 30px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillStyle = 'rgba(255,255,255,.95)';
-  x.fillText('today’s haul 🐑', 58, 158);
-
   const items = (h.items || []).filter(i => !i.refunded);
-  const shown = items.slice(0, 9), extra = items.length - shown.length;
-  const cols = shown.length <= 1 ? 1 : shown.length <= 4 ? 2 : 3;
-  const rows = Math.ceil(shown.length / cols) || 1;
-  const padX = 56, gap = 26, areaTop = 262, areaH = 920;
-  const cw = Math.floor((W - padX * 2 - gap * (cols - 1)) / cols);
-  const ch = Math.min(Math.floor(cw * 1.4), Math.floor((areaH - gap * (rows - 1)) / rows));
-  const gridW = cw * cols + gap * (cols - 1), gridH = ch * rows + gap * (rows - 1);
-  const gx = Math.floor((W - gridW) / 2), gy = areaTop + Math.floor((areaH - gridH) / 2);
+  const isFan = items.length <= 6;
+  const shown = items.slice(0, isFan ? 6 : 8);
+  const extra = items.length - shown.length;
 
-  const imgs = await Promise.all(shown.map(i => loadCors(haulSrc(i.image, 600))));
+  const [logo, ...arts] = await Promise.all(
+    [loadCors('logo.png')].concat(shown.map(i => loadCors(haulSrc(i.image, 700))))
+  );
 
-  // A partial last row (3 cards in a 2-wide grid, 5 in a 3-wide) left a hole in
-  // the corner. Centre whatever is on each row instead.
-  const rowX = r => {
-    const count = Math.min(cols, shown.length - r * cols);
-    return Math.floor((W - (count * cw + (count - 1) * gap)) / 2);
-  };
-  shown.forEach((it, k) => {
-    const cxp = rowX(Math.floor(k / cols)) + (k % cols) * (cw + gap);
-    const cyp = gy + Math.floor(k / cols) * (ch + gap);
-    x.save();
-    x.shadowColor = 'rgba(120,60,95,.28)'; x.shadowBlur = 22; x.shadowOffsetY = 10;
-    x.fillStyle = '#fff'; rrect(x, cxp, cyp, cw, ch, 18); x.fill();
-    x.restore();
+  /* ---- ground ---- */
+  x.fillStyle = '#FBEFE6'; x.fillRect(0, 0, W, H);
+  let g = x.createRadialGradient(W/2, 600, 60, W/2, 600, 680);
+  g.addColorStop(0, 'rgba(217,142,192,.34)');
+  g.addColorStop(.55, 'rgba(240,185,207,.16)');
+  g.addColorStop(1, 'rgba(251,239,230,0)');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  g = x.createRadialGradient(950, 1180, 20, 950, 1180, 460);
+  g.addColorStop(0, 'rgba(251,212,78,.20)');
+  g.addColorStop(1, 'rgba(251,212,78,0)');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  // faint hairlines, so a flat background still has some texture
+  x.save();
+  x.globalAlpha = .05; x.strokeStyle = '#A84E8E'; x.lineWidth = 2;
+  for(let i = -H; i < W; i += 46){ x.beginPath(); x.moveTo(i, H); x.lineTo(i + H, 0); x.stroke(); }
+  x.restore();
 
-    x.save();
-    rrect(x, cxp + 8, cyp + 8, cw - 16, ch - 16, 13); x.clip();
-    const im = imgs[k];
-    if(im){
-      const s = Math.max((cw - 16) / im.width, (ch - 16) / im.height);
-      const dw = im.width * s, dh = im.height * s;
-      x.drawImage(im, cxp + 8 + ((cw - 16) - dw) / 2, cyp + 8 + ((ch - 16) - dh) / 2, dw, dh);
-    } else {
-      const pg = x.createLinearGradient(cxp, cyp, cxp + cw, cyp + ch);
-      pg.addColorStop(0, '#F6E1D6'); pg.addColorStop(1, '#E9D3AD');
-      x.fillStyle = pg; x.fillRect(cxp + 8, cyp + 8, cw - 16, ch - 16);
-      x.fillStyle = '#A84E8E';
-      x.font = "800 22px 'Plus Jakarta Sans', system-ui, sans-serif";
-      x.textAlign = 'center';
-      wrapText(x, it.name || 'Card', cxp + cw / 2, cyp + ch / 2, cw - 44, 27, 3);
-      x.textAlign = 'left';
-    }
-    x.restore();
-  });
-
-  if(extra > 0){
-    const t = '+' + extra + ' more';
-    x.font = "800 28px 'Plus Jakarta Sans', system-ui, sans-serif";
-    const tw = x.measureText(t).width;
-    x.fillStyle = 'rgba(90,58,78,.82)';
-    const chipX = Math.min(W - padX - tw - 36, gx + gridW - tw - 36);
-    rrect(x, chipX, gy + gridH - 58, tw + 36, 46, 23); x.fill();
-    x.fillStyle = '#fff';
-    x.fillText(t, chipX + 18, gy + gridH - 26);
+  /* ---- header ---- */
+  x.save();
+  x.beginPath(); x.arc(100, 100, 46, 0, Math.PI*2);
+  x.shadowColor = 'rgba(96,44,74,.22)'; x.shadowBlur = 16; x.shadowOffsetY = 5;
+  x.fillStyle = '#fff'; x.fill();
+  x.restore();
+  if(logo){
+    x.save(); x.beginPath(); x.arc(100, 100, 42, 0, Math.PI*2); x.clip();
+    coverDraw(x, logo, 58, 58, 84, 84); x.restore();
+  } else {
+    x.font = '44px system-ui, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText('🐑', 100, 104); x.textAlign = 'left'; x.textBaseline = 'alphabetic';
   }
-
-  const n = items.length;
-  x.fillStyle = '#5A3A4E';
-  x.font = "800 34px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText(n + ' card' + (n === 1 ? '' : 's'), padX, H - 104);
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.fillStyle = '#A84E8E';
+  x.font = "600 48px Fraunces, Georgia, serif";
+  x.fillText('FloofMart TCG', 164, 94);
   x.fillStyle = '#8a6b80';
-  x.font = "700 26px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText(new Date().toLocaleDateString('en-SG', {day:'numeric', month:'short', year:'numeric'}), padX, H - 62);
+  x.font = "700 23px 'Plus Jakarta Sans', system-ui, sans-serif";
+  x.fillText('today’s haul · ' + new Date().toLocaleDateString('en-SG', {day:'numeric', month:'short', year:'numeric'}), 166, 128);
+
+  /* ---- sparkles, behind the cards ---- */
+  [[150,320,17],[930,300,22],[870,760,15],[120,830,20],[300,215,12],
+   [800,190,13],[60,600,14],[1010,560,16],[540,148,11]].forEach(s =>
+    sparkle(x, s[0], s[1], s[2], .55));
+
+  /* ---- the cards ---- */
+  const midY = 630;
+  if(isFan){
+    const f0 = FAN[shown.length] || FAN[6];
+    const f = {h:f0.h, step:f0.step, tilt:f0.tilt, dip:f0.dip};
+    const mid = (shown.length - 1) / 2;
+    // A card tilted 15° is ~140px wider than its own width, which is how the
+    // outer cards ended up hanging off the edge. Measure the real extent of
+    // the widest card and scale the whole fan down until it fits.
+    let cw = Math.round(f.h * .715);
+    const th = f.tilt * Math.PI / 180;
+    const ext = mid * f.step + (cw * Math.cos(th) + f.h * Math.sin(th)) / 2;
+    if(ext > 512){
+      const k = 512 / ext;
+      f.h = Math.round(f.h * k); f.step = Math.round(f.step * k);
+      cw = Math.round(f.h * .715);
+    }
+    // Farthest from the middle first, so the centre card ends up on top.
+    shown.map((it, i) => i)
+      .sort((a, b) => Math.abs(b - mid) - Math.abs(a - mid))
+      .forEach(i => {
+        const off = i - mid;
+        drawHaulCard(x, arts[i],
+          W/2 + off * f.step,
+          midY + Math.pow(Math.abs(off), 1.5) * f.dip,
+          cw, f.h,
+          mid === 0 ? -2 : (off / mid) * f.tilt,
+          shown[i].name);
+      });
+  } else {
+    // Size from the HEIGHT first. Deriving the card size from the width alone
+    // is what once stood three rows 1312px tall on a 1350px canvas — over the
+    // header and straight through the footer.
+    const cols = 4, gap = 22, padX = 56;
+    const rows = Math.ceil(shown.length / cols);
+    const chip = extra > 0 ? 76 : 0;
+    const TOP = 190, BOT = 1100;
+    const availH = (BOT - TOP) - chip;
+    let chh = Math.floor((availH - gap*(rows-1)) / rows);
+    let cw  = Math.round(chh * .715);
+    const maxCw = Math.floor((W - padX*2 - gap*(cols-1)) / cols);
+    if(cw > maxCw){ cw = maxCw; chh = Math.round(cw / .715); }
+    const gridH = chh*rows + gap*(rows-1);
+    const gy = TOP + Math.floor((availH - gridH) / 2);
+    shown.forEach((it, k) => {
+      const row = Math.floor(k / cols);
+      const inRow = Math.min(cols, shown.length - row*cols);
+      const rowW = inRow*cw + (inRow-1)*gap;
+      const cx = (W - rowW)/2 + (k % cols)*(cw+gap) + cw/2;
+      drawHaulCard(x, arts[k], cx, gy + row*(chh+gap) + chh/2, cw, chh,
+                   ((k*37) % 7 - 3) * 1.15, it.name);
+    });
+    if(extra > 0){
+      const t = '+' + extra + ' more';
+      x.font = "800 30px 'Plus Jakarta Sans', system-ui, sans-serif";
+      const tw = x.measureText(t).width;
+      x.fillStyle = 'rgba(90,58,78,.86)';
+      rrect(x, (W - tw - 44)/2, gy + gridH + 14, tw + 44, 52, 26); x.fill();
+      x.fillStyle = '#fff'; x.textAlign = 'center';
+      x.fillText(t, W/2, gy + gridH + 48); x.textAlign = 'left';
+    }
+  }
+  // a couple of sparkles on top, so the cards sit inside the glitter
+  [[215,470,14],[880,520,12],[650,930,15]].forEach(s => sparkle(x, s[0], s[1], s[2], .7));
+
+  /* ---- footer ---- */
+  const n = items.length;
+  x.strokeStyle = 'rgba(168,78,142,.20)'; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(56, 1136); x.lineTo(W - 56, 1136); x.stroke();
+
+  x.fillStyle = '#5A3A4E';
+  x.font = "800 40px 'Plus Jakarta Sans', system-ui, sans-serif";
+  x.fillText(n + ' card' + (n === 1 ? '' : 's') + ' pulled', 56, 1196);
+
+  const names = items.slice(0, 2).map(i => {
+    const s = String(i.name || '');
+    return s.length > 24 ? s.slice(0, 23) + '…' : s;
+  });
+  if(n > 2) names.push('+' + (n - 2) + ' more');
+  x.fillStyle = '#8a6b80';
+  x.font = "600 23px 'Plus Jakarta Sans', system-ui, sans-serif";
+  x.fillText(fitText(x, names.join('  ·  '), 560), 56, 1234);
 
   x.textAlign = 'right';
   x.fillStyle = '#A84E8E';
   x.font = "800 30px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText(shopHandle(), W - padX, H - 104);
+  x.fillText(shopHandle(), W - 56, 1196);
   x.fillStyle = '#8a6b80';
-  x.font = "700 24px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText('Pokémon TCG · Singapore', W - padX, H - 62);
+  x.font = "700 22px 'Plus Jakarta Sans', system-ui, sans-serif";
+  x.fillText('Pokémon TCG · Singapore', W - 56, 1232);
   x.textAlign = 'left';
 
   return cv;
 }
 
-/* Prefers the orders payload (it carries scans), then the snapshot checkout
-   kept, because by the time the order comes back the cards are out of the shop. */
-function haulFor(orderId){
+/* Prefers the orders payload (it carries the scans), then the snapshot checkout
+   kept, because by the time an order comes back its cards have left the shop. */
+function haulItemsFor(orderId){
   const o = (STATE.orders || []).find(x => String(x.id) === String(orderId));
-  if(o && (o.items || []).length) return {orderId:o.id, items:o.items.filter(i => !i.refunded)};
-  if(STATE.lastHaul && String(STATE.lastHaul.orderId) === String(orderId)) return STATE.lastHaul;
-  if(HAUL && String(HAUL.orderId) === String(orderId)) return HAUL;
+  if(o && (o.items || []).length) return o.items.filter(i => !i.refunded);
+  if(STATE.lastHaul && String(STATE.lastHaul.orderId) === String(orderId)) return STATE.lastHaul.items;
   return null;
 }
 
-async function shareHaul(orderId){
-  const h = haulFor(orderId);
-  if(!h || !h.items.length){
-    (tg && tg.showAlert ? tg.showAlert : alert)('Nothing to share from that order yet.');
+/* Builds the picture and keeps every form of it we might need: a data URL for
+   the <img> preview (press-and-hold to save), a PNG blob for the share sheet,
+   and a smaller JPEG for the trip through the Worker to Telegram. */
+async function prepareHaul(orderId){
+  if(HAUL && String(HAUL.orderId) === String(orderId) && HAUL.blob) return HAUL;
+  const items = haulItemsFor(orderId);
+  if(!items || !items.length) return null;
+  const cv = await buildHaulCanvas({orderId, items});
+  const dataUrl = cv.toDataURL('image/png');
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+  const jpeg = cv.toDataURL('image/jpeg', 0.88);   // ~4x smaller for the upload
+  HAUL = {orderId: String(orderId), items, dataUrl, blob, jpeg};
+  return HAUL;
+}
+
+function haulFile(){
+  if(!HAUL || !HAUL.blob) return null;
+  try { return new File([HAUL.blob], 'floofmart-haul.png', {type:'image/png'}); }
+  catch(e){ return null; }
+}
+function canShareHaulFile(){
+  const f = haulFile();
+  try { return !!(f && navigator.canShare && navigator.canShare({files:[f]})); }
+  catch(e){ return false; }
+}
+// Telegram's own webview is where <a download> goes nowhere.
+function inTelegramMobile(){
+  return !!(tg && /^(android|ios|android_x)$/.test(String(tg.platform || '')));
+}
+
+/* NOT async, and nothing is awaited before navigator.share — that is the whole
+   point. The blob is already sitting in HAUL by the time this can be tapped. */
+function shareHaulNow(){
+  const f = haulFile();
+  if(!f) return;
+  const link = inviteLink();
+  const payload = {files: [f], text: haulInviteText() + (link ? '\n' + link : '')};
+  if(link) payload.url = link;   // targets that want a url get a real one
+  try { navigator.share(payload).then(() => sfx('ok')).catch(() => {}); } catch(e){}
+}
+
+/* Share or copy just the invite, no picture — used by the welcome guide and by
+   the link row under the haul. Reads the link at tap time, because overview
+   may not have landed when the button was drawn. */
+function shareInvite(){
+  const link = inviteLink();
+  if(!link){
+    (tg && tg.showAlert ? tg.showAlert : alert)('Your link is still loading — give it a second and try again 🐾');
     return;
   }
-  const link = STATE.refLink || '';
-  const text = 'My FloofMart haul 🐑' + (link ? ' ' + link : '');
-
-  let blob = null;
-  try {
-    const cv = await buildHaulCanvas(h);
-    blob = await new Promise(res => cv.toBlob(res, 'image/png'));
-  } catch(e){ blob = null; }
-
-  if(blob){
-    const file = new File([blob], 'floofmart-haul.png', {type:'image/png'});
-    try {
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], text:text});
-        sfx('ok');
-        return;
-      }
-    } catch(e){ if(e && e.name === 'AbortError') return; }   // they backed out; not an error
-    // No share sheet (desktop, or an older webview) — hand them the file.
-    try {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'floofmart-haul.png';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-      (tg && tg.showAlert ? tg.showAlert : alert)('Saved your haul image 📸 Post it anywhere — tag us!');
-      return;
-    } catch(e){}
-  }
-  // Last resort: share the words without the picture.
   try {
     if(tg && tg.openTelegramLink){
-      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link || 'https://t.me/') +
-                          '&text=' + encodeURIComponent(text));
+      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) +
+                          '&text=' + encodeURIComponent(haulInviteText()));
       return;
     }
   } catch(e){}
-  (tg && tg.showAlert ? tg.showAlert : alert)('Couldn’t build the image on this device — screenshot your binder instead 🐾');
+  try {
+    if(navigator.share){ navigator.share({title:'FloofMart TCG', text:haulInviteText(), url:link}); return; }
+  } catch(e){}
+  copyInvite();
+}
+function copyInvite(btn){
+  const link = inviteLink();
+  if(!link) return;
+  const payload = haulInviteText() + '\n' + link;
+  const ok = () => {
+    if(btn){ const o = btn.textContent; btn.textContent = 'Copied ✓';
+             setTimeout(() => { btn.textContent = o; }, 1600); }
+    else (tg && tg.showAlert ? tg.showAlert : alert)('Link copied 🐾');
+    sfx('ok');
+  };
+  // writeText REJECTS when clipboard permission is denied, which plenty of
+  // webviews do. Saying "Copied ✓" before it settles is how you get someone
+  // pasting nothing, so wait for it and offer the link itself if it fails.
+  const fail = () => (tg && tg.showAlert ? tg.showAlert : alert)(payload);
+  try {
+    const pr = navigator.clipboard && navigator.clipboard.writeText(payload);
+    if(pr && pr.then) pr.then(ok).catch(fail); else ok();
+  } catch(e){ fail(); }
+}
+// The link, short enough to read on one line.
+function inviteLinkLabel(){
+  const l = inviteLink();
+  if(!l) return 'loading…';
+  return l.replace(/^https?:\/\//, '');
+}
+function inviteRowHtml(){
+  if(!inviteLink()) return '';
+  return `<div class="haul-invite">
+      <div class="hi-t">${esc(haulInviteText())}</div>
+      <a class="hi-l" href="${esc(inviteLink())}" onclick="event.preventDefault();shareInvite()">${esc(inviteLinkLabel())}</a>
+      <button class="hi-c" onclick="copyInvite(this)">Copy</button>
+    </div>`;
+}
+
+function saveHaul(){
+  if(!HAUL || !HAUL.blob) return;
+  try {
+    const url = URL.createObjectURL(HAUL.blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'floofmart-haul.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    sfx('ok');
+  } catch(e){
+    (tg && tg.showAlert ? tg.showAlert : alert)('Press and hold the picture to save it 🐾');
+  }
+}
+
+/* The reliable one inside Telegram: the bot sends them the photo, and from
+   there it's a normal Telegram picture they can save or forward anywhere. */
+async function sendHaulToTelegram(btn){
+  if(!HAUL || !HAUL.jpeg) return;
+  await guard(btn, async () => {
+    const r = await api('haulImage', {orderId: HAUL.orderId, image: HAUL.jpeg});
+    const m = (r && r.ok)
+      ? (r.message || 'Sent it to you on Telegram 📸 Forward it anywhere from there!')
+      : ((r && (r.message || r.error)) || 'Couldn’t send that — try again in a sec.');
+    (tg && tg.showAlert ? tg.showAlert : alert)(m);
+    if(r && r.ok) sfx('ok');
+  });
+}
+
+/* The buttons under the preview. Only ever offers what this device can do:
+   a share sheet where files can be shared, a download where downloads work,
+   and the bot DM everywhere (it needs no browser capability at all). */
+function haulActionsHtml(){
+  const canShare = canShareHaulFile();
+  const tgMobile = inTelegramMobile();
+  return inviteRowHtml() + (canShare
+      ? `<button class="cta" onclick="shareHaulNow()">📸 Share my haul</button>`
+      : '') +
+    `<button class="${canShare ? 'cta-alt' : 'cta'}" onclick="guard(this,()=>sendHaulToTelegram(this))">📩 Send it to me on Telegram</button>` +
+    (tgMobile
+      ? `<p class="note" style="margin-top:10px">Or press and hold the picture to save it straight to your photos.</p>`
+      : `<button class="cta-alt" onclick="saveHaul()">⬇️ Save the image</button>`);
+}
+
+/* Opened from an order in the Orders tab. Builds first, shows the buttons
+   after — so whichever one they tap is working with a finished picture. */
+async function openHaulSheet(orderId){
+  const body = document.getElementById('cardViewBody');
+  body.innerHTML = `<div class="cv-panel haul-panel">
+      <button class="cv-close" onclick="closeCardView()">✕</button>
+      <div class="haul-wrap">
+        <div class="haul-hd">📸 Your haul</div>
+        <div class="haul-prev" id="haulPrev"><div class="skelcard" style="height:300px;width:100%"></div></div>
+        <div id="haulActions"><p class="note">Putting your cards together…</p></div>
+      </div>
+    </div>`;
+  document.getElementById('cardViewScrim').classList.add('show');
+  document.getElementById('cardView').classList.add('show');
+  const h = await prepareHaul(orderId);
+  const prev = document.getElementById('haulPrev');
+  const acts = document.getElementById('haulActions');
+  if(!prev || !acts) return;                       // they closed it while we drew
+  if(!h){
+    prev.innerHTML = '';
+    acts.innerHTML = `<p class="note">Nothing to share from that order yet.</p>`;
+    return;
+  }
+  prev.innerHTML = `<img class="haul-img" src="${h.dataUrl}" alt="Your FloofMart haul">`;
+  acts.innerHTML = haulActionsHtml();
 }
 
 /* Replaces the bare alert after a payment upload. The sheet stays open, so the
@@ -3092,7 +3381,6 @@ async function shareHaul(orderId){
 function showPaidHaul(inv){
   const isShip = String(inv.orderId || '').indexOf('SH') === 0;
   const items = (inv.items || []).filter(i => !i.refunded);
-  HAUL = {orderId: inv.orderId, items: items.slice()};
   const n = items.length;
   document.getElementById('invBody').innerHTML = `
     <div class="paid-ok">
@@ -3102,14 +3390,19 @@ function showPaidHaul(inv){
         ? 'We’re checking it now — your box goes out once it’s confirmed, and tracking follows here.'
         : `We’re checking it now. Once it’s confirmed your ${n} card${n===1?'':'s'} go${n===1?'es':''} into your box 🧺`}</div>
     </div>
-    ${isShip ? '' : `<div class="haul-prev" id="haulPrev"></div>
-    <button class="cta" onclick="guard(this,()=>shareHaul('${inv.orderId}'))">📸 Share my haul</button>`}
+    ${isShip ? '' : `<div class="haul-prev" id="haulPrev"></div><div id="haulActions"></div>`}
     <button class="cta-alt" style="margin-top:8px" onclick="closeInvoice();go('orders')">Go to my orders</button>`;
   if(isShip) return;
-  // Preview is nice-to-have: if it can't be drawn, the share button still works.
-  buildHaulCanvas(HAUL).then(cv => {
-    const box = document.getElementById('haulPrev');
-    if(box && cv){ cv.className = 'haul-img'; box.innerHTML = ''; box.appendChild(cv); }
+  // STATE.lastHaul is what carries the scans here — the order payload drops them.
+  if(!STATE.lastHaul || String(STATE.lastHaul.orderId) !== String(inv.orderId)){
+    STATE.lastHaul = {orderId: inv.orderId, items: items};
+  }
+  prepareHaul(inv.orderId).then(h => {
+    const prev = document.getElementById('haulPrev');
+    const acts = document.getElementById('haulActions');
+    if(!prev || !acts || !h) return;
+    prev.innerHTML = `<img class="haul-img" src="${h.dataUrl}" alt="Your FloofMart haul">`;
+    acts.innerHTML = haulActionsHtml();
   }).catch(() => {});
 }
 
@@ -3524,6 +3817,7 @@ const GUIDES={
     {ic:'🧺',t:'We keep a box for you',b:'Every card you buy goes into your box and waits there. You pay postage <b>once</b>, whenever you decide to send it — not once per order.'},
     {ic:'🎯',t:'Drops',b:'We post cards in the channel and the first person to comment <b>claim</b> wins it. Press Start on the bot first, or we can’t send you the invoice.'},
     {ic:'💳',t:'You earn credit',b:'$3 back for every $100 you spend. It comes off your total automatically at checkout — nothing to remember.'},
+    {ic:'🎁',t:'Bring a friend, both win',b:'They spend $15+ and <b>you get $3 credit</b>. Your own link is<br><b>{{REF}}</b><br><button class="wsug" style="margin-top:10px" onclick="shareInvite()">🔗 Share my link</button> <button class="wsug" style="margin-top:10px" onclick="copyInvite(this)">Copy</button>'},
     {ic:'🆘',t:'Stuck at any point?',b:'Help &amp; Support is in the menu. A real person reads it.'}
   ]},
   buy:{title:'How buying works',steps:[
@@ -3559,7 +3853,7 @@ function openGuide(key){
        <div class="gd-step">${k+1} of ${g.steps.length}</div>
        <span class="gd-ic">${s.ic}</span>
        <div class="gd-t">${s.t}</div>
-       <div class="gd-b">${s.b}</div>
+       <div class="gd-b">${String(s.b).replace('{{REF}}', esc(inviteLinkLabel()))}</div>
      </div>`).join('');
   document.getElementById('gdDots').innerHTML=g.steps.map((_,k)=>
     `<span class="gd-dot${k===0?' on':''}"></span>`).join('');
