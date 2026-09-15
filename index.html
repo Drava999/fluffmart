@@ -1083,7 +1083,43 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
    :has(>img) is what keeps the white mount off tiles that have no photo (and
    off the fan, whose images are nested inside .bfan), so the cream gradient
    placeholder still shows through where there's nothing to mount. */
+/* ══ CARD FIT, PART 2 ══════════════════════════════════════════════════════
+   contain fits the scan to the box exactly, so the scan's square corners now
+   land on the box's rounded ones and overflow:hidden bites a piece out of each
+   card. Inset the scan instead and let the white mount draw the rounded corner
+   — the card sits in a thin white frame with all four of its own corners
+   intact. :has(>img) keeps all of this off the bundle fan and off tiles with
+   no photo, exactly as in part 1. */
 
+/* --- store tile --- */
+.pcard .img:has(>img){padding:6px}
+/* Absolutely-positioned children sit against the PADDING box, so "Claimed"
+   would stop 6px short of the tile edge and leave a white ring. */
+.pcard .img:has(>img)>.soldout{inset:-6px}
+
+/* --- "Just in" rail --- */
+.jimg:has(>img){padding:4px}
+
+/* --- the big card view --- */
+.cv-face:has(>img){padding:7px}
+
+/* --- thumbnails --- */
+.cv-strip img{padding:2px}
+.crow .ci:has(img),.asell .ci:has(img),
+.doc-thumb:has(img),.po-thumb:has(img){padding:2px}
+
+/* --- binder pockets --- */
+.pocket.filled{padding:4px}
+.pocket.filled:after{inset:-4px}
+
+/* ══ "JUST IN" RAIL — LEVEL TOPS ═══════════════════════════════════════════
+   .jcard is a <button>, and a button centres its own contents. The rail
+   stretches every button to the tallest one, so a card with a one-line name
+   got its whole stack centred in that height and its picture pushed down,
+   while a two-line name sat high. Stop the stretch, and give the name the same
+   two-line floor the store tiles already have so the prices line up too. */
+.jrail{align-items:flex-start}
+.jnm{min-height:29px}
 /* --- store tile --- */
 .pcard .img{aspect-ratio:63/88}
 .pcard .img>img{width:100%;height:100%;object-fit:contain}
