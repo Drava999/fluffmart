@@ -507,10 +507,10 @@ html{scroll-behavior:smooth}
 .doc-hd{padding:18px 18px 15px;background:linear-gradient(160deg,var(--ruff),#fbeef6);border-radius:18px 18px 0 0}
 .doc-brand{font-family:'Fraunces',serif;font-size:15px;color:var(--fawn-deep);letter-spacing:.4px}
 .doc-brandsub{font-size:10px;color:var(--hint);margin-top:0}
-.doc-oid{font-family:'Plus Jakarta Sans';font-weight:800;font-size:19px;margin-top:12px;letter-spacing:-.02em}
+.doc-oid{font-family:'Plus Jakarta Sans';font-weight:800;font-size:19px;margin-top:12px;letter-spacing:-.02em;\n  padding-right:120px}
 .doc-meta{font-size:11.5px;color:var(--hint);margin-top:3px;line-height:1.6}
 .doc-stamp{position:absolute;top:52px;right:16px;font-size:10px;font-weight:800;letter-spacing:.6px;
-  padding:5px 10px;border-radius:8px;text-transform:uppercase}
+  padding:5px 10px;border-radius:8px;text-transform:uppercase;max-width:116px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .doc-body{padding:6px 18px 18px}
 .doc-sec{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.7px;margin:16px 0 4px}
 .doc-line{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -2992,6 +2992,26 @@ function haulSrc(u, w){
   const s = imgUrl(u, w);
   return (HAUL_IMG_PROXY && s) ? HAUL_IMG_PROXY + encodeURIComponent(s) : s;
 }
+/* The Drive file id, from either URL shape the sheet might hold. */
+function driveId(u){
+  const s = String(u || '');
+  const m = s.match(/[?&]id=([\w-]{10,})/) || s.match(/\/d\/([\w-]{10,})/);
+  return m ? m[1] : '';
+}
+async function loadHaulArt(u, w){
+  if(!u) return null;
+  let im;
+  if(HAUL_IMG_PROXY){
+    im = await loadCors(HAUL_IMG_PROXY + encodeURIComponent(imgUrl(u, w)));
+    if(im) return im;
+  }
+  const id = driveId(u);
+  if(id){
+    im = await loadCors('https://lh3.googleusercontent.com/d/' + id + '=w' + w);
+    if(im) return im;
+  }
+  return await loadCors(imgUrl(u, w));
+}
 function loadCors(src){
   return new Promise(res => {
     if(!src) return res(null);
@@ -3131,7 +3151,7 @@ async function buildHaulCanvas(h){
   const extra = items.length - shown.length;
 
   const [logo, ...arts] = await Promise.all(
-    [loadCors('logo.png')].concat(shown.map(i => loadCors(haulSrc(i.image, 700))))
+    [loadCors('logo.png')].concat(shown.map(i => loadHaulArt(i.image, 700)))
   );
 
   /* ---- ground ---- */
@@ -3411,10 +3431,11 @@ async function sendHaulToTelegram(btn){
 function haulActionsHtml(){
   const canShare = canShareHaulFile();
   const tgMobile = inTelegramMobile();
-  return inviteRowHtml() + (canShare
+  return (canShare
       ? `<button class="cta" onclick="shareHaulNow()">📸 Share my haul</button>`
       : '') +
     `<button class="${canShare ? 'cta-alt' : 'cta'}" onclick="guard(this,()=>sendHaulToTelegram(this))">📩 Send it to me on Telegram</button>` +
+    (inviteLink() ? `<button class="cta-alt" onclick="copyInvite(this)">🔗 Copy my invite link</button>` : '') +
     (tgMobile
       ? `<p class="note" style="margin-top:10px">Or press and hold the picture to save it straight to your photos.</p>`
       : `<button class="cta-alt" onclick="saveHaul()">⬇️ Save the image</button>`);
@@ -3703,13 +3724,7 @@ function viewInvoice(id){
   const gone=items.filter(i=>i.refunded);
   const sub=live.reduce((s,i)=>s+i.price,0);
   const refunded=gone.reduce((s,i)=>s+i.price,0);
-  const stamp=cancelled?{t:'Cancelled',c:'b-cancelled'}
-    :o.status==='Delivered'?{t:'Delivered',c:'b-delivered'}
-    :o.status==='Refunded'?{t:'Refunded',c:'b-cancelled'}
-    :(o.status||'').toLowerCase().includes('ship')||o.status==='In Transit'?{t:'Shipped',c:'b-shipped'}
-    :o.status==='Packed'?{t:'Packed',c:'b-packed'}
-    :o.status==='Payment Verified'?{t:'Paid',c:'b-packed'}
-    :{t:o.status||'',c:'b-ordered'};
+  const stamp={t:statusLabel(o), c:cancelled?'b-cancelled':(BADGE[o.status]||'b-ordered')};
   const line=(it,void_)=>`<div class="doc-line ${void_?'doc-void':''}">
       <div class="doc-thumb">${findImg(it)?`<img src="${findImg(it)}">`:(EMOJI[it.tier]||'🃏')}</div>
       <div class="doc-nm">${esc(it.name)}<div class="doc-tag">${void_?('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):'')):[esc(it.number||''),esc(rarityLabel(it))].filter(Boolean).join(' · ')}</div></div>
