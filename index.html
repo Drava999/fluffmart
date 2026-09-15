@@ -334,7 +334,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .inv-badge{transition:background .3s}
 .pay-warn{background:#fff3cd;color:#8a6d00;border-radius:10px;padding:9px 12px;font-size:12.5px;
   font-weight:700;text-align:center;margin-bottom:12px}
-#pnQr{width:170px;height:170px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:8px;padding:4px}
+/* 190, not 170: a PayNow payload is ~50 modules and a bank app scanning a
+   SCREENSHOT gets one already-resampled frame with no second attempt, so every
+   displayed pixel counts. The canvas inside is drawn far larger and scaled down
+   here; height:auto keeps it square, because stretching the grid even slightly
+   is enough to stop it decoding. */
+#pnQr{width:190px;height:190px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:8px;padding:4px}
+#pnQr>canvas,#pnQr>img{display:block;width:100%;height:auto;image-rendering:-webkit-optimize-contrast}
 #pnQr img,#pnQr canvas{display:block}
 .pn-num{font-size:13px;color:var(--text);line-height:1.5}.pn-num b{font-size:15px}
 .pn-note{font-size:11.5px;color:var(--fawn-deep);margin-top:8px}
@@ -1706,8 +1712,69 @@ function renderPayQR(inv, isRetry){
   try {
     const payload=payNowPayload(mobile,inv.total,inv.orderId,inv.paynowName);
     box.innerHTML='';
-    new QRCode(box,{text:payload,width:170,height:170,correctLevel:QRCode.CorrectLevel.L});
+    const c=qrCanvas(payload);
+    if(c) box.appendChild(c);
+    // Last resort: let the library draw it, but big and at level M, so a
+    // screenshot still has a chance.
+    else new QRCode(box,{text:payload,width:760,height:760,correctLevel:QRCode.CorrectLevel.M});
   } catch(e){ box.innerHTML='<div class="pn-qr-ph">QR unavailable —<br><span>pay to the number below</span></div>'; }
+}
+  /* ── PayNow QR, drawn module by module ────────────────────────────────────────
+   Why this isn't left to qrcodejs: the library sizes its canvas in CSS pixels
+   and divides by the module count, so a ~50-module PayNow code in a 150px box
+   left each module 2 or 3 physical pixels wide — neighbouring modules differing
+   in width by 50%. A bank app's CAMERA copes with that: it autofocuses, takes
+   many frames, and sees the white screen around the card. "Scan from gallery"
+   gets one already-resampled, already-compressed frame and no second attempt,
+   which is exactly the symptom — the code only ever worked when someone else
+   pointed a phone at the screen.
+
+   Three things were wrong and all three are fixed here:
+     · module size is now an exact integer, so every module is identical;
+     · the 4-module quiet zone the QR spec requires is drawn in — qrcodejs
+       never draws one, and the old markup then clipped the corners with an
+       8px border-radius, which can eat into a finder pattern;
+     · error correction is M (15% recovery) instead of L (7%), so there is
+       margin left after a screenshot has been resampled and JPEG'd.
+   M costs ~4 more modules than L, which the larger canvas absorbs easily. */
+const QR_QUIET = 4;      // modules of white margin — spec, not decoration
+const QR_TARGET = 980;   // canvas px, displayed at 190: a 3x screenshot still
+                         // lands ~5 device pixels on each module
+
+function qrCanvas(text){
+  // The module matrix is only reachable through _oQRCode. It survives this
+  // vendored build (checked), but if it ever stops existing we return null and
+  // renderPayQR falls back to the library's own drawing rather than showing
+  // nothing.
+  let model=null;
+  try {
+    const probe=new QRCode(document.createElement('div'),
+      {text:text, width:8, height:8, correctLevel:QRCode.CorrectLevel.M});
+    model=probe._oQRCode;
+  } catch(e){ return null; }
+  if(!model || typeof model.getModuleCount!=='function' || typeof model.isDark!=='function') return null;
+
+  const n=model.getModuleCount();
+  if(!(n>0)) return null;
+  const total=n+QR_QUIET*2;
+  const px=Math.max(3,Math.floor(QR_TARGET/total));   // integer — no rounding drift
+  const size=total*px;
+
+  const c=document.createElement('canvas');
+  c.width=c.height=size;
+  c.setAttribute('role','img');
+  c.setAttribute('aria-label','PayNow QR code');
+  const x=c.getContext('2d');
+  // Opaque white, so a screenshot of a dark-themed app still yields a
+  // black-on-white code rather than black-on-whatever-is-behind.
+  x.fillStyle='#ffffff'; x.fillRect(0,0,size,size);
+  x.fillStyle='#000000';
+  for(let r=0;r<n;r++){
+    for(let col=0;col<n;col++){
+      if(model.isDark(r,col)) x.fillRect((col+QR_QUIET)*px,(r+QR_QUIET)*px,px,px);
+    }
+  }
+  return c;
 }
 const tg = window.Telegram && window.Telegram.WebApp;
 
