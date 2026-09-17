@@ -3389,7 +3389,7 @@ function orderCardHtml(o){
       (o.tracking?'<a class="oc-track" href="https://www.ship24.com/tracking?p='+encodeURIComponent(o.tracking)+'" target="_blank" rel="noopener">Track '+esc(o.tracking)+' ↗</a>':'')+
       (anyRefund&&!cancelled?'<div class="oc-note" style="color:#FF9FB4">↩️ '+o.items.filter(i=>i.refunded).length+' card(s) refunded — see the invoice</div>':'')+
       '<div class="oc-foot">'+
-        '<span>'+itemsLabel(o.items)+(o.parcelId&&!cancelled?' · box '+esc(o.parcelId):'')+'</span>'+
+        '<span>'+itemsLabel(o.items)+(o.parcelId&&!cancelled?' · '+esc(o.parcelId):'')+'</span>'+
         '<span class="oc-tot">'+(cancelled?'$0.00':'$'+o.total.toFixed(2))+'</span>'+
       '</div>'+
       '<div class="oc-acts">'+
