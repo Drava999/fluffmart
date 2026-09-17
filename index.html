@@ -388,7 +388,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .oseg{display:flex;gap:6px;background:var(--ruff);padding:4px;border-radius:14px;margin-bottom:14px}
 .oseg-b{flex:1;padding:9px 4px;border-radius:11px;font-weight:800;font-size:12.5px;color:var(--hint);background:transparent}
 .oseg-b.on{background:var(--card);color:var(--fawn-deep);box-shadow:0 1px 4px rgba(0,0,0,.08)}
-#oseg-parcel,#oseg-orders,#oseg-binder{will-change:transform,opacity}
+#oseg-orders,#oseg-binder{will-change:transform,opacity}
 .oseg-slide-r{animation:slideInR .28s cubic-bezier(.33,1,.68,1)}
 .oseg-slide-l{animation:slideInL .28s cubic-bezier(.33,1,.68,1)}
 .asell{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
@@ -1310,6 +1310,150 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .oc-b-pay{background:#fff;color:#6D3358}
 .oc-b-alt{background:rgba(255,255,255,.14);color:#fff}
 .oc-b:active{transform:scale(.97)}
+/* ══ Orders: one screen, a box at a time ══════════════════════════════════ */
+.ohd{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ohd .oseg{flex:1;margin:0}
+.ohist{flex-shrink:0;font-family:inherit;font-size:11.5px;font-weight:700;color:var(--hint);
+  background:transparent;border:1px solid var(--line);border-radius:18px;padding:7px 10px;white-space:nowrap}
+.ohist:active{background:var(--ruff)}
+.oact{border-radius:16px;overflow:hidden;margin-bottom:10px;border:1.5px solid var(--fawn);background:var(--card)}
+.oact-hd{display:flex;gap:10px;align-items:center;padding:12px 13px 11px;color:#fff;
+  background:linear-gradient(135deg,#D98EC0,#c0679f)}
+.oact-go{border-color:#6fbf9c}
+.oact-go .oact-hd{background:linear-gradient(135deg,#6fbf9c,#4e9e7c)}
+.oact-ic{font-size:22px}
+.oact-t{font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+.oact-s{font-size:11.5px;opacity:.93;margin-top:1px}
+.oact-b{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:100%;
+  border:none;background:var(--card);color:var(--fawn-deep);font-family:inherit;font-weight:800;font-size:13.5px;padding:11px}
+.oact-go .oact-b{color:#2f7a5b}
+.oact-b small{font-size:10px;font-weight:700;opacity:.7}
+.oact-2{display:flex}.oact-2 .oact-b+.oact-b{border-left:1.5px solid #cde9dc}
+.oact-rule{font-size:11px;color:var(--hint);padding:0 12px 10px;line-height:1.35;background:var(--card)}
+.ostages{display:flex;gap:6px;margin:4px 0 12px}
+.ostg{flex:1;min-width:0;font-family:inherit;background:var(--card);border:1.5px solid var(--line);border-radius:13px;
+  padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;transition:transform .08s}
+.ostg:active{transform:scale(.96)}
+.ostg-v{font-size:15px;font-weight:800;color:var(--fawn-deep);white-space:nowrap}
+.ostg-l{font-size:10.5px;font-weight:700;color:var(--hint)}
+.ostg.empty .ostg-v{color:var(--hint);opacity:.45}
+.ostg.on{background:var(--fawn);border-color:var(--fawn);box-shadow:0 4px 12px rgba(213,142,191,.35)}
+.ostg.on .ostg-v,.ostg.on .ostg-l{color:#fff;opacity:1}
+.opanel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:2px 12px}
+.pyrow{display:grid;grid-template-columns:1fr auto;grid-template-areas:"m a" "c c";gap:6px 10px;padding:11px 0}
+.pyrow+.pyrow{border-top:1px dashed var(--line)}
+.pyrow-m{grid-area:m;min-width:0}.pyrow-a{grid-area:a;font-size:13.5px;font-weight:800;color:var(--fawn-deep)}
+.pyrow-c{grid-area:c}
+.pyrow-n{font-size:13px;font-weight:800;color:var(--text)}
+.pyrow-s{font-size:11px;color:var(--hint)}
+.pyrow-id{font-size:10.5px;color:var(--hint);opacity:.8;margin-top:1px}
+.pyrow-dead{opacity:.6}
+.pytot{display:flex;justify-content:space-between;font-weight:800;font-size:13.5px;border-top:1.5px solid var(--text);padding:10px 0 9px;color:var(--text)}
+.linkish{font-family:inherit;background:none;border:none;padding:0;color:var(--fawn-deep);font-weight:700;font-size:inherit;text-decoration:underline;cursor:pointer}
+.oempty{border:1.5px dashed var(--line);border-radius:14px;padding:18px 14px;text-align:center;font-size:13px;color:var(--hint);line-height:1.5}
+.oempty small{font-size:11.5px}
+/* card strips: bundles grouped with their name underneath */
+.fstrip{display:flex;flex-wrap:wrap;gap:9px 11px;margin:12px 0 2px}
+.fg{display:flex;flex-direction:column;min-width:0}
+.fg-cards{display:flex;gap:3px}
+.fc{width:34px;aspect-ratio:63/88;border-radius:4px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;box-shadow:0 1px 3px rgba(60,20,45,.2)}
+.fc img{width:100%;height:100%;object-fit:contain;display:block}
+.fc-more{font-size:11px;font-weight:800;color:var(--fawn-deep);background:var(--ruff)}
+.fg-lbl{font-size:9px;font-weight:700;margin-top:4px;padding-top:3px;border-top:1.5px solid currentColor;opacity:.75;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:112px;text-align:center}
+.pyrow .fg-lbl{color:var(--hint)}
+.pyrow-one .fg-lbl{display:none}
+.bxcard{cursor:pointer}
+.bx-t{font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:700}
+.bx-sub{font-size:11.5px;color:rgba(255,255,255,.65);margin-top:1px}
+.bxcard .fg-lbl{color:rgba(255,255,255,.85)}
+.bx-link{text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center}
+/* box sheet + history */
+.bsheet .bs-hd{padding:22px 18px 14px;text-align:center;border-bottom:1px dashed rgba(178,92,147,.3)}
+.bs-t{font-family:'Fraunces',Georgia,serif;font-size:21px;font-weight:700;color:var(--fawn-deep)}
+.bs-s{font-size:11.5px;color:var(--hint);margin-top:2px}
+.bs-pill{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;background:var(--ruff);color:var(--fawn-deep)}
+.bs-steps{margin:6px 6px 0}
+.bs-steps .oc-dot,.bs-steps .oc-bar{background:#eadbe4}
+.bs-steps .oc-dot.on,.bs-steps .oc-bar.on{background:#6fcf9f}
+.bs-steps .oc-lbls{color:var(--hint);opacity:.6}.bs-steps .oc-lbls .on{color:var(--fawn-deep);opacity:1}
+.bs-line{font-size:12px;color:var(--text);margin-top:10px}
+.bs-track{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--fawn-deep)}
+.bs-card{display:flex;align-items:center;gap:11px;padding:6px 0}
+.bs-bundle{padding:6px 0 4px}
+.bs-bundle+.bs-card,.bs-card+.bs-bundle,.bs-bundle+.bs-bundle{border-top:1px dashed var(--line)}
+.bs-bhd{display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;color:var(--text);margin:4px 0 2px}
+.bs-bhd span:last-child{color:var(--hint);font-weight:700;font-size:11px}
+.bs-in{margin-left:8px;padding-left:12px;border-left:1.5px solid var(--line)}
+.bs-in .rthumb{width:32px;height:44px}
+.bs-sec-row{display:flex;justify-content:space-between;align-items:center}
+.bs-req{font-family:inherit;font-size:10.5px;font-weight:700;color:var(--hint);background:none;border:1px solid var(--line);border-radius:12px;padding:3px 9px;letter-spacing:0;text-transform:none}
+.bs-rc{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;font-family:inherit;
+  background:none;border:none;border-bottom:1px dashed var(--line);padding:10px 0;color:var(--text)}
+.bs-rc-id{font-size:12.5px;font-weight:800}
+.bs-rc-s{font-size:11px;color:var(--hint);margin-top:1px}
+.bs-rc-r{text-align:right;flex-shrink:0}.bs-rc-r b{display:block;font-size:13px;color:var(--fawn-deep)}.bs-rc-r span{font-size:10.5px;color:var(--hint)}
+.bs-rc-flat{cursor:default}
+.hrow{display:flex;align-items:center;gap:11px;width:100%;text-align:left;font-family:inherit;background:var(--card);
+  border:1px solid var(--line);border-radius:13px;padding:10px 12px;margin-bottom:7px;color:var(--text)}
+.hrow-th{display:flex;gap:2px;flex-shrink:0}.hrow-th .fc{width:24px}
+.hrow-m{flex:1;min-width:0}.hrow-t{font-size:13px;font-weight:800}.hrow-s{font-size:11px;color:var(--hint);margin-top:1px}
+.hrow-go{color:var(--hint);font-size:16px}
+.hrow-quiet{background:transparent}
+.hcanc{display:none;padding:0 4px 6px}.hcanc.open{display:block}
+.h-foot{text-align:center;margin-top:16px;font-size:12px}
+.rline.rline-sub{padding-top:2px;padding-bottom:4px;opacity:.92}
+.rline-sub .rnm{font-size:12px;font-weight:600}
+.rline-sub .rthumb{transform:scale(.85)}
+/* ── a box in the Orders list: the box is the card, its orders are lines ── */
+.bxcard .oc-thumbs{flex-wrap:wrap}
+.bx-sec{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  color:rgba(255,255,255,.55);margin:14px 0 6px}
+.bx-rows{background:rgba(0,0,0,.14);border-radius:12px;padding:2px 11px}
+.bx-row{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px 0}
+.bx-row+.bx-row{border-top:1px solid rgba(255,255,255,.12)}
+.bx-rl{min-width:0;flex:1}
+.bx-rid{font-size:12.5px;font-weight:800;letter-spacing:.2px}
+.bx-rst{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.14);margin-left:4px;white-space:nowrap}
+.bx-rit{font-size:11.5px;color:rgba(255,255,255,.75);margin-top:3px;overflow-wrap:anywhere}
+.bx-rit .po-bn{color:rgba(255,255,255,.55)}
+.bx-rnote{font-size:10.5px;color:rgba(255,255,255,.5);margin-top:3px}
+.bx-rr{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.bx-ramt{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+.bx-rb{font-family:inherit;font-size:11px;font-weight:700;padding:6px 10px;border-radius:9px;border:none;
+  background:rgba(255,255,255,.14);color:#fff;white-space:nowrap}
+.bx-rb-pay{background:#fff;color:#6D3358}
+/* ── My box pane ── */
+.px-strip{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.px-th{width:34px;aspect-ratio:63/88;border-radius:5px;overflow:hidden;background:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 1px 3px rgba(92,42,73,.18)}
+.px-th img{width:100%;height:100%;object-fit:contain;display:block}
+.px-more{background:var(--ruff);color:var(--fawn-deep);font-size:11px;font-weight:800}
+.px-acts{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
+.px-track{text-decoration:none;display:inline-block}
+.px-sec{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.7px;margin:14px 4px 8px}
+.px-sec:first-child{margin-top:2px}
+.parcel-gone{border-style:dashed}
+.px-steps{display:flex;align-items:center;gap:4px;margin:10px 0 2px;flex-wrap:nowrap}
+.px-step{font-size:10px;font-weight:700;color:var(--hint);opacity:.55;white-space:nowrap}
+.px-step.on{color:var(--fawn-deep);opacity:1}
+.px-stepbar{flex:1;height:2px;background:var(--line);min-width:6px}
+.px-upd{font-size:11.5px;color:var(--text);margin-top:6px}
+.px-id{font-size:11px;font-weight:700;color:var(--hint);margin-top:2px}
+.po-grp{padding:6px 0 8px}
+.po-grp+.po-grp{border-top:1px dashed var(--line)}
+.po-grp-hd{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;color:var(--hint);margin-bottom:2px}
+.po-grp-hd .po-inv{margin-top:0}
+.po-num{font-size:10.5px;color:var(--hint);font-weight:600}
+.po-bn{font-weight:600;opacity:.8}
+.po-bundle .po-thumb{background:var(--ruff)}
+.po-in-bundle{padding-left:22px;position:relative}
+.po-in-bundle::before{content:'';position:absolute;left:9px;top:0;bottom:50%;width:8px;
+  border-left:1.5px solid var(--line);border-bottom:1.5px solid var(--line);border-bottom-left-radius:5px}
+/* home stat: tappable, with a one-line state under the number */
+.stat-go{cursor:pointer}
+.stat .s2{font-size:10.5px;opacity:.85;margin-top:2px;font-weight:600}
 .past-hd{margin-top:20px}
 
 /* ── receipt-style invoice ─────────────────────────────────────────────── */
@@ -1390,7 +1534,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <p>Claim singles, join live drops, and turn spare cards into store credit.</p>
       <div class="stats">
         <div class="stat"><div class="n" id="ov-credit">$0.00</div><div class="l">Store credit</div></div>
-        <div class="stat"><div class="n" id="ov-transit">0</div><div class="l">Cards on the way</div></div>
+        <div class="stat stat-go" onclick="go('orders')"><div class="n" id="ov-transit">0</div><div class="l" id="ov-transit-l">Cards in your box</div><div class="s2" id="ov-transit-s"></div></div>
       </div>
     </div>
     <div id="ov-justin"></div>
@@ -1454,14 +1598,14 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
   <!-- ORDERS -->
   <div class="view hidden" id="v-orders">
-    <div class="oseg">
-      <button class="oseg-b on" data-oseg="parcel" onclick="orderSeg('parcel')">🧺 My box</button>
-      <button class="oseg-b" data-oseg="orders" onclick="orderSeg('orders')">📦 Orders</button>
-      <button class="oseg-b" data-oseg="binder" onclick="orderSeg('binder')">📖 Binder</button>
-
+    <div class="ohd">
+      <div class="oseg">
+        <button class="oseg-b on" data-oseg="orders" onclick="orderSeg('orders')">📦 Orders</button>
+        <button class="oseg-b" data-oseg="binder" onclick="orderSeg('binder')">📖 Binder</button>
+      </div>
+      <button class="ohist" id="ohistBtn" onclick="openHistory()">🕘 Order history</button>
     </div>
-    <div id="oseg-parcel"><div id="parcelPane"></div></div>
-    <div id="oseg-orders" class="hidden"><div class="ofilt" id="ordersFilter"></div><div id="ordersList"></div></div>
+    <div id="oseg-orders"><div id="ordersMain"></div></div>
     <div id="oseg-binder" class="hidden"><div id="binderWrap"></div></div>
   </div>
 
@@ -1875,14 +2019,124 @@ function crew(n){
   return CALLSIGNS[s] || 'FloofMart crew';
 }
 
-// An order line can be a single card or a whole bundle, so "1 card" was wrong
-// for a 3-card Kanto bundle. Name the lines by what they actually are.
+/* ── What's physically in an order line ─────────────────────────────────────
+   An order line is either one card or a whole bundle. Everywhere a buyer SEES
+   cards — thumbnails, the box list, the binder, the haul picture, the counts —
+   a bundle has to open up into the cards inside it, or a three-card bundle
+   reads as "1 card" and shows as one photo of the packaging.
+
+   Best source first:
+     1. it.components  — [{name, number, image, imageBack, n}] from the server
+     2. it.imageBack   — the bundle's face set "front~back|front2~back2"
+     3. it.image       — the cover, only when nothing else exists
+   Returns one entry per physical card: {name, number, f, b, bundle}. */
+function isBundleItem(it){
+  if(!it) return false;
+  if(Array.isArray(it.components) && it.components.length) return true;
+  if(String(it.tier||'').toLowerCase()==='bundle' || String(it.category||'').toLowerCase()==='bundle') return true;
+  const bk=String(it.imageBack||'');
+  return bk.indexOf('|')>=0 || bk.indexOf('~')>=0;
+}
+function itemCards(it){
+  if(!it) return [];
+  if(!isBundleItem(it)){
+    return [{name:it.name||'', number:it.number||'', f:String(it.image||''), b:String(it.imageBack||'').split('|')[0].split('~')[0], bundle:''}];
+  }
+  const bname=String(it.name||'Bundle');
+  const out=[];
+  if(Array.isArray(it.components) && it.components.length){
+    it.components.forEach(c=>{
+      const n=Math.max(1, Number(c.n||1));
+      for(let k=0;k<n;k++) out.push({name:c.name||bname, number:c.number||'',
+        f:String(c.image||'').split('|')[0].split('~')[0],
+        b:String(c.imageBack||'').split('|')[0].split('~')[0], bundle:bname});
+    });
+    if(out.length) return out;
+  }
+  const faces=String(it.imageBack||'').split('|').map(s=>s.trim()).filter(Boolean)
+    .map(s=>{ const p=s.split('~'); return {f:(p[0]||'').trim(), b:(p[1]||'').trim()}; }).filter(x=>x.f);
+  if(faces.length){
+    faces.forEach((x,i)=>out.push({name:bname+' · card '+(i+1)+' of '+faces.length, number:'', f:x.f, b:x.b, bundle:bname}));
+    return out;
+  }
+  return [{name:bname, number:'', f:String(it.image||''), b:'', bundle:bname}];
+}
+function liveItems(items){ return (items||[]).filter(i=>!i.refunded); }
+function cardCount(items){ return liveItems(items).reduce((n,it)=>n+itemCards(it).length,0); }
+
+// "4 cards · 1 bundle" rather than "2 items". Cards are what a buyer counts.
 function itemsLabel(items){
-  const all=(items||[]).filter(i=>!i.refunded);
-  const n=all.length;
-  const bundles=all.filter(i=>String(i.tier||'').toLowerCase()==='bundle').length;
-  const word=(bundles===n&&n)?'bundle':(bundles>0?'item':'card');
-  return n+' '+word+(n===1?'':'s');
+  const all=liveItems(items);
+  const cards=cardCount(all);
+  const bundles=all.filter(isBundleItem).length;
+  return cards+' card'+(cards===1?'':'s')+(bundles?' · '+bundles+' bundle'+(bundles===1?'':'s'):'');
+}
+
+/* Card thumbnails that don't quietly give up. drive.google.com/thumbnail is
+   flaky inside some webviews (signed-in Google cookies, throttling), and one
+   failed request used to leave a blank white tile for good. On error it retries
+   the same file through lh3.googleusercontent.com, and only then falls back to
+   the tier emoji. Deliberately NOT loading="lazy": these tiles live in panes
+   that are hidden when drawn, and a few old Android webviews never start a lazy
+   image that was display:none at paint time. */
+function thumbHtml(u, w, alt, tier){
+  const emo=EMOJI[tier]||'🃏';
+  if(!u) return emo;
+  return '<img src="'+esc(imgUrl(u,w))+'" alt="'+esc(alt||'')+'" decoding="async" data-w="'+w+'" data-emo="'+esc(emo)+'" onerror="thumbRetry(this)">';
+}
+function thumbRetry(el){
+  const id=driveId(el.getAttribute('src'));
+  if(id && !el.dataset.retried){
+    el.dataset.retried='1';
+    el.src='https://lh3.googleusercontent.com/d/'+id+'=w'+(el.dataset.w||400);
+    return;
+  }
+  el.onerror=null;
+  const s=document.createElement('span'); s.textContent=el.dataset.emo||'🃏';
+  el.replaceWith(s);
+}
+
+/* The sheet stamps "Payment Verified · <time>" with whatever locale Apps Script
+   happened to run in, which is how "17/9/2026 下午10:25:25" reached a buyer.
+   Read any of the shapes it has written and show one: "17 Sep, 10:25 PM". A
+   stamp that can't be read is dropped rather than shown raw. */
+const MON3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function parseStamp(t){
+  t=String(t||'').trim(); if(!t) return null;
+  let m=t.match(/^(\d{1,2}) ([A-Za-z]{3})[a-z]* (\d{4}),? (\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  if(m){
+    const mo=MON3.findIndex(x=>x.toLowerCase()===m[2].slice(0,3).toLowerCase());
+    if(mo<0) return null;
+    let h=Number(m[4]); const ap=(m[6]||'').toUpperCase();
+    if(ap==='PM'&&h<12) h+=12; if(ap==='AM'&&h===12) h=0;
+    return {y:+m[3], mo, d:+m[1], h, mi:+m[5]};
+  }
+  m=t.match(/(\d{1,4})[\/.\-](\d{1,2})[\/.\-](\d{1,4})\D*?(\d{1,2}):(\d{2})/);
+  if(!m) return null;
+  let a=+m[1], b=+m[2], c=+m[3], y, mo, d;
+  if(String(m[1]).length===4){ y=a; mo=b; d=c; }
+  else {
+    y=c<100?2000+c:c;
+    const usStyle=/,\s*\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM)/i.test(t) && m[0].indexOf('/')>=0;
+    if(a>12){ d=a; mo=b; } else if(b>12){ mo=a; d=b; } else if(usStyle){ mo=a; d=b; } else { d=a; mo=b; }
+  }
+  let h=+m[4];
+  const pm=/(PM|p\.m\.|下午|晚上|午後|오후)/i.test(t), am=/(AM|a\.m\.|上午|凌晨|早上|午前|오전)/i.test(t);
+  if(pm&&h<12) h+=12; if(am&&!pm&&h===12) h=0;
+  if(mo<1||mo>12||d<1||d>31||h>23) return null;
+  return {y, mo:mo-1, d, h, mi:+m[5]};
+}
+function fmtStamp(s){
+  const h12=(s.h%12)||12;
+  return s.d+' '+MON3[s.mo]+', '+h12+':'+String(s.mi).padStart(2,'0')+' '+(s.h<12?'AM':'PM');
+}
+function cleanUpdate(txt){
+  const s=String(txt||''); const i=s.lastIndexOf(' · ');
+  if(i<0) return s;
+  const head=s.slice(0,i), rest=s.slice(i+3), d=rest.indexOf(' — ');
+  const tail=d>=0?rest.slice(d):'';          // tracking detail, e.g. " — Arrived at hub"
+  const p=parseStamp(d>=0?rest.slice(0,d):rest);
+  return (p ? head+' · '+fmtStamp(p) : head)+tail;
 }
 
 // PayNow SGQR payload generator (amount + reference embedded)
@@ -2282,7 +2536,7 @@ function attachSwipe(){
     const dir=dx<0?1:-1;                 // swipe left -> next
     // If we're on the Orders tab, swipe moves its SUB-tabs first.
     if(STATE.tab==='orders'){
-      const cur=OSEGS.indexOf(STATE.oseg||'parcel');
+      const cur=OSEGS.indexOf(STATE.oseg||'orders');
       if((dir>0&&cur<OSEGS.length-1)||(dir<0&&cur>0)){ swipeOrderSeg(dir); return; }
     }
     swipeMainTab(dir);
@@ -2321,7 +2575,7 @@ function applyOverview(r){
   }
   updateRateLabels();
   document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
-  document.getElementById('ov-transit').textContent = r.ordersInTransit||0;
+  paintBoxStat(r);
   {
     // One labelled row per policy instead of three lines of hint text crammed
     // into a .feat subtitle. Cleared (not left stale) when Config empties out.
@@ -2341,16 +2595,36 @@ function applyOverview(r){
   if(r.welcome){ const h=document.querySelector('.hero p'); if(h) h.textContent=r.welcome; }
   { const t=document.getElementById('ov-tip'); if(t) t.textContent='✨ Did you know? '+pokeFact(); }
   if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
-  STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.openParcel=r.openParcel||null; STATE.holdDays=r.holdExpiryDays||21;
+  STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.unpaidTotal=Number(r.unpaidTotal||0); STATE.openParcel=r.openParcel||null; STATE.holdDays=r.holdExpiryDays||21;
   STATE.refLink = r.referralLink || STATE.refLink || '';
   renderUnpaidBanner();
   renderLoyalty(r);
 }
+/* The home tile used to say "2 cards on the way" for a box that hadn't been
+   packed, holding one card and a three-card bundle. It now says where the cards
+   actually are, and counts a bundle as the cards inside it:
+     nothing shipped yet   ->  4   Cards in your box   · waiting to ship
+     some of it shipped    ->  3   Cards on the way    · +4 still in your box
+   Older servers without the new fields fall back to the old number, labelled
+   neutrally rather than wrongly. */
+function paintBoxStat(r){
+  const nEl=document.getElementById('ov-transit'), lEl=document.getElementById('ov-transit-l'), sEl=document.getElementById('ov-transit-s');
+  if(!nEl) return;
+  const set=(n,l,sub)=>{ nEl.textContent=n; if(lEl) lEl.textContent=l; if(sEl) sEl.textContent=sub||''; };
+  if(r.boxCards===undefined && r.shipCards===undefined){
+    set(r.ordersInTransit||0, 'Cards bought', ''); return;
+  }
+  const box=Number(r.boxCards||0), ship=Number(r.shipCards||0);
+  const stage={packing:'📦 being packed', pickup:'🤝 ready for pickup', checking:'⏳ checking payment'}[r.boxStage]||'🧺 waiting to ship';
+  if(ship>0) set(ship, ship===1?'Card on the way':'Cards on the way', box>0?('+'+box+' still in your box'):'🚚 tracking in Orders');
+  else if(box>0) set(box, box===1?'Card in your box':'Cards in your box', stage);
+  else set(0, 'Cards in your box', 'empty for now');
+}
 function renderUnpaidBanner(){
   const el=document.getElementById('ov-unpaid'); if(!el) return;
-  el.innerHTML=(STATE.unpaidOrders>0)?`<button class="unpaid-banner" onclick="go('orders')">
+  el.innerHTML=(STATE.unpaidOrders>0)?`<button class="unpaid-banner" onclick="STATE.ostage='pay';STATE.ostageAuto=false;go('orders')">
       <span class="ub-ic">💳</span>
-            <span class="ub-t"><b>${STATE.unpaidOrders>1?STATE.unpaidOrders+' orders waiting to be paid':'One order waiting to be paid'}</b><br>Shop orders release themselves when the timer runs out.</span>
+            <span class="ub-t"><b>${STATE.unpaidTotal>0?'$'+STATE.unpaidTotal.toFixed(2)+' to pay':(STATE.unpaidOrders>1?STATE.unpaidOrders+' orders waiting to be paid':'One order waiting to be paid')}</b><br>${STATE.unpaidOrders>1?'Pay for all of them in one go.':'Shop orders release themselves when the timer runs out.'}</span>
       <span class="ub-go">Pay ›</span>
     </button>`:'';
 }
@@ -2926,7 +3200,7 @@ async function checkout(){
   const snap=STATE.cart.slice();
   // Kept for the haul image: the order payload drops the scans, and by the time
   // it comes back the cards are out of STATE.inventory.
-  if(rid) STATE.lastHaul={orderId:rid, items:snap.map(c=>({name:c.name,number:c.number||'',price:c.price,image:c.image||''}))};
+  if(rid) STATE.lastHaul={orderId:rid, items:snap.map(c=>({name:c.name,number:c.number||'',price:c.price,image:c.image||'',imageBack:c.imageBack||'',tier:c.tier||'',category:c.category||''}))};
   const pay=STATE.payInfo||{};
   const shownQr=!!(rid && tot0>0 && pay.mobile);
   const warn=shownQr?'⚠️ DON\'T pay that QR — this order didn\'t go through and nothing was charged.\n\n':'';
@@ -3046,7 +3320,7 @@ function showInvoice(inv){
   const long=mins>60;
   const noDeadline=!(mins>0);
   b.innerHTML=`
-    <div class="inv-head"><div class="inv-oid">Invoice · ${inv.orderId}</div><div class="inv-badge" id="payTimer">${noDeadline?'🧺 Held':(inv._resumeSecs!=null?fmtLeft(inv._resumeSecs):fmtLeft(mins*60))}</div></div>
+    <div class="inv-head"><div class="inv-oid">${inv.groupCount?'Paying for '+inv.groupCount+' orders':'Invoice · '+inv.orderId}</div><div class="inv-badge" id="payTimer">${noDeadline?'🧺 Held':(inv._resumeSecs!=null?fmtLeft(inv._resumeSecs):fmtLeft(mins*60))}</div></div>
     ${noDeadline
       ?`<div class="pay-warn" style="background:#e2f5ec;color:#1c7a52">🧺 <b>No deadline</b> — this card is held for you. Pay whenever you're ready.</div>`
       :`<div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>`}
@@ -3194,8 +3468,11 @@ async function submitProof(){
     (tg&&tg.showAlert?tg.showAlert:alert)('One moment — still reserving your cards. Try again in a second.');
     return;
   }
-  const r=await api('submitPayment',{orderId:INVOICE.orderId,image:PAYPROOF});
+  const r=await api('submitPayment', INVOICE.orderIds
+    ? {orderIds:INVOICE.orderIds, ref:INVOICE.orderId, total:INVOICE.total, image:PAYPROOF}
+    : {orderId:INVOICE.orderId, image:PAYPROOF});
   if(r.ok){
+    STATE.ostageAuto=true;
     clearInterval(PAY_TIMER);
     sfx('chime');
     showPaidHaul(INVOICE);
@@ -3211,9 +3488,10 @@ function applyOrdersPayload(r){
   STATE.payInfo={mobile:r.paynowMobile,name:r.paynowName,mins:r.paymentWindowMins||10};
   STATE.openParcelId=r.openParcel||null; STATE.parcelStatus=r.parcelStatus||null;
   STATE.shipInvoice=r.shipInvoice||null; STATE.pickupNote=r.pickupNote||''; STATE.shipFlat=r.shipFlat||3;
+  STATE.olderHidden=Number(r.olderHidden||0);
 }
 async function loadOrders(force){
-  const list=document.getElementById('ordersList');
+  const list=document.getElementById('ordersMain');
   if(ORDERS_CACHE && !force && Date.now()-ORDERS_TS<5000){ STATE.orders=ORDERS_CACHE; paintOrders(); return; }
   if(!ORDERS_CACHE){
     // paint the last snapshot immediately, then refresh underneath
@@ -3221,7 +3499,7 @@ async function loadOrders(force){
     if(!ORDERS_CACHE) list.innerHTML='<div class="skelcard" style="height:150px"></div>';
   }
   let r;
-  try { r = await api('orders'); }
+  try { r = await api('orders', STATE.ordersAll?{all:1}:{}); }
   catch(e){ if(!ORDERS_CACHE) list.innerHTML='<div class="empty"><div class="e-ic">⚠️</div><p>Couldn\'t load orders.</p></div>'; return; }
   if(!r || r.ok===false){ if(!ORDERS_CACHE) list.innerHTML='<div class="empty"><div class="e-ic">⚠️</div><p>Orders didn\'t load.<br><small style="opacity:.7;word-break:break-all">'+(r&&r.raw?('HTTP '+r.status+': '+r.raw):JSON.stringify(r).slice(0,400))+'</small></p></div>'; return; }
   applyOrdersPayload(r); ORDERS_TS=Date.now();
@@ -3256,152 +3534,393 @@ function statusLabel(o){
   if(s==='Refunded')               return '↩️ Refunded';
   return s;
 }
-function renderParcelCard(p){
-  const inParcel=STATE.orders.filter(o=>o.parcelId===p.id && String(o.id).indexOf('SH')!==0 && !o.cancelled && o.status!=='Refunded');
-  if(!inParcel.length) return '';
-  const allItems=inParcel.reduce((a,o)=>a.concat(o.items.filter(i=>!i.refunded)),[]);
-  const paidCards=inParcel.filter(o=>['Payment Verified','Packed'].includes(o.status));
-  const unpaid=inParcel.filter(o=>o.status==='Awaiting Payment');
-  const anyPending=inParcel.some(o=>['Awaiting Payment','Awaiting Verification'].includes(o.status)&&!payExpired(o));
-  const canDeliver=paidCards.length>0 && !anyPending && (p.status==='open'||p.status==='ship_awaiting_fee');
-  const shipInv=p.shipInvoice;
-  let foot='';
-  if(p.status==='shipping_paid') foot=`<div class="parcel-done">🚚 Packing your box now. Tracking follows shortly.</div>`;
-  else if(p.status==='pickup_ready') foot=`<div class="parcel-done">🤝 Self-pickup arranged — ${(STATE.pickupNote||'we\'ll message you with details')}.</div>`;
-  else if(p.feeVerifying) foot=`<div class="parcel-done">⏳ Got your postage payment. Checking it now — your box goes out once it's confirmed.</div>`;
-  else if(shipInv) foot=`<div class="parcel-ship-inv"><div class="psi-t">🚚 Postage — $${shipInv.fee.toFixed(2)}</div><div class="psi-s">One fee, whole box.</div><button class="cta" onclick="resumePayment('${shipInv.id}')">💳 Pay postage ($${shipInv.fee.toFixed(2)})</button></div>`;
-  else if(paidCards.length>0 && anyPending) foot=`<div class="parcel-hint">⏳ We're still checking some payments. Once they're all through you can send the whole box at once.</div>`;
-  else if(canDeliver){
+/* The newest tracking line across the box's orders. They share one tracking
+   number, so they say the same thing — show it once, not once per order. */
+function boxLatestUpdate(orders){
+  const rank={'Delivered':3,'In Transit':2,'Shipped':1};
+  const best=(orders||[]).filter(o=>o.lastUpdate).sort((a,b)=>(rank[b.status]||0)-(rank[a.status]||0))[0];
+  return best?cleanUpdate(best.lastUpdate):'';
+}
+
+/* ============ ORDERS — one screen, a box at a time ============
+   What a buyer sees, top to bottom:
+     1. Things to do now (at most two): pay, pay postage, send your box, pick up.
+     2. Three stage buttons — To pay · In your box · On the way. Each one is a
+        toggle: tapping it shows only that part below. Before payment the only
+        number is money; after payment the only number is cards (a bundle counts
+        as its cards). Orders are never counted here.
+     3. Whatever that stage holds.
+   Order history is a quiet button in the top-right corner. Box numbers never
+   appear — a box is "Your box", "Sent 18 Sep" or "Delivered 21 Sep". Order
+   numbers only show on receipts and on the pay screen, where they're the
+   PayNow reference. */
+const isSHo=o=>String((o&&o.id)||'').indexOf('SH')===0;
+function dateShort(ms){ return ms?new Date(ms).toLocaleDateString('en-SG',{day:'numeric',month:'short'}):''; }
+function stampMs(txt){
+  const s=String(txt||''), i=s.lastIndexOf(' · ');
+  const part=(i>=0?s.slice(i+3):s).split(' — ')[0];
+  const p=parseStamp(part);
+  return p?new Date(p.y,p.mo,p.d,p.h,p.mi).getTime():0;
+}
+function unpaidList(){
+  return (STATE.orders||[]).filter(o=>!isSHo(o)&&o.status==='Awaiting Payment'&&!o.cancelled&&!payExpired(o))
+    .sort((a,b)=>(a.createdMs||0)-(b.createdMs||0));
+}
+function boxStageOf(b){
+  const st=b.orders.map(o=>o.status), p=b.parcel;
+  const pickup=b.orders.some(o=>o.delivery==='pickup')||(p&&p.delivery==='pickup')||b.orders.some(o=>o.boxStatus==='collected');
+  if(st.length&&st.every(s=>s==='Delivered')) return {key:'done', l:pickup?'Collected':'Delivered', ic:'✅', step:3};
+  if(st.some(s=>s==='Shipped'||s==='In Transit')) return {key:'way', l:st.some(s=>s==='In Transit')?'In transit':'Sent', ic:'🚚', step:2};
+  if(p&&p.status==='pickup_ready')     return {key:'box', l:'Ready for pickup', ic:'🤝', step:1};
+  if(st.every(s=>s==='Packed'))        return {key:'box', l:'Packed', ic:'📦', step:1};
+  if(p&&p.status==='shipping_paid')    return {key:'box', l:'Being packed', ic:'📦', step:0};
+  if(st.some(s=>s==='Awaiting Verification')) return {key:'box', l:'Checking payment', ic:'⏳', step:0};
+  return {key:'box', l:'In your box', ic:'🧺', step:0};
+}
+function boxDoneMs(b){
+  return Math.max(0, ...b.orders.map(o=>stampMs(o.lastUpdate)), ...b.orders.map(o=>o.boxClosedMs||0));
+}
+function boxSentMs(b){
+  return Math.max(0, ...b.orders.map(o=>o.boxClosedMs||0)) || Math.max(0, ...b.orders.map(o=>stampMs(o.shippedBy)||stampMs(o.lastUpdate)));
+}
+/* Everything the Orders screen needs, worked out once per paint. */
+function ordersModel(){
+  const all=STATE.orders||[];
+  const cardO=all.filter(o=>!isSHo(o));
+  const byBox={}, list=[];
+  cardO.forEach(o=>{
+    if(o.cancelled||o.status==='Awaiting Payment'||o.status==='Refunded') return;
+    if(!liveItems(o.items).length) return;
+    const k=o.parcelId||('o:'+o.id);
+    if(!byBox[k]){ byBox[k]={id:k, orders:[], sh:[]}; list.push(byBox[k]); }
+    byBox[k].orders.push(o);
+  });
+  all.filter(isSHo).forEach(o=>{ if(o.parcelId&&byBox[o.parcelId]&&!o.cancelled) byBox[o.parcelId].sh.push(o); });
+  list.forEach(b=>{
+    b.parcel=(STATE.parcels||[]).find(p=>p.id===b.id)||null;
+    b.stage=boxStageOf(b);
+    b.items=b.orders.reduce((a,o)=>a.concat(liveItems(o.items)),[]);
+    b.cards=cardCount(b.items);
+    b.total=Math.round((b.orders.reduce((s,o)=>s+Number(o.total||0),0)+b.sh.reduce((s,o)=>s+Number(o.total||0),0))*100)/100;
+    b.startMs=Math.min(...b.orders.map(o=>o.createdMs||Date.now()));
+  });
+  const DAY=86400000;
+  const recent=b=>{ const t=boxDoneMs(b); return t>0 && (Date.now()-t)<3*DAY; };
+  const unpaid=unpaidList();
+  const expired=cardO.filter(o=>o.status==='Awaiting Payment'&&!o.cancelled&&payExpired(o));
+  const postage=(STATE.parcels||[]).filter(p=>p.shipInvoice).map(p=>({parcel:p, id:p.shipInvoice.id, fee:Number(p.shipInvoice.fee||0)}));
+  const inBox=list.filter(b=>b.stage.key==='box').sort((a,b)=>b.startMs-a.startMs);
+  const onWay=list.filter(b=>b.stage.key==='way'||(b.stage.key==='done'&&recent(b))).sort((a,b)=>boxSentMs(b)-boxSentMs(a));
+  const past=list.filter(b=>b.stage.key==='done'&&!recent(b)).sort((a,b)=>boxDoneMs(b)-boxDoneMs(a));
+  const cancelled=cardO.filter(o=>o.cancelled).sort((a,b)=>(b.createdMs||0)-(a.createdMs||0));
+  const payTotal=Math.round((unpaid.reduce((s,o)=>s+Number(o.total||0),0)+postage.reduce((s,x)=>s+x.fee,0))*100)/100;
+  return {list, unpaid, expired, postage, inBox, onWay, past, cancelled, payTotal,
+    boxCards:inBox.reduce((n,b)=>n+b.cards,0),
+    wayCards:onWay.filter(b=>b.stage.key==='way').reduce((n,b)=>n+b.cards,0)};
+}
+
+/* Thumbnails, one per physical card. A bundle's cards sit together with the
+   bundle's name underlined beneath them, so nobody reads three loose cards. */
+function faceStripHtml(items, w, max){
+  const groups=[]; let shown=0, extra=0;
+  liveItems(items).forEach(it=>{
+    const cs=itemCards(it), bundle=isBundleItem(it);
+    const room=Math.max(0,(max||99)-shown);
+    const take=cs.slice(0,room); extra+=cs.length-take.length; shown+=take.length;
+    if(!take.length) return;
+    groups.push('<div class="fg'+(bundle?' fg-b':'')+'"><div class="fg-cards">'+
+      take.map(c=>'<div class="fc">'+thumbHtml(c.f,w||200,c.name)+'</div>').join('')+'</div>'+
+      (bundle?'<div class="fg-lbl">'+esc(it.name)+'</div>':'')+'</div>');
+  });
+  if(extra>0) groups.push('<div class="fg"><div class="fg-cards"><div class="fc fc-more">+'+extra+'</div></div></div>');
+  return '<div class="fstrip">'+groups.join('')+'</div>';
+}
+function boxStepsHtml(step){
+  const L=['In box','Packed','Sent','Delivered'];
+  return '<div class="oc-line">'+L.map((s,i)=>'<span class="oc-dot '+(i<=step?'on':'')+'"></span>'+(i<L.length-1?'<span class="oc-bar '+(i<step?'on':'')+'"></span>':'')).join('')+'</div>'+
+    '<div class="oc-lbls">'+L.map((s,i)=>'<span class="'+(i<=step?'on':'')+'">'+s+'</span>').join('')+'</div>';
+}
+function boxTitle(b){
+  if(b.stage.key==='done') return {t:b.stage.l, sub:dateShort(boxDoneMs(b))};
+  if(b.stage.key==='way')  return {t:'On its way', sub:'Sent '+dateShort(boxSentMs(b))};
+  return {t:'Your box', sub:'Since '+dateShort(b.startMs)};
+}
+function boxShareId(b){ return b.id.indexOf('o:')===0 ? b.id.slice(2) : 'box:'+b.id; }
+function boxStatusLine(b){
+  if(b.stage.key==='way'||b.stage.key==='done') return boxLatestUpdate(b.orders);
+  const checking=b.orders.filter(o=>o.status==='Awaiting Verification').length;
+  if(checking) return '⏳ Checking '+(checking===1?'a payment':checking+' payments')+' — usually within the hour';
+  if(b.parcel&&b.parcel.feeVerifying) return '⏳ Checking your postage payment';
+  if(b.parcel&&b.parcel.status==='shipping_paid') return '📦 We\'re packing it — tracking follows';
+  if(b.parcel&&b.parcel.status==='pickup_ready') return '🤝 '+(STATE.pickupNote||'We\'ll message you to arrange pickup');
+  return '';
+}
+function boxCardHtml(b){
+  const t=boxTitle(b), line=boxStatusLine(b);
+  const tracking=(b.orders.find(o=>o.tracking)||{}).tracking||'';
+  const bundles=b.items.filter(isBundleItem).length;
+  const canShare=b.orders.some(o=>OWNED_STATUSES.includes(o.status));
+  return '<div class="ocard bxcard" onclick="openBoxSheet(\''+b.id+'\')">'+
+    '<div class="oc-hd"><div style="min-width:0"><div class="bx-t">'+esc(t.t)+'</div><div class="bx-sub">'+esc(t.sub)+'</div></div>'+
+      '<span class="oc-badge">'+b.stage.ic+' '+esc(b.stage.l)+'</span></div>'+
+    boxStepsHtml(b.stage.step)+
+    (line?'<div class="oc-note">'+esc(line)+'</div>':'')+
+    faceStripHtml(b.items,200,12)+
+    '<div class="oc-foot"><span>'+b.cards+' card'+(b.cards===1?'':'s')+(bundles?' · '+bundles+' bundle'+(bundles===1?'':'s'):'')+'</span><span class="oc-tot">$'+b.total.toFixed(2)+'</span></div>'+
+    '<div class="oc-acts" onclick="event.stopPropagation()">'+
+      (tracking?'<a class="oc-b oc-b-alt bx-link" href="https://www.ship24.com/tracking?p='+encodeURIComponent(tracking)+'" target="_blank" rel="noopener">🚚 Track</a>':'')+
+      '<button class="oc-b oc-b-alt" onclick="openBoxSheet(\''+b.id+'\')">🧾 Receipts</button>'+
+      (canShare?'<button class="oc-b oc-b-alt" onclick="openHaulSheet(\''+boxShareId(b)+'\')">📸 Share</button>':'')+
+    '</div>'+
+  '</div>';
+}
+function payRowHtml(o){
+  const live=liveItems(o.items), n=cardCount(live);
+  const names=live.map(i=>esc(i.name)).slice(0,2).join(', ')+(live.length>2?' +'+(live.length-2):'');
+  const mins=(o.payWindowMins===0)?0:(o.payWindowMins||(STATE.payInfo&&STATE.payInfo.mins)||10);
+  const due=(mins>0&&o.createdMs)?'pay by '+new Date(o.createdMs+mins*60000).toLocaleTimeString('en-SG',{hour:'numeric',minute:'2-digit'}):'no deadline';
+  return '<div class="pyrow">'+
+    '<div class="pyrow-m"><div class="pyrow-n">'+names+'</div>'+
+      '<div class="pyrow-s">'+n+' card'+(n===1?'':'s')+' · '+due+'</div>'+
+      '<div class="pyrow-id">#'+esc(o.id)+' · <button class="linkish" onclick="guard(this,()=>cancelUnpaid(\''+o.id+'\'))">Cancel</button></div></div>'+
+    '<div class="pyrow-a">$'+Number(o.total||0).toFixed(2)+'</div>'+
+    '<div class="pyrow-c'+(live.length===1?' pyrow-one':'')+'">'+faceStripHtml(live,200,12)+'</div>'+
+  '</div>';
+}
+function actionsHtml(m){
+  const acts=[];
+  if(m.unpaid.length){
+    const n=m.unpaid.length, amt=m.unpaid.reduce((s,o)=>s+Number(o.total||0),0);
+    const hasBox=m.inBox.length>0;
+    acts.push('<div class="oact oact-pay"><div class="oact-hd"><span class="oact-ic">💳</span><div><div class="oact-t">$'+amt.toFixed(2)+' to pay</div>'+
+      '<div class="oact-s">'+(n>1?n+' orders · one PayNow QR for all of them':esc(liveItems(m.unpaid[0].items).map(i=>i.name).join(', ')))+'</div></div></div>'+
+      '<button class="oact-b" onclick="payAll()">Pay $'+amt.toFixed(2)+'</button>'+
+      (hasBox?'<div class="oact-rule">🧺 Your box can be sent once everything is paid or cancelled.</div>':'')+'</div>');
+  }
+  m.postage.forEach(x=>{
+    acts.push('<div class="oact oact-pay"><div class="oact-hd"><span class="oact-ic">🚚</span><div><div class="oact-t">Postage $'+x.fee.toFixed(2)+' to pay</div><div class="oact-s">One fee for your whole box</div></div></div>'+
+      '<button class="oact-b" onclick="resumePayment(\''+x.id+'\')">Pay postage</button></div>');
+  });
+  (STATE.parcels||[]).forEach(p=>{
+    const b=m.inBox.find(x=>x.id===p.id); if(!b) return;
+    const inP=(STATE.orders||[]).filter(o=>o.parcelId===p.id&&!isSHo(o)&&!o.cancelled);
+    const blocked=inP.some(o=>['Awaiting Payment','Awaiting Verification'].includes(o.status))||m.unpaid.length>0;
+    if(p.status==='pickup_ready'){
+      acts.push('<div class="oact oact-go"><div class="oact-hd"><span class="oact-ic">🤝</span><div><div class="oact-t">Ready for pickup</div><div class="oact-s">'+esc(STATE.pickupNote||'We\'ll message you to arrange a time and place.')+'</div></div></div></div>');
+      return;
+    }
+    if(blocked||p.shipInvoice||p.feeVerifying||!(p.status==='open'||p.status==='ship_awaiting_fee')) return;
     const fee=(p.shipFee!=null?p.shipFee:(STATE.shipFlat||3));
     const need=(p.freeShipMin||0)-(p.merchValue||0);
-    foot=`<div class="parcel-choose"><div class="pc-t">Ready for your cards?</div>
-      ${fee<=0?`<div class="parcel-save">🎉 Free shipping unlocked — this parcel is over $${(p.freeShipMin||0).toFixed(2)}</div>`
-             :(need>0&&need<=15?`<div class="parcel-hint">Add $${need.toFixed(2)} more to this parcel and shipping is free 🚚</div>`:'')}
-      <div class="pc-btns">
-      <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('ship','${p.id}'))">🚚 Ship to me<span>${fee<=0?'FREE':'$'+fee.toFixed(2)}</span></button>
-      <button class="pc-b" onclick="guardGroup('.pc-b',this,()=>chooseDelivery('pickup','${p.id}'))">🤝 Self-pickup<span>FREE</span></button></div></div>`;
-  }
-  else foot=`<div class="parcel-hint">Once your payment's confirmed, you can send your box from here.</div>`;
-  return `<div class="parcel">
-    <div class="parcel-hd"><span>${PARCEL_TITLE[p.status]||'🧺 Parcel'} <span style="font-size:11px;opacity:.6">${p.id}</span></span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${itemsLabel(allItems)}</span></div>
-    <button class="po-inv" style="width:100%;margin:8px 0 0" onclick="viewStatement('${p.id}')">🧾 Statement for this box</button>
-    <div class="parcel-orders">${inParcel.map(o=>`
-      <div class="po-row"><div class="po-l">
-        <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-ordered'}">${o.status==='Payment Verified'?'✓ In parcel':statusLabel(o)}</span></div>
-        <div class="po-items">${o.items.filter(i=>!i.refunded).slice(0,3).map(i=>esc(i.name)).join(', ')}${o.items.filter(i=>!i.refunded).length>3?' +'+(o.items.filter(i=>!i.refunded).length-3):''}</div></div><div class="po-r"><div class="po-amt">$${o.total.toFixed(2)}</div>${o.status==='Awaiting Payment'?(payExpired(o)
-          ?`<span style="font-size:11.5px;font-weight:800;color:#c2405e">⌛ Timed out</span><button class="cancel-link" onclick="event.stopPropagation();guard(this,()=>cancelUnpaid('${o.id}'))">Clear it</button>`
-          :`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button><button class="cancel-link" onclick="event.stopPropagation();guard(this,()=>cancelUnpaid('${o.id}'))">Cancel</button>`):''}</div></div>
-      <button class="po-more" onclick="togglePoCards('${o.id}')" id="pom-${o.id}">▾ Show what's inside</button>
-      <div class="po-cards" id="poc-${o.id}">
-       ${o.items.filter(i=>!i.refunded).map(i=>`<div class="po-card"><div class="po-thumb">${i.image?`<img src="${imgUrl(i.image,200)}">`:(EMOJI[i.tier]||'🃏')}</div><div class="po-cn">${esc(i.name)}${i.number?`<div style="font-size:10.5px;color:var(--hint);font-weight:600">${i.number}</div>`:''}</div><div class="po-cp">$${i.price.toFixed(2)}</div></div>`).join('')}
-        <button class="po-inv" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
-      </div>`).join('')}</div>    ${unpaid.length?`<div class="parcel-hint">⏳ ${unpaid.length} order${unpaid.length>1?'s':''} above still to pay. Your box can't go out until they're settled — unpaid shop orders release themselves after the timer, claim wins are held.</div>`:''}
-    ${foot}</div>`;
+    acts.push('<div class="oact oact-go"><div class="oact-hd"><span class="oact-ic">📦</span><div><div class="oact-t">Your box is ready to send</div>'+
+      '<div class="oact-s">'+b.cards+' card'+(b.cards===1?'':'s')+' · '+(fee<=0?'postage is free on this one':(need>0&&need<=15?'add $'+need.toFixed(2)+' more for free postage':'one postage fee for the lot'))+'</div></div></div>'+
+      '<div class="oact-2"><button class="oact-b" onclick="guard(this,()=>chooseDelivery(\'ship\',\''+p.id+'\'))">🚚 Ship to me<small>'+(fee<=0?'FREE':'$'+Number(fee).toFixed(2))+'</small></button>'+
+      '<button class="oact-b oact-b2" onclick="guard(this,()=>chooseDelivery(\'pickup\',\''+p.id+'\'))">🤝 Self-pickup<small>FREE</small></button></div></div>');
+  });
+  return acts.slice(0,2).join('');
 }
-const OFILTERS=[
-  {k:'all',   l:'All',       f:o=>true},
-  {k:'unpaid',l:'💳 Unpaid', f:o=>o.status==='Awaiting Payment'},
-  {k:'check', l:'⏳ Checking',f:o=>o.status==='Awaiting Verification'},
-  {k:'paid',  l:'✓ Paid',    f:o=>['Payment Verified','Packed'].includes(o.status)},
-  {k:'ship',  l:'🚚 Shipped', f:o=>['Shipped','In Transit','Delivered'].includes(o.status)},
-  {k:'closed',l:'↩️ Refunded / cancelled', f:o=>o.cancelled||o.status==='Refunded'||o.items.some(i=>i.refunded)}
-];
-function pickOrderFilter(k){ STATE.oFilter=k; paintOrders(); }
-function togglePoCards(id){
-  const box=document.getElementById('poc-'+id), btn=document.getElementById('pom-'+id);
-  if(!box) return;
-  const open=box.classList.toggle('open');
-  if(btn) btn.textContent=(open?'▴ Hide':'▾ Show what\'s inside');
+function stageStripHtml(m, cur){
+  const btn=(k,val,label)=>'<button class="ostg'+(k===cur?' on':'')+(val?'':' empty')+'" aria-pressed="'+(k===cur)+'" onclick="pickStage(\''+k+'\')">'+
+    '<span class="ostg-v">'+(val||'—')+'</span><span class="ostg-l">'+label+'</span></button>';
+  return '<div class="ostages" role="tablist">'+
+    btn('pay', m.payTotal>0?'$'+priceLabel(m.payTotal).slice(1):'', 'To pay')+
+    btn('box', m.boxCards?m.boxCards+' card'+(m.boxCards===1?'':'s'):'', 'In your box')+
+    btn('way', m.wayCards?m.wayCards+' card'+(m.wayCards===1?'':'s'):'', 'On the way')+
+  '</div>';
+}
+function defaultStage(m){
+  if(m.unpaid.length||m.postage.length) return 'pay';
+  if(m.inBox.length) return 'box';
+  if(m.onWay.length) return 'way';
+  return 'box';
+}
+function pickStage(k){
+  STATE.ostage=k; STATE.ostageAuto=false;
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+  paintOrders();
+}
+function stageBodyHtml(m, cur){
+  if(cur==='pay'){
+    const rows=m.unpaid.map(payRowHtml).join('');
+    const post=m.postage.map(x=>'<div class="pyrow"><div class="pyrow-m"><div class="pyrow-n">🚚 Postage</div><div class="pyrow-s">One fee for your whole box</div>'+
+      '<div class="pyrow-id">#'+esc(x.id)+'</div></div><div class="pyrow-a">$'+x.fee.toFixed(2)+'</div></div>').join('');
+    const dead=m.expired.map(o=>'<div class="pyrow pyrow-dead"><div class="pyrow-m"><div class="pyrow-n">'+liveItems(o.items).map(i=>esc(i.name)).slice(0,2).join(', ')+'</div>'+
+      '<div class="pyrow-s">⌛ Timed out — the cards went back on sale</div></div><div class="pyrow-a"><button class="linkish" onclick="guard(this,()=>cancelUnpaid(\''+o.id+'\'))">Clear</button></div></div>').join('');
+    if(!rows&&!post&&!dead) return '<div class="oempty">🎉 Nothing to pay.</div>';
+    return '<div class="opanel">'+rows+post+dead+
+      ((m.unpaid.length+m.postage.length)>0?'<div class="pytot"><span>Total</span><span>$'+m.payTotal.toFixed(2)+'</span></div>':'')+'</div>';
+  }
+  if(cur==='box'){
+    if(!m.inBox.length) return '<div class="oempty">🧺 Your box is empty.<br><small>Cards land here the moment they\'re paid.'+(m.unpaid.length?' Pay for yours under To pay.':'')+'</small></div>';
+    return m.inBox.map(boxCardHtml).join('');
+  }
+  if(!m.onWay.length) return '<div class="oempty">🚚 Nothing on the way right now.<br><small>Delivered boxes are in Order history.</small></div>';
+  return m.onWay.map(boxCardHtml).join('');
 }
 function paintOrders(){
-  const list=document.getElementById('ordersList');
-  const parcels=STATE.parcels||[];
-  const activeIds=new Set(parcels.map(p=>p.id));
-  const isSH=o=>String(o.id).indexOf('SH')===0;
-  const dead=o=>!!o.cancelled;
-  const normal=STATE.orders.filter(o=>!isSH(o));
-  const live=normal.filter(o=>!dead(o));
-  const past=normal.filter(dead);
-  const rank={shipping_paid:0,pickup_ready:0,ship_awaiting_fee:1,open:2};
-  const cards=parcels.slice().sort((a,b)=>(rank[a.status]??3)-(rank[b.status]??3)).map(renderParcelCard).filter(Boolean);
-  const ppane=document.getElementById('parcelPane');
-  // Lead with what it saves them, not how it works. The sum is the explanation.
-  const flat=Number(STATE.shipFlat||3);
-  const nOrd=(STATE.orders||[]).filter(o=>o.parcelId&&!o.cancelled&&o.status!=='Refunded'&&String(o.id).indexOf('SH')!==0).length;
-  const wouldBe=nOrd*flat, actualFee=flat, saved=Math.max(0,wouldBe-actualFee);
-  const explain=(nOrd>1&&saved>0)
-    ? `<div class="parcel-explain">🧺 <b>We keep a box for you.</b> Everything you buy goes in it and waits.
-       <div class="parcel-save" style="margin-top:10px">Sending your ${nOrd} orders separately would've cost <b>$${wouldBe.toFixed(2)}</b>. You'll pay <b>$${actualFee.toFixed(2)}</b> — one postage fee for the lot.</div></div>`
-    : `<div class="parcel-explain">🧺 <b>We keep a box for you.</b> Everything you buy goes in it and waits — and you pay postage once, whenever you're ready to send it. Not once per order.</div>`;
-  if(ppane) ppane.innerHTML=cards.length?explain+cards.join(''):`<div class="empty"><div class="e-ic">🧺</div><p>Your box is empty.<br>Buy a card and it goes straight in — then you pay postage once, when you're ready 🐾</p><div class="e-tip">↓ pull down to refresh</div></div>`;
-  // Filter bar — counts come from the full set so an empty tab still shows 0.
-  const all=[...live,...past];
-  const fb=document.getElementById('ordersFilter');
-  const cur=STATE.oFilter||'all';
-  if(fb) fb.innerHTML=OFILTERS.map(f=>{
-    const n=all.filter(f.f).length;
-    return `<button class="ofilt-b ${f.k===cur?'on':''}" onclick="pickOrderFilter('${f.k}')">${f.l} <span class="n">${n}</span></button>`;
-  }).join('');
-  const sel=OFILTERS.find(f=>f.k===cur)||OFILTERS[0];
-  const shown=all.filter(sel.f);
-  if(!all.length){ list.innerHTML=`<div class="empty"><div class="e-ic">📭</div><p>No orders yet!<br>Your claims will show here with live tracking 🚚</p></div>`; }
-  else if(!shown.length){ list.innerHTML=`<div class="empty"><div class="e-ic">🔍</div><p>Nothing under “${sel.l}”.</p></div>`; }
-  else if(cur==='all'){
-    const l2=shown.filter(o=>!o.cancelled), p2=shown.filter(o=>o.cancelled);
-    list.innerHTML=l2.map(orderCardHtml).join('')
-      +(p2.length?`<div class="past-hd">Closed &amp; cancelled</div>`+p2.map(orderCardHtml).join(''):'');
+  const main=document.getElementById('ordersMain'); if(!main) return;
+  const m=ordersModel(); STATE.omodel=m;
+  if(STATE.ostageAuto!==false||!STATE.ostage) STATE.ostage=defaultStage(m);
+  const cur=STATE.ostage;
+  const nothing=!m.list.length&&!m.unpaid.length&&!m.expired.length;
+  if(nothing){
+    main.innerHTML='<div class="empty"><div class="e-ic">🧺</div><p>No orders yet!<br>Buy a card or win a claim and it shows up here 🐾</p><div class="e-tip">↓ pull down to refresh</div></div>';
+  } else {
+    main.innerHTML=actionsHtml(m)+stageStripHtml(m,cur)+'<div class="ostage-body">'+stageBodyHtml(m,cur)+'</div>';
   }
-  else list.innerHTML=shown.map(orderCardHtml).join('');
+  const hb=document.getElementById('ohistBtn');
+  if(hb) hb.classList.toggle('has', m.past.length>0||m.cancelled.length>0);
   buildBinder();
 }
-function orderCardHtml(o){
-  const cancelled=!!o.cancelled;
-  const merged=(o.status||'').indexOf('Merged into')===0;
-  const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:(cancelled?-1:0);
-  const live=o.items.filter(i=>!i.refunded);
-  const anyRefund=o.items.some(i=>i.refunded);
-  const shown=live.slice(0,4);
-  const extra=live.length-shown.length;
 
-  // Thumbnails rather than a price list: the order card answers "where are my
-  // cards", the invoice answers "what did this cost". Prices live there.
-  const thumbs=shown.map(i=>
-    '<div class="oc-th">'+(i.image?'<img src="'+imgUrl(i.image,200)+'" loading="lazy" alt="'+esc(i.name)+'">':(EMOJI[i.tier]||'🃏'))+'</div>').join('')+
-    (extra>0?'<div class="oc-th oc-more">+'+extra+'</div>':'');
-
-  const track=(cancelled||merged)?'':
-    '<div class="oc-line">'+STEPS.map((s,i)=>
-      '<span class="oc-dot '+(i<=si?'on':'')+'"></span>'+
-      (i<STEPS.length-1?'<span class="oc-bar '+(i<si?'on':'')+'"></span>':'')).join('')+'</div>'+
-    '<div class="oc-lbls">'+STEPS.map((s,i)=>'<span class="'+(i<=si?'on':'')+'">'+s+'</span>').join('')+'</div>';
-
-  return '<div class="ocard '+(cancelled?'dead':'')+'">'+
-      '<div class="oc-hd">'+
-        '<div style="min-width:0">'+
-          '<div class="oc-cap">Order</div>'+
-          '<div class="oc-id">'+esc(o.id)+'</div>'+
-        '</div>'+
-        '<span class="oc-badge">'+esc(statusLabel(o))+'</span>'+
+/* ---------- one box, opened ---------- */
+function receiptPayLabel(o){
+  const ref=(o.items||[]).filter(i=>i.refunded).length;
+  const base=o.status==='Awaiting Verification'?'⏳ Checking':(o.status==='Refunded'?'↩️ Refunded':(o.status==='Awaiting Payment'?'💳 Unpaid':'✓ Paid'));
+  return base+(ref&&o.status!=='Refunded'?' · ↩️ '+ref+' refunded':'');
+}
+function openBoxSheet(id){
+  const m=STATE.omodel||ordersModel();
+  const b=m.list.find(x=>x.id===id); if(!b) return;
+  const t=boxTitle(b), line=boxStatusLine(b);
+  const tracking=(b.orders.find(o=>o.tracking)||{}).tracking||'';
+  const inside=b.items.map(it=>{
+    if(!isBundleItem(it)){
+      return '<div class="bs-card">'+'<div class="rthumb">'+thumbHtml(it.image,200,it.name,it.tier)+'</div><div class="rmid"><div class="rnm">'+esc(it.name)+'</div>'+(it.number?'<div class="rsub">'+esc(it.number)+'</div>':'')+'</div></div>';
+    }
+    const cs=itemCards(it);
+    return '<div class="bs-bundle"><div class="bs-bhd"><span>📚 '+esc(it.name)+'</span><span>'+cs.length+' cards</span></div>'+
+      cs.map(c=>'<div class="bs-card bs-in"><div class="rthumb">'+thumbHtml(c.f,200,c.name)+'</div><div class="rmid"><div class="rnm">'+esc(c.name)+'</div>'+(c.number?'<div class="rsub">'+esc(c.number)+'</div>':'')+'</div></div>').join('')+'</div>';
+  }).join('');
+  const receipts=b.orders.slice().sort((x,y)=>(x.createdMs||0)-(y.createdMs||0)).map(o=>{
+    const n=cardCount(o.items);
+    return '<button class="bs-rc" onclick="viewInvoice(\''+o.id+'\')"><div><div class="bs-rc-id">#'+esc(o.id)+'</div><div class="bs-rc-s">'+dateShort(o.createdMs)+' · '+n+' card'+(n===1?'':'s')+' · '+receiptPayLabel(o)+'</div></div>'+
+      '<div class="bs-rc-r"><b>$'+Number(o.total||0).toFixed(2)+'</b><span>View ›</span></div></button>';
+  }).join('');
+  let postage='';
+  if(b.sh.length){
+    postage=b.sh.map(o=>'<button class="bs-rc" onclick="'+(o.status==='Awaiting Payment'?'resumePayment':'viewInvoice')+'(\''+o.id+'\')"><div><div class="bs-rc-id">🚚 Postage</div><div class="bs-rc-s">One fee for the whole box · '+receiptPayLabel(o)+'</div></div><div class="bs-rc-r"><b>$'+Number(o.total||0).toFixed(2)+'</b><span>'+(o.status==='Awaiting Payment'?'Pay ›':'View ›')+'</span></div></button>').join('');
+  } else {
+    const p=b.parcel, sent=b.stage.key==='way'||b.stage.key==='done';
+    const free=p&&p.shipFee===0;
+    postage='<div class="bs-rc bs-rc-flat"><div><div class="bs-rc-id">🚚 Postage</div><div class="bs-rc-s">'+
+      (sent||free?'One fee for the whole box':'Charged once, when you send your box')+'</div></div><div class="bs-rc-r"><b>'+(sent||free?'FREE':'—')+'</b></div></div>';
+  }
+  const payIds=b.orders.filter(o=>OWNED_STATUSES.includes(o.status)).map(o=>o.id).concat(b.sh.filter(o=>OWNED_STATUSES.includes(o.status)).map(o=>o.id));
+  const canShare=b.orders.some(o=>OWNED_STATUSES.includes(o.status));
+  document.getElementById('cardViewBody').innerHTML=
+    '<div class="doc bsheet">'+
+      '<button class="doc-close" onclick="closeCardView()">✕</button>'+
+      '<div class="bs-hd"><div class="bs-t">'+esc(t.t)+'</div><div class="bs-s">'+esc(t.sub)+' · '+b.cards+' card'+(b.cards===1?'':'s')+'</div>'+
+        '<span class="bs-pill">'+b.stage.ic+' '+esc(b.stage.l)+'</span>'+
+        '<div class="bs-steps">'+boxStepsHtml(b.stage.step)+'</div>'+
+        (line?'<div class="bs-line">'+esc(line)+'</div>':'')+
+        (tracking?'<a class="bs-track" href="https://www.ship24.com/tracking?p='+encodeURIComponent(tracking)+'" target="_blank" rel="noopener">🚚 Track '+esc(tracking)+' ↗</a>':'')+
       '</div>'+
-      (live.length?'<div class="oc-thumbs">'+thumbs+'</div>':'')+
-      track+
-      (o.lastUpdate&&!cancelled?'<div class="oc-note">📍 '+esc(o.lastUpdate)+'</div>':'')+
-      (o.tracking?'<a class="oc-track" href="https://www.ship24.com/tracking?p='+encodeURIComponent(o.tracking)+'" target="_blank" rel="noopener">Track '+esc(o.tracking)+' ↗</a>':'')+
-      (anyRefund&&!cancelled?'<div class="oc-note" style="color:#FF9FB4">↩️ '+o.items.filter(i=>i.refunded).length+' card(s) refunded — see the invoice</div>':'')+
-      '<div class="oc-foot">'+
-        '<span>'+itemsLabel(o.items)+(o.parcelId&&!cancelled?' · '+esc(o.parcelId):'')+'</span>'+
-        '<span class="oc-tot">'+(cancelled?'$0.00':'$'+o.total.toFixed(2))+'</span>'+
-      '</div>'+
-      '<div class="oc-acts">'+
-        (o.status==='Awaiting Payment'?(payExpired(o)
-          ?'<button class="oc-b oc-b-alt" onclick="guard(this,()=>cancelUnpaid(\''+o.id+'\'))">Clear it from my list</button>'
-          :'<button class="oc-b oc-b-pay" onclick="resumePayment(\''+o.id+'\')">💳 Complete payment</button>'+
-           '<button class="oc-b oc-b-alt" onclick="guard(this,()=>cancelUnpaid(\''+o.id+'\'))">Cancel</button>'):'')+
-        '<button class="oc-b oc-b-alt" onclick="viewInvoice(\''+o.id+'\')">🧾 Invoice</button>'+
-        (!cancelled&&['Payment Verified','Packed','Shipped','In Transit','Delivered'].indexOf(o.status)>=0
-          ?'<button class="oc-b oc-b-alt" onclick="openHaulSheet(\''+o.id+'\')">📸 Share</button>':'')+
+      '<div class="rcpt-body">'+
+        '<div class="rcpt-sec">What\'s inside</div>'+inside+
+        '<div class="rcpt-sec bs-sec-row"><span>Receipts</span>'+(payIds.length?'<button class="bs-req" onclick="requestInvoices('+JSON.stringify(payIds).replace(/"/g,'&quot;')+',this)">📄 Request invoices</button>':'')+'</div>'+
+        receipts+postage+
+        '<div class="rcpt-grand"><span>Box total</span><span>'+money(b.total)+'</span></div>'+
+        (canShare?'<button class="pics" style="margin-top:12px" onclick="openHaulSheet(\''+boxShareId(b)+'\')">📸 Share this box</button>':'')+
+        '<div class="rcpt-ft">Questions about this box? Help &amp; Support — quote any receipt number above.</div>'+
       '</div>'+
     '</div>';
+  document.getElementById('cardViewScrim').classList.add('show');
+  document.getElementById('cardView').classList.add('show');
+}
+async function requestInvoices(ids, btn){
+  if(!ids||!ids.length) return;
+  await guard(btn, async()=>{
+    const r=await api('invoicePdf', ids.length===1?{orderId:ids[0]}:{orderIds:ids});
+    (tg&&tg.showAlert?tg.showAlert:alert)((r&&r.ok)?(r.message||'Sent to your Telegram 📄'):('Couldn\'t send those: '+((r&&(r.message||r.error))||'no response')));
+  });
+}
+
+/* ---------- Order history (top-right button) ---------- */
+function openHistory(){
+  const m=STATE.omodel||ordersModel();
+  const byMonth={}, months=[];
+  m.past.forEach(b=>{
+    const t=boxDoneMs(b)||b.startMs, d=new Date(t);
+    const k=d.toLocaleDateString('en-SG',{month:'long',year:'numeric'});
+    if(!byMonth[k]){ byMonth[k]=[]; months.push(k); }
+    byMonth[k].push(b);
+  });
+  const row=b=>{
+    const faces=b.items.reduce((a,it)=>a.concat(itemCards(it)),[]).slice(0,3);
+    const refunds=b.orders.reduce((n,o)=>n+(o.items||[]).filter(i=>i.refunded).length,0);
+    return '<button class="hrow" onclick="openBoxSheet(\''+b.id+'\')">'+
+      '<div class="hrow-th">'+faces.map(c=>'<div class="fc">'+thumbHtml(c.f,120,c.name)+'</div>').join('')+'</div>'+
+      '<div class="hrow-m"><div class="hrow-t">'+esc(b.stage.l)+' '+dateShort(boxDoneMs(b)||b.startMs)+'</div>'+
+      '<div class="hrow-s">'+b.cards+' card'+(b.cards===1?'':'s')+' · $'+b.total.toFixed(2)+(refunds?' · ↩️ '+refunds+' refunded':'')+'</div></div>'+
+      '<span class="hrow-go">›</span></button>';
+  };
+  const boxesHtml=months.length
+    ? months.map(k=>'<div class="rcpt-sec">'+esc(k)+'</div>'+byMonth[k].map(row).join('')).join('')
+    : '<div class="oempty" style="margin-top:6px">Nothing here yet.<br><small>Boxes land here a few days after they\'re delivered or collected.</small></div>';
+  const cancelledHtml=m.cancelled.length
+    ? '<button class="hrow hrow-quiet" onclick="document.getElementById(\'hCanc\').classList.toggle(\'open\')"><div class="hrow-m"><div class="hrow-t">'+m.cancelled.length+' cancelled order'+(m.cancelled.length===1?'':'s')+'</div><div class="hrow-s">Nothing was charged</div></div><span class="hrow-go">▾</span></button>'+
+      '<div class="hcanc" id="hCanc">'+m.cancelled.map(o=>'<button class="bs-rc" onclick="viewInvoice(\''+o.id+'\')"><div><div class="bs-rc-id">#'+esc(o.id)+'</div><div class="bs-rc-s">'+dateShort(o.createdMs)+' · '+liveItems(o.items).map(i=>esc(i.name)).slice(0,2).join(', ')+'</div></div><div class="bs-rc-r"><b>$0.00</b><span>'+esc(statusLabel(o))+'</span></div></button>').join('')+'</div>'
+    : '';
+  document.getElementById('cardViewBody').innerHTML=
+    '<div class="doc bsheet">'+
+      '<button class="doc-close" onclick="closeCardView()">✕</button>'+
+      '<div class="bs-hd"><div class="bs-t">Order history</div><div class="bs-s">Delivered and collected boxes</div></div>'+
+      '<div class="rcpt-body">'+boxesHtml+
+        (cancelledHtml?'<div class="rcpt-sec">Cancelled</div>'+cancelledHtml:'')+
+        (STATE.olderHidden>0?'<button class="pics" style="margin-top:12px" onclick="showOlderOrders(this)">Show older orders</button>':'')+
+        '<div class="h-foot"><button class="linkish" onclick="openAllReceipts()">🧾 All receipts</button></div>'+
+      '</div>'+
+    '</div>';
+  document.getElementById('cardViewScrim').classList.add('show');
+  document.getElementById('cardView').classList.add('show');
+}
+async function showOlderOrders(btn){
+  await guard(btn, async()=>{ STATE.ordersAll=true; await loadOrders(true); openHistory(); });
+}
+function openAllReceipts(){
+  const list=(STATE.orders||[]).slice().sort((a,b)=>(b.createdMs||0)-(a.createdMs||0));
+  const paid=list.filter(o=>OWNED_STATUSES.includes(o.status)).slice(0,12).map(o=>o.id);
+  document.getElementById('cardViewBody').innerHTML=
+    '<div class="doc bsheet">'+
+      '<button class="doc-close" onclick="openHistory()">‹</button>'+
+      '<div class="bs-hd"><div class="bs-t">All receipts</div><div class="bs-s">Newest first</div></div>'+
+      '<div class="rcpt-body">'+
+        '<div class="rcpt-sec bs-sec-row"><span>'+list.length+' receipt'+(list.length===1?'':'s')+'</span>'+(paid.length?'<button class="bs-req" onclick="requestInvoices('+JSON.stringify(paid).replace(/"/g,'&quot;')+',this)">📄 Request invoices</button>':'')+'</div>'+
+        list.map(o=>{
+          const n=cardCount(o.items);
+          return '<button class="bs-rc" onclick="viewInvoice(\''+o.id+'\')"><div><div class="bs-rc-id">'+(isSHo(o)?'🚚 Postage · ':'')+'#'+esc(o.id)+'</div>'+
+            '<div class="bs-rc-s">'+dateShort(o.createdMs)+(isSHo(o)?'':' · '+n+' card'+(n===1?'':'s'))+' · '+(o.cancelled?'✕ Cancelled':receiptPayLabel(o))+'</div></div>'+
+            '<div class="bs-rc-r"><b>$'+(o.cancelled?'0.00':Number(o.total||0).toFixed(2))+'</b><span>View ›</span></div></button>';
+        }).join('')+
+        (STATE.olderHidden>0?'<button class="pics" style="margin-top:12px" onclick="showOlderOrders(this)">Show older orders</button>':'')+
+      '</div>'+
+    '</div>';
+}
+
+/* ---------- Pay all ---------- */
+function payAll(focusId){
+  const list=unpaidList();
+  if(!list.length){ if(focusId) resumePayment(focusId); return; }
+  if(list.length===1){ resumePayment(list[0].id); return; }
+  let remain=Infinity, mins=0;
+  list.forEach(o=>{
+    const w=(o.payWindowMins===0)?0:(o.payWindowMins||(STATE.payInfo&&STATE.payInfo.mins)||10);
+    if(w>0&&o.createdMs){
+      const r=Math.max(0, w*60-Math.floor((Date.now()-o.createdMs)/1000));
+      if(r<remain){ remain=r; mins=w; }
+    }
+  });
+  const items=list.reduce((a,o)=>a.concat(liveItems(o.items)),[]);
+  const sum=k=>Math.round(list.reduce((s,o)=>s+Number(o[k]||0),0)*100)/100;
+  showInvoice({
+    orderId: list[0].id+'-ALL'+list.length, orderIds: list.map(o=>o.id), groupCount: list.length,
+    items, subtotal: items.reduce((s,i)=>s+Number(i.price||0),0),
+    shipping: sum('shipping'), creditUsed: sum('creditUsed'), total: sum('total'),
+    paynowMobile:(STATE.payInfo&&STATE.payInfo.mobile)||'', paynowName:(STATE.payInfo&&STATE.payInfo.name)||'FloofMart TCG',
+    paymentWindowMins: remain===Infinity?0:mins, _resumeSecs: remain===Infinity?null:remain
+  });
 }
 
 async function doRefresh(){
@@ -3480,7 +3999,7 @@ function attachPullRefresh(){
     else if(ptr) ptr.classList.remove('show','armed');
   },{passive:true});
 }
-const OSEGS=['parcel','orders','binder'];
+const OSEGS=['orders','binder'];
 function orderSeg(which,dir){
   if(dir===undefined){ const a=OSEGS.indexOf(STATE.oseg),b=OSEGS.indexOf(which); dir=(a>=0&&b>=0)?Math.sign(b-a):0; }
   STATE.oseg=which;
@@ -3495,7 +4014,7 @@ function orderSeg(which,dir){
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
 }
 function swipeOrderSeg(dir){
-  const cur=OSEGS.indexOf(STATE.oseg||'parcel');
+  const cur=OSEGS.indexOf(STATE.oseg||'orders');
   const next=cur+dir;
   if(next<0||next>=OSEGS.length) return;
   orderSeg(OSEGS[next],dir);
@@ -3729,13 +4248,17 @@ async function buildHaulCanvas(h){
   // face, silently, if they aren't decoded yet.
   try { if(document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
 
-  const items = (h.items || []).filter(i => !i.refunded);
+  // Draw CARDS, not order lines: a bundle opens up into every card inside it,
+  // each with its own scan, so a box with one bundle and one single is a
+  // four-card haul with four faces.
+  const lines = (h.items || []).filter(i => !i.refunded);
+  const items = lines.reduce((a, it) => a.concat(itemCards(it)), []);
   const isFan = items.length <= 6;
   const shown = items.slice(0, isFan ? 6 : 8);
   const extra = items.length - shown.length;
 
   const [logo, ...arts] = await Promise.all(
-    [loadCors('logo.png')].concat(shown.map(i => loadHaulArt(haulArtFor(i), 700)))
+    [loadCors('logo.png')].concat(shown.map(c => loadHaulArt(c.f, 700)))
   );
 
   /* ---- ground ---- */
@@ -3774,7 +4297,7 @@ async function buildHaulCanvas(h){
   x.fillText('FloofMart TCG', 164, 94);
   x.fillStyle = '#8a6b80';
   x.font = "700 23px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText('today’s haul · ' + new Date().toLocaleDateString('en-SG', {day:'numeric', month:'short', year:'numeric'}), 166, 128);
+  x.fillText((h.boxId ? 'box haul · ' : 'today’s haul · ') + new Date().toLocaleDateString('en-SG', {day:'numeric', month:'short', year:'numeric'}), 166, 128);
 
   /* ---- sparkles, behind the cards ---- */
   [[150,320,17],[930,300,22],[870,760,15],[120,830,20],[300,215,12],
@@ -3847,8 +4370,8 @@ async function buildHaulCanvas(h){
   [[215,470,14],[880,520,12],[650,930,15]].forEach(s => sparkle(x, s[0], s[1], s[2], .7));
 
   /* ---- footer ---- */
-  const n = items.length;                  // lines in the name list below
-  const nCards = haulCardCount(items);     // real cards — a bundle is all of its
+  const n = lines.length;                  // lines in the name list below
+  const nCards = items.length;             // real cards — a bundle is all of its
   x.strokeStyle = 'rgba(168,78,142,.20)'; x.lineWidth = 2;
   x.beginPath(); x.moveTo(56, 1136); x.lineTo(W - 56, 1136); x.stroke();
 
@@ -3856,7 +4379,7 @@ async function buildHaulCanvas(h){
   x.font = "800 40px 'Plus Jakarta Sans', system-ui, sans-serif";
   x.fillText(nCards + ' card' + (nCards === 1 ? '' : 's') + ' haul!', 56, 1196);
 
-  const names = items.slice(0, 2).map(i => {
+  const names = lines.slice(0, 2).map(i => {
     const s = String(i.name || '');
     return s.length > 24 ? s.slice(0, 23) + '…' : s;
   });
@@ -3898,9 +4421,18 @@ function haulUploadJpeg(cv){
 /* Prefers the orders payload (it carries the scans), then the snapshot checkout
    kept, because by the time an order comes back its cards have left the shop. */
 function haulItemsFor(orderId){
-  const o = (STATE.orders || []).find(x => String(x.id) === String(orderId));
+  const key = String(orderId);
+  // "box:BOX-2026-0026" — every paid card in that box, across all its orders.
+  if(key.indexOf('box:') === 0){
+    const pid = key.slice(4);
+    const mine = (STATE.orders || []).filter(o => String(o.parcelId) === pid &&
+      String(o.id).indexOf('SH') !== 0 && !o.cancelled && OWNED_STATUSES.includes(o.status));
+    const items = mine.reduce((a, o) => a.concat(liveItems(o.items)), []);
+    return items.length ? items : null;
+  }
+  const o = (STATE.orders || []).find(x => String(x.id) === key);
   if(o && (o.items || []).length) return o.items.filter(i => !i.refunded);
-  if(STATE.lastHaul && String(STATE.lastHaul.orderId) === String(orderId)) return STATE.lastHaul.items;
+  if(STATE.lastHaul && String(STATE.lastHaul.orderId) === key) return STATE.lastHaul.items;
   return null;
 }
 
@@ -3911,11 +4443,12 @@ async function prepareHaul(orderId){
   if(HAUL && String(HAUL.orderId) === String(orderId) && HAUL.blob) return HAUL;
   const items = haulItemsFor(orderId);
   if(!items || !items.length) return null;
-  const cv = await buildHaulCanvas({orderId, items});
+  const boxId = String(orderId).indexOf('box:') === 0 ? String(orderId).slice(4) : '';
+  const cv = await buildHaulCanvas({orderId, boxId, items});
   const dataUrl = cv.toDataURL('image/png');
   const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
   const jpeg = haulUploadJpeg(cv);
-  HAUL = {orderId: String(orderId), items, dataUrl, blob, jpeg};
+  HAUL = {orderId: String(orderId), boxId, items, dataUrl, blob, jpeg};
   return HAUL;
 }
 
@@ -4037,7 +4570,14 @@ function haulSendError(r){
 async function sendHaulToTelegram(btn){
   if(!HAUL || !HAUL.jpeg) return;
   await guard(btn, async () => {
-    const r = await api('haulImage', {orderId: HAUL.orderId, image: HAUL.jpeg});
+    // A box share names one of its orders (that's what the server checks you
+    // own) plus the box, so the caption can count the whole box.
+    let oid = HAUL.orderId;
+    if(HAUL.boxId){
+      const o = (STATE.orders || []).find(x => String(x.parcelId) === HAUL.boxId && String(x.id).indexOf('SH') !== 0 && !x.cancelled);
+      oid = o ? o.id : '';
+    }
+    const r = await api('haulImage', {orderId: oid, boxId: HAUL.boxId || '', cards: cardCount(HAUL.items), image: HAUL.jpeg});
     const m = (r && r.ok)
       ? (r.message || 'Sent it to you on Telegram 📸 Forward it anywhere from there!')
       : haulSendError(r);
@@ -4069,7 +4609,7 @@ async function openHaulSheet(orderId){
   body.innerHTML = `<div class="cv-panel haul-panel">
       <button class="cv-close" onclick="closeCardView()">✕</button>
       <div class="haul-wrap">
-        <div class="haul-hd">📸 Your haul</div>
+        <div class="haul-hd">📸 ${String(orderId).indexOf('box:')===0?'Your box haul':'Your haul'}</div>
         <div class="haul-prev" id="haulPrev"><div class="skelcard" style="height:300px;width:100%"></div></div>
         <div id="haulActions"><p class="note">Putting your cards together…</p></div>
       </div>
@@ -4094,7 +4634,7 @@ async function openHaulSheet(orderId){
 function showPaidHaul(inv){
   const isShip = String(inv.orderId || '').indexOf('SH') === 0;
   const items = (inv.items || []).filter(i => !i.refunded);
-  const n = items.length;
+  const n = cardCount(items);
   document.getElementById('invBody').innerHTML = `
     <div class="paid-ok">
       <div class="pk-ic">🎉</div>
@@ -4125,11 +4665,18 @@ const OWNED_STATUSES=['Payment Verified','Packed','Shipped','In Transit','Delive
 function buildBinder(){
   const wrap=document.getElementById('binderWrap');
   const cards=[];
+  // One pocket per physical card. A three-card bundle fills three pockets, each
+  // with its own scan — never one pocket holding a photo of the bundle.
   (STATE.orders||[]).forEach(o=>{
     if(!OWNED_STATUSES.includes(o.status)) return;
-    (o.items||[]).filter(i=>!i.refunded).forEach(it=>cards.push({...it,orderId:o.id,date:o.created,status:o.status}));
+    liveItems(o.items).forEach(it=>{
+      const cs=itemCards(it), each=cs.length>1?Number(it.price||0)/cs.length:Number(it.price||0);
+      cs.forEach(c=>cards.push({name:c.name, number:c.number, image:c.f, back:c.b, bundle:c.bundle,
+        bundlePrice:c.bundle?Number(it.price||0):0, price:each, tier:c.bundle?'':it.tier, rarity:c.bundle?'':it.rarity,
+        orderId:o.id, date:o.created, status:o.status}));
+    });
   });
-  const sig=cards.map(c=>c.orderId+'|'+c.name+'|'+c.status).join(';');
+  const sig=cards.map(c=>c.orderId+'|'+c.name+'|'+c.image+'|'+c.status).join(';');
   if(sig===BINDER.sig && wrap.innerHTML) return;
   BINDER.sig=sig; BINDER.cards=cards;
   if(!cards.length){
@@ -4167,7 +4714,7 @@ function paintBinderPage(animate,dir){
   for(let i=0;i<9;i++){
     const c=slice[i];
     if(c){
-      const im=c.image?`<img src="${imgUrl(c.image,400)}" loading="lazy" alt="">`:`<span class="bp-emoji">${EMOJI[c.tier]||'🃏'}</span>`;
+      const im=c.image?thumbHtml(c.image,400,c.name,c.tier):`<span class="bp-emoji">${EMOJI[c.tier]||'🃏'}</span>`;
       pockets.push(`<button class="pocket filled" onclick="openBinderCard(${BINDER.page*9+i})">${im}</button>`);
     } else {
       pockets.push(`<div class="pocket"><span class="bp-paw">🐾</span></div>`);
@@ -4194,11 +4741,11 @@ function binderFlip(dir){
 }
 function openBinderCard(idx){
   const c=BINDER.cards[idx]; if(!c) return;
-  const front=c.image?`<img src="${imgUrl(c.image,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo</span></div>`;
-  // A bundle's imageBack is the whole face set ("front~back|front2~back2"),
-  // not a back scan — imgUrl would return another FRONT. Only singles flip.
-  const _bk=String(c.imageBack||''), _isSet=_bk.indexOf('|')>=0||_bk.indexOf('~')>=0;
-  const back=(_bk&&!_isSet)?`<div class="cv-face cv-back"><img src="${imgUrl(_bk,800)}" alt="back"></div>`:'';
+  const front=c.image?`<img src="${imgUrl(c.image,800)}" alt="" onerror="thumbRetry(this)" data-w="800">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo</span></div>`;
+  const back=c.back?`<div class="cv-face cv-back"><img src="${imgUrl(c.back,800)}" alt="back" onerror="thumbRetry(this)" data-w="800"></div>`:'';
+  const tags=c.bundle
+    ? `<span class="cv-tag">📚 From ${esc(c.bundle)}</span><span class="cv-tag">Bundle $${Number(c.bundlePrice).toFixed(2)}</span>`
+    : `<span class="cv-tag">${esc(rarityLabel(c))}</span><span class="cv-tag">Claimed for $${Number(c.price).toFixed(2)}</span>`;
   document.getElementById('cardViewBody').innerHTML=`
     <div class="cv-panel">
       <button class="cv-close" onclick="closeCardView()">✕</button>
@@ -4210,11 +4757,9 @@ function openBinderCard(idx){
       </div>
       <div class="cv-meta">
         <div class="cv-name">${esc(c.name)}</div>
-        <div class="cv-tags">
-          <span class="cv-tag">${esc(rarityLabel(c))}</span>
-          <span class="cv-tag">Claimed for $${Number(c.price).toFixed(2)}</span>
-        </div>
-        <div class="cv-hint">Order #${c.orderId}${c.date?' · '+new Date(c.date).toLocaleDateString():''}<br>${c.status||''}</div>
+        ${c.number?`<div class="cv-hint" style="margin-top:2px">${esc(c.number)}</div>`:''}
+        <div class="cv-tags">${tags}</div>
+        <div class="cv-hint">Order #${c.orderId}${c.date?' · '+new Date(c.date).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'}):''}<br>${esc(statusLabel({status:c.status}))}</div>
       </div>
     </div>`;
   document.getElementById('cardViewScrim').classList.add('show');
@@ -4317,6 +4862,7 @@ async function sendSupport(btn){
 /* ============ PAY / INVOICE ============ */
 function resumePayment(id){
   const o=STATE.orders.find(x=>x.id===id); if(!o) return;
+  if(o.status!=='Awaiting Payment'){ viewInvoice(id); return; }
   // Claim + auction invoices carry their own, much longer window.
   const mins=(o.payWindowMins===0)?0:(o.payWindowMins||(STATE.payInfo&&STATE.payInfo.mins)||10);
   const elapsed=o.createdMs?Math.floor((Date.now()-o.createdMs)/1000):0;
@@ -4360,7 +4906,7 @@ function viewInvoice(id){
     const src=findImg(it);
     const big=it.image?imgUrl(it.image,1600):'';
     return '<div class="rline '+(void_?'rline-void':'')+'"'+(big?' onclick="openZoom(\''+big+'\')"':'')+'>'+
-      '<div class="rthumb">'+(src?'<img src="'+src+'" alt="'+esc(it.name)+'">':(EMOJI[it.tier]||'🃏'))+'</div>'+
+      '<div class="rthumb">'+(isBundleItem(it)?'📚':(src?'<img src="'+src+'" alt="'+esc(it.name)+'" data-w="200" onerror="thumbRetry(this)">':(EMOJI[it.tier]||'🃏')))+'</div>'+
       '<div class="rmid">'+
         '<div class="rnm">'+esc(it.name)+'</div>'+
         '<div class="rsub">'+(void_
@@ -4368,7 +4914,14 @@ function viewInvoice(id){
           : [esc(it.number||''),esc(rarityLabel(it))].filter(Boolean).join(' · '))+'</div>'+
       '</div>'+
       '<div class="ramt">'+money(it.price)+'</div>'+
-    '</div>';
+    '</div>'+
+    // A bundle's invoice line names what was actually inside it.
+    (isBundleItem(it)?itemCards(it).map(c=>
+      '<div class="rline rline-sub'+(void_?' rline-void':'')+'">'+
+        '<div class="rthumb">'+thumbHtml(c.f,200,c.name)+'</div>'+
+        '<div class="rmid"><div class="rnm">↳ '+esc(c.name)+'</div>'+(c.number?'<div class="rsub">'+esc(c.number)+'</div>':'')+'</div>'+
+        '<div class="ramt"></div>'+
+      '</div>').join(''):'');
   };
 
   document.getElementById('cardViewBody').innerHTML=
@@ -4378,7 +4931,7 @@ function viewInvoice(id){
         '<div class="rcpt-brand">FLOOFMART TCG</div>'+
         '<div class="rcpt-sub">Pokémon TCG · Singapore</div>'+
         '<div class="rcpt-id">'+esc(o.id)+'</div>'+
-        '<div class="rcpt-meta">'+(o.created?esc(new Date(o.created).toLocaleString()):'')+'</div>'+
+        '<div class="rcpt-meta">'+(o.created?esc(new Date(o.created).toLocaleString('en-SG',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'})):'')+'</div>'+
         '<div class="rcpt-stamp badge '+stamp.c+'">'+esc(stamp.t)+'</div>'+
       '</div>'+
       '<div class="rcpt-body">'+
@@ -4419,15 +4972,15 @@ function viewStatement(pid){
   const credit=mine.reduce((s,o)=>s+Number(o.creditUsed||0),0);
 
   const block=o=>{
-    const live=(o.items||[]).filter(i=>!i.refunded);
-    const thumbs=live.slice(0,6).map(i=>
-      '<div class="st-th">'+(i.image?'<img src="'+imgUrl(i.image,200)+'" loading="lazy" alt="'+esc(i.name)+'">':(EMOJI[i.tier]||'🃏'))+'</div>').join('')+
-      (live.length>6?'<div class="st-th st-more">+'+(live.length-6)+'</div>':'');
+    const faces=liveItems(o.items).reduce((a,it)=>a.concat(itemCards(it)),[]);
+    const thumbs=faces.slice(0,6).map(c=>
+      '<div class="st-th">'+thumbHtml(c.f,200,c.name)+'</div>').join('')+
+      (faces.length>6?'<div class="st-th st-more">+'+(faces.length-6)+'</div>':'');
     return '<div class="stblock">'+
       '<div class="st-hd">'+
         '<div style="min-width:0">'+
           '<div class="st-id">'+esc(o.id)+'</div>'+
-          '<div class="st-meta">'+(o.created?esc(new Date(o.created).toLocaleDateString()):'')+' · '+itemsLabel(o.items)+'</div>'+
+          '<div class="st-meta">'+(o.created?esc(new Date(o.created).toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'})):'')+' · '+itemsLabel(o.items)+'</div>'+
         '</div>'+
         '<div class="st-amt">'+money(o.total)+'</div>'+
       '</div>'+
@@ -4482,7 +5035,7 @@ async function loadProfile(){
   set('p-transit',alive.filter(o=>['Payment Verified','Packed','Shipped','In Transit'].indexOf(o.status)>=0).length);
   const nt=alive.filter(o=>o.lastUpdate).slice(0,5).map(o=>
     '<div class="notif"><span class="nt-ic">🔔</span><div><b>#'+esc(o.id)+'</b> — '+
-    esc(statusLabel(o))+'<div class="nt-sub">'+esc(o.lastUpdate)+'</div></div></div>').join('');
+    esc(statusLabel(o))+'<div class="nt-sub">'+esc(cleanUpdate(o.lastUpdate))+'</div></div></div>').join('');
   const box=document.getElementById('prof-notifs');
   if(box) box.innerHTML = nt ? '<div class="section-t">Recent updates</div>'+nt : '';
 }
@@ -4764,7 +5317,12 @@ function maybeFirstRun(){
   // string rather than the hash.
   try {
     const wantPay=new URLSearchParams(location.search).get('pay');
-    if(wantPay){ go('orders'); loadOrders(true).then(()=>resumePayment(wantPay)); }
+    if(wantPay){ go('orders'); loadOrders(true).then(()=>{
+      const o=(STATE.orders||[]).find(x=>x.id===wantPay);
+      if(!o||o.status!=='Awaiting Payment'){ if(o) viewInvoice(wantPay); return; }
+      // Everything unpaid goes in one payment; the order they tapped is in it.
+      payAll(wantPay);
+    }); }
   } catch(e){}
   // Coming back to the app after paying/claiming elsewhere should never show
   // stale stock or stale orders.
