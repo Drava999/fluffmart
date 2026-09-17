@@ -1603,7 +1603,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <button class="oseg-b on" data-oseg="orders" onclick="orderSeg('orders')">📦 Orders</button>
         <button class="oseg-b" data-oseg="binder" onclick="orderSeg('binder')">📖 Binder</button>
       </div>
-      <button class="ohist" id="ohistBtn" onclick="openHistory()">🕘 Order history</button>
+      <button class="ohist" id="ohistBtn" onclick="openHistory()">🕘 Order History</button>
     </div>
     <div id="oseg-orders"><div id="ordersMain"></div></div>
     <div id="oseg-binder" class="hidden"><div id="binderWrap"></div></div>
@@ -3754,7 +3754,7 @@ function stageBodyHtml(m, cur){
     if(!m.inBox.length) return '<div class="oempty">🧺 Your box is empty.<br><small>Cards land here the moment they\'re paid.'+(m.unpaid.length?' Pay for yours under To pay.':'')+'</small></div>';
     return m.inBox.map(boxCardHtml).join('');
   }
-  if(!m.onWay.length) return '<div class="oempty">🚚 Nothing on the way right now.<br><small>Delivered boxes are in Order history.</small></div>';
+  if(!m.onWay.length) return '<div class="oempty">🚚 Nothing on the way right now.<br><small>Delivered boxes are in Order History.</small></div>';
   return m.onWay.map(boxCardHtml).join('');
 }
 function paintOrders(){
@@ -3866,7 +3866,7 @@ function openHistory(){
   document.getElementById('cardViewBody').innerHTML=
     '<div class="doc bsheet">'+
       '<button class="doc-close" onclick="closeCardView()">✕</button>'+
-      '<div class="bs-hd"><div class="bs-t">Order history</div><div class="bs-s">Delivered and collected boxes</div></div>'+
+      '<div class="bs-hd"><div class="bs-t">Order History</div><div class="bs-s">Delivered and collected boxes</div></div>'+
       '<div class="rcpt-body">'+boxesHtml+
         (cancelledHtml?'<div class="rcpt-sec">Cancelled</div>'+cancelledHtml:'')+
         (STATE.olderHidden>0?'<button class="pics" style="margin-top:12px" onclick="showOlderOrders(this)">Show older orders</button>':'')+
