@@ -429,7 +429,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .dd-lbl{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;
   padding:8px 12px 4px;border-top:1px solid var(--line);margin-top:4px}
 .dd-lbl:first-child{border-top:none;margin-top:0}
-.cattabs{display:flex;gap:8px;margin:12px 0 0}
 .cattab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);
   font-size:13px;font-weight:700;color:var(--hint)}
 .cattab.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
@@ -1176,6 +1175,199 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   .nav,.cartbar,.scrim,.cv-scrim{display:none!important}
   @page{margin:14mm}
 }
+
+/* ══ 2026-09-17 REBUILD ═══════════════════════════════════════════════════
+   Appended last on purpose: everything here is either new, or a correction
+   that has to beat an earlier rule of the same specificity. */
+
+/* ── corrections ───────────────────────────────────────────────────────── */
+/* .cv-tag was declared twice and the later one won, painting the card-view
+   tags white on a white panel. This restores the readable pair. */
+.cv-tag{font-size:11px;font-weight:700;color:var(--fawn-deep);background:var(--ruff);
+  padding:4px 10px;border-radius:11px}
+/* The desktop media query sits ABOVE the base .sheet rule, so the base rule
+   (left:0;right:0;margin:0 auto) was winning and undoing the phone-column
+   geometry -- and ".sheet.show{transform:none}" was undoing the slide-up.
+   Both halves have to be restated here, together, or a -50% translate just
+   shoves an already-centred sheet off to the left. */
+.sheet.show{transform:translateY(0)}
+@media (min-width:600px){
+  .sheet{left:50%;right:auto;width:520px;max-width:520px;margin:0;
+    transform:translateX(-50%) translateY(100%)}
+  .sheet.show{transform:translateX(-50%) translateY(0)}
+  /* Same bug, same cause: the base .nav rule below the media query resets
+     left/right, but nothing resets the transform -- so the nav kept a -50%
+     shift with no 50% offset to cancel it and sat half a column to the left. */
+  .nav{left:50%;right:auto;width:520px;max-width:520px;margin:0;
+    transform:translateX(-50%)}
+}
+/* The buyback boxes were different heights: only the first carries a badge. */
+.rates{align-items:stretch}
+.rate{display:flex;flex-direction:column;justify-content:flex-start}
+.rate-b{margin-top:auto}
+/* Dead rule — there is no avatar element in the profile markup. */
+.prof-av{display:none}
+
+/* ── store toolbar ─────────────────────────────────────────────────────── */
+.toolrow{display:flex;gap:8px}
+.tbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:40px;
+  padding:0 13px;border-radius:12px;border:1px solid var(--line);background:var(--card);
+  font-family:inherit;font-size:12.5px;font-weight:700;color:var(--text);min-width:0}
+.tbtn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tcount{flex-shrink:0;min-width:18px;height:18px;border-radius:9px;background:var(--fawn);
+  color:#fff;font-size:10.5px;font-weight:800;display:flex;align-items:center;
+  justify-content:center;padding:0 5px}
+#activeFilters{gap:6px;padding:8px 2px 0}
+.fchip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:12px;
+  font-weight:700;padding:6px 10px;border-radius:16px;background:var(--ruff);
+  color:var(--fawn-deep);border:none;font-family:inherit}
+.fchip .x{font-size:12px;line-height:1;opacity:.55}
+
+/* ── filter sheet ──────────────────────────────────────────────────────── */
+.fgroup{padding:14px 0;border-bottom:1px solid var(--line)}
+.fgroup:last-child{border-bottom:none}
+.fg-t{font-size:10px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--hint);margin-bottom:9px}
+.fg-wrap{display:flex;flex-wrap:wrap;gap:7px}
+.fopt{font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:18px;
+  border:1.5px solid var(--line);background:var(--card);color:var(--hint);
+  font-family:inherit;min-height:36px}
+.fopt.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
+.fopt .n{opacity:.65;font-weight:700;margin-left:4px}
+.prng{display:flex;align-items:center;gap:10px;margin-top:2px}
+.prng input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);
+  border-radius:11px;font-size:14px;background:var(--bg);color:var(--text);
+  font-family:inherit;outline:none;text-align:center}
+.prng input:focus{border-color:var(--fawn)}
+.prng span{font-size:12px;font-weight:700;color:var(--hint)}
+.pquick{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+
+/* ── sticky rarity sections ────────────────────────────────────────────── */
+.sect{margin-bottom:6px}
+.sect-hd{position:sticky;top:96px;z-index:11;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;margin:0 -16px;padding:9px 16px;background:var(--bg)}
+@media (min-width:600px){ .sect-hd{margin:0 -20px;padding:9px 20px} }
+.sect-t{font-size:11.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--fawn-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sect-n{font-size:11px;font-weight:700;color:var(--hint);flex-shrink:0}
+.sect .grid{padding-bottom:16px;margin-top:0}
+
+/* ── tile: refreshed, no spine ─────────────────────────────────────────── */
+.pcard{border-radius:14px;box-shadow:none;border:1px solid var(--line)}
+@media (hover:hover){ .pcard:hover{transform:translateY(-2px);
+  box-shadow:0 8px 22px rgba(180,88,154,.14)} }
+.pcard .img{border-radius:13px 13px 0 0}
+.pcard .body{padding:10px 11px 11px}
+.rar{font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--fawn-deep);margin-bottom:4px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.pcard .nm{font-size:13px;min-height:34px;margin-bottom:1px}
+.price{font-family:'Fraunces',Georgia,serif;font-size:19px;font-weight:700;
+  letter-spacing:0;font-variant-numeric:tabular-nums}
+.was{font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:11px;
+  -webkit-text-fill-color:var(--hint);color:var(--hint)}
+.add{width:34px;height:34px;border-radius:8px;background:var(--fawn-deep);
+  border:none;font-size:20px;font-weight:600;line-height:1;color:#fff}
+
+/* ── order card ────────────────────────────────────────────────────────── */
+.ocard{border-radius:18px;padding:15px;margin-bottom:12px;
+  background:linear-gradient(155deg,#7A3D64 0%,#5C2A49 100%);color:#fff;
+  box-shadow:0 8px 24px rgba(92,42,73,.28)}
+.ocard.dead{opacity:.55}
+.oc-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.oc-cap{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  color:rgba(255,255,255,.6)}
+.oc-id{font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:700;
+  letter-spacing:.5px;margin-top:2px;overflow-wrap:anywhere}
+.ocard.dead .oc-id{text-decoration:line-through}
+.oc-badge{font-size:10.5px;font-weight:700;padding:5px 11px;border-radius:20px;
+  background:rgba(255,255,255,.16);white-space:nowrap;flex-shrink:0}
+.oc-thumbs{display:flex;gap:6px;margin:14px 0 4px}
+.oc-th{width:34px;height:46px;border-radius:5px;overflow:hidden;flex-shrink:0;
+  background:rgba(255,255,255,.12);display:flex;align-items:center;
+  justify-content:center;font-size:17px}
+.oc-th img{width:100%;height:100%;object-fit:contain;background:#fff;display:block}
+.oc-more{font-size:11px;font-weight:700;color:rgba(255,255,255,.8)}
+.oc-line{display:flex;align-items:center;margin-top:14px}
+.oc-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);flex-shrink:0}
+.oc-dot.on{background:#8FE0B8}
+.oc-bar{flex-grow:1;height:2px;background:rgba(255,255,255,.22)}
+.oc-bar.on{background:#8FE0B8}
+.oc-lbls{display:flex;justify-content:space-between;margin-top:7px;
+  font-size:9.5px;font-weight:600;color:rgba(255,255,255,.45)}
+.oc-lbls .on{color:rgba(255,255,255,.85)}
+.oc-note{font-size:11.5px;color:rgba(255,255,255,.72);margin-top:11px;overflow-wrap:anywhere}
+.oc-track{display:inline-block;margin-top:9px;font-size:11.5px;font-weight:700;
+  color:#F0A8D2;text-decoration:none;overflow-wrap:anywhere}
+.oc-foot{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.16);
+  font-size:12px;color:rgba(255,255,255,.7)}
+.oc-tot{font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:700;
+  color:#fff;flex-shrink:0;font-variant-numeric:tabular-nums}
+.oc-acts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.oc-b{flex:1;min-width:104px;padding:10px;border-radius:11px;font-family:inherit;
+  font-size:12px;font-weight:700;border:none}
+.oc-b-pay{background:#fff;color:#6D3358}
+.oc-b-alt{background:rgba(255,255,255,.14);color:#fff}
+.oc-b:active{transform:scale(.97)}
+.past-hd{margin-top:20px}
+
+/* ── receipt-style invoice ─────────────────────────────────────────────── */
+.rcpt-hd{padding:20px 18px 17px;text-align:center;
+  border-bottom:1px dashed rgba(178,92,147,.3);border-radius:18px 18px 0 0}
+.rcpt-brand{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;
+  color:var(--fawn-deep);letter-spacing:1.2px}
+.rcpt-sub{font-size:10.5px;color:var(--hint);margin-top:2px}
+.rcpt-id{font-family:'Fraunces',Georgia,serif;font-size:25px;font-weight:700;
+  margin-top:14px;letter-spacing:1px;overflow-wrap:anywhere}
+.rcpt-meta{font-size:11px;color:var(--hint);margin-top:3px}
+.rcpt-stamp{display:inline-block;margin-top:11px;font-size:10.5px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;padding:5px 14px;border-radius:5px}
+.rcpt-body{padding:6px 18px 18px}
+.rcpt-sec{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;
+  letter-spacing:.8px;margin:16px 0 4px}
+.rline{display:flex;align-items:center;gap:11px;padding:10px 0;
+  border-bottom:1px solid var(--line);cursor:pointer}
+.rline:active{background:var(--ruff)}
+.rthumb{width:38px;height:52px;border-radius:5px;background:#fff;border:1px solid var(--line);
+  overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+.rthumb img{width:100%;height:100%;object-fit:contain;display:block}
+.rmid{flex:1;min-width:0}
+.rnm{font-size:13px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.rsub{font-size:10.5px;color:var(--hint);font-weight:600;margin-top:2px}
+.ramt{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:700;
+  flex-shrink:0;font-variant-numeric:tabular-nums}
+.rline-void{opacity:.55}
+.rline-void .rnm,.rline-void .ramt{text-decoration:line-through}
+.rline-void .rsub{color:#c2405e;text-decoration:none}
+.rcpt-tot{margin-top:13px;padding-top:10px;border-top:1px dashed rgba(178,92,147,.3)}
+.rrow{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;
+  color:var(--hint);padding:4px 0;font-variant-numeric:tabular-nums}
+.rcpt-grand{display:flex;align-items:baseline;justify-content:space-between;
+  margin-top:11px;padding-top:11px;border-top:2px solid var(--text);
+  font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.rcpt-grand span:last-child{font-family:'Fraunces',Georgia,serif;font-size:25px;
+  font-weight:700;letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
+.rcpt-ft{text-align:center;font-size:10.5px;color:var(--hint);line-height:1.7;margin-top:18px}
+:root[data-theme="dark"] .rcpt-hd{border-bottom-color:rgba(240,185,207,.25)}
+:root[data-theme="dark"] .rthumb{background:#fff}
+
+/* ── parcel statement ──────────────────────────────────────────────────── */
+.stblock{border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:11px}
+.st-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.st-id{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;overflow-wrap:anywhere}
+.st-meta{font-size:11px;color:var(--hint);margin-top:2px}
+.st-amt{font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;
+  flex-shrink:0;font-variant-numeric:tabular-nums}
+.st-thumbs{display:flex;gap:5px;margin:10px 0 4px;flex-wrap:wrap}
+.st-th{width:28px;height:38px;border-radius:4px;background:#fff;border:1px solid var(--line);
+  overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.st-th img{width:100%;height:100%;object-fit:contain;display:block}
+.st-more{font-size:10px;font-weight:800;color:var(--hint);background:var(--ruff)}
+.st-go{width:100%;margin-top:8px;padding:9px;border-radius:10px;background:var(--ruff);
+  color:var(--fawn-deep);font-family:inherit;font-size:12px;font-weight:800;border:none}
+
+@media print{ .rline{cursor:default} .rcpt-body .pics,.st-go{display:none!important} }
 </style>
 </head>
 <body>
@@ -1239,27 +1431,24 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 
   <!-- STORE -->
   <div class="view hidden" id="v-store">
-    <div class="howbuy" id="howBuy">
-      <button class="howbuy-hd" onclick="openGuide('buy')"><span>🛍️ How buying works</span><span class="hb-chev">›</span></button>
-      <div class="howbuy-b" id="hbBody">
-                <div class="hb-step"><span>🧺</span><div><b>We keep a box for you.</b> Every card you buy goes in it and waits. You pay postage once, when you're ready to send it — not once per order.</div></div>
-        <div class="hb-step"><span>1️⃣</span><div><b>Add cards to your cart.</b> Tapping + doesn't hold a card — checking out does.</div></div>
-        <div class="hb-step"><span>2️⃣</span><div><b>Pay for the cards.</b> Scan the PayNow QR, then send us the screenshot. You get 10 minutes. No postage yet.</div></div>
-        <div class="hb-step"><span>3️⃣</span><div><b>We check it</b>, and your cards go in your box 🧺 It's in the Orders tab.</div></div>
-        <div class="hb-step"><span>4️⃣</span><div><b>Keep shopping.</b> Everything joins the same box.</div></div>
-        <div class="hb-step"><span>5️⃣</span><div><b>Send it when you're ready.</b> 🚚 Delivery, or 🤝 collect it yourself for free. Spend enough in one box and delivery is free too.</div></div>
-        <div class="hb-step"><span>↩️</span><div><b>Changed your mind?</b> Help &amp; Support, with your order number. We handle refunds by hand.</div></div>
-        <div class="hb-step"><span>💳</span><div><b>Store credit.</b> $3 back for every $100 you spend. It comes off your total automatically — if it covers everything, there's nothing to pay.</div></div>
-      </div>
-    </div>
-    <div class="cattabs" id="cattabs"></div>
+    <button class="feat" style="margin:0 0 12px" onclick="openGuide('buy')">
+      <div class="ic">🛍️</div><div><h3>How buying works</h3><p>Cart, payment, your box</p></div>
+      <span class="chev">›</span>
+    </button>
     <div class="tools">
-      <div class="search">🔎<input id="q" placeholder="Search…" oninput="renderStore()"></div>
-      <div class="dd" id="sortDD">
-        <button class="dd-btn" onclick="toggleSort(event)"><span id="sortLabel">All cards</span><span class="dd-chev">⌄</span></button>
-        <div class="dd-menu" id="sortMenu"></div>
+      <div class="search">🔎<input id="q" placeholder="Search cards…" oninput="renderStore()"></div>
+      <div class="toolrow">
+        <button class="tbtn" onclick="openFilters()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h18"></path><path d="M6 12h12"></path><path d="M10 19h4"></path></svg>
+          <span>Filters</span><span class="tcount hidden" id="filtCount">0</span>
+        </button>
+        <button class="tbtn" onclick="openSort()"><span id="sortLabel">Rarity</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+        </button>
       </div>
+      <div class="chips" id="activeFilters"></div>
     </div>
+    <div id="storeGrid"></div>
     <div class="grid" id="storeGrid"></div>
   </div>
 
@@ -1411,7 +1600,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <button class="feat" style="margin:16px 0 8px" onclick="openGuide('credit')"><div class="ic">💡</div><div><h3>How store credit works</h3><p>Four quick cards</p></div><span class="chev">›</span></button>
   <div class="section-t hidden" style="margin:16px 4px 8px">How store credit works</div>
   <div class="hb-body" style="padding:0 4px">
-    <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> $3 back for every $100 you spend. Refer a friend and you get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
+    <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> $3 back for every $100 you pay. Refer a friend and you get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
     <div class="hb-step"><span>🛒</span><div><b>How you spend it.</b> Toggle "Use store credit" at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6. If it covers everything, there's nothing to pay at all.</div></div>
     <div class="hb-step"><span>↩️</span><div><b>Refunds.</b> Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
     <div class="hb-step"><span>ℹ️</span><div><b>Good to know.</b> Credit never expires, but it can't be cashed out. If an order is cancelled or times out, any credit you used comes straight back.</div></div>
@@ -1520,6 +1709,20 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   </div>
 </div>
 
+<div class="scrim" id="filtScrim" onclick="closeFilters()"></div>
+<div class="sheet" id="filtSheet">
+  <div class="sh-hd"><h2>Filters</h2><button class="rm" onclick="closeFilters()">✕</button></div>
+  <div class="body" id="filtBody"></div>
+  <div class="sh-ft">
+    <button class="cta-alt" style="margin:0 0 8px" onclick="clearFilters()">Clear all</button>
+    <button class="cta" onclick="closeFilters()"><span id="filtApply">Show cards</span></button>
+  </div>
+</div>
+<div class="scrim" id="sortScrim" onclick="closeSort()"></div>
+<div class="sheet" id="sortSheet">
+  <div class="sh-hd"><h2>Sort by</h2><button class="rm" onclick="closeSort()">✕</button></div>
+  <div class="body" id="sortBody" style="padding-bottom:20px"></div>
+</div>
 <div class="ptr" id="ptr"><img src="wooloo-roll.gif" alt="↻" onerror="this.style.display='none';this.parentElement.textContent='↻'"></div>
 <audio id="bgm" loop preload="none"><source src="bgm.mp3" type="audio/mpeg"></audio>
 <div class="zoom-wrap" id="zoomWrap">
@@ -1846,7 +2049,7 @@ async function guardGroup(selector, btn, fn){
   finally { all.forEach(b=>{ b.disabled=false; }); }
 }
 const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered','Refunded':'b-cancelled'};
-let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, cart:[], inventory:[], invTs:0, orders:[], credit:0, tier:'All', set:'', cat:'single', sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
+let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, tab:'overview', cart:[], inventory:[], invTs:0, orders:[], credit:0, cats:[], rarities:[], sets:[], priceMin:null, priceMax:null, sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
 
 const TIERS = ['All'];   // legacy, no longer rendered
 const EMOJI = {Sealed:'📦',Merch:'🎁',Bundle:'📚'};   // placeholder only, for cards with no photo
@@ -1951,19 +2154,11 @@ const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Ver
 const POKE_FACTS=["Pikachu was almost not the mascot — Clefairy was the original pick.","Rhydon was the very first Pokémon ever designed.","Wobbuffet's blue body is a decoy — its real target is the black tail.","Azurill can change gender when it evolves into Marill.","Slowpoke's tail regrows — and is considered a delicacy in the games.","A Magikarp can leap over mountains… and still be useless in battle.","Cubone wears the skull of its mother.","Ditto and Mew are the only Pokémon that can transform — fueling fan theories for decades.","Arcanine was originally meant to be Legendary.","Gengar might be Clefable's shadow — look at their silhouettes.","Poliwag's swirl is based on tadpole intestines, visible through their skin.","Charizard isn't a Dragon-type (until Mega X).","Eevee has the most evolutions of any Pokémon — 8 and counting.","Wailord is lighter than water — it would float like a balloon.","Alakazam's IQ is said to be over 5,000.","Farfetch'd is based on a Japanese saying about a duck bringing its own seasoning.","Snorlax weighs 460 kg — about the same as a grand piano and a half.","Jigglypuff's song works on any creature that can hear.","Vaporeon's cells are so water-like it can melt into water and vanish.","Meowth is one of the few Pokémon that learned to speak human language.","Spinda's spot pattern has over 4 billion possible combinations.","Shuckle can produce the strongest single attack in the games via Power Trick shenanigans.","Mimikyu wears its disguise because it wants to be loved like Pikachu.","Dragonite can fly around the globe in about 16 hours.","Magcargo's body temperature is hotter than the surface of the sun (18,000°F).","Absol doesn't cause disasters — it tries to warn people about them.","Metapod's Harden is its whole personality.","Umbreon's rings glow when it's excited or at night — moonlight powers it.","The first shiny most players ever saw was the Red Gyarados.","Togepi's shell is said to be stuffed with happiness."];
 function pokeFact(){ return POKE_FACTS[Math.floor(Math.random()*POKE_FACTS.length)]; }
 
-function toggleHowBuy(){
-  const b=document.getElementById('hbBody'), c=document.getElementById('hbChev');
-  const open=b.classList.toggle('open'); c.textContent=open?'▴':'▾';
-  try{ localStorage.setItem('fm_seen_guide','1'); }catch(e){}
-}
 function togglePolicy(){
   const b=document.getElementById('polBody'), c=document.getElementById('polChev');
   if(!b) return;
   const open=b.classList.toggle('open');
   if(c) c.textContent=open?'▴':'▾';
-}
-function initHowBuy(){
-  try{ if(!localStorage.getItem('fm_seen_guide')){ document.getElementById('hbBody').classList.add('open'); document.getElementById('hbChev').textContent='▴'; } }catch(e){}
 }
 
 /* ============ API ============ */
@@ -2041,7 +2236,7 @@ function go(tab,dir){
   // than a minute is refetched, otherwise sold cards linger on the shelf.
   if(tab==='store'){
     if(!STATE.inventory.length||Date.now()-(STATE.invTs||0)>60000) loadStore();
-    else { renderCatTabs(); renderStore(); }   // re-render: boot painted it while hidden
+    else { renderStore(); renderActiveChips(); }   // re-render: boot painted it while hidden
   }
   if(tab==='orders') loadOrders();
   if(tab==='profile') loadProfile();
@@ -2099,7 +2294,7 @@ async function bootApp(){
   // 1) paint instantly from the last snapshot (stale-while-revalidate)
   try{ const c=JSON.parse(localStorage.getItem('fm_boot')||'null');
     if(c&&c.overview){ applyOverview(c.overview); }
-    if(c&&c.inventory){ STATE.inventory=mergeInventory(c.inventory); renderCatTabs(); renderStore(); }
+    if(c&&c.inventory){ STATE.inventory=mergeInventory(c.inventory); renderStore(); renderActiveChips(); }
   }catch(e){}
   // 2) one round trip refreshes both  // 'boot' is served by Apps Script; 'inventory' comes from D1 at the edge.
   // Two parallel calls beat one round trip to the Sheet.
@@ -2107,7 +2302,7 @@ async function bootApp(){
   const r={ok:true,overview:ov,inventory:invr};
   if(r&&r.ok){
     if(r.overview&&r.overview.ok) applyOverview(r.overview);
-    if(r.inventory&&r.inventory.ok){ STATE.inventory=mergeInventory(r.inventory.items||[]); STATE.invTs=Date.now(); renderCatTabs(); renderStore(); }
+    if(r.inventory&&r.inventory.ok){ STATE.inventory=mergeInventory(r.inventory.items||[]); STATE.invTs=Date.now(); renderStore(); renderActiveChips(); }
     try{ localStorage.setItem('fm_boot',JSON.stringify({overview:r.overview,inventory:(r.inventory&&r.inventory.items)||[]})); }catch(e){}
   } else { loadOverview(); loadStore(); }
 }
@@ -2167,7 +2362,7 @@ function renderLoyalty(r){
   el.innerHTML=`
     <div class="loyal">
       <div class="loyal-hd">🎁 Rewards</div>
-      <div class="loyal-row">Spend $${toGo.toFixed(2)} more to earn <b>$${rc.toFixed(2)}</b> store credit</div>
+      <div class="loyal-row">Pay $${toGo.toFixed(2)} more to earn <b>$${rc.toFixed(2)}</b> store credit</div>
       <div class="loyal-bar"><div class="loyal-fill" style="width:${pct}%"></div></div>
       <div class="loyal-sub">$${spend.toFixed(2)} spent · reward every $${thr}</div>
       ${refLink?`<div class="loyal-ref">
@@ -2214,121 +2409,283 @@ function shareReferral(link){
 
 /* ============ STORE ============ */
 
-const SORTS=[{v:'rarity',l:'Rarity (rarest first)'},{v:'price-desc',l:'Price: high to low'},{v:'price-asc',l:'Price: low to high'},{v:'name',l:'Name A\u2013Z'},{v:'set',l:'Set A\u2013Z'}];
-function toggleSort(e){
-  if(e) e.stopPropagation();
-  const dd=document.getElementById('sortDD'), menu=document.getElementById('sortMenu');
-  if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
-  const pool=STATE.inventory.filter(c=>(c.category||'single').toLowerCase()===STATE.cat);
-  const sets=[...new Set(pool.map(c=>c.set).filter(Boolean))].sort();
-  const tiers=[...new Set(pool.map(c=>rarityLabel(c)).filter(Boolean))]
-    .sort((a,b)=>rarityRank({rarity:a})-rarityRank({rarity:b})||a.localeCompare(b));
-  let html='<div class="dd-lbl">Sort by</div>';
-  html+=SORTS.map(s=>`<button class="dd-item ${s.v===STATE.sort&&STATE.tier==='All'&&!STATE.set?'on':''}" onclick="pickSort('${s.v}','${s.l}')">${s.l}</button>`).join('');
-  if(tiers.length){
-    html+='<div class="dd-lbl">Rarity</div>';
-    html+=`<button class="dd-item ${STATE.tier==='All'?'on':''}" onclick="pickTier('All')">All rarities</button>`;    html+=tiers.map(t=>`<button class="dd-item ${STATE.tier===t?'on':''}" onclick='pickTier(${JSON.stringify(t)})'>${esc(t)}</button>`).join('');
+const SORTS=[{v:'rarity',l:'Rarity — rarest first'},{v:'price-desc',l:'Price — high to low'},
+             {v:'price-asc',l:'Price — low to high'},{v:'name',l:'Name — A to Z'},
+             {v:'set',l:'Set — A to Z'}];
+const CATS=[{c:'single',l:'Singles'},{c:'sealed',l:'Sealed'},
+            {c:'bundle',l:'Bundles'},{c:'merch',l:'Merch'}];
+const PRICE_PRESETS=[{l:'Under $10',min:null,max:10},{l:'$10–$25',min:10,max:25},
+                     {l:'$25–$50',min:25,max:50},{l:'$50+',min:50,max:null}];
+
+// Whole dollars read better on a tile; cents only when there are cents.
+function priceLabel(n){ n=Number(n||0); return '$'+(n%1?n.toFixed(2):n.toFixed(0)); }
+
+// Everything EXCEPT the named facet, so each facet's counts reflect the other
+// filters without zeroing out its own options.
+function poolExcept(facet){
+  const qEl=document.getElementById('q');
+  const q=((qEl&&qEl.value)||'').toLowerCase().trim();
+  return STATE.inventory.filter(c=>{
+    const cc=(c.category||'single').toLowerCase();
+    if(facet!=='cat' && STATE.cats.length && STATE.cats.indexOf(cc)<0) return false;
+    if(facet!=='rar' && STATE.rarities.length && STATE.rarities.indexOf(rarityLabel(c))<0) return false;
+    if(facet!=='set' && STATE.sets.length && STATE.sets.indexOf(String(c.set||''))<0) return false;
+    if(facet!=='price'){
+      const p=Number(c.price||0);
+      if(STATE.priceMin!=null && p<STATE.priceMin) return false;
+      if(STATE.priceMax!=null && p>STATE.priceMax) return false;
+    }
+    if(q && (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().indexOf(q)<0) return false;
+    return Number(c.qty)>0;
+  });
+}
+function filterCount(){
+  return STATE.cats.length+STATE.rarities.length+STATE.sets.length+
+         ((STATE.priceMin!=null||STATE.priceMax!=null)?1:0);
+}
+function toggleIn(arr,v){ const i=arr.indexOf(v); if(i>=0) arr.splice(i,1); else arr.push(v); }
+function toggleCat(v){ toggleIn(STATE.cats,v); afterFilterChange(); }
+function toggleRar(v){ toggleIn(STATE.rarities,v); afterFilterChange(); }
+function toggleSet(v){ toggleIn(STATE.sets,v); afterFilterChange(); }
+function setPrice(min,max){
+  // Tapping the preset you are already on clears it.
+  const same=(STATE.priceMin===min && STATE.priceMax===max);
+  STATE.priceMin=same?null:min; STATE.priceMax=same?null:max;
+  afterFilterChange();
+}
+function setPriceInput(){
+  const lo=parseFloat((document.getElementById('pmin')||{}).value);
+  const hi=parseFloat((document.getElementById('pmax')||{}).value);
+  STATE.priceMin=isNaN(lo)?null:lo;
+  STATE.priceMax=isNaN(hi)?null:hi;
+  afterFilterChange(true);
+}
+function clearFilters(){
+  STATE.cats=[]; STATE.rarities=[]; STATE.sets=[];
+  STATE.priceMin=null; STATE.priceMax=null;
+  afterFilterChange();
+}
+function afterFilterChange(keepInputs){
+  renderStore();
+  renderActiveChips();
+  if(!keepInputs) renderFilterSheet();
+  else { const a=document.getElementById('filtApply'); if(a) a.textContent=applyLabel(); }
+  const c=document.getElementById('filtCount'), n=filterCount();
+  if(c){ c.textContent=n; c.classList.toggle('hidden',!n); }
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+}
+function applyLabel(){
+  const n=visibleCards().length;
+  return n ? ('Show '+n+' card'+(n===1?'':'s')) : 'No matches';
+}
+
+/* The active filters, as removable chips under the toolbar — so you can always
+   see what is narrowing the shelf without opening the sheet. */
+function renderActiveChips(){
+  const el=document.getElementById('activeFilters'); if(!el) return;
+  const bits=[];
+  STATE.cats.forEach(c=>{
+    const f=CATS.filter(x=>x.c===c)[0];
+    bits.push('<button class="fchip" onclick="toggleCat(\''+c+'\')">'+esc(f?f.l:c)+'<span class="x">✕</span></button>');
+  });
+  STATE.rarities.forEach(r=>bits.push(
+    "<button class=\"fchip\" onclick='toggleRar("+JSON.stringify(r)+")'>"+esc(r)+'<span class="x">✕</span></button>'));
+  STATE.sets.forEach(s=>bits.push(
+    "<button class=\"fchip\" onclick='toggleSet("+JSON.stringify(s)+")'>"+esc(s)+'<span class="x">✕</span></button>'));
+  if(STATE.priceMin!=null||STATE.priceMax!=null){
+    const l=(STATE.priceMin!=null?priceLabel(STATE.priceMin):'$0')+' – '+
+            (STATE.priceMax!=null?priceLabel(STATE.priceMax):'any');
+    bits.push('<button class="fchip" onclick="setPrice(STATE.priceMin,STATE.priceMax)">'+esc(l)+'<span class="x">✕</span></button>');
   }
-  if(sets.length){
-    html+='<div class="dd-lbl">Set</div>';
-    html+=`<button class="dd-item ${!STATE.set?'on':''}" onclick="pickSet('')">All sets</button>`;
-    html+=sets.map(s=>`<button class="dd-item ${STATE.set===s?'on':''}" onclick="pickSet(${JSON.stringify(s).replace(/"/g,'&quot;')})">${s}</button>`).join('');
-  }
-  menu.innerHTML=html;
-  dd.classList.add('open');
+  el.innerHTML=bits.join('');
+  el.style.display=bits.length?'flex':'none';
 }
-function ddLabel(){
-  let parts=[];
-  if(STATE.tier!=='All') parts.push(STATE.tier);
-  if(STATE.set) parts.push(STATE.set);
-  if(!parts.length){ const s=SORTS.find(x=>x.v===STATE.sort); parts.push(s?s.l:'All cards'); }
-  document.getElementById('sortLabel').textContent=parts.join(' \u00B7 ');
+
+function openFilters(){
+  renderFilterSheet();
+  document.getElementById('filtScrim').classList.add('show');
+  document.getElementById('filtSheet').classList.add('show');
 }
-function pickSort(v,l){ STATE.sort=v; closeDD(); ddLabel(); renderStore(); }
-function pickTier(t){ STATE.tier=t; closeDD(); ddLabel(); renderStore(); }
-function pickSet(s){ STATE.set=s; closeDD(); ddLabel(); renderStore(); }
-const CATS=[{c:'single',l:'🃏 Singles'},{c:'sealed',l:'📦 Sealed'},{c:'bundle',l:'📚 Bundles'},{c:'merch',l:'🎁 Merch'}];
-function renderCatTabs(){
-  const have={}; STATE.inventory.forEach(x=>{ have[(x.category||'single').toLowerCase()]=true; });
-  const avail=CATS.filter(x=>have[x.c]);
-  if(!avail.length){ document.getElementById('cattabs').innerHTML=''; return; }
-  if(!avail.find(x=>x.c===STATE.cat)) STATE.cat=avail[0].c;
-  document.getElementById('cattabs').innerHTML=avail.map(x=>
-    `<button class="cattab ${x.c===STATE.cat?'on':''}" onclick="pickCat('${x.c}')">${x.l}</button>`).join('');
-  // hide the tab bar entirely if only singles exist
-  document.getElementById('cattabs').style.display = avail.length>1 ? 'flex' : 'none';
+function closeFilters(){
+  document.getElementById('filtScrim').classList.remove('show');
+  document.getElementById('filtSheet').classList.remove('show');
 }
-function pickCat(c){
-  STATE.cat=c; STATE.tier='All'; STATE.set='';
-  renderCatTabs(); ddLabel(); renderStore();
+function renderFilterSheet(){
+  const body=document.getElementById('filtBody'); if(!body) return;
+  const tally=(pool,fn)=>{ const m={}; pool.forEach(c=>{ const k=fn(c); if(k) m[k]=(m[k]||0)+1; }); return m; };
+
+  const catN=tally(poolExcept('cat'),c=>(c.category||'single').toLowerCase());
+  const cats=CATS.filter(x=>catN[x.c]).map(x=>
+    '<button class="fopt '+(STATE.cats.indexOf(x.c)>=0?'on':'')+'" onclick="toggleCat(\''+x.c+'\')">'+
+    esc(x.l)+'<span class="n">'+catN[x.c]+'</span></button>').join('');
+
+  const rarN=tally(poolExcept('rar'),c=>rarityLabel(c));
+  const rars=Object.keys(rarN)
+    .sort((a,b)=>rarityRank({rarity:a})-rarityRank({rarity:b})||a.localeCompare(b))
+    .map(r=>"<button class=\"fopt "+(STATE.rarities.indexOf(r)>=0?'on':'')+"\" onclick='toggleRar("+JSON.stringify(r)+")'>"+
+      esc(r)+'<span class="n">'+rarN[r]+'</span></button>').join('');
+
+  const setN=tally(poolExcept('set'),c=>String(c.set||''));
+  const sets=Object.keys(setN).sort().map(s=>
+    "<button class=\"fopt "+(STATE.sets.indexOf(s)>=0?'on':'')+"\" onclick='toggleSet("+JSON.stringify(s)+")'>"+
+    esc(s)+'<span class="n">'+setN[s]+'</span></button>').join('');
+
+  const presets=PRICE_PRESETS.map(p=>
+    '<button class="fopt '+((STATE.priceMin===p.min&&STATE.priceMax===p.max)?'on':'')+
+    '" onclick="setPrice('+p.min+','+p.max+')">'+esc(p.l)+'</button>').join('');
+
+  body.innerHTML=
+    (cats?'<div class="fgroup"><div class="fg-t">Category</div><div class="fg-wrap">'+cats+'</div></div>':'')+
+    '<div class="fgroup"><div class="fg-t">Price</div>'+
+      '<div class="prng">'+
+        '<input id="pmin" type="number" inputmode="decimal" placeholder="Min" value="'+(STATE.priceMin!=null?STATE.priceMin:'')+'" onchange="setPriceInput()">'+
+        '<span>to</span>'+
+        '<input id="pmax" type="number" inputmode="decimal" placeholder="Max" value="'+(STATE.priceMax!=null?STATE.priceMax:'')+'" onchange="setPriceInput()">'+
+      '</div>'+
+      '<div class="pquick">'+presets+'</div></div>'+
+    (rars?'<div class="fgroup"><div class="fg-t">Rarity</div><div class="fg-wrap">'+rars+'</div></div>':'')+
+    (sets?'<div class="fgroup"><div class="fg-t">Set</div><div class="fg-wrap">'+sets+'</div></div>':'');
+
+  const a=document.getElementById('filtApply'); if(a) a.textContent=applyLabel();
 }
-function closeDD(){ document.getElementById('sortDD').classList.remove('open'); }
+
+function openSort(){
+  const body=document.getElementById('sortBody');
+  if(body) body.innerHTML=SORTS.map(s=>
+    '<button class="fopt" style="display:block;width:100%;text-align:left;margin-bottom:8px;'+
+    (s.v===STATE.sort?'background:var(--ruff);border-color:var(--fawn);color:var(--fawn-deep)':'')+
+    '" onclick="pickSort(\''+s.v+'\')">'+esc(s.l)+'</button>').join('');
+  document.getElementById('sortScrim').classList.add('show');
+  document.getElementById('sortSheet').classList.add('show');
+}
+function closeSort(){
+  document.getElementById('sortScrim').classList.remove('show');
+  document.getElementById('sortSheet').classList.remove('show');
+}
+function pickSort(v){
+  STATE.sort=v;
+  const l=document.getElementById('sortLabel');
+  const s=SORTS.filter(x=>x.v===v)[0];
+  if(l&&s) l.textContent=s.l.split(' — ')[0];
+  closeSort(); renderStore();
+}
+
 async function loadStore(){
   const grid=document.getElementById('storeGrid');
   if(!STATE.inventory.length) grid.innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
   const r = await api('inventory');
   STATE.inventory = mergeInventory(r.items||[]);
   STATE.invTs = Date.now();
-  renderCatTabs(); renderStore();
+  renderStore(); renderActiveChips();
 }
-function renderStore(){
-  const q = (document.getElementById('q').value||'').toLowerCase();
-  // A card with no photo looks broken in the grid, so buyers don't see it.
-  // You do — with a count, so stock doesn't quietly go missing from the shop.
-  let hiddenNoPic = 0;
-  let list = STATE.inventory.filter(c=>{
-    const okTier = STATE.tier==='All'||rarityLabel(c)===STATE.tier;
-    const okSet = !STATE.set || c.set===STATE.set;
-    const cc = (c.category||'single').toLowerCase();
-    const okCat = cc===STATE.cat;
-    const okQ = !q || (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().includes(q);
-    if(!(okTier && okSet && okCat && okQ)) return false;
-    if(!faceList(c).length){ hiddenNoPic++; return !!STATE.isAdmin; }
+// The filtered, sorted list — shared by the grid and by the "Show N cards"
+// button, so the two can never disagree.
+function visibleCards(){
+  const qEl=document.getElementById('q');
+  const q=((qEl&&qEl.value)||'').toLowerCase().trim();
+  const list=STATE.inventory.filter(c=>{
+    const cc=(c.category||'single').toLowerCase();
+    if(STATE.cats.length && STATE.cats.indexOf(cc)<0) return false;
+    if(STATE.rarities.length && STATE.rarities.indexOf(rarityLabel(c))<0) return false;
+    if(STATE.sets.length && STATE.sets.indexOf(String(c.set||''))<0) return false;
+    const p=Number(c.price||0);
+    if(STATE.priceMin!=null && p<STATE.priceMin) return false;
+    if(STATE.priceMax!=null && p>STATE.priceMax) return false;
+    if(q && (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().indexOf(q)<0) return false;
+    if(!faceList(c).length) return !!STATE.isAdmin;
     return true;
   });
-  const s = STATE.sort;
+  const s=STATE.sort;
   list.sort((a,b)=>{
     if(s==='price-asc') return a.price-b.price;
     if(s==='price-desc') return b.price-a.price;
     if(s==='set') return (a.set||'').localeCompare(b.set||'')||a.name.localeCompare(b.name);
     if(s==='name') return a.name.localeCompare(b.name);
-    // rarity: rarest first, then price high
-    // rarity: display order first, then price high
     return rarityRank(a)-rarityRank(b) || b.price-a.price;
   });
-  const grid = document.getElementById('storeGrid');  if(!list.length){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="e-ic">🔎</div><p>Nothing matching that yet.<br>Try another rarity — or add it to your wishlist and we'll ping you 🐾</p><button class="cta-alt" style="max-width:220px;margin:12px auto 0" onclick="openWishlist()">🔔 Watch for it</button></div>`; return; }
-  const adminNote = (STATE.isAdmin && hiddenNoPic)
-    ? `<div style="grid-column:1/-1;background:var(--ruff);color:var(--fawn-deep);border-radius:12px;padding:9px 12px;font-size:12px;font-weight:700">👁️ ${hiddenNoPic} card${hiddenNoPic===1?'':'s'} with no photo — hidden from buyers, shown to you</div>`
-    : '';
-  grid.innerHTML = adminNote + list.map(c=>{
-    const inCart = STATE.cart.filter(x=>x.id===c.id).length;
-    const soldOut = (c.qty - inCart) <= 0;
-    const faces = faceList(c);
-    const front = faces.length>1 ? fanHtml(faces,400)
-      : faces.length ? `<img src="${imgUrl(faces[0].f,400)}" loading="lazy" alt="">`
+  return list;
+}
+
+/* Which band a card belongs to, given the current sort — so the sticky header
+   always says something about why the cards around it are together. */
+function sectionKey(c){
+  const s=STATE.sort;
+  if(s==='set') return String(c.set||'Other');
+  if(s==='name') return String(c.name||'?').charAt(0).toUpperCase();
+  if(s==='price-asc'||s==='price-desc'){
+    const p=Number(c.price||0);
+    return p<10?'Under $10':p<25?'$10 – $25':p<50?'$25 – $50':'$50 and up';
+  }
+  return rarityLabel(c)||'Other';
+}
+
+function renderStore(){
+  const grid=document.getElementById('storeGrid'); if(!grid) return;
+  const list=visibleCards();
+  const hiddenNoPic=STATE.isAdmin?STATE.inventory.filter(c=>!faceList(c).length).length:0;
+
+  if(!list.length){
+    grid.innerHTML='<div class="empty"><div class="e-ic">🔎</div>'+
+      '<p>Nothing matching that.<br>Loosen a filter, or let us ping you when it lands 🐾</p>'+
+      '<button class="cta-alt" style="max-width:220px;margin:12px auto 0" onclick="openWishlist()">🔔 Watch for it</button>'+
+      (filterCount()?'<button class="cta-alt" style="max-width:220px;margin:8px auto 0" onclick="clearFilters()">Clear filters</button>':'')+
+      '</div>';
+    renderJustIn(); return;
+  }
+
+  const tile=c=>{
+    const inCart=STATE.cart.filter(x=>x.id===c.id).length;
+    const soldOut=(c.qty-inCart)<=0;
+    const faces=faceList(c);
+    const front=faces.length>1 ? fanHtml(faces,400)
+      : faces.length ? '<img src="'+imgUrl(faces[0].f,400)+'" loading="lazy" alt="">'
       : (EMOJI[c.tier]||'🃏');
-    // Worked out once, so the rarity pill knows whether a flag is in its way.
-    const stockTag = c.qty===1 ? 'Only 1!' : (c.qty<=3&&c.qty>1 ? c.qty+' left' : '');
-      return `<div class="pcard${rarityClass(c)===' holo'?' top-rarity':''}" onclick="openCardView('${c.id}')">
-      <div class="tier${rarityClass(c)}${stockTag?' tight':''}">${esc(rarityLabel(c))}</div>
-      ${stockTag?`<div class="stock-tag">${stockTag}</div>`:''}
-      <div class="img">${front}
-        ${backOf(c)?'<div class="flip-hint">⤾ flip</div>':''}
-        ${c.imageType==='stock'?'<div class="stockflag">stock image</div>':''}
-        ${faceList(c).length?'':'<div class="stockflag" style="background:#c2405e">no photo</div>'}
-        ${soldOut?'<div class="soldout">Claimed</div>':''}</div>
-      <div class="body">
-                <div class="nm">${esc(c.name)}</div>
-        <div class="meta">${esc(c.set||'')}${c.number?' · '+esc(c.number):''}</div>
-                <div class="desc">${[c.variance?esc(c.variance):'', c.grade?('Graded '+esc(c.grade)):esc(condShort(c.condition))].filter(Boolean).join(' · ')}</div>
-        <div class="prow">
-          <span class="price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="was">$${c.marketPrice.toFixed(2)}</span>`:''}</span>
-          <button class="add" ${soldOut?'disabled':''} onclick="event.stopPropagation();addToCart('${c.id}')">+</button>
-        </div>
-            </div></div>`;
-  }).join('');
+    const stockTag=c.qty===1?'Only 1':(c.qty<=3&&c.qty>1?c.qty+' left':'');
+    const cond=[c.variance?esc(c.variance):'',
+                c.grade?('Graded '+esc(c.grade)):esc(condShort(c.condition))].filter(Boolean).join(' · ');
+    return '<div class="pcard" onclick="openCardView(\''+c.id+'\')">'+
+      '<div class="img">'+front+
+        (backOf(c)?'<div class="flip-hint">⤾ flip</div>':'')+
+        (c.imageType==='stock'?'<div class="stockflag">stock image</div>':'')+
+        (faces.length?'':'<div class="stockflag" style="background:#c2405e">no photo</div>')+
+        (stockTag?'<div class="stock-tag">'+stockTag+'</div>':'')+
+        (soldOut?'<div class="soldout">Claimed</div>':'')+'</div>'+
+      '<div class="body">'+
+        '<div class="rar">'+esc(rarityLabel(c))+'</div>'+
+        '<div class="nm">'+esc(c.name)+'</div>'+
+        '<div class="meta">'+esc(c.set||'')+(c.number?' · '+esc(c.number):'')+'</div>'+
+        '<div class="desc">'+cond+'</div>'+
+        '<div class="prow">'+
+          '<span class="price">'+priceLabel(c.price)+
+            (c.marketPrice&&c.marketPrice>c.price?'<span class="was">'+priceLabel(c.marketPrice)+'</span>':'')+'</span>'+
+          '<button class="add" '+(soldOut?'disabled':'')+' aria-label="Add '+esc(c.name)+' to cart" onclick="event.stopPropagation();addToCart(\''+c.id+'\')">+</button>'+
+        '</div>'+
+      '</div></div>';
+  };
+
+  // Group into sections in list order — the list is already sorted, so a simple
+  // run-length walk gives the right bands with no second sort.
+  const sections=[];
+  list.forEach(c=>{
+    const k=sectionKey(c);
+    const last=sections[sections.length-1];
+    if(last&&last.k===k) last.items.push(c); else sections.push({k:k,items:[c]});
+  });
+
+  const adminNote=(STATE.isAdmin&&hiddenNoPic)
+    ? '<div style="background:var(--ruff);color:var(--fawn-deep);border-radius:12px;padding:9px 12px;font-size:12px;font-weight:700;margin-bottom:12px">👁️ '+
+      hiddenNoPic+' card'+(hiddenNoPic===1?'':'s')+' with no photo — hidden from buyers, shown to you</div>'
+    : '';
+
+  grid.innerHTML=adminNote+sections.map(s=>
+    '<div class="sect">'+
+      '<div class="sect-hd"><div class="sect-t">'+esc(s.k)+'</div>'+
+        '<div class="sect-n">'+s.items.length+' card'+(s.items.length===1?'':'s')+'</div></div>'+
+      '<div class="grid">'+s.items.map(tile).join('')+'</div>'+
+    '</div>').join('');
+
   armFans();
-  renderJustIn()
+  renderJustIn();
 }
 
 async function askPics(id){
@@ -2364,8 +2721,8 @@ function openCardView(id){
                 ${cvFaces.length>1?`<div class="cv-strip">${cvFaces.map((u,i)=>`<img src="${imgUrl(u.f,200)}" alt="" class="${i===0?'on':''}" onclick="event.stopPropagation();cvFace(this,${i})">`).join('')}</div>`:''}
       </div>
       <div class="cv-meta">
-        <div class="cv-name">${c.name}</div>
-        <div class="cv-sub">${c.set}${c.number?' · '+c.number:''}</div>
+        <div class="cv-name">${esc(c.name)}</div>
+        <div class="cv-sub">${esc(c.set||'')}${c.number?' · '+esc(c.number):''}</div>
         <div class="cv-tags">
           <span class="cv-tag">${esc(rarityLabel(c))}</span>
           ${c.variance?`<span class="cv-tag">${esc(c.variance)}</span>`:''}
@@ -2695,7 +3052,7 @@ function showInvoice(inv){
       :`<div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>`}
     ${inv._pending?`<div class="pay-warn" id="resvNote" style="background:#e8f0fb;color:#2a5aa5">🔒 Reserving your cards…</div>`:''}
     <div class="inv-items">
-      ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${it.name}${it.number?` <span style="color:var(--hint);font-size:11.5px">${it.number}</span>`:''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
+      ${inv.items.map(it=>`<div class="inv-row"><span>${EMOJI[it.tier]||''} ${esc(it.name)}${it.number?` <span style="color:var(--hint);font-size:11.5px">${esc(it.number)}</span>`:''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
       ${inv.shipping>0
         ?`<div class="inv-row"><span>Shipping</span><span>$${inv.shipping.toFixed(2)}</span></div>`
         :(String(inv.orderId||'').indexOf('SH')===0?''
@@ -2927,15 +3284,16 @@ function renderParcelCard(p){
   else foot=`<div class="parcel-hint">Once your payment's confirmed, you can send your box from here.</div>`;
   return `<div class="parcel">
     <div class="parcel-hd"><span>${PARCEL_TITLE[p.status]||'🧺 Parcel'} <span style="font-size:11px;opacity:.6">${p.id}</span></span><span class="parcel-n">${inParcel.length} order${inParcel.length>1?'s':''} · ${itemsLabel(allItems)}</span></div>
+    <button class="po-inv" style="width:100%;margin:8px 0 0" onclick="viewStatement('${p.id}')">🧾 Statement for this box</button>
     <div class="parcel-orders">${inParcel.map(o=>`
       <div class="po-row"><div class="po-l">
         <div class="po-id">#${o.id} <span class="badge ${BADGE[o.status]||'b-ordered'}">${o.status==='Payment Verified'?'✓ In parcel':statusLabel(o)}</span></div>
-        <div class="po-items">${o.items.filter(i=>!i.refunded).slice(0,3).map(i=>i.name).join(', ')}${o.items.filter(i=>!i.refunded).length>3?' +'+(o.items.filter(i=>!i.refunded).length-3):''}</div></div></div><div class="po-r"><div class="po-amt">$${o.total.toFixed(2)}</div>${o.status==='Awaiting Payment'?(payExpired(o)
+        <div class="po-items">${o.items.filter(i=>!i.refunded).slice(0,3).map(i=>esc(i.name)).join(', ')}${o.items.filter(i=>!i.refunded).length>3?' +'+(o.items.filter(i=>!i.refunded).length-3):''}</div></div><div class="po-r"><div class="po-amt">$${o.total.toFixed(2)}</div>${o.status==='Awaiting Payment'?(payExpired(o)
           ?`<span style="font-size:11.5px;font-weight:800;color:#c2405e">⌛ Timed out</span><button class="cancel-link" onclick="event.stopPropagation();guard(this,()=>cancelUnpaid('${o.id}'))">Clear it</button>`
           :`<button class="po-pay" onclick="resumePayment('${o.id}')">💳 Pay</button><button class="cancel-link" onclick="event.stopPropagation();guard(this,()=>cancelUnpaid('${o.id}'))">Cancel</button>`):''}</div></div>
       <button class="po-more" onclick="togglePoCards('${o.id}')" id="pom-${o.id}">▾ Show what's inside</button>
       <div class="po-cards" id="poc-${o.id}">
-       ${o.items.filter(i=>!i.refunded).map(i=>`<div class="po-card"><div class="po-thumb">${i.image?`<img src="${imgUrl(i.image,200)}">`:(EMOJI[i.tier]||'🃏')}</div><div class="po-cn">${i.name}${i.number?`<div style="font-size:10.5px;color:var(--hint);font-weight:600">${i.number}</div>`:''}</div><div class="po-cp">$${i.price.toFixed(2)}</div></div>`).join('')}
+       ${o.items.filter(i=>!i.refunded).map(i=>`<div class="po-card"><div class="po-thumb">${i.image?`<img src="${imgUrl(i.image,200)}">`:(EMOJI[i.tier]||'🃏')}</div><div class="po-cn">${esc(i.name)}${i.number?`<div style="font-size:10.5px;color:var(--hint);font-weight:600">${i.number}</div>`:''}</div><div class="po-cp">$${i.price.toFixed(2)}</div></div>`).join('')}
         <button class="po-inv" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
       </div>`).join('')}</div>    ${unpaid.length?`<div class="parcel-hint">⏳ ${unpaid.length} order${unpaid.length>1?'s':''} above still to pay. Your box can't go out until they're settled — unpaid shop orders release themselves after the timer, claim wins are held.</div>`:''}
     ${foot}</div>`;
@@ -3000,31 +3358,52 @@ function orderCardHtml(o){
   const cancelled=!!o.cancelled;
   const merged=(o.status||'').indexOf('Merged into')===0;
   const si=STATUS_STEP[o.status]!=null?STATUS_STEP[o.status]:(cancelled?-1:0);
-  const bcls=merged?'b-delivered':(cancelled?'b-cancelled':(BADGE[o.status]||'b-ordered'));
-  const track=(cancelled||merged)?'':`<div class="track">${STEPS.map((s,i)=>`<div class="step ${i<=si?'done':''}"><div class="dot"></div><div class="lbl">${s}</div></div>`).join('')}</div>`;
-  const anyRefund=o.items.some(i=>i.refunded);
   const live=o.items.filter(i=>!i.refunded);
-  return `<div class="order ${cancelled?'dead':''}">
-      <div class="hd"><div class="oid-l"><span class="oid">#${o.id}</span>${
-        o.delivery==='pickup' ? '<div class="obox"><span class="ptag">🤝 pickup</span></div>'
-        : (o.parcelId&&!cancelled ? `<div class="obox">Box <span class="ptag">🧺 ${o.parcelId}</span></div>` : '')
-      }</div><span class="badge ${bcls}">${statusLabel(o)}</span></div>
-      ${track}
-      ${o.lastUpdate&&!cancelled?`<div style="font-size:11.5px;color:var(--hint)">📍 ${o.lastUpdate}</div>`:''}
-      ${o.tracking?`<a class="trackn" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">Track ${o.tracking} ↗</a>`:''}
-        <div class="oitems">${(cancelled?o.items:live).map(it=>`<div class="oitem"><span>${EMOJI[it.tier]||''} ${it.name}${it.number?` <span style="opacity:.7">${it.number}</span>`:''}${it.refunded?' ↩️':''}</span><span>$${it.price.toFixed(2)}</span></div>`).join('')}
-        ${anyRefund&&!cancelled?`<div class="oitem" style="color:#c2405e">↩️ ${o.items.filter(i=>i.refunded).length} card(s) refunded — see invoice</div>`:''}
-        <div class="oitem" style="font-weight:800;color:var(--text);margin-top:4px"><span>${cancelled?'Charged':'Total'}</span><span>$${(cancelled?0:o.total).toFixed(2)}</span></div></div>
-      ${o.status==='Awaiting Payment'?(payExpired(o)
-        ?`<div class="parcel-hint" style="margin-top:8px">⌛ This order's payment window ran out — the cards went back on sale. Nothing was charged.</div>
-      <button class="cancel-link" onclick="guard(this,()=>cancelUnpaid('${o.id}'))">Clear it from my list</button>`
-        :`<button class="cta" style="margin-top:8px" onclick="resumePayment('${o.id}')">💳 Complete payment</button>
-      <button class="cancel-link" onclick="guard(this,()=>cancelUnpaid('${o.id}'))">Cancel this order</button>`):''}
-      <button class="pics" style="margin-top:8px" onclick="viewInvoice('${o.id}')">🧾 View invoice</button>
-      ${!cancelled&&['Payment Verified','Packed','Shipped','In Transit','Delivered'].includes(o.status)
-        ?`<button class="pics" style="margin-top:8px" onclick="openHaulSheet('${o.id}')">📸 Share my haul</button>`:''}
-    </div>`;
+  const anyRefund=o.items.some(i=>i.refunded);
+  const shown=live.slice(0,4);
+  const extra=live.length-shown.length;
+
+  // Thumbnails rather than a price list: the order card answers "where are my
+  // cards", the invoice answers "what did this cost". Prices live there.
+  const thumbs=shown.map(i=>
+    '<div class="oc-th">'+(i.image?'<img src="'+imgUrl(i.image,200)+'" loading="lazy" alt="'+esc(i.name)+'">':(EMOJI[i.tier]||'🃏'))+'</div>').join('')+
+    (extra>0?'<div class="oc-th oc-more">+'+extra+'</div>':'');
+
+  const track=(cancelled||merged)?'':
+    '<div class="oc-line">'+STEPS.map((s,i)=>
+      '<span class="oc-dot '+(i<=si?'on':'')+'"></span>'+
+      (i<STEPS.length-1?'<span class="oc-bar '+(i<si?'on':'')+'"></span>':'')).join('')+'</div>'+
+    '<div class="oc-lbls">'+STEPS.map((s,i)=>'<span class="'+(i<=si?'on':'')+'">'+s+'</span>').join('')+'</div>';
+
+  return '<div class="ocard '+(cancelled?'dead':'')+'">'+
+      '<div class="oc-hd">'+
+        '<div style="min-width:0">'+
+          '<div class="oc-cap">Order</div>'+
+          '<div class="oc-id">'+esc(o.id)+'</div>'+
+        '</div>'+
+        '<span class="oc-badge">'+esc(statusLabel(o))+'</span>'+
+      '</div>'+
+      (live.length?'<div class="oc-thumbs">'+thumbs+'</div>':'')+
+      track+
+      (o.lastUpdate&&!cancelled?'<div class="oc-note">📍 '+esc(o.lastUpdate)+'</div>':'')+
+      (o.tracking?'<a class="oc-track" href="https://www.ship24.com/tracking?p='+encodeURIComponent(o.tracking)+'" target="_blank" rel="noopener">Track '+esc(o.tracking)+' ↗</a>':'')+
+      (anyRefund&&!cancelled?'<div class="oc-note" style="color:#FF9FB4">↩️ '+o.items.filter(i=>i.refunded).length+' card(s) refunded — see the invoice</div>':'')+
+      '<div class="oc-foot">'+
+        '<span>'+itemsLabel(o.items)+(o.parcelId&&!cancelled?' · box '+esc(o.parcelId):'')+'</span>'+
+        '<span class="oc-tot">'+(cancelled?'$0.00':'$'+o.total.toFixed(2))+'</span>'+
+      '</div>'+
+      '<div class="oc-acts">'+
+        (o.status==='Awaiting Payment'?(payExpired(o)
+          ?'<button class="oc-b oc-b-alt" onclick="guard(this,()=>cancelUnpaid(\''+o.id+'\'))">Clear it from my list</button>'
+          :'<button class="oc-b oc-b-pay" onclick="resumePayment(\''+o.id+'\')">💳 Complete payment</button>'+
+           '<button class="oc-b oc-b-alt" onclick="guard(this,()=>cancelUnpaid(\''+o.id+'\'))">Cancel</button>'):'')+
+        '<button class="oc-b oc-b-alt" onclick="viewInvoice(\''+o.id+'\')">🧾 Invoice</button>'+
+        (!cancelled&&['Payment Verified','Packed','Shipped','In Transit','Delivered'].indexOf(o.status)>=0
+          ?'<button class="oc-b oc-b-alt" onclick="openHaulSheet(\''+o.id+'\')">📸 Share</button>':'')+
+      '</div>'+
+    '</div>';
 }
+
 async function doRefresh(){
   const ptr=document.getElementById('ptr');
   if(ptr){
@@ -3830,7 +4209,7 @@ function openBinderCard(idx){
         ${back?'<div class="cv-flip-hint">tap card to flip ⤾ · 🔍 to zoom</div>':(c.image?'<div class="cv-flip-hint">🔍 tap to zoom in</div>':'')}
       </div>
       <div class="cv-meta">
-        <div class="cv-name">${c.name}</div>
+        <div class="cv-name">${esc(c.name)}</div>
         <div class="cv-tags">
           <span class="cv-tag">${esc(rarityLabel(c))}</span>
           <span class="cv-tag">Claimed for $${Number(c.price).toFixed(2)}</span>
@@ -3956,66 +4335,132 @@ function resumePayment(id){
 
 // The invoice document. Shows EVERYTHING that happened to the order — cards
 // bought, cards refunded, credit applied, who handled it, where it went.
+// The invoice document. Shows EVERYTHING that happened to the order — cards
+// bought, cards refunded, credit applied, who handled it, where it went.
+// Every line carries its own scan; tapping one opens the zoom viewer.
 function viewInvoice(id){
-  const o=STATE.orders.find(x=>x.id===id); if(!o) return;
+  const o=STATE.orders.filter(x=>x.id===id)[0]; if(!o) return;
   if(o.status==='Awaiting Payment'){ closeCardView&&closeCardView(); resumePayment(id); return; }
-  const findImg=(it)=>{ if(it.image) return imgUrl(it.image,200); const c=STATE.inventory.find(x=>x.name===it.name); return c&&c.image?imgUrl(c.image,200):''; };
+  const findImg=(it)=>{ if(it.image) return imgUrl(it.image,200);
+    const c=STATE.inventory.filter(x=>x.name===it.name)[0]; return c&&c.image?imgUrl(c.image,200):''; };
   const cancelled=!!o.cancelled;
   const items=o.items||[];
   const live=items.filter(i=>!i.refunded);
   const gone=items.filter(i=>i.refunded);
   const sub=live.reduce((s,i)=>s+i.price,0);
   const refunded=gone.reduce((s,i)=>s+i.price,0);
-  // The old fallback printed the raw status, so "Awaiting Verification" (and
-  // "Awaiting Payment") ran left out of the corner and over the order number.
-  // statusLabel is the same short vocabulary the Orders tab uses.
   const stamp={t:statusLabel(o), c:cancelled?'b-cancelled':(BADGE[o.status]||'b-ordered')};
-  const line=(it,void_)=>`<div class="doc-line ${void_?'doc-void':''}">
-      <div class="doc-thumb">${findImg(it)?`<img src="${findImg(it)}">`:(EMOJI[it.tier]||'🃏')}</div>
-      <div class="doc-nm">${esc(it.name)}<div class="doc-tag">${void_?('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):'')):[esc(it.number||''),esc(rarityLabel(it))].filter(Boolean).join(' · ')}</div></div>
-      <div class="doc-amt">${money(it.price)}</div></div>`;
   const trail=[
-    o.verifiedBy?`<b>Payment verified</b> · ${esc(crew(o.verifiedBy))}`:'',
-    o.packedBy?`<b>Packed</b> · ${esc(crew(o.packedBy))}`:'',
-    o.shippedBy?`<b>Shipped</b> · ${esc(crew(o.shippedBy))}`:''
+    o.verifiedBy?'<b>Payment verified</b> · '+esc(crew(o.verifiedBy)):'',
+    o.packedBy?'<b>Packed</b> · '+esc(crew(o.packedBy)):'',
+    o.shippedBy?'<b>Shipped</b> · '+esc(crew(o.shippedBy)):''
   ].filter(Boolean).join('<br>');
 
-  document.getElementById('cardViewBody').innerHTML=`
-    <div class="doc">
-      <button class="doc-close" onclick="closeCardView()">✕</button>
-      <div class="doc-hd">
-        <div class="doc-brand">FLOOFMART TCG</div>
-        <div class="doc-brandsub">Pokémon TCG · Singapore</div>
-        <div class="doc-oid">🧾 ${esc(o.id)}</div>
-        <div class="doc-meta">${o.created?new Date(o.created).toLocaleString():''}${o.parcelId&&!cancelled?'<br>Parcel '+esc(o.parcelId):''}${o.delivery?'<br>'+(o.delivery==='pickup'?'🤝 Self-pickup':'🚚 Delivery'):''}</div>
-      </div>
-      <div class="doc-stamp badge ${stamp.c}">${esc(stamp.t)}</div>
-      <div class="doc-body">
-        ${cancelled?`<div class="doc-note" style="background:#fdf0f0"><b>This order was cancelled.</b> Nothing was charged for it${o.creditUsed>0?', and any store credit you used was returned to your balance':''}. The cards went back on sale.</div>`:''}
-        ${live.length?`<div class="doc-sec">Cards</div>${live.map(i=>line(i,cancelled)).join('')}`:''}
-        ${gone.length?`<div class="doc-sec">Refunded</div>${gone.map(i=>line(i,true)).join('')}`:''}
-        <div class="doc-tot">
-          <div class="doc-row"><span>Subtotal${cancelled?' (not charged)':''}</span><span>${money(cancelled?0:sub)}</span></div>
-          ${refunded>0?`<div class="doc-row" style="color:#c2405e"><span>Refunded</span><span>−${money(refunded)}</span></div>`:''}
-          ${o.creditUsed>0?`<div class="doc-row" style="color:var(--mint)"><span>Store credit applied</span><span>−${money(o.creditUsed)}</span></div>`:''}
-          <div class="doc-row muted"><span>${o.shipping?'Shipping':'Postage'}</span><span>${
-            o.shipping?money(o.shipping)
-            :(String(o.id).indexOf('SH')===0?'—':'billed when the parcel ships')}</span></div>
-          <div class="doc-row grand"><span>${cancelled?'Charged':'Total'}</span><span>${money(cancelled?0:o.total)}</span></div>
-        </div>
-        ${o.note?`<div class="doc-note">📝 ${esc(o.note)}</div>`:''}
-        ${trail?`<div class="doc-sec">Handled by</div><div class="doc-trail">${trail}</div>`:''}
-        ${o.shipAddress?`<div class="doc-sec">Ship to</div><div class="doc-trail">${esc(o.shipName||'')}<br>${esc(o.shipAddress)}</div>`:''}
-        ${o.tracking?`<a class="doc-track" href="https://www.ship24.com/tracking?p=${encodeURIComponent(o.tracking)}" target="_blank">🚚 Track ${esc(o.tracking)} ↗</a>`:''}
-        <button class="pics" style="margin-top:10px" onclick="getPdf('${o.id}',this)">📄 Send me a PDF invoice</button>        ${(!tg||!tg.platform||/^(tdesktop|web|weba|webk|macos)$/.test(tg.platform))?`<button class="pics" style="margin-top:6px" onclick="window.print()">🖨️ Print / Save as PDF</button>`:''}
-        <div class="doc-ft">Paid by PayNow · FloofMart TCG, Singapore<br>
-          Questions about this invoice? Help &amp; Support, quoting ${esc(o.id)}.<br>
-          Refunds return store credit instantly; cash refunds are sent by hand.</div>
-      </div>
-    </div>`;
+  const line=(it,void_)=>{
+    const src=findImg(it);
+    const big=it.image?imgUrl(it.image,1600):'';
+    return '<div class="rline '+(void_?'rline-void':'')+'"'+(big?' onclick="openZoom(\''+big+'\')"':'')+'>'+
+      '<div class="rthumb">'+(src?'<img src="'+src+'" alt="'+esc(it.name)+'">':(EMOJI[it.tier]||'🃏'))+'</div>'+
+      '<div class="rmid">'+
+        '<div class="rnm">'+esc(it.name)+'</div>'+
+        '<div class="rsub">'+(void_
+          ? ('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):''))
+          : [esc(it.number||''),esc(rarityLabel(it))].filter(Boolean).join(' · '))+'</div>'+
+      '</div>'+
+      '<div class="ramt">'+money(it.price)+'</div>'+
+    '</div>';
+  };
+
+  document.getElementById('cardViewBody').innerHTML=
+    '<div class="doc">'+
+      '<button class="doc-close" onclick="closeCardView()">✕</button>'+
+      '<div class="rcpt-hd">'+
+        '<div class="rcpt-brand">FLOOFMART TCG</div>'+
+        '<div class="rcpt-sub">Pokémon TCG · Singapore</div>'+
+        '<div class="rcpt-id">'+esc(o.id)+'</div>'+
+        '<div class="rcpt-meta">'+(o.created?esc(new Date(o.created).toLocaleString()):'')+'</div>'+
+        '<div class="rcpt-stamp badge '+stamp.c+'">'+esc(stamp.t)+'</div>'+
+      '</div>'+
+      '<div class="rcpt-body">'+
+        (cancelled?'<div class="doc-note" style="background:#fdf0f0"><b>This order was cancelled.</b> Nothing was charged'+(o.creditUsed>0?', and the store credit you used went back to your balance':'')+'. The cards returned to the shop.</div>':'')+
+        (live.length?live.map(i=>line(i,cancelled)).join(''):'')+
+        (gone.length?'<div class="rcpt-sec">Refunded</div>'+gone.map(i=>line(i,true)).join(''):'')+
+        '<div class="rcpt-tot">'+
+          '<div class="rrow"><span>Subtotal'+(cancelled?' (not charged)':'')+'</span><span>'+money(cancelled?0:sub)+'</span></div>'+
+          (refunded>0?'<div class="rrow" style="color:#c2405e"><span>Refunded</span><span>−'+money(refunded)+'</span></div>':'')+
+          (o.creditUsed>0?'<div class="rrow" style="color:#1c7a52"><span>Store credit</span><span>−'+money(o.creditUsed)+'</span></div>':'')+
+          '<div class="rrow"><span>'+(o.shipping?'Shipping':'Postage')+'</span><span>'+
+            (o.shipping?money(o.shipping):(String(o.id).indexOf('SH')===0?'—':'on despatch'))+'</span></div>'+
+        '</div>'+
+        '<div class="rcpt-grand"><span>'+(cancelled?'Charged':'Total')+'</span><span>'+money(cancelled?0:o.total)+'</span></div>'+
+        (o.note?'<div class="doc-note">📝 '+esc(o.note)+'</div>':'')+
+        (trail?'<div class="rcpt-sec">Handled by</div><div class="doc-trail">'+trail+'</div>':'')+
+        (o.shipAddress?'<div class="rcpt-sec">Ship to</div><div class="doc-trail">'+esc(o.shipName||'')+'<br>'+esc(o.shipAddress)+'</div>':'')+
+        (o.tracking?'<a class="doc-track" href="https://www.ship24.com/tracking?p='+encodeURIComponent(o.tracking)+'" target="_blank" rel="noopener">🚚 Track '+esc(o.tracking)+' ↗</a>':'')+
+        '<button class="pics" style="margin-top:12px" onclick="getPdf(\''+o.id+'\',this)">📄 Send me a PDF</button>'+
+        ((!tg||!tg.platform||/^(tdesktop|web|weba|webk|macos)$/.test(tg.platform))?'<button class="pics" style="margin-top:6px" onclick="window.print()">🖨️ Print / Save as PDF</button>':'')+
+        '<div class="rcpt-ft">Paid by PayNow · quote '+esc(o.id)+' in Help &amp; Support</div>'+
+      '</div>'+
+    '</div>';
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
 }
+
+/* Ten orders in one box means ten invoices. They have to STAY ten — refunds,
+   verification and claim wins are all per-order, and merging them would break
+   the refund trail. So this is a statement ABOVE them, not instead of them. */
+function viewStatement(pid){
+  const mine=(STATE.orders||[]).filter(o=>
+    String(o.parcelId||'')===String(pid) && String(o.id).indexOf('SH')!==0 && !o.cancelled);
+  if(!mine.length) return;
+  const sh=(STATE.orders||[]).filter(o=>
+    String(o.parcelId||'')===String(pid) && String(o.id).indexOf('SH')===0 && !o.cancelled);
+  const grand=mine.reduce((s,o)=>s+Number(o.total||0),0)+sh.reduce((s,o)=>s+Number(o.total||0),0);
+  const credit=mine.reduce((s,o)=>s+Number(o.creditUsed||0),0);
+
+  const block=o=>{
+    const live=(o.items||[]).filter(i=>!i.refunded);
+    const thumbs=live.slice(0,6).map(i=>
+      '<div class="st-th">'+(i.image?'<img src="'+imgUrl(i.image,200)+'" loading="lazy" alt="'+esc(i.name)+'">':(EMOJI[i.tier]||'🃏'))+'</div>').join('')+
+      (live.length>6?'<div class="st-th st-more">+'+(live.length-6)+'</div>':'');
+    return '<div class="stblock">'+
+      '<div class="st-hd">'+
+        '<div style="min-width:0">'+
+          '<div class="st-id">'+esc(o.id)+'</div>'+
+          '<div class="st-meta">'+(o.created?esc(new Date(o.created).toLocaleDateString()):'')+' · '+itemsLabel(o.items)+'</div>'+
+        '</div>'+
+        '<div class="st-amt">'+money(o.total)+'</div>'+
+      '</div>'+
+      '<div class="st-thumbs">'+thumbs+'</div>'+
+      '<button class="st-go" onclick="viewInvoice(\''+o.id+'\')">Open invoice ›</button>'+
+    '</div>';
+  };
+
+  document.getElementById('cardViewBody').innerHTML=
+    '<div class="doc">'+
+      '<button class="doc-close" onclick="closeCardView()">✕</button>'+
+      '<div class="rcpt-hd">'+
+        '<div class="rcpt-brand">FLOOFMART TCG</div>'+
+        '<div class="rcpt-sub">Statement for one box</div>'+
+        '<div class="rcpt-id">'+esc(pid)+'</div>'+
+        '<div class="rcpt-meta">'+mine.length+' order'+(mine.length===1?'':'s')+' in this box</div>'+
+      '</div>'+
+      '<div class="rcpt-body">'+
+        mine.map(block).join('')+
+        (sh.length?'<div class="rcpt-sec">Postage</div>'+sh.map(o=>
+          '<div class="rrow" style="font-size:13px;color:var(--text)"><span>'+esc(o.id)+'</span><span>'+money(o.total)+'</span></div>').join(''):'')+
+        '<div class="rcpt-tot">'+
+          (credit>0?'<div class="rrow" style="color:#1c7a52"><span>Store credit applied</span><span>−'+money(credit)+'</span></div>':'')+
+        '</div>'+
+        '<div class="rcpt-grand"><span>Box total</span><span>'+money(grand)+'</span></div>'+
+        '<div class="rcpt-ft">Each order keeps its own invoice — tap any one above.<br>'+
+          'Questions? Help &amp; Support, quoting the box number.</div>'+
+      '</div>'+
+    '</div>';
+  document.getElementById('cardViewScrim').classList.add('show');
+  document.getElementById('cardView').classList.add('show');
+}
+
 async function getPdf(id,btn){
   await guard(btn, async()=>{
     const r=await api('invoicePdf',{orderId:id});
@@ -4024,19 +4469,24 @@ async function getPdf(id,btn){
     (tg&&tg.showAlert?tg.showAlert:alert)(m);
   });
 }
-function loadProfile(){
-  const pc=document.getElementById('p-credit'); if(pc) pc.textContent = '$'+(STATE.credit||0).toFixed(0);
-  loadOrders(); // ensures ORDERS_CACHE
-  setTimeout(()=>{
-    const os=(ORDERS_CACHE||[]).filter(o=>String(o.id).indexOf('SH')!==0);
-    const alive=os.filter(o=>!o.cancelled&&o.status!=='Refunded'&&(o.status||'').indexOf('Merged')!==0);
-    document.getElementById('p-orders').textContent=alive.length;
-    document.getElementById('p-transit').textContent=alive.filter(o=>['Payment Verified','Packed','Shipped','In Transit'].includes(o.status)).length;
-    // recent notifications from order lastUpdates
-    const nt=alive.filter(o=>o.lastUpdate).slice(0,5).map(o=>`<div class="notif"><span class="nt-ic">🔔</span><div><b>#${o.id}</b> — ${o.status}<div class="nt-sub">${o.lastUpdate}</div></div></div>`).join('');
-    document.getElementById('prof-notifs').innerHTML = nt ? '<div class="section-t">Recent updates</div>'+nt : '';
-  },300);
+async function loadProfile(){
+  const pc=document.getElementById('p-credit');
+  if(pc) pc.textContent='$'+(STATE.credit||0).toFixed(0);
+  // Was setTimeout(...,300) and raced the fetch: on a slow connection the
+  // stats read an empty cache and stuck at 0 until you left and came back.
+  await loadOrders();
+  const os=(ORDERS_CACHE||[]).filter(o=>String(o.id).indexOf('SH')!==0);
+  const alive=os.filter(o=>!o.cancelled&&o.status!=='Refunded'&&(o.status||'').indexOf('Merged')!==0);
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('p-orders',alive.length);
+  set('p-transit',alive.filter(o=>['Payment Verified','Packed','Shipped','In Transit'].indexOf(o.status)>=0).length);
+  const nt=alive.filter(o=>o.lastUpdate).slice(0,5).map(o=>
+    '<div class="notif"><span class="nt-ic">🔔</span><div><b>#'+esc(o.id)+'</b> — '+
+    esc(statusLabel(o))+'<div class="nt-sub">'+esc(o.lastUpdate)+'</div></div></div>').join('');
+  const box=document.getElementById('prof-notifs');
+  if(box) box.innerHTML = nt ? '<div class="section-t">Recent updates</div>'+nt : '';
 }
+
 async function loadCredit(){
   document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
   document.getElementById('v-credit').classList.remove('hidden');
@@ -4224,7 +4674,7 @@ const GUIDES={
     {ic:'🐑',t:'Hello!',b:'FloofMart is a Pokémon card shop that lives inside Telegram. Browsing, paying and tracking all happen right here — there is no other website to visit.'},
     {ic:'🧺',t:'We keep a box for you',b:'Every card you buy goes into your box and waits there. You pay postage <b>once</b>, whenever you decide to send it — not once per order.'},
     {ic:'🎯',t:'Drops',b:'We post cards in the channel and the first person to comment <b>claim</b> wins it. Press Start on the bot first, or we can’t send you the invoice.'},
-    {ic:'💳',t:'You earn credit',b:'$3 back for every $100 you spend. It comes off your total automatically at checkout — nothing to remember.'},
+    {ic:'💳',t:'You earn credit',b:'$3 back for every $100 you pay. It comes off your total automatically at checkout — nothing to remember.'},
     {ic:'🎁',t:'Bring a friend, both win',b:'They spend $15+ and <b>you get $3 credit</b>. Your own link is<br><b>{{REF}}</b><br><button class="wsug" style="margin-top:10px" onclick="shareInvite()">🔗 Share my link</button> <button class="wsug" style="margin-top:10px" onclick="copyInvite(this)">Copy</button>'},
     {ic:'🆘',t:'Stuck at any point?',b:'Help &amp; Support is in the menu. A real person reads it.'}
   ]},
@@ -4244,7 +4694,7 @@ const GUIDES={
     {ic:'⏰',t:'Pay within the window',b:'Claim wins have a deadline on them. Miss it and the card passes to the next person in the queue — so pay when you see it.'}
   ]},
   credit:{title:'Store credit',steps:[
-    {ic:'🎁',t:'How you earn it',b:'$3 back for every $100 you spend. Refer a friend and you get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.'},
+    {ic:'🎁',t:'How you earn it',b:'$3 back for every $100 you pay. Refer a friend and you get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.'},
     {ic:'🛒',t:'How you spend it',b:'Toggle <b>Use store credit</b> at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6.'},
     {ic:'↩️',t:'Refunds',b:'Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.'},
     {ic:'ℹ️',t:'Good to know',b:'Credit never expires, but it can’t be cashed out. If an order is cancelled or times out, any credit you used comes straight back.'}
@@ -4305,7 +4755,6 @@ function maybeFirstRun(){
   loadPrefs();
   maybeFirstRun();
   renderSettings();
-  initHowBuy();
   attachSwipe();
   attachPullRefresh();
   bootApp();
