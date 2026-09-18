@@ -1370,11 +1370,48 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .bxcard .fg-lbl{color:rgba(255,255,255,.85)}
 .bx-link{text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center}
 /* box sheet + history */
-.htabs{display:flex;gap:6px;padding:0 14px 10px}
-.htab{flex:1 1 0;min-width:0;min-height:34px;padding:7px 6px;border:none;border-radius:10px;white-space:nowrap;
-  background:var(--chip,#f1e7ec);color:var(--hint);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
-.htab.on{background:var(--primary,#e58bb0);color:#fff}
-.htab i{font-style:normal;opacity:.75;font-weight:600}
+/* History filter chips. They filter ONE list in place; they are not tabs and
+   must never repaint the header, or the whole panel jumps on every tap. */
+.fchips{display:flex;gap:6px;padding:12px 18px 2px;overflow-x:auto;scrollbar-width:none}
+.fchips::-webkit-scrollbar{display:none}
+.fchip{flex:0 0 auto;min-height:32px;padding:5px 12px;border:1px solid var(--line);border-radius:999px;
+  background:#fff;color:var(--hint);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.fchip.on{background:var(--fawn-deep);border-color:var(--fawn-deep);color:#fff}
+.fchip i{font-style:normal;opacity:.7;margin-left:3px}
+.alist{transition:opacity .14s ease}
+.alist.fade{opacity:0}
+/* ONE row shape for orders and boxes alike. The old screen drew boxes as
+   bordered cards and receipts as bare text lines, which is why moving between
+   them read as three different screens. */
+.orow{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:13px;margin-bottom:7px;overflow:hidden}
+.orow-hd{display:flex;align-items:center;gap:11px;flex:1;min-width:0;text-align:left;font-family:inherit;
+  background:none;border:none;padding:9px 4px 9px 11px;color:var(--text)}
+.orow.dead{background:#fbf7f9}
+.orow:active{background:var(--ruff)}
+.orow-th{display:flex;gap:2px;flex-shrink:0}
+.orow-th .fc{width:24px;flex:0 0 24px}
+.orow-th .fc+.fc{margin-left:-10px}
+.orow-m{flex:1;min-width:0}
+.orow-t{font-size:13px;font-weight:800;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.orow-s{font-size:11px;color:var(--hint);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.orow-amt{font-size:13px;font-weight:800;color:var(--fawn-deep);flex-shrink:0}
+.orow.dead .orow-amt{color:var(--hint);text-decoration:line-through;font-weight:700}
+.orow-go{color:var(--hint);font-size:16px;flex-shrink:0;padding-right:11px}
+/* The per-order invoice button. It is a SIBLING of .orow-hd, never inside it:
+   a button nested in a button gets hoisted out by the browser and wraps. */
+.pdfb{width:32px;height:32px;flex:0 0 32px;margin-right:9px;border-radius:9px;border:1px solid var(--line);
+  background:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;
+  color:var(--fawn-deep);cursor:pointer}
+.pdfb:active{background:var(--ruff)}
+.pdfb[disabled]{opacity:.32}
+.htag{font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:6px;text-transform:uppercase;
+  white-space:nowrap;letter-spacing:.3px}
+.htag.ok{background:#e4f5ec;color:var(--mint-deep)}
+.htag.way{background:#e6f1f7;color:#3d7f9c}
+.htag.wait{background:#fdf0d8;color:#a97b12}
+.htag.ref{background:#f3e9f6;color:#8a5aa0}
+.htag.can{background:#f2eef0;color:var(--hint)}
 .bsheet .bs-hd{padding:22px 18px 14px;text-align:center;border-bottom:1px dashed rgba(178,92,147,.3)}
 .bs-t{font-family:'Fraunces',Georgia,serif;font-size:21px;font-weight:700;color:var(--fawn-deep)}
 .bs-s{font-size:11.5px;color:var(--hint);margin-top:2px}
@@ -3914,76 +3951,153 @@ async function requestInvoices(ids, btn){
   });
 }
 
-/* ---------- Order history (top-right button) ---------- */
-/* ---------- Order history ----------
-   Was three places to look: a month list, a collapsible drawer of cancelled
-   orders, and a separate "All receipts" screen one level deeper. Now it's one
-   screen with three tabs, so there is a single answer to "where do I find an
-   old order" and going into one no longer loses your place. */
-var HIST_TAB='boxes';
-function openHistory(tab){ if(tab) HIST_TAB=tab; cvGo(paint_openHistory); }
-/* Switching tab repaints in place - it is not a new screen, so it must not
-   push onto the stack or Back would walk through every tab you touched. */
-function histTab(t){ HIST_TAB=t; cvPaint(); }
-function openAllReceipts(){ openHistory('receipts'); }   /* kept: older callers */
+/* ---------- Order history (top-right button) ----------
+   One list, newest first, grouped by month. The chips filter that same list in
+   place -- they are NOT tabs: only #histList is rewritten, so the title, the
+   chips and the scroll position never move. Every row is the same shape
+   whether it's a box or an order, and every paid order carries its own invoice
+   button, so "send me the receipt for that one" is a single tap and needs no
+   screen at all. Tapping the row itself goes straight to the full invoice,
+   which already holds the cards, the refunds, the totals, the PDF and Print --
+   there is nothing left to expand. */
+var HIST_F='all';
+function openHistory(f){ if(f) HIST_F=f; cvGo(paint_openHistory); }
+function openAllReceipts(){ openHistory('all'); }   /* kept: older callers */
 
-function histBoxesHtml(m){
-  const byMonth={}, months=[];
-  m.past.forEach(b=>{
-    const t=boxDoneMs(b)||b.startMs, d=new Date(t);
-    const k=d.toLocaleDateString('en-SG',{month:'long',year:'numeric'});
-    if(!byMonth[k]){ byMonth[k]=[]; months.push(k); }
-    byMonth[k].push(b);
+/* Short status word for a row. statusLabel() is the long form used on the
+   invoice; here it has to fit beside an order number on a 360px phone. */
+function histTag(o){
+  if(o.cancelled)                         return ['can','Cancelled'];
+  if(isRefunded(o))                       return ['ref','Refunded'];
+  if(refundInfo(o).some)                  return ['ref','Part refund'];
+  var s=String(o.status||'');
+  if(s.indexOf('Merged into')===0)        return ['way','In your box'];
+  if(s==='Awaiting Payment')              return payExpired(o)?['can','Timed out']:['wait','Unpaid'];
+  if(s==='Awaiting Verification')         return ['wait','Checking'];
+  if(s==='Payment Verified')              return ['ok','Paid'];
+  if(s==='Packed')                        return ['ok','Packed'];
+  if(s==='Shipped'||s==='In Transit')     return ['way','On the way'];
+  if(s==='Delivered')                     return ['ok','Delivered'];
+  return ['can', s||'—'];
+}
+var HIST_STAGE_TAG={done:'ok', way:'way', box:'wait'};
+function histFaces(items){
+  var cs=(items||[]).reduce(function(a,it){ return a.concat(itemCards(it)); },[]).slice(0,3);
+  return '<div class="orow-th">'+cs.map(function(c){
+    return '<div class="fc">'+thumbHtml(c.f,120,c.name)+'</div>'; }).join('')+'</div>';
+}
+/* A paid order can have its invoice sent from the row. An unpaid or cancelled
+   one has no invoice to send, so the button is visibly disabled rather than
+   missing -- otherwise the rows don't line up and it reads as a glitch. */
+function histPdfBtn(o){
+  return OWNED_STATUSES.indexOf(o.status)>=0
+    ? '<button class="pdfb" title="Send me this invoice" onclick="event.stopPropagation();getPdf(\''+o.id+'\',this)">📄</button>'
+    : '<button class="pdfb" disabled title="No invoice until it\'s paid">📄</button>';
+}
+function histOrderRow(o){
+  var t=histTag(o), gone=o.cancelled||isRefunded(o);
+  var all=o.items||[], back=all.filter(function(i){ return i.refunded; });
+  /* cardCount() counts only LIVE cards, so a fully refunded order read
+     "0 cards" and a partly refunded one under-reported. History is a record
+     of what was ordered: count every card, then say how many came back. */
+  var n=(all.length?all:[]).reduce(function(s,it){ return s+itemCards(it).length; },0);
+  return '<div class="orow'+(gone?' dead':'')+'">'+
+    '<button class="orow-hd" onclick="viewInvoice(\''+o.id+'\')">'+
+      histFaces(liveItems(all).concat(back))+
+      '<div class="orow-m">'+
+        '<div class="orow-t">#'+esc(o.id)+' <span class="htag '+t[0]+'">'+esc(t[1])+'</span></div>'+
+        '<div class="orow-s">'+dateShort(o.createdMs)+
+          (isSHo(o)?' · Postage':' · '+n+' card'+(n===1?'':'s'))+
+          /* Short form on purpose: the tag beside the order number already
+             says "Part refund", so this line only has to carry the count,
+             and the box number must survive on a 360px screen. */
+          (back.length&&!isRefunded(o)?' · ↩️'+back.length:'')+
+          (o.parcelId?' · Box '+esc(o.parcelId):'')+'</div>'+
+      '</div>'+
+      /* A cancelled order shows what it WOULD have cost, struck through --
+         "$0.00" with a line through it says nothing at all. */
+      '<span class="orow-amt">'+money(Number(o.total||0))+'</span>'+
+    '</button>'+
+    histPdfBtn(o)+
+  '</div>';
+}
+/* A box has no order number and no invoice of its own, so its title IS its
+   status ("Delivered", "On its way") -- repeating that in the tag beside it
+   would just say the same word twice. The tag carries the parcel's own stage
+   only when it says something the title doesn't. */
+function histBoxRow(b){
+  var refunds=b.orders.reduce(function(n,o){ return n+(o.items||[]).filter(function(i){return i.refunded;}).length; },0);
+  var title=boxTitle(b).t, extra=(b.stage.l!==title)?b.stage.l:'';
+  return '<div class="orow">'+
+    '<button class="orow-hd" onclick="openBoxSheet(\''+b.id+'\')">'+
+      histFaces(b.items)+
+      '<div class="orow-m">'+
+        '<div class="orow-t">'+b.stage.ic+' '+esc(title)+
+          (extra?' <span class="htag '+(HIST_STAGE_TAG[b.stage.key]||'ok')+'">'+esc(extra)+'</span>':'')+'</div>'+
+        '<div class="orow-s">'+dateShort(boxDoneMs(b)||b.startMs)+' · '+b.cards+' card'+(b.cards===1?'':'s')+
+          ' · '+b.orders.length+' order'+(b.orders.length===1?'':'s')+
+          (refunds?' · ↩️'+refunds:'')+'</div>'+
+      '</div>'+
+      '<span class="orow-amt">'+money(b.total)+'</span>'+
+    '</button>'+
+    '<span class="orow-go">›</span>'+
+  '</div>';
+}
+function histMonths(list, msOf, row){
+  var by={}, keys=[];
+  list.forEach(function(x){
+    var k=new Date(msOf(x)||Date.now()).toLocaleDateString('en-SG',{month:'long',year:'numeric'});
+    if(!by[k]){ by[k]=[]; keys.push(k); }
+    by[k].push(x);
   });
-  if(!months.length) return '<div class="oempty" style="margin-top:6px">Nothing here yet.<br><small>Boxes land here a few days after they\'re delivered or collected.</small></div>';
-  const row=b=>{
-    const faces=b.items.reduce((a,it)=>a.concat(itemCards(it)),[]).slice(0,3);
-    const refunds=b.orders.reduce((n,o)=>n+(o.items||[]).filter(i=>i.refunded).length,0);
-    return '<button class="hrow" onclick="openBoxSheet(\''+b.id+'\')">'+
-      '<div class="hrow-th">'+faces.map(c=>'<div class="fc">'+thumbHtml(c.f,120,c.name)+'</div>').join('')+'</div>'+
-      '<div class="hrow-m"><div class="hrow-t">'+esc(b.stage.l)+' '+dateShort(boxDoneMs(b)||b.startMs)+'</div>'+
-      '<div class="hrow-s">'+b.cards+' card'+(b.cards===1?'':'s')+' · $'+b.total.toFixed(2)+(refunds?' · ↩️ '+refunds+' refunded':'')+'</div></div>'+
-      '<span class="hrow-go">›</span></button>';
-  };
-  return months.map(k=>'<div class="rcpt-sec">'+esc(k)+'</div>'+byMonth[k].map(row).join('')).join('');
-}
-function histReceiptsHtml(){
-  const list=(STATE.orders||[]).slice().sort((a,b)=>(b.createdMs||0)-(a.createdMs||0));
-  if(!list.length) return '<div class="oempty" style="margin-top:6px">No receipts yet.</div>';
-  const paid=list.filter(o=>OWNED_STATUSES.includes(o.status)).slice(0,12).map(o=>o.id);
-  return '<div class="rcpt-sec bs-sec-row"><span>'+list.length+' receipt'+(list.length===1?'':'s')+'</span>'+
-      (paid.length?'<button class="bs-req" onclick="requestInvoices('+JSON.stringify(paid).replace(/"/g,'&quot;')+',this)">📄 Request invoices</button>':'')+'</div>'+
-    list.map(o=>{
-      const n=cardCount(o.items), dead=o.cancelled;
-      return '<button class="bs-rc" onclick="viewInvoice(\''+o.id+'\')"><div><div class="bs-rc-id">'+(isSHo(o)?'🚚 Postage · ':'')+'#'+esc(o.id)+'</div>'+
-        '<div class="bs-rc-s">'+dateShort(o.createdMs)+(isSHo(o)?'':' · '+n+' card'+(n===1?'':'s'))+' · '+esc(dead||isRefunded(o)||refundInfo(o).some?statusLabel(o):receiptPayLabel(o))+'</div></div>'+
-        '<div class="bs-rc-r"><b>$'+(dead?'0.00':Number(o.total||0).toFixed(2))+'</b><span>View ›</span></div></button>';
-    }).join('');
-}
-function histClosedHtml(m){
-  if(!m.closed.length) return '<div class="oempty" style="margin-top:6px">Nothing cancelled or refunded. 🐾</div>';
-  return m.closed.map(o=>{
-    const ref=isRefunded(o), back=ref?Number(o.total||0):0;
-    return '<button class="bs-rc" onclick="viewInvoice(\''+o.id+'\')"><div><div class="bs-rc-id">#'+esc(o.id)+'</div>'+
-      '<div class="bs-rc-s">'+dateShort(o.createdMs)+' · '+liveItems(o.items).concat((o.items||[]).filter(i=>i.refunded)).map(i=>esc(i.name)).slice(0,2).join(', ')+'</div></div>'+
-      '<div class="bs-rc-r"><b>'+(ref?'$'+back.toFixed(2):'$0.00')+'</b><span>'+esc(statusLabel(o))+'</span></div></button>';
+  return keys.map(function(k){
+    return '<div class="rcpt-sec">'+esc(k)+'</div>'+by[k].map(row).join('');
   }).join('');
 }
+function histListHtml(){
+  var m=STATE.omodel||ordersModel();
+  if(HIST_F==='boxes'){
+    var bx=m.past.concat(m.onWay, m.inBox).sort(function(a,b){
+      return (boxDoneMs(b)||b.startMs)-(boxDoneMs(a)||a.startMs); });
+    return bx.length ? histMonths(bx, function(b){ return boxDoneMs(b)||b.startMs; }, histBoxRow)
+      : '<div class="oempty" style="margin-top:6px">No boxes yet.<br><small>A box is everything shipped to you in one parcel.</small></div>';
+  }
+  var l=(STATE.orders||[]).slice().sort(function(a,b){ return (b.createdMs||0)-(a.createdMs||0); });
+  if(HIST_F==='paid')   l=l.filter(function(o){ return OWNED_STATUSES.indexOf(o.status)>=0 && !o.cancelled && !isRefunded(o); });
+  if(HIST_F==='closed') l=l.filter(function(o){ return o.cancelled || isRefunded(o); });
+  if(!l.length) return '<div class="oempty" style="margin-top:6px">'+
+    (HIST_F==='closed'?'Nothing cancelled or refunded. 🐾':'No orders here yet.')+'</div>';
+  return histMonths(l, function(o){ return o.createdMs; }, histOrderRow);
+}
+/* Repaints ONLY the list. Anything that rewrote #cardViewBody here would also
+   redraw the header and reset the scroll, which is what made the old tabs
+   feel like the screen was being thrown away and rebuilt on every tap. */
+function histFilter(f){
+  var el=document.getElementById('histList'); if(!el){ HIST_F=f; cvPaint(); return; }
+  HIST_F=f;
+  el.classList.add('fade');
+  var chips=document.querySelectorAll('#histChips .fchip');
+  for(var i=0;i<chips.length;i++) chips[i].classList.toggle('on', chips[i].getAttribute('data-f')===f);
+  setTimeout(function(){ el.innerHTML=histListHtml(); el.classList.remove('fade'); }, 140);
+}
 function paint_openHistory(){
-  const m=STATE.omodel||ordersModel();
-  const tabs=[['boxes','Boxes',m.past.length],['receipts','Receipts',(STATE.orders||[]).length],['closed','Closed',m.closed.length]];
-  const body = HIST_TAB==='receipts' ? histReceiptsHtml()
-             : HIST_TAB==='closed'   ? histClosedHtml(m)
-             : histBoxesHtml(m);
-  const sub  = HIST_TAB==='receipts' ? 'Every order, newest first'
-             : HIST_TAB==='closed'   ? 'Cancelled and refunded orders'
-             : 'Delivered and collected boxes';
+  var m=STATE.omodel||ordersModel(), all=STATE.orders||[];
+  var chips=[
+    ['all',    'Everything', all.length],
+    ['boxes',  'Boxes',      m.past.length+m.onWay.length+m.inBox.length],
+    ['paid',   'Paid',       all.filter(function(o){ return OWNED_STATUSES.indexOf(o.status)>=0 && !o.cancelled && !isRefunded(o); }).length],
+    ['closed', 'Closed',     m.closed.length]
+  ];
   document.getElementById('cardViewBody').innerHTML=
     '<div class="doc bsheet">'+
       cvNavBtn()+
-      '<div class="bs-hd"><div class="bs-t">Order History</div><div class="bs-s">'+sub+'</div></div>'+
-      '<div class="htabs">'+tabs.map(t=>'<button class="htab'+(HIST_TAB===t[0]?' on':'')+'" onclick="histTab(\''+t[0]+'\')">'+t[1]+(t[2]?' <i>'+t[2]+'</i>':'')+'</button>').join('')+'</div>'+
-      '<div class="rcpt-body">'+body+
+      '<div class="bs-hd"><div class="bs-t">Order History</div>'+
+        '<div class="bs-s">Tap any order for its full invoice · 📄 sends you the PDF</div></div>'+
+      '<div class="fchips" id="histChips">'+chips.map(function(c){
+        return '<button class="fchip'+(HIST_F===c[0]?' on':'')+'" data-f="'+c[0]+
+          '" onclick="histFilter(\''+c[0]+'\')">'+c[1]+'<i>'+c[2]+'</i></button>'; }).join('')+'</div>'+
+      '<div class="rcpt-body">'+
+        '<div class="alist" id="histList">'+histListHtml()+'</div>'+
         (STATE.olderHidden>0?'<button class="pics" style="margin-top:12px" onclick="showOlderOrders(this)">Show older orders</button>':'')+
       '</div>'+
     '</div>';
