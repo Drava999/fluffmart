@@ -2221,7 +2221,10 @@ let PAY_TIMER=null;
 function renderPayQR(inv, isRetry){
   const box=document.getElementById('pnQr'); if(!box) return;
   box.innerHTML=''; // never stack a new QR on top of a stale one
-  const mobile=(inv.paynowMobile||'').replace(/\s/g,'');
+  let mobile=String(inv.paynowMobile||'').replace(/[\s\-()]/g,'').replace(/\.0+$/,'');
+  // A bare 8-digit SG mobile is not a valid PayNow proxy -- bank apps reject the QR.
+  if(/^[89]\d{7}$/.test(mobile)) mobile='+65'+mobile;
+  else if(/^65[89]\d{7}$/.test(mobile)) mobile='+'+mobile;
   if(!mobile){ box.innerHTML='<div class="pn-qr-ph">Set PayNow<br><span>in Config</span></div>'; return; }
   // If the CDN script didn't load (flaky network inside the Telegram webview), pull it again once.
   if(typeof QRCode==='undefined'){
@@ -5543,7 +5546,7 @@ const GUIDES={
     {ic:'🧺',t:'We keep a box for you',b:'Every card you buy goes into your box and waits there. You pay postage <b>once</b>, whenever you decide to send it — not once per order.'},
     {ic:'🎯',t:'Drops',b:'We post cards in the channel and the first person to comment <b>claim</b> wins it. Press Start on the bot first, or we can’t send you the invoice.'},
     {ic:'💳',t:'You earn credit',b:'$3 back for every $100 you pay. It comes off your total automatically at checkout — nothing to remember.'},
-    {ic:'🎁',t:'Bring a friend, both win',b:'They spend $15+ and <b>you get $3 credit</b>. Your own link is<br><b>{{REF}}</b><br><button class="wsug" style="margin-top:10px" onclick="shareInvite()">🔗 Share my link</button> <button class="wsug" style="margin-top:10px" onclick="copyInvite(this)">Copy</button>'},
+    {ic:'🎁',t:'Bring a friend, both win',b:'When they spend $15+, <b>you each get $3 credit</b>. Your own link is<br><b>{{REF}}</b><br><button class="wsug" style="margin-top:10px" onclick="shareInvite()">🔗 Share my link</button> <button class="wsug" style="margin-top:10px" onclick="copyInvite(this)">Copy</button>'},
     {ic:'🆘',t:'Stuck at any point?',b:'Help &amp; Support is in the menu. A real person reads it.'}
   ]},
   buy:{title:'How buying works',steps:[
