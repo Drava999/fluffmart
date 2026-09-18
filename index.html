@@ -1369,6 +1369,17 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .bx-sub{font-size:11.5px;color:rgba(255,255,255,.65);margin-top:1px}
 .bxcard .fg-lbl{color:rgba(255,255,255,.85)}
 .bx-link{text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center}
+/* The hold countdown. Deliberately quiet until it matters: no colour at all
+   for most of the three weeks, amber in the last week, and a neutral grey once
+   it's past -- NOT red, because nothing bad has happened or is going to. */
+.hold-line{display:block;font-size:11.5px;font-weight:700;color:var(--hint);
+  background:var(--ruff);border-radius:10px;padding:7px 10px;margin:8px 0 2px;line-height:1.35}
+.hold-line small{display:block;font-size:10.5px;font-weight:600;opacity:.78;margin-top:1px}
+.hold-soon{background:#fdf0d8;color:#8a6410}
+.hold-over{background:#f2eef0;color:var(--hint)}
+/* The only loud one. Something happens here whether they act or not, so it has
+   to read differently from the three quiet states above it. */
+.hold-final{background:#fde8e8;color:#9c3535}
 /* box sheet + history */
 /* History filter chips. They filter ONE list in place; they are not tabs and
    must never repaint the header, or the whole panel jumps on every tap. */
@@ -2644,7 +2655,7 @@ function applyOverview(r){
   if(r.welcome){ const h=document.querySelector('.hero p'); if(h) h.textContent=r.welcome; }
   { const t=document.getElementById('ov-tip'); if(t) t.textContent='✨ Did you know? '+pokeFact(); }
   if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
-  STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.unpaidTotal=Number(r.unpaidTotal||0); STATE.openParcel=r.openParcel||null; STATE.holdDays=r.holdExpiryDays||21;
+  STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.unpaidTotal=Number(r.unpaidTotal||0); STATE.openParcel=r.openParcel||null; STATE.holdDays=Number(r.holdExpiryDays||21); STATE.holdGraceHours=Number(r.holdGraceHours==null?24:r.holdGraceHours);
   STATE.refLink = r.referralLink || STATE.refLink || '';
   renderUnpaidBanner();
   renderLoyalty(r);
@@ -3586,6 +3597,12 @@ function applyOrdersPayload(r){
   STATE.payInfo={mobile:r.paynowMobile,name:r.paynowName,mins:r.paymentWindowMins||10,
                  grace:Number(r.paymentGraceMins==null?5:r.paymentGraceMins)};
   STATE.openParcelId=r.openParcel||null; STATE.parcelStatus=r.parcelStatus||null;
+  /* Also taken from the orders payload, not just overview: a buyer can open
+     the Orders tab before the home screen has loaded, and the hold countdown
+     would otherwise quietly fall back to the 21-day default even when Config
+     says something else. */
+  if(r.holdExpiryDays!=null) STATE.holdDays=Number(r.holdExpiryDays)||21;
+  if(r.holdGraceHours!=null) STATE.holdGraceHours=Number(r.holdGraceHours);
   STATE.shipInvoice=r.shipInvoice||null; STATE.pickupNote=r.pickupNote||''; STATE.shipFlat=r.shipFlat||3;
   STATE.olderHidden=Number(r.olderHidden||0);
 }
@@ -3779,6 +3796,72 @@ function boxTitle(b){
   return {t:'Your box', sub:'Since '+dateShort(b.startMs)};
 }
 function boxShareId(b){ return b.id.indexOf('o:')===0 ? b.id.slice(2) : 'box:'+b.id; }
+/* ---------- the 21-day hold, made visible ----------
+   A box holds paid cards until the buyer picks Ship or Self-pickup. The policy
+   said "up to 3 weeks" in the store info and nowhere else, so a buyer had no
+   way to know where THIS box stood -- the first they heard of it was a DM on
+   day 21.
+
+   What actually happens at zero, and what this must therefore not imply: the
+   shop nudges them, and keeps nudging weekly. Nothing is cancelled, nothing
+   goes back on sale, no fee appears. Saying "expires" here would be a lie that
+   costs us a support message and some trust. */
+function holdDays(){ const d=Number(STATE.holdDays||21); return d>0?d:0; }
+function boxAgeDays(b){
+  const ms=(b&&b.parcel&&b.parcel.createdMs)||b.startMs||0;
+  if(!ms) return null;
+  return Math.floor((Date.now()-ms)/86400000);
+}
+/* Only while the box is still collecting. Once it's sent or delivered the
+   hold is over and a countdown is noise. */
+function holdInfo(b){
+  if(!b||!b.stage||b.stage.key!=='box') return null;
+  const total=holdDays(); if(!total) return null;
+  const age=boxAgeDays(b); if(age===null) return null;
+  const left=total-age;
+  /* Once the hold ends the shop sends the box itself after a grace period, so
+     "over" is no longer a resting state -- it is a countdown to something
+     happening. The server owns the real clock (final_notice_at on the parcel);
+     this only has to be roughly right, and must never claim MORE time than the
+     server will give. */
+  const graceH=Number(STATE.holdGraceHours==null?24:STATE.holdGraceHours);
+  /* Prefer the server's own stamp. holdSweep_ writes final_notice_at the
+     moment it sends the 24-hour warning, so counting from that is the same
+     clock the push will use. Falling back to created+hold only matters in the
+     minutes before the sweep first runs. */
+  const startMs=(b.parcel&&b.parcel.finalNoticeMs)||0;
+  const ms=(b&&b.parcel&&b.parcel.createdMs)||b.startMs||0;
+  let finalHours=null;
+  if(left<=0){
+    const from=startMs||(ms?ms+total*86400000:0);
+    finalHours=from?Math.max(0,Math.ceil((from+graceH*3600000-Date.now())/3600000)):graceH;
+  }
+  return { age:age, total:total, left:left, graceH:graceH,
+           soon:left<=7&&left>0, over:left<=0, finalHours:finalHours };
+}
+function holdLineHtml(b){
+  const h=holdInfo(b); if(!h) return '';
+  if(h.over){
+    /* Inside the grace: a real, imminent thing. This is the ONE state that
+       gets the loud treatment, because something happens whether they act or
+       not -- and they can still change it to pickup or a different address. */
+    if(h.finalHours>0){
+      return '<div class="hold-line hold-final">\u23F0 We\u2019re sending this box in about '+
+        h.finalHours+' hour'+(h.finalHours===1?'':'s')+
+        '<small>Your '+h.total+'-day hold is up. Choose \uD83D\uDE9A Ship or \uD83E\uDD1D Self-pickup now ' +
+        'and it goes your way \u2014 otherwise we post it to your saved address. Nothing is cancelled.</small></div>';
+    }
+    return '<div class="hold-line hold-final">\uD83D\uDE9A Going out now \u2014 held '+h.age+' days'+
+      '<small>Your hold is up, so we\u2019re sending it. Need it changed? Message us before it\u2019s packed.</small></div>';
+  }
+  if(h.soon){
+    return '<div class="hold-line hold-soon">\u23F3 '+h.left+' day'+(h.left===1?'':'s')+' left of your '+h.total+'-day hold'+
+      '<small>Then you get '+h.graceH+' hours\u2019 notice and we send it for you. Your cards stay yours either way.</small></div>';
+  }
+  return '<div class="hold-line">\uD83E\uDDFA Held '+h.age+' of '+h.total+' days'+
+    '<small>Add more cards, or send the box whenever you like. After '+h.total+
+    ' days we\u2019ll send it for you.</small></div>';
+}
 function boxStatusLine(b){
   if(b.stage.key==='way'||b.stage.key==='done') return boxLatestUpdate(b.orders);
   const checking=b.orders.filter(o=>o.status==='Awaiting Verification').length;
@@ -3798,6 +3881,7 @@ function boxCardHtml(b){
       '<span class="oc-badge">'+b.stage.ic+' '+esc(b.stage.l)+'</span></div>'+
     boxStepsHtml(b.stage.step)+
     (line?'<div class="oc-note">'+esc(line)+'</div>':'')+
+    holdLineHtml(b)+
     faceStripHtml(b.items,200,12)+
     '<div class="oc-foot"><span>'+b.cards+' card'+(b.cards===1?'':'s')+(bundles?' · '+bundles+' bundle'+(bundles===1?'':'s'):'')+'</span><span class="oc-tot">$'+b.total.toFixed(2)+'</span></div>'+
     '<div class="oc-acts" onclick="event.stopPropagation()">'+
@@ -3951,6 +4035,7 @@ function paint_openBoxSheet(id){
         (tracking?'<a class="bs-track" href="https://www.ship24.com/tracking?p='+encodeURIComponent(tracking)+'" target="_blank" rel="noopener">🚚 Track '+esc(tracking)+' ↗</a>':'')+
       '</div>'+
       '<div class="rcpt-body">'+
+        holdLineHtml(b)+
         '<div class="rcpt-sec">What\'s inside</div>'+inside+
         '<div class="rcpt-sec bs-sec-row"><span>Receipts</span>'+(payIds.length?'<button class="bs-req" onclick="requestInvoices('+JSON.stringify(payIds).replace(/"/g,'&quot;')+',this)">📄 Request invoices</button>':'')+'</div>'+
         receipts+postage+
