@@ -1786,7 +1786,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <button class="feat" style="margin:16px 0 8px" onclick="openGuide('credit')"><div class="ic">💡</div><div><h3>How store credit works</h3><p>Four quick cards</p></div><span class="chev">›</span></button>
   <div class="section-t hidden" style="margin:16px 4px 8px">How store credit works</div>
   <div class="hb-body" style="padding:0 4px">
-    <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> $3 back for every $100 you pay. Refer a friend and you get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
+    <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> $3 back for every $100 you pay. Refer a friend and you BOTH get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
     <div class="hb-step"><span>🛒</span><div><b>How you spend it.</b> Toggle "Use store credit" at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6. If it covers everything, there's nothing to pay at all.</div></div>
     <div class="hb-step"><span>↩️</span><div><b>Refunds.</b> Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
     <div class="hb-step"><span>ℹ️</span><div><b>Good to know.</b> Credit never expires, but it can't be cashed out. If an order is cancelled or times out, any credit you used comes straight back.</div></div>
@@ -2613,7 +2613,8 @@ function applyOverview(r){
   STATE.credit = r.credit||0;
   STATE.isAdmin = !!r.isAdmin;
   if (r.paynowMobile && !STATE.payInfo) {
-    STATE.payInfo = { mobile: r.paynowMobile, name: r.paynowName, mins: Number(r.paymentWindowMins || 10) };
+    STATE.payInfo = { mobile: r.paynowMobile, name: r.paynowName, mins: Number(r.paymentWindowMins || 10),
+                      grace: Number(r.paymentGraceMins == null ? 5 : r.paymentGraceMins) };
   }
   updateRateLabels();
   document.getElementById('ov-credit').textContent = '$'+(r.credit||0).toFixed(2);
@@ -2688,7 +2689,7 @@ function renderLoyalty(r){
       <div class="loyal-bar"><div class="loyal-fill" style="width:${pct}%"></div></div>
       <div class="loyal-sub">$${spend.toFixed(2)} spent · reward every $${thr}</div>
       ${refLink?`<div class="loyal-ref">
-        <div class="loyal-reft">Refer a friend → you both win. They spend $${r.referralMinSpend||15}+, you get $${(r.referralCredit||3).toFixed(2)} credit.</div>
+        <div class="loyal-reft">Refer a friend → you both win. Once they spend $${r.referralMinSpend||15}+, <b>you each</b> get $${(r.referralCredit||3).toFixed(2)} credit.</div>
         <button class="loyal-refb" onclick="shareReferral('${refLink.replace(/'/g,'')}')">🔗 Copy my referral link</button>
       </div>`:''}
     </div>`;
@@ -3582,7 +3583,8 @@ let ORDERS_CACHE=null, ORDERS_TS=0;
 function applyOrdersPayload(r){
   ORDERS_CACHE=r.orders||[]; STATE.orders=ORDERS_CACHE;
   STATE.parcels=r.parcels||[];
-  STATE.payInfo={mobile:r.paynowMobile,name:r.paynowName,mins:r.paymentWindowMins||10};
+  STATE.payInfo={mobile:r.paynowMobile,name:r.paynowName,mins:r.paymentWindowMins||10,
+                 grace:Number(r.paymentGraceMins==null?5:r.paymentGraceMins)};
   STATE.openParcelId=r.openParcel||null; STATE.parcelStatus=r.parcelStatus||null;
   STATE.shipInvoice=r.shipInvoice||null; STATE.pickupNote=r.pickupNote||''; STATE.shipFlat=r.shipFlat||3;
   STATE.olderHidden=Number(r.olderHidden||0);
@@ -3607,11 +3609,29 @@ const PARCEL_TITLE={open:'🧺 Your box',ship_awaiting_fee:'🧺 Your box',shipp
 /* The server sweeps expired unpaid orders on its own schedule, so between the
    deadline passing and that sweep an order still reads "Awaiting Payment" —
    which is how a dead invoice kept a live Pay button. Work it out here too. */
+/* The server's sweep runs every 10 minutes, so for up to 10 minutes after the
+   deadline the cards are STILL HELD while this used to have already told the
+   buyer they went back on sale. Now the Pay button survives a grace period
+   (payment_grace_mins, default 5): inside it they can still pay and keep their
+   cards, and if the sweep got there first the server says so plainly rather
+   than taking a transfer for a dead order. */
+function payGrace(){
+  const g=(STATE.payInfo&&STATE.payInfo.grace);
+  return (g===0||g>0)?g:5;
+}
 function payExpired(o){
   if(!o||o.status!=='Awaiting Payment') return false;
   const mins=(o.payWindowMins===0)?0:(o.payWindowMins||(STATE.payInfo&&STATE.payInfo.mins)||10);
   if(!(mins>0)) return false;          // 0 = no deadline; claim wins are held
   if(!o.createdMs) return false;
+  return (Date.now()-o.createdMs) >= (mins+payGrace())*60*1000;
+}
+/* Past the deadline but still inside the grace: the deadline has passed, the
+   cards have not gone anywhere yet, and paying now still works. */
+function payLate(o){
+  if(!o||o.status!=='Awaiting Payment'||payExpired(o)) return false;
+  const mins=(o.payWindowMins===0)?0:(o.payWindowMins||(STATE.payInfo&&STATE.payInfo.mins)||10);
+  if(!(mins>0)||!o.createdMs) return false;
   return (Date.now()-o.createdMs) >= mins*60*1000;
 }
 /* The Orders tab printed the raw sheet status, so "Awaiting Payment" wrapped
@@ -3632,7 +3652,7 @@ function statusLabel(o){
   if(o&&o.cancelled)               return '\u2715 Cancelled';
   if(isRefunded(o))                return '\u21A9\uFE0F Refunded';
   if(o&&refundInfo(o).some)        return '\u21A9\uFE0F Partly refunded';
-  if(s==='Awaiting Payment')       return payExpired(o)?'⌛ Timed out':'💳 Unpaid';
+  if(s==='Awaiting Payment')       return payExpired(o)?'⌛ Timed out':(payLate(o)?'⏰ Pay now — last chance':'💳 Unpaid');
   if(s==='Awaiting Verification')  return '⏳ Checking';
   if(s==='Payment Verified')       return '✓ Paid';
   if(s==='Packed')                 return '📦 Packed';
@@ -3972,7 +3992,7 @@ function histTag(o){
   if(refundInfo(o).some)                  return ['ref','Part refund'];
   var s=String(o.status||'');
   if(s.indexOf('Merged into')===0)        return ['way','In your box'];
-  if(s==='Awaiting Payment')              return payExpired(o)?['can','Timed out']:['wait','Unpaid'];
+  if(s==='Awaiting Payment')              return payExpired(o)?['can','Timed out']:(payLate(o)?['wait','Last chance']:['wait','Unpaid']);
   if(s==='Awaiting Verification')         return ['wait','Checking'];
   if(s==='Payment Verified')              return ['ok','Paid'];
   if(s==='Packed')                        return ['ok','Packed'];
@@ -5457,7 +5477,7 @@ const GUIDES={
     {ic:'⏰',t:'Pay within the window',b:'Claim wins have a deadline on them. Miss it and the card passes to the next person in the queue — so pay when you see it.'}
   ]},
   credit:{title:'Store credit',steps:[
-    {ic:'🎁',t:'How you earn it',b:'$3 back for every $100 you pay. Refer a friend and you get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.'},
+    {ic:'🎁',t:'How you earn it',b:'$3 back for every $100 you pay. Refer a friend and you BOTH get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.'},
     {ic:'🛒',t:'How you spend it',b:'Toggle <b>Use store credit</b> at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6.'},
     {ic:'↩️',t:'Refunds',b:'Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.'},
     {ic:'ℹ️',t:'Good to know',b:'Credit never expires, but it can’t be cashed out. If an order is cancelled or times out, any credit you used comes straight back.'}
