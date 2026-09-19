@@ -1931,7 +1931,17 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 <script>
 /* ============ CONFIG ============ */
 // Paste your deployed Apps Script Web App URL here. Leave blank to preview with demo data.
-const API_URL = "https://fluffmart-api.shrimaniac.workers.dev/api"; // new modules-format Worker
+// ONE file for both shops. Served from /staging/ (or opened with ?env=staging)
+// it talks to the staging Worker and says so on screen; anywhere else it is live.
+const IS_STAGING = /\/staging\//.test(location.pathname) || /[?&]env=staging\b/.test(location.search);
+const API_URL = IS_STAGING
+  ? "https://fluffmart-api-staging.shrimaniac.workers.dev/api"
+  : "https://fluffmart-api.shrimaniac.workers.dev/api";
+if (IS_STAGING) {
+  const addBar = () => document.body && document.body.insertAdjacentHTML('afterbegin',
+    '<div style="position:sticky;top:0;z-index:99999;background:#FFD400;color:#000;font:700 13px/1.2 system-ui,sans-serif;text-align:center;padding:6px 8px">🧪 TEST SHOP — nothing here is real</div>');
+  if (document.body) addBar(); else document.addEventListener('DOMContentLoaded', addBar);
+}
 /* ================================ */
 
 function imgUrl(u,w){ if(!u) return u; u=String(u).split('|')[0].split('~')[0].trim(); return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
