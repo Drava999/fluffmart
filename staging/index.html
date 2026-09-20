@@ -1797,7 +1797,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   <button class="feat" style="margin:16px 0 8px" onclick="openGuide('credit')"><div class="ic">💡</div><div><h3>How store credit works</h3><p>Four quick cards</p></div><span class="chev">›</span></button>
   <div class="section-t hidden" style="margin:16px 4px 8px">How store credit works</div>
   <div class="hb-body" style="padding:0 4px">
-    <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> $3 back for every $100 you pay. Refer a friend and you BOTH get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
+    <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> $3 back for every $100 you pay. Refer a friend and you BOTH get $3 once they spend $20+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
     <div class="hb-step"><span>🛒</span><div><b>How you spend it.</b> Toggle "Use store credit" at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6. If it covers everything, there's nothing to pay at all.</div></div>
     <div class="hb-step"><span>↩️</span><div><b>Refunds.</b> Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
     <div class="hb-step"><span>ℹ️</span><div><b>Good to know.</b> Credit never expires, but it can't be cashed out. If an order is cancelled or times out, any credit you used comes straight back.</div></div>
@@ -3475,10 +3475,15 @@ function showInvoice(inv){
   // inline holds back the whole sheet until it finishes.
   requestAnimationFrame(()=>renderPayQR(inv));
   // countdown
-  let left=inv._resumeSecs!=null?inv._resumeSecs:mins*60;
+  /* Anchored to the wall clock, NOT to ticks. A backgrounded Telegram webview
+     throttles or suspends its timers, and the buyer backgrounds this screen on
+     purpose -- the instruction on it is to go and pay in their banking app. A
+     tick-counted countdown then tells them they have nine minutes left when
+     the server released their cards three minutes ago. */
+  const payDeadline = Date.now() + (inv._resumeSecs!=null?inv._resumeSecs:mins*60)*1000;
   clearInterval(PAY_TIMER);
   if(!noDeadline) PAY_TIMER=setInterval(()=>{
-    left--;
+    const left=Math.round((payDeadline-Date.now())/1000);
     const el=document.getElementById('payTimer');
     if(!el){ clearInterval(PAY_TIMER); return; }
     el.textContent=fmtLeft(left);
@@ -3597,8 +3602,8 @@ async function submitProof(){
     STATE.ostageAuto=true;
     clearInterval(PAY_TIMER);
     sfx('chime');
-    showPaidHaul(INVOICE);
-    ORDERS_CACHE=null; loadOverview(); loadOrders(true);
+    ORDERS_CACHE=null; loadOverview();
+    showPaidHaul(INVOICE);          // owns the orders refresh, then draws the haul
   } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Upload failed, try again.'); }
 }
 
@@ -4709,10 +4714,13 @@ async function buildHaulCanvas(h){
     const s = String(i.name || '');
     return s.length > 24 ? s.slice(0, 23) + '…' : s;
   });
-  if(n > 2) names.push('+' + (n - 2) + ' more');
   x.fillStyle = '#8a6b80';
   x.font = "600 23px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText(fitText(x, names.join('  ·  '), 560), 56, 1234);
+  /* Fit the NAMES to what's left after the chip, then add the chip whole.
+     Fitting the joined string instead ate the end of it, so "+2 more" came out
+     as "+2…" — which reads as a rendering bug rather than a count. */
+  const more = n > 2 ? '  ·  +' + (n - 2) + ' more' : '';
+  x.fillText(fitText(x, names.join('  ·  '), 560 - (more ? x.measureText(more).width : 0)) + more, 56, 1234);
 
   x.textAlign = 'right';
   x.fillStyle = '#A84E8E';
@@ -4971,18 +4979,31 @@ function showPaidHaul(inv){
     </div>
     ${isShip ? '' : `<div class="haul-prev" id="haulPrev"></div><div id="haulActions"></div>`}
     <button class="cta-alt" style="margin-top:8px" onclick="closeInvoice();go('orders')">Go to my orders</button>`;
-  if(isShip) return;
-  // STATE.lastHaul is what carries the scans here — the order payload drops them.
+  if(isShip){ loadOrders(true).catch(() => {}); return; }
+  // Kept as the fallback: if the refresh below fails, this still has the scans.
   if(!STATE.lastHaul || String(STATE.lastHaul.orderId) !== String(inv.orderId)){
     STATE.lastHaul = {orderId: inv.orderId, items: items};
   }
-  prepareHaul(inv.orderId).then(h => {
-    const prev = document.getElementById('haulPrev');
-    const acts = document.getElementById('haulActions');
-    if(!prev || !acts || !h) return;
-    prev.innerHTML = `<img class="haul-img" src="${h.dataUrl}" alt="Your FloofMart haul">`;
-    acts.innerHTML = haulActionsHtml();
-  }).catch(() => {});
+  /* Draw from the ORDER, not the cart snapshot.
+     getOrders_ sends `components` on a bundle line — read straight off the
+     Inventory row via bundle_of — so a bundle opens into its real cards even
+     when its cached face set (image_back) is empty. The cart snapshot has no
+     components and can only fall back to the bundle's COVER photo, which is a
+     wide picture of the packaging: letterboxed into a tall card frame it became
+     three near-empty slots, and the count read "4 cards" while the Telegram
+     caption said 8. This is the only path that had that problem — sharing the
+     same box from the Orders tab always used the order and always looked right.
+     Best effort: if the refresh fails we still draw, just from the snapshot. */
+  HAUL = null;                      // never reuse a drawing made from the snapshot
+  loadOrders(true).catch(() => {})
+    .then(() => prepareHaul(inv.orderId))
+    .then(h => {
+      const prev = document.getElementById('haulPrev');
+      const acts = document.getElementById('haulActions');
+      if(!prev || !acts || !h) return;
+      prev.innerHTML = `<img class="haul-img" src="${h.dataUrl}" alt="Your FloofMart haul">`;
+      acts.innerHTML = haulActionsHtml();
+    }).catch(() => {});
 }
 
 /* ============ BINDER (past purchases) ============ */
@@ -5377,7 +5398,7 @@ async function loadCredit(){
   const led=(r.ledger||[]);
   document.getElementById('creditBal').textContent='$'+(r.balance||0).toFixed(2);
   list.innerHTML = led.length
-    ? led.map(l=>`<div class="cr-row"><div class="cr-l"><div class="cr-rsn">${l.reason||'Adjustment'}</div><div class="cr-dt">${l.at?new Date(l.at).toLocaleDateString():''}</div></div><div class="cr-amt ${l.amount>0?'pos':'neg'}">${l.amount>0?'+':''}$${Math.abs(l.amount).toFixed(2)}</div></div>`).join('')
+    ? led.map(l=>`<div class="cr-row"><div class="cr-l"><div class="cr-rsn">${esc(l.reason||'Adjustment')}</div><div class="cr-dt">${l.at?new Date(l.at).toLocaleDateString():''}</div></div><div class="cr-amt ${l.amount>0?'pos':'neg'}">${l.amount>0?'+':''}$${Math.abs(l.amount).toFixed(2)}</div></div>`).join('')
     : `<div class="empty" style="padding:30px"><div class="e-ic">💳</div><p>No store credit transactions yet.<br>Sell us cards or earn rewards to start! 🐾</p></div>`;
 }
 function backToProfile(){ document.getElementById('v-credit').classList.add('hidden'); document.getElementById('v-profile').classList.remove('hidden'); }
