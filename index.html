@@ -3597,8 +3597,8 @@ async function submitProof(){
     STATE.ostageAuto=true;
     clearInterval(PAY_TIMER);
     sfx('chime');
-    showPaidHaul(INVOICE);
-    ORDERS_CACHE=null; loadOverview(); loadOrders(true);
+    ORDERS_CACHE=null; loadOverview();
+    showPaidHaul(INVOICE);          // owns the orders refresh, then draws the haul
   } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Upload failed, try again.'); }
 }
 
@@ -4709,10 +4709,13 @@ async function buildHaulCanvas(h){
     const s = String(i.name || '');
     return s.length > 24 ? s.slice(0, 23) + '…' : s;
   });
-  if(n > 2) names.push('+' + (n - 2) + ' more');
   x.fillStyle = '#8a6b80';
   x.font = "600 23px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText(fitText(x, names.join('  ·  '), 560), 56, 1234);
+  /* Fit the NAMES to what's left after the chip, then add the chip whole.
+     Fitting the joined string instead ate the end of it, so "+2 more" came out
+     as "+2…" — which reads as a rendering bug rather than a count. */
+  const more = n > 2 ? '  ·  +' + (n - 2) + ' more' : '';
+  x.fillText(fitText(x, names.join('  ·  '), 560 - (more ? x.measureText(more).width : 0)) + more, 56, 1234);
 
   x.textAlign = 'right';
   x.fillStyle = '#A84E8E';
@@ -4971,18 +4974,31 @@ function showPaidHaul(inv){
     </div>
     ${isShip ? '' : `<div class="haul-prev" id="haulPrev"></div><div id="haulActions"></div>`}
     <button class="cta-alt" style="margin-top:8px" onclick="closeInvoice();go('orders')">Go to my orders</button>`;
-  if(isShip) return;
-  // STATE.lastHaul is what carries the scans here — the order payload drops them.
+  if(isShip){ loadOrders(true).catch(() => {}); return; }
+  // Kept as the fallback: if the refresh below fails, this still has the scans.
   if(!STATE.lastHaul || String(STATE.lastHaul.orderId) !== String(inv.orderId)){
     STATE.lastHaul = {orderId: inv.orderId, items: items};
   }
-  prepareHaul(inv.orderId).then(h => {
-    const prev = document.getElementById('haulPrev');
-    const acts = document.getElementById('haulActions');
-    if(!prev || !acts || !h) return;
-    prev.innerHTML = `<img class="haul-img" src="${h.dataUrl}" alt="Your FloofMart haul">`;
-    acts.innerHTML = haulActionsHtml();
-  }).catch(() => {});
+  /* Draw from the ORDER, not the cart snapshot.
+     getOrders_ sends `components` on a bundle line — read straight off the
+     Inventory row via bundle_of — so a bundle opens into its real cards even
+     when its cached face set (image_back) is empty. The cart snapshot has no
+     components and can only fall back to the bundle's COVER photo, which is a
+     wide picture of the packaging: letterboxed into a tall card frame it became
+     three near-empty slots, and the count read "4 cards" while the Telegram
+     caption said 8. This is the only path that had that problem — sharing the
+     same box from the Orders tab always used the order and always looked right.
+     Best effort: if the refresh fails we still draw, just from the snapshot. */
+  HAUL = null;                      // never reuse a drawing made from the snapshot
+  loadOrders(true).catch(() => {})
+    .then(() => prepareHaul(inv.orderId))
+    .then(h => {
+      const prev = document.getElementById('haulPrev');
+      const acts = document.getElementById('haulActions');
+      if(!prev || !acts || !h) return;
+      prev.innerHTML = `<img class="haul-img" src="${h.dataUrl}" alt="Your FloofMart haul">`;
+      acts.innerHTML = haulActionsHtml();
+    }).catch(() => {});
 }
 
 /* ============ BINDER (past purchases) ============ */
