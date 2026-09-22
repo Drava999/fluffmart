@@ -770,6 +770,8 @@ html{scroll-behavior:smooth}
 .sinfo-l{min-width:0;flex:1}
 .sinfo-k{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.5px}
 .sinfo-v{font-size:12.5px;line-height:1.45;margin-top:1px;overflow-wrap:anywhere}
+.sinfo-v a{color:var(--fawn-deep);font-weight:800;text-decoration:none;border-bottom:1.5px solid currentColor;padding-bottom:1px}
+.sinfo-v a:active{opacity:.6}
 .sinfo-go{display:flex;align-items:center;justify-content:space-between;width:100%;
   margin-top:10px;padding-top:11px;border-top:1px dashed var(--line);
   font-size:12.5px;font-weight:800;color:var(--fawn-deep);background:transparent}
@@ -2060,6 +2062,15 @@ function mergeInventory(items){
   return out;
 }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+/* A link OUT of the Mini App. Telegram's in-app webview does not reliably
+   honour target="_blank" -- openLink is the documented way to hand a URL to
+   the real browser. The <a href> is still correct, so the row keeps working
+   if the page is ever opened outside Telegram; returning false only stops the
+   default when we have already handled it. */
+function openExt(url){
+  try { if (typeof tg !== 'undefined' && tg && tg.openLink) { tg.openLink(url); return false; } } catch(e){}
+  return true;
+}
 function money(n){ return '$'+Number(n||0).toFixed(2); }
 
 /* Buyers see a callsign, never an admin's real Telegram name. Key = exactly what
@@ -2650,18 +2661,25 @@ function applyOverview(r){
     // A Config value still holding a [PLACEHOLDER] is unfinished, not content.
     // Showing it puts "Follow our tiktok @ [PLACEHOLDER] !" on the storefront.
     const real=v=>{ const t=String(v==null?'':v).trim(); return (!t||/\[[^\]]*\]/.test(t))?'':t; };
-    const tt=real(r.tiktok).replace(/^@/,'');
+    /* The Config row may hold a bare handle, an @handle, or the whole URL
+       pasted out of the TikTok app. All three end up as one handle and one
+       canonical link, so nobody has to remember which form to type. */
+    const tt=real(r.tiktok)
+      .replace(/^(?:https?:\/\/)?(?:[a-z0-9-]+\.)*tiktok\.com\/+/i,'')
+      .replace(/^\/+/,'').replace(/^@/,'').replace(/[?#\/].*$/,'').trim();
     const rows=[
       {ic:'\uD83D\uDE9A', k:'Delivery', v:real(r.shippingPolicy)},
       {ic:'\uD83E\uDDFA', k:'Your box', v:real(r.holdPolicy)},
       {ic:'\u2139\uFE0F', k:'Also',     v:real(r.policyExtra)},
-      {ic:'\uD83C\uDFB5', k:'TikTok',   v:tt?('@'+tt):''},
+      {ic:'\uD83C\uDFB5', k:'TikTok',   v:tt?('@'+tt):'', href:tt?('https://www.tiktok.com/@'+encodeURIComponent(tt)):''},
       {ic:'\u2728', k:'Tip',      v:real(r.tip)}
     ].filter(x=>x.v);
     if(el) el.innerHTML = rows.length ? `<div class="sinfo">
       <div class="sinfo-hd">🏪 Store info</div>
       ${rows.map(x=>`<div class="sinfo-r"><div class="sinfo-ic">${x.ic}</div>
-        <div class="sinfo-l"><div class="sinfo-k">${x.k}</div><div class="sinfo-v">${esc(x.v)}</div></div></div>`).join('')}
+        <div class="sinfo-l"><div class="sinfo-k">${x.k}</div><div class="sinfo-v">${
+          x.href ? `<a href="${esc(x.href)}" target="_blank" rel="noopener noreferrer" onclick="return openExt(this.href)">${esc(x.v)}</a>` : esc(x.v)
+        }</div></div></div>`).join('')}
       <button class="sinfo-go" onclick="go('support')"><span>Refunds &amp; full policies</span><span>›</span></button>
     </div>` : '';
   }
