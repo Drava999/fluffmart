@@ -1573,8 +1573,11 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
    TWO layouts: narrow = icon rail, .pc-wide = full rail. Telegram Desktop
    opens a Mini App in a phone-sized window, so narrow is the one you see
    first and it has to be good on its own. */
+/* No overflow-y here. body already has overflow-x:hidden from the base sheet;
+   adding overflow-y:scroll makes body its own scroll container while html is
+   still scrolling, which stacks two scrollbars at the right edge. */
 body.pc{--pc-rail:62px;--pc-col:1160px;--pc-safetop:0px;
-  padding-bottom:0;background:var(--bg);overflow-y:scroll}
+  padding-bottom:0;background:var(--bg)}
 body.pc.pc-wide{--pc-rail:236px}
 
 body.pc #app{width:auto;max-width:none;margin:0 0 0 var(--pc-rail);
@@ -1655,11 +1658,11 @@ body.pc .grid>*:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(74,
 body.pc .feat:hover,body.pc .tbtn:hover,body.pc .stat-go:hover{background:var(--ruff)}
 body.pc button:focus-visible,body.pc input:focus-visible,
 body.pc select:focus-visible{outline:2px solid var(--berry);outline-offset:2px}
-body.pc ::-webkit-scrollbar{width:11px;height:11px}
-body.pc ::-webkit-scrollbar-thumb{background:rgba(178,92,147,.28);border-radius:8px;
-  border:3px solid var(--bg)}
-body.pc ::-webkit-scrollbar-thumb:hover{background:rgba(178,92,147,.45)}
-body.pc ::-webkit-scrollbar-track{background:transparent}</style>
+/* Custom scrollbars removed. `body.pc ::-webkit-scrollbar` is a DESCENDANT
+   selector — it reached every scrollable element on the page, including the
+   horizontal strips (.chips, .jrail, .ofilt, .gd-track, .fchips) that
+   deliberately hide their scrollbars, and it outranked them on specificity.
+   Not worth it for a cosmetic bar. */
 </head>
 <body>
 
@@ -2813,8 +2816,16 @@ function renderUnpaidBanner(){
 }
 function renderLoyalty(r){
   const el=document.getElementById('ov-loyalty'); if(!el) return;
-  const thr=r.rewardThreshold||100, rc=r.rewardCredit||3, spend=r.spend||0;
-  const into=spend%thr, pct=Math.min(100,Math.round(into/thr*100)), toGo=(thr-into);
+  /* thr comes from a spreadsheet cell a human edits, so treat it as hostile:
+     anything not a positive number falls back to 100. spend can legitimately be
+     NEGATIVE — a refund writes a negative spend_event — and JS keeps the sign
+     through %, so clamp the progress rather than render a backwards bar. */
+  const thrRaw=Number(r.rewardThreshold), rc=Number(r.rewardCredit)||3;
+  const thr=(isFinite(thrRaw)&&thrRaw>0)?thrRaw:100;
+  const spend=Number(r.spend)||0;
+  const into=Math.max(0,spend%thr);
+  const pct=Math.max(0,Math.min(100,Math.round(into/thr*100)));
+  const toGo=Math.max(0,thr-into);
   const refLink=r.referralLink||'';
   el.innerHTML=`
     <div class="loyal">
