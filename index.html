@@ -1656,6 +1656,44 @@ body.pc select:focus-visible{outline:2px solid var(--berry);outline-offset:2px}
 /* Custom scrollbars removed (fix pack 19 S1). */
 /* Store credit page: readable column on a wide screen. */
 body.pc #v-credit{max-width:640px}
+/* ===== portal: My consignment + Admin ===== */
+.pt-tabs{display:flex;gap:6px;overflow-x:auto;margin:4px 0 12px;padding-bottom:2px}
+.pt-tabs .chip{cursor:pointer}
+.pt-tabs .chip.on{background:var(--berry);color:#fff;border-color:var(--berry)}
+.pt-stats{display:flex;gap:8px;margin-bottom:12px}
+.pt-stats .pstat .pn{font-size:18px}
+.pt-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:13px}
+.pt-row:last-child{border-bottom:0}
+.pt-row .l{min-width:0;flex:1}
+.pt-row .t{font-weight:700;color:var(--text);overflow-wrap:anywhere}
+.pt-row .s{font-size:11.5px;color:var(--hint);margin-top:2px;overflow-wrap:anywhere}
+.pt-row .r{text-align:right;font-weight:800;white-space:nowrap}
+.pt-pos{color:var(--mint-deep)}
+.pt-neg{color:var(--berry)}
+.pt-card{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.pt-card:last-child{border-bottom:0}
+.pt-card img,.pt-card .noimg{width:54px;height:75px;border-radius:6px;object-fit:cover;flex:none;background:var(--line)}
+.pt-card .b{min-width:0;flex:1;font-size:13px}
+.pt-tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:12px;background:var(--line);color:var(--fawn-deep);margin:3px 4px 0 0}
+.pt-tag.warn{background:#fde2e4;color:#b23a48}
+.pt-tag.ok{background:#dff5ea;color:#1f7a52}
+.pt-mini{font-size:12px;font-weight:800;padding:6px 11px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fawn-deep);margin:6px 6px 0 0;cursor:pointer}
+.pt-mini.pri{background:var(--berry);border-color:var(--berry);color:#fff}
+.pt-mini:disabled{opacity:.5}
+.pt-form{margin-top:8px;padding:10px;border:1px dashed var(--line);border-radius:12px}
+.pt-form .field{margin-bottom:8px}
+.pt-inl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pt-inl input,.pt-inl select{flex:1;min-width:70px}
+.pt-h{font-weight:800;font-size:13px;color:var(--fawn-deep);margin:14px 2px 6px}
+.pt-big{font-family:'Plus Jakarta Sans';font-weight:800;font-size:26px;color:var(--fawn-deep)}
+.pt-tier{display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:6px;align-items:center;margin-bottom:6px;font-size:12px}
+.pt-tier input{width:100%}
+.pt-tier .kp{color:var(--hint);font-size:11.5px}
+.pt-err{color:#b23a48;font-size:12px;white-space:pre-wrap;margin-top:6px}
+.pt-thumbs{display:flex;gap:6px;margin-top:6px}
+.pt-thumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px}
+.pt-in,.pt-inl input,.pt-inl select,.pt-tier input,.pt-form textarea{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit;outline:none;box-sizing:border-box}
+.pt-form textarea,.panel textarea.pt-in{width:100%}
 </style>
 </head>
 <body>
@@ -1785,10 +1823,26 @@ body.pc #v-credit{max-width:640px}
       <button class="feat" onclick="openWishlist()"><div class="ic">🔔</div><div><h3>My wishlist</h3><p id="p-wish-sub">Get pinged when cards restock</p></div><span class="chev">›</span></button>
       <button class="feat" onclick="openAddrEdit()"><div class="ic">📦</div><div><h3>Delivery address</h3><p id="p-addr-sub">Saved for faster checkout</p></div><span class="chev">›</span></button>
       <button class="feat" onclick="loadCredit()"><div class="ic">💳</div><div><h3>Store credit history</h3><p id="p-credit-sub">See your credit ledger</p></div><span class="chev">›</span></button>
+      <button class="feat hidden" id="p-consign-btn" onclick="openConsign()"><div class="ic">🐑</div><div><h3>My consignment</h3><p>Your shelf, sales &amp; balance</p></div><span class="chev">›</span></button>
+      <button class="feat hidden" id="p-admin-btn" onclick="openAdmin()"><div class="ic">🛠️</div><div><h3>Admin</h3><p>Today, consignment &amp; rates</p></div><span class="chev">›</span></button>
       <button class="feat" onclick="go('support')"><div class="ic">🆘</div><div><h3>Help &amp; support</h3><p>Message us</p></div><span class="chev">›</span></button>
       <button class="feat" onclick="go('settings')"><div class="ic">⚙️</div><div><h3>Settings</h3><p id="p-set-sub">Theme, sound &amp; motion</p></div><span class="chev">›</span></button>
     </div>
     <div id="prof-notifs"></div>
+  </div>
+
+  <!-- MY CONSIGNMENT -->
+  <div class="view hidden" id="v-consign">
+    <button class="back-btn" onclick="go('profile')">‹ Back</button>
+    <div class="section-t">My consignment</div>
+    <div id="cz-body"></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="view hidden" id="v-admin">
+    <button class="back-btn" onclick="go('profile')">‹ Back</button>
+    <div class="section-t">Admin</div>
+    <div id="ad-body"></div>
   </div>
 
   <!-- SUPPORT -->
@@ -2645,7 +2699,7 @@ function go(tab,dir){
     dir = (a>=0&&b>=0) ? Math.sign(b-a) : 0;
   }
   STATE.tab=tab;
-  ['overview','store','orders','buyback','support','profile','credit','settings'].forEach(t=>{
+  ['overview','store','orders','buyback','support','profile','credit','settings','consign','admin'].forEach(t=>{
     const el=document.getElementById('v-'+t); if(!el) return;
     el.classList.remove('slide-in-right','slide-in-left');
     el.classList.toggle('hidden',t!==tab);
@@ -2738,6 +2792,9 @@ function applyOverview(r){
   STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,freeShipMin:r.freeShipMin||r.freeShipThreshold||25,shipFlat:r.shipFlat!=null?r.shipFlat:3};
   STATE.credit = r.credit||0;
   STATE.isAdmin = !!r.isAdmin;
+  STATE.isConsignor = !!r.isConsignor;
+  { const cb=document.getElementById('p-consign-btn'), ab=document.getElementById('p-admin-btn');
+    if(cb) cb.classList.toggle('hidden',!STATE.isConsignor); if(ab) ab.classList.toggle('hidden',!STATE.isAdmin); }
   if (r.paynowMobile && !STATE.payInfo) {
     STATE.payInfo = { mobile: r.paynowMobile, name: r.paynowName, mins: Number(r.paymentWindowMins || 10),
                       grace: Number(r.paymentGraceMins == null ? 5 : r.paymentGraceMins) };
@@ -6018,6 +6075,424 @@ function closeZoom(){ document.getElementById('zoomWrap').classList.remove('show
     if(ZM.scale<=1.02){ZM.x=0;ZM.y=0;} zoomApply(); e.preventDefault(); },{passive:false});
   w.addEventListener('click',e=>{ if(e.target===w) closeZoom(); });
 })();
+/* ============ PORTAL: My consignment (consignors) + Admin tab (admins) ============
+   Everything here is served by Apps Script (portal.gs), never the D1 cache.
+   Server text is always passed through esc(); onclick handlers only ever carry
+   list indexes, never ids or names, so a quote in a card name can't break out. */
+const ptAlert=m=>(tg&&tg.showAlert?tg.showAlert:alert)(String(m||''));
+const ptConfirm=m=>new Promise(res=>{ if(tg&&tg.showConfirm) tg.showConfirm(String(m),ok=>res(!!ok)); else res(confirm(m)); });
+const ptDate=ms=>ms?new Date(ms).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'2-digit'}):'';
+const ptErr=r=>(r&&r.message)||({not_admin:'Admins only.',not_consignor:'You\'re not set up as a consignor.',rate_limited:'Too many tries — give it a little while.'}[r&&r.error])||'Something went wrong — try again.';
+const ptVal=id=>{ const el=document.getElementById(id); return el?String(el.value||'').trim():''; };
+const ptNum=id=>{ const v=ptVal(id).replace(/[$,\s]/g,''); return v===''?null:Number(v); };
+const PT_STATE_TAG={'On sale':'ok','Returned to you':'warn'};
+const PT_RATE_NAMES={en:'English',jp:'Japanese',slab:'Graded (slab)'};
+function ptSkel(el){ el.innerHTML='<div class="skelcard" style="height:90px"></div><div class="skelcard" style="height:160px;margin-top:10px"></div>'; }
+function ptTabs(list,cur,fn){ return '<div class="pt-tabs">'+list.map(t=>`<span class="chip${t[0]===cur?' on':''}" onclick="${fn}('${t[0]}')">${esc(t[1])}</span>`).join('')+'</div>'; }
+function ptRatesHtml(tables){
+  if(!tables) return '<p class="note">No rate table.</p>';
+  return ['en','jp','slab'].filter(k=>tables[k]).map(k=>{
+    const t=tables[k], tiers=(t.tiers||[]);
+    return `<div class="pt-h">${esc(t.label||PT_RATE_NAMES[k])}</div>`+
+      `<div class="s" style="font-size:11.5px;color:var(--hint);margin:0 2px 4px">Minimum price $${Number(t.min||0).toFixed(0)}</div>`+
+      tiers.map((x,i)=>{ const nx=tiers[i+1];
+        return `<div class="pt-row"><div class="l"><div class="t">$${Number(x[0]).toFixed(0)}${nx?' – $'+(Number(nx[0])-0.01).toFixed(2):' and up'}</div></div>`+
+               `<div class="r">we keep ${Number(x[1])}% · you get ${(100-Number(x[1])).toFixed(0)}%</div></div>`; }).join('');
+  }).join('');
+}
+function ptSalesHtml(sales){
+  if(!sales||!sales.length) return '<div class="empty" style="padding:24px"><p>No sales yet.</p></div>';
+  return sales.map(s=>{ const rev=s.type==='reversal';
+    return `<div class="pt-row"><div class="l"><div class="t">${esc(s.card)}</div><div class="s">${ptDate(s.at)}`+
+      (s.bundle?` · in bundle ${esc(s.bundle)}`:'')+(rev?' · refunded':` · sold $${Number(s.salePrice||0).toFixed(2)} · we kept ${Number(s.pct||0)}%`)+
+      (s.offApp?' · sold in person':'')+`</div></div><div class="r ${rev?'pt-neg':'pt-pos'}">${Number(s.net)<0?'−':'+'}$${Math.abs(Number(s.net||0)).toFixed(2)}</div></div>`; }).join('');
+}
+function ptPayoutsHtml(p){
+  if(!p||!p.length) return '<div class="empty" style="padding:24px"><p>No payouts yet.</p></div>';
+  return p.map(x=>`<div class="pt-row"><div class="l"><div class="t">${ptDate(x.at)}</div><div class="s">${esc(x.method||'PayNow')}${x.ref?' · ref '+esc(x.ref):''}</div></div><div class="r">$${Number(x.amount||0).toFixed(2)}</div></div>`).join('');
+}
+const PT_REQ_TYPE={price:'Price change',intake:'Consign more',payout:'Payout',paynow:'PayNow change'};
+function ptReqLine(q){
+  const bits=[];
+  if(q.cardName) bits.push(esc(q.cardName));
+  if(q.price!=null) bits.push('price → $'+Number(q.price).toFixed(2));
+  if(q.floor!=null) bits.push('floor → $'+Number(q.floor).toFixed(2));
+  if(q.photos) bits.push(q.photos+' photo'+(q.photos>1?'s':''));
+  return bits.join(' · ');
+}
+function ptReqsHtml(reqs){
+  if(!reqs||!reqs.length) return '<div class="empty" style="padding:24px"><p>No requests.</p></div>';
+  return reqs.map(q=>`<div class="pt-row"><div class="l"><div class="t">${esc(PT_REQ_TYPE[q.type]||q.type)} <span class="pt-tag${q.status==='open'?'':q.status==='approved'||q.status==='done'?' ok':' warn'}">${esc(q.status)}</span></div>`+
+    `<div class="s">${ptDate(q.created)}${ptReqLine(q)?' · '+ptReqLine(q):''}${q.note?'<br>“'+esc(q.note)+'”':''}${q.decision?'<br>Reply: '+esc(q.decision):''}</div></div></div>`).join('');
+}
+
+/* ---------- My consignment ---------- */
+let CZ=null, CZ_TAB='shelf', CZ_OPEN=-1, CZ_PHOTOS=[];
+async function openConsign(){
+  go('consign');
+  const b=document.getElementById('cz-body'); ptSkel(b);
+  const r=await api('consignMe');
+  CZ=r; CZ_OPEN=-1; renderConsign();
+}
+function czTab(t){ CZ_TAB=t; CZ_OPEN=-1; renderConsign(); }
+function renderConsign(){
+  const b=document.getElementById('cz-body'); if(!b) return;
+  const r=CZ;
+  if(!r||!r.ok){ b.innerHTML=`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="openConsign()">Try again</button></div>`; return; }
+  if(!r.isConsignor){ b.innerHTML='<div class="empty"><div class="e-ic">🐑</div><p>You\'re not set up as a consignor.<br>Want us to sell cards for you? Message us from Help &amp; support.</p></div>'; return; }
+  let payBtn;
+  if(r.payoutPending) payBtn='<button class="cta" disabled>Payout requested ✓</button>';
+  else if(r.canRequestPayout) payBtn=`<button class="cta" onclick="czPayout(this)">Request payout · $${Number(r.balance).toFixed(2)}</button>`;
+  else payBtn=`<button class="cta" disabled>Payouts start at $${Number(r.minPayout||0).toFixed(0)}</button>`;
+  let h=`<div class="pt-stats">
+      <div class="pstat"><div class="pn">$${Number(r.balance||0).toFixed(2)}</div><div class="pl">Balance</div></div>
+      <div class="pstat"><div class="pn">${Number(r.sold||0)}</div><div class="pl">Sold</div></div>
+      <div class="pstat"><div class="pn">$${Number(r.paid||0).toFixed(0)}</div><div class="pl">Paid out</div></div></div>
+    ${payBtn}
+    <div class="pt-row" style="margin-top:6px"><div class="l"><div class="t">PayNow</div><div class="s">${r.paynow?esc(r.paynow):'Not set — we need this to pay you'}</div></div>
+      <button class="pt-mini" onclick="czPaynowForm()">${r.paynow?'Change':'Add'}</button></div>
+    <div id="cz-paynow"></div>`;
+  h+=ptTabs([['shelf','On the shelf'],['sales','Sales'],['payouts','Payouts'],['rates','My rates'],['requests','Requests'],['more','Consign more']],CZ_TAB,'czTab');
+  h+='<div class="panel">';
+  if(CZ_TAB==='shelf'){
+    h+= (r.shelf&&r.shelf.length)? r.shelf.map((c,i)=>{
+      const meta=[c.set,c.number?'#'+c.number:'',c.grade||c.condition].filter(Boolean).map(esc).join(' · ');
+      const canAsk=c.state!=='Returned to you';
+      return `<div class="pt-card">${c.image?`<img src="${esc(c.image)}" loading="lazy" alt="">`:'<div class="noimg"></div>'}<div class="b">
+        <div class="t" style="font-weight:700">${esc(c.name)}${c.qty>1?' ×'+c.qty:''}</div><div class="s" style="color:var(--hint);font-size:11.5px">${meta}</div>
+        <div style="margin-top:3px"><b>$${Number(c.price||0).toFixed(2)}</b>${c.floor?` <span style="color:var(--hint);font-size:12px">· floor $${Number(c.floor).toFixed(2)}</span>`:''}</div>
+        <span class="pt-tag ${PT_STATE_TAG[c.state]||''}">${esc(c.state)}</span>${c.bundle?`<span class="pt-tag">${esc(c.bundle)}</span>`:''}
+        ${canAsk?`<div><button class="pt-mini" onclick="czAsk(${i})">${CZ_OPEN===i?'Close':'Ask to change price'}</button></div>`:''}
+        ${CZ_OPEN===i?`<div class="pt-form"><div class="pt-inl"><input id="cz-np" inputmode="decimal" placeholder="New price $"><input id="cz-nf" inputmode="decimal" placeholder="New floor $"></div>
+          <textarea id="cz-nn" rows="2" placeholder="Note (optional)" style="margin-top:6px"></textarea>
+          <button class="pt-mini pri" onclick="czSendPrice(this,${i})">Send request</button>
+          <div class="note" style="text-align:left">The floor is the lowest you'll accept (drops, auctions, offers). Nothing changes until we approve it.</div></div>`:''}
+      </div></div>`; }).join('')
+      : '<div class="empty" style="padding:24px"><p>Nothing on the shelf right now.</p></div>';
+  } else if(CZ_TAB==='sales') h+=ptSalesHtml(r.sales);
+  else if(CZ_TAB==='payouts') h+=ptPayoutsHtml(r.payouts);
+  else if(CZ_TAB==='rates') h+=`<p class="note" style="text-align:left;margin:0 0 6px">These are the rates you signed up on${r.rates&&r.rates.ver?' ('+esc(r.rates.ver)+')':''}. The % is set by what each card sells for.</p>`+ptRatesHtml(r.rates&&r.rates.tables);
+  else if(CZ_TAB==='requests') h+=ptReqsHtml(r.requests);
+  else if(CZ_TAB==='more'){
+    h+=`<p class="note" style="text-align:left;margin:0 0 10px">Tell us which cards you'd like us to sell — names, sets, condition, and any price you have in mind. Photos help (up to 3).</p>
+      <textarea id="cz-more" class="pt-in" rows="5" placeholder="e.g. 3 cards: Umbreon VMAX 215/203 NM, …"></textarea>
+      <div style="margin-top:8px"><label class="pt-mini" style="display:inline-block">📷 Add photos<input type="file" accept="image/*" multiple style="display:none" onchange="czPhotos(event)"></label></div>
+      <div class="pt-thumbs" id="cz-thumbs">${CZ_PHOTOS.map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div>
+      <button class="cta" style="margin-top:10px" onclick="czSendMore(this)">Send to FloofMart</button>`;
+  }
+  h+='</div>';
+  b.innerHTML=h;
+}
+function czAsk(i){ CZ_OPEN=(CZ_OPEN===i?-1:i); renderConsign(); }
+async function czSendPrice(btn,i){
+  const c=CZ&&CZ.shelf&&CZ.shelf[i]; if(!c) return;
+  const price=ptNum('cz-np'), floor=ptNum('cz-nf');
+  if(price==null&&floor==null){ ptAlert('Give a new price, a new floor, or both.'); return; }
+  if((price!=null&&!(price>0))||(floor!=null&&!(floor>=0))){ ptAlert('Those numbers don\'t look right.'); return; }
+  await guard(btn, async()=>{
+    const r=await api('consignPriceRequest',{cardId:c.id,price:price,floor:floor,note:ptVal('cz-nn')});
+    ptAlert(r.ok?(r.message||'Sent!'):ptErr(r));
+    if(r.ok){ CZ_OPEN=-1; const m=await api('consignMe'); if(m&&m.ok){ CZ=m; } renderConsign(); }
+  });
+}
+async function czPayout(btn){
+  if(!(await ptConfirm('Request a payout of $'+Number(CZ.balance).toFixed(2)+' to PayNow '+(CZ.paynow||'(not set)')+'?'))) return;
+  await guard(btn, async()=>{
+    const r=await api('consignPayoutRequest');
+    ptAlert(r.ok?(r.message||'Requested!'):ptErr(r));
+    const m=await api('consignMe'); if(m&&m.ok) CZ=m; renderConsign();
+  });
+}
+function czPaynowForm(){
+  const el=document.getElementById('cz-paynow'); if(!el) return;
+  if(el.innerHTML){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="pt-form"><div class="pt-inl"><input id="cz-pn" inputmode="tel" placeholder="8-digit mobile or UEN" value="${esc(CZ.paynow||'')}"><button class="pt-mini pri" onclick="czSavePaynow(this)">Save</button></div>
+    <div class="note" style="text-align:left">We pay your balance to this PayNow. If you change it after a payout, we'll double-check with you first.</div></div>`;
+}
+async function czSavePaynow(btn){
+  const v=ptVal('cz-pn'); if(!v){ ptAlert('Type your PayNow number.'); return; }
+  await guard(btn, async()=>{
+    const r=await api('consignSetPaynow',{paynow:v});
+    ptAlert(r.ok?(r.message||'Saved'):ptErr(r));
+    if(r.ok){ CZ.paynow=r.paynow; renderConsign(); }
+  });
+}
+async function czPhotos(e){
+  const files=[...(e.target.files||[])].slice(0,3-CZ_PHOTOS.length);
+  if(!files.length){ if(CZ_PHOTOS.length>=3) ptAlert('Up to 3 photos.'); return; }
+  const keep=ptVal('cz-more');
+  for(const f of files){ try{ CZ_PHOTOS.push(await shrinkImage(f,1000,0.75)); }catch(err){} }
+  renderConsign();
+  const ta=document.getElementById('cz-more'); if(ta) ta.value=keep;
+}
+async function czSendMore(btn){
+  const msg=ptVal('cz-more');
+  if(!msg){ ptAlert('Tell us which cards you\'d like to consign.'); return; }
+  await guard(btn, async()=>{
+    const r=await api('consignSubmit',{message:msg,photos:CZ_PHOTOS});
+    ptAlert(r.ok?(r.message||'Sent!'):ptErr(r));
+    if(r.ok){ CZ_PHOTOS=[]; CZ_TAB='requests'; const m=await api('consignMe'); if(m&&m.ok) CZ=m; renderConsign(); }
+  });
+}
+
+/* ---------- Admin ---------- */
+let AD_TAB='today', AD={dash:null,list:null,reqs:null,cur:null,rates:null,edit:null,cardOpen:-1,show:'all'};
+function openAdmin(){ go('admin'); adTab(AD_TAB); }
+function adTab(t){ AD_TAB=t; AD.cur=null; AD.cardOpen=-1; adLoad(); }
+function adHead(){ return ptTabs([['today','Today'],['consign','Consignment'],['rates','Rates']],AD_TAB,'adTab'); }
+async function adLoad(){
+  const b=document.getElementById('ad-body'); if(!b) return;
+  b.innerHTML=adHead()+'<div id="ad-in"></div>'; ptSkel(document.getElementById('ad-in'));
+  if(AD_TAB==='today'){ AD.dash=await api('adminDash'); adRenderToday(); }
+  else if(AD_TAB==='consign'){ const [l,q]=await Promise.all([api('adminConsignors'),api('adminConsignRequests')]); AD.list=l; AD.reqs=q; adRenderConsign(); }
+  else { AD.rates=await api('adminRates'); AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates(); }
+}
+function adIn(html){ const el=document.getElementById('ad-in'); if(el) el.innerHTML=html; }
+function adOpenLink(i){ const v=AD.dash&&AD.dash.jobs&&AD.dash.jobs.verify[i]; if(!v||!v.link) return; if(tg&&tg.openTelegramLink&&/^https:\/\/t\.me\//.test(v.link)) tg.openTelegramLink(v.link); else openExt(v.link); }
+
+function adRenderToday(){
+  const d=AD.dash;
+  if(!d||!d.ok){ adIn(`<div class="empty"><p>${esc(ptErr(d))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
+  const j=d.jobs||{}, s=d.stock||{}, m=d.money||{}, c=d.consign||{};
+  const sec=(title,list,fmt,empty)=>`<div class="pt-h">${title} <span class="pt-tag">${(list||[]).length}</span></div>`+
+    ((list&&list.length)?'<div class="panel" style="padding:4px 12px">'+list.map(fmt).join('')+'</div>':`<p class="note" style="text-align:left;margin:0 2px">${empty}</p>`);
+  let h=`<div class="pt-stats">
+      <div class="pstat"><div class="pn">$${Number(m.today||0).toFixed(0)}</div><div class="pl">Today</div></div>
+      <div class="pstat"><div class="pn">$${Number(m.week||0).toFixed(0)}</div><div class="pl">7 days</div></div>
+      <div class="pstat"><div class="pn">$${Number(m.month||0).toFixed(0)}</div><div class="pl">This month</div></div></div>
+    <p class="note" style="text-align:left;margin:-4px 2px 6px">Month: ${Number(m.monthCount||0)} sales · profit $${Number(m.monthProfit||0).toFixed(2)} (sales net of refunds)</p>`;
+  h+=sec('To verify',j.verify,(v,i)=>`<div class="pt-row"><div class="l"><div class="t">#${esc(v.id)}${v.postage?' <span class="pt-tag">postage</span>':''}</div><div class="s">${esc(v.buyer)} · $${Number(v.total||0).toFixed(2)}${v.since?' · '+ptDate(v.since):''}</div></div>${v.link?`<button class="pt-mini" onclick="adOpenLink(${i})">Open</button>`:''}</div>`,'Nothing waiting 🎉');
+  h+=sec('To pack',j.pack,x=>`<div class="pt-row"><div class="l"><div class="t">${esc(x.id)}</div><div class="s">${esc(x.buyer)} · ${x.orders} order${x.orders>1?'s':''}</div></div></div>`,'Nothing to pack.');
+  h+=sec('To ship (postage paid)',j.ship,x=>`<div class="pt-row"><div class="l"><div class="t">${esc(x.id)}</div><div class="s">${esc(x.buyer)}</div></div></div>`,'Nothing to ship.');
+  h+=sec('To hand over',j.handover,x=>`<div class="pt-row"><div class="l"><div class="t">${esc(x.id)}</div><div class="s">${esc(x.buyer)}</div></div></div>`,'No pickups waiting.');
+  h+=sec('Boxes past their hold',j.overHold,x=>`<div class="pt-row"><div class="l"><div class="t">${esc(x.id)}</div><div class="s">${esc(x.buyer)}</div></div><div class="r pt-neg">${x.days}d</div></div>`,'None.');
+  h+=sec('Unpaid claim wins',j.claims,x=>`<div class="pt-row"><div class="l"><div class="t">#${esc(x.id)}</div><div class="s">${esc(x.buyer)} · $${Number(x.total||0).toFixed(2)}</div></div><div class="r">${x.days}d</div></div>`,'None.');
+  h+=`<div class="pt-h">Stock</div><div class="panel" style="padding:4px 12px">
+    <div class="pt-row"><div class="l"><div class="t">On sale</div></div><div class="r">${Number(s.onSale||0)} · $${Number(s.stockValue||0).toFixed(0)}</div></div>
+    <div class="pt-row"><div class="l"><div class="t">On sale with no photo</div></div><div class="r ${s.noPhoto?'pt-neg':''}">${Number(s.noPhoto||0)}</div></div>
+    <div class="pt-row"><div class="l"><div class="t">Stuck on a drop/auction hold</div><div class="s">Held, but no live drop or auction has them — /stockcheck</div></div><div class="r ${s.stuckHolds?'pt-neg':''}">${Number(s.stuckHolds||0)}</div></div></div>`;
+  h+=sec('Open drops &amp; auctions',s.events,e=>`<div class="pt-row"><div class="l"><div class="t">${esc(e.short||'')} ${esc(e.title||'')}</div><div class="s">${esc(e.kind)} · ${esc(e.state||'')} · ${Number(e.cards||0)} cards · ${Number(e.ageHrs||0)}h old</div></div></div>`,'None open.');
+  h+=`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>
+    <p class="note">Refunds, cancels and restores stay in Telegram. ${esc(d.version||'')} · ${new Date(d.at||Date.now()).toLocaleTimeString()}</p>`;
+  adIn(h);
+}
+
+function adRenderConsign(){
+  const l=AD.list, q=AD.reqs;
+  if(!l||!l.ok){ adIn(`<div class="empty"><p>${esc(ptErr(l))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
+  const reqs=((q&&q.requests)||[]), open=reqs.filter(x=>x.status==='open');
+  const owed=l.consignors.reduce((a,x)=>a+Math.max(0,Number(x.balance||0)),0);
+  const shown=l.consignors.filter(x=>AD.show==='all'||Number(x.balance||0)>0);
+  let h=`<div class="panel" style="text-align:center"><div class="pt-big">$${owed.toFixed(2)}</div><div class="note" style="margin-top:0">owed to ${l.consignors.filter(x=>x.balance>0).length} consignor(s) · payouts from $${Number(l.minPayout||0).toFixed(0)}</div></div>`;
+  h+=`<div class="pt-h">Requests <span class="pt-tag">${open.length} open</span></div>`;
+  h+= open.length ? '<div class="panel" style="padding:4px 12px">'+open.map(x=>{ const i=reqs.indexOf(x);
+    return `<div class="pt-row" style="display:block"><div class="t">${esc(PT_REQ_TYPE[x.type]||x.type)} · @${esc(x.consignor)} <span style="color:var(--hint);font-weight:400">${esc(x.id)}</span></div>
+      <div class="s">${ptDate(x.created)}${ptReqLine(x)?' · '+ptReqLine(x):''}${x.note?'<br>“'+esc(x.note)+'”':''}</div>
+      <div class="pt-inl" style="margin-top:6px"><input id="ad-rq-${i}" placeholder="Note to them (optional)"></div>
+      <button class="pt-mini pri" onclick="adDecide(this,${i},true)">${x.type==='payout'?'Acknowledge':x.type==='intake'?'Accept':'Approve'}</button><button class="pt-mini" onclick="adDecide(this,${i},false)">Decline</button>
+      ${x.type==='payout'?`<button class="pt-mini" onclick="adOpenByHandle('${esc(String(x.consignor).replace(/[^\w.-]/g,''))}')">Pay them…</button>`:''}</div>`; }).join('')+'</div>'
+    : '<p class="note" style="text-align:left;margin:0 2px">No open requests.</p>';
+  h+=`<div class="pt-h">Consignors</div>`+ptTabs([['all','All'],['owed','Owed']],AD.show,'adShow');
+  h+= shown.length ? '<div class="panel" style="padding:4px 12px">'+shown.map(x=>{ const i=l.consignors.indexOf(x);
+    return `<div class="pt-row" onclick="adOpen(${i})" style="cursor:pointer"><div class="l"><div class="t">${esc(x.handle)}${x.name?' · '+esc(x.name):''}${x.status!=='active'?` <span class="pt-tag warn">${esc(x.status)}</span>`:''}</div>
+      <div class="s">${x.onShelf} on shelf${x.inBundles?' · '+x.inBundles+' in bundles':''} · $${Number(x.shelfValue||0).toFixed(0)} listed · ${esc(String(x.lang||'en').toUpperCase())}${x.linked?'':' · not linked'}${x.paynow?'':' · no PayNow'}</div></div>
+      <div class="r ${x.balance>0?'pt-pos':''}">$${Number(x.balance||0).toFixed(2)} ›</div></div>`; }).join('')+'</div>'
+    : '<p class="note" style="text-align:left;margin:0 2px">None.</p>';
+  h+=`<div class="pt-h">Register a consignor</div><div class="panel">
+    <div class="pt-inl"><input id="ad-nh" placeholder="@handle"><select id="ad-nl"><option value="en">English</option><option value="jp">Japanese</option></select></div>
+    <div class="pt-inl" style="margin-top:6px"><input id="ad-nn" placeholder="Name (optional)"><input id="ad-np" inputmode="tel" placeholder="PayNow (optional)"></div>
+    <button class="pt-mini pri" onclick="adNew(this)">Register</button>
+    <p class="note" style="text-align:left">Then make the Collectr portfolio "${esc(l.prefix||'CN')} @handle", add their cards and send the CSV to the bot.</p></div>`;
+  adIn(h);
+}
+function adShow(v){ AD.show=v; adRenderConsign(); }
+async function adDecide(btn,i,approve){
+  const q=AD.reqs&&AD.reqs.requests&&AD.reqs.requests[i]; if(!q) return;
+  if(!approve&&!(await ptConfirm('Decline '+q.id+'? They\'ll be told.'))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminConsignDecide',{reqId:q.id,approve:!!approve,note:ptVal('ad-rq-'+i)});
+    ptAlert(r.ok?(r.message||'Done'):ptErr(r));
+    const [l,rq]=await Promise.all([api('adminConsignors'),api('adminConsignRequests')]); AD.list=l; AD.reqs=rq; adRenderConsign();
+  });
+}
+function adOpenByHandle(h){ const l=AD.list&&AD.list.consignors||[]; const i=l.findIndex(x=>x.id===String(h).toLowerCase()||x.id===h); if(i>=0) adOpen(i); }
+async function adNew(btn){
+  const handle=ptVal('ad-nh').replace(/^@/,'');
+  if(!/^[A-Za-z0-9_]{3,32}$/.test(handle)){ ptAlert('Give their Telegram @handle (letters, numbers, _).'); return; }
+  await guard(btn, async()=>{
+    const r=await api('adminConsignNew',{handle:handle,lang:ptVal('ad-nl')||'en',name:ptVal('ad-nn'),paynow:ptVal('ad-np')});
+    ptAlert(r.ok?(r.message||'Registered'):ptErr(r));
+    if(r.ok){ AD.list=await api('adminConsignors'); adRenderConsign(); }
+  });
+}
+async function adOpen(i){
+  const x=AD.list&&AD.list.consignors&&AD.list.consignors[i]; if(!x) return;
+  adIn('<div class="skelcard" style="height:200px"></div>');
+  AD.cur=await api('adminConsignor',{id:x.id}); AD.cardOpen=-1; AD.curTab='shelf';
+  adRenderOne(); window.scrollTo(0,0);
+}
+async function adReloadOne(){ if(!AD.cur||!AD.cur.id) return; const r=await api('adminConsignor',{id:AD.cur.id}); if(r&&r.ok) AD.cur=r; adRenderOne(); }
+function adOneTab(t){ AD.curTab=t; AD.cardOpen=-1; adRenderOne(); }
+function adRenderOne(){
+  const c=AD.cur;
+  if(!c||!c.ok){ adIn(`<button class="back-btn" onclick="adRenderConsign()">‹ All consignors</button><div class="empty"><p>${esc(ptErr(c))}</p></div>`); return; }
+  let h=`<button class="back-btn" onclick="AD.cur=null;adRenderConsign()">‹ All consignors</button>
+    <div class="panel"><div class="t" style="font-weight:800;font-size:16px">${esc(c.handle)}${c.name?' · '+esc(c.name):''}</div>
+    <div class="note" style="text-align:left;margin-top:4px">${esc(String(c.lang||'en').toUpperCase())} · ${c.linked?'linked to Telegram':'<b>not linked</b> — ask them to open the shop or send /myconsign'} · PayNow ${c.paynow?esc(c.paynow):'<b>not set</b>'}<br>
+    Portfolio "${esc(c.portfolio)}" · ${c.consignId?esc(c.consignId):'no open consignment'} · rates ${esc(c.rateVer||'—')}${c.onLiveRates?' (current)':` <span class="pt-tag warn">not current (${esc(c.liveRateVer)})</span>`}${c.joined?' · since '+ptDate(c.joined):''}</div></div>
+    <div class="pt-stats" style="margin-top:10px">
+      <div class="pstat"><div class="pn">$${Number(c.balance||0).toFixed(2)}</div><div class="pl">Owed</div></div>
+      <div class="pstat"><div class="pn">${Number(c.sold||0)}</div><div class="pl">Sold</div></div>
+      <div class="pstat"><div class="pn">$${Number(c.commission||0).toFixed(0)}</div><div class="pl">Our cut</div></div></div>
+    <div class="panel"><div class="pt-h" style="margin-top:0">Record a payout</div>
+      <div class="pt-inl"><input id="ad-pa" inputmode="decimal" placeholder="Amount $" value="${c.balance>0?Number(c.balance).toFixed(2):''}"><input id="ad-pr" placeholder="PayNow ref"></div>
+      <button class="pt-mini pri" onclick="adPay(this)">Record payout</button>
+      <p class="note" style="text-align:left">Send the PayNow first, then record it here — it books the payout and DMs them. Earned $${Number(c.earned||0).toFixed(2)} · paid $${Number(c.paid||0).toFixed(2)}${c.reversed?' · reversed $'+Math.abs(Number(c.reversed)).toFixed(2):''}.</p></div>`;
+  h+=ptTabs([['shelf','Shelf'],['sales','Sales'],['payouts','Payouts'],['rates','Rates'],['requests','Requests']],AD.curTab||'shelf','adOneTab');
+  h+='<div class="panel">';
+  const t=AD.curTab||'shelf';
+  if(t==='shelf'){
+    h+= (c.shelf&&c.shelf.length) ? c.shelf.map((x,i)=>{
+      const live=x.state!=='Returned to you';
+      return `<div class="pt-card">${x.image?`<img src="${esc(x.image)}" loading="lazy" alt="">`:'<div class="noimg"></div>'}<div class="b">
+        <div style="font-weight:700">${esc(x.name)}${x.qty>1?' ×'+x.qty:''} <span style="color:var(--hint);font-weight:400;font-size:11px">${esc(x.id)}</span></div>
+        <div style="color:var(--hint);font-size:11.5px">${[x.set,x.number?'#'+x.number:'',x.grade||x.condition].filter(Boolean).map(esc).join(' · ')}</div>
+        <div style="margin-top:3px"><b>$${Number(x.price||0).toFixed(2)}</b> · floor ${x.floor?'$'+Number(x.floor).toFixed(2):'none'} · ${esc(String(x.rateKey||'en').toUpperCase())}</div>
+        <span class="pt-tag ${PT_STATE_TAG[x.state]||''}">${esc(x.state)}</span>${x.bundle?`<span class="pt-tag">${esc(x.bundle)}</span>`:''}
+        ${live?`<div><button class="pt-mini" onclick="adCard(${i})">${AD.cardOpen===i?'Close':'Edit'}</button></div>`:''}
+        ${AD.cardOpen===i?`<div class="pt-form">
+          <div class="pt-inl"><input id="ad-cf" inputmode="decimal" placeholder="Floor $ (0 = none)" value="${x.floor||''}"><button class="pt-mini" onclick="adSet(this,${i},'floor')">Set floor</button></div>
+          <div class="pt-inl"><input id="ad-cp" inputmode="decimal" placeholder="Price $" value="${Number(x.price||0).toFixed(2)}"><button class="pt-mini" onclick="adSet(this,${i},'price')">Set price</button></div>
+          <div class="pt-inl"><select id="ad-ck">${['en','jp','slab'].map(k=>`<option value="${k}"${x.rateKey===k?' selected':''}>${PT_RATE_NAMES[k]}</option>`).join('')}</select><button class="pt-mini" onclick="adSet(this,${i},'rateKey')">Set rate table</button></div>
+          <button class="pt-mini" style="color:var(--berry)" onclick="adSet(this,${i},'return')">Return to owner</button></div>`:''}
+      </div></div>`; }).join('')
+      : '<div class="empty" style="padding:24px"><p>Nothing on the shelf.</p></div>';
+  } else if(t==='sales') h+=ptSalesHtml(c.sales);
+  else if(t==='payouts') h+=ptPayoutsHtml(c.payouts);
+  else if(t==='rates'){
+    h+=`<p class="note" style="text-align:left;margin:0 0 6px">Their frozen table: ${esc(c.rateVer||'—')}. Current table: ${esc(c.liveRateVer||'—')}.</p>`+ptRatesHtml(c.rates&&c.rates.tables);
+    if(!c.onLiveRates) h+=`<button class="pt-mini pri" style="margin-top:10px" onclick="adReopen(this)">Move them onto the current rates…</button>
+      <p class="note" style="text-align:left">Only with their agreement. Unsold cards move to the current table; anything already sold keeps its terms. They get a DM.</p>`;
+  } else if(t==='requests') h+=ptReqsHtml(c.requests);
+  h+='</div>';
+  adIn(h);
+}
+function adCard(i){ AD.cardOpen=(AD.cardOpen===i?-1:i); adRenderOne(); }
+async function adSet(btn,i,field){
+  const x=AD.cur&&AD.cur.shelf&&AD.cur.shelf[i]; if(!x) return;
+  let value='';
+  if(field==='floor'){ value=ptNum('ad-cf'); if(value==null) value=0; }
+  else if(field==='price'){ value=ptNum('ad-cp'); if(!(value>0)){ ptAlert('Give a price.'); return; } }
+  else if(field==='rateKey') value=ptVal('ad-ck');
+  else if(field==='return'){ if(!(await ptConfirm('Take '+x.name+' off the shelf and return it to '+AD.cur.handle+'?'))) return; }
+  await guard(btn, async()=>{
+    const r=await api('adminConsignSet',{cardId:x.id,field:field,value:value});
+    ptAlert(r.ok?(r.message||'Done'):ptErr(r));
+    if(r.ok){ AD.cardOpen=-1; await adReloadOne(); }
+  });
+}
+async function adPay(btn){
+  const c=AD.cur; if(!c) return;
+  const amt=ptNum('ad-pa'), ref=ptVal('ad-pr');
+  if(!(amt>0)){ ptAlert('Amount has to be more than zero.'); return; }
+  if(amt>Number(c.balance||0)+0.005&&!(await ptConfirm('That\'s more than they\'re owed ($'+Number(c.balance||0).toFixed(2)+'). Record it anyway?'))) return;
+  if(!(await ptConfirm('Record a $'+amt.toFixed(2)+' payout to '+c.handle+(ref?' (ref '+ref+')':'')+'? They\'ll get a DM.'))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminConsignPay',{id:c.id,amount:amt,ref:ref});
+    ptAlert(r.ok?('Recorded. Balance now $'+Number(r.balance||0).toFixed(2)+(r.dmed?' — they\'ve been told.':' — they aren\'t linked, so tell them yourself.')):ptErr(r));
+    if(r.ok) await adReloadOne();
+  });
+}
+async function adReopen(btn){
+  const c=AD.cur; if(!c) return;
+  if(!(await ptConfirm('Has '+c.handle+' agreed to move onto the current rates ('+c.liveRateVer+')? Their unsold cards will use the new table.'))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminConsignReopen',{id:c.id});
+    ptAlert(r.ok?(r.message||'Done'):ptErr(r));
+    if(r.ok) await adReloadOne();
+  });
+}
+
+/* ---------- Rates editor ---------- */
+function adRenderRates(){
+  const r=AD.rates, e=AD.edit;
+  if(!r||!r.ok||!e){ adIn(`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
+  let h=`<div class="panel"><div class="note" style="text-align:left;margin:0">Now using <b>${esc(r.rates.ver||'')}</b>${r.isDefault?' (the default)':''}. Changes apply to <b>new</b> consignments only — existing consignors keep the rates they signed up on${r.consignorsOnOld?` (${r.consignorsOnOld} consignor${r.consignorsOnOld>1?'s are':' is'} on an older table)`:''}.<br>"From $" is where a tier starts; "% we keep" is our commission on the sale price.</div></div>`;
+  ['en','jp','slab'].forEach(k=>{
+    const t=e[k]||{tiers:[]};
+    h+=`<div class="pt-h">${esc(PT_RATE_NAMES[k])}</div><div class="panel">
+      <div class="pt-inl" style="margin-bottom:8px"><span style="font-size:12px;color:var(--hint)">Minimum price $</span><input inputmode="decimal" value="${adNv(t.min)}" oninput="adRate('${k}',-1,0,this.value)" style="max-width:90px"></div>
+      <div class="pt-tier" style="color:var(--hint);font-weight:700"><span>From $</span><span>% we keep</span><span>Owner gets at "from"</span><span></span></div>`+
+      (t.tiers||[]).map((x,i)=>`<div class="pt-tier"><input inputmode="decimal" value="${adNv(x[0])}" oninput="adRate('${k}',${i},0,this.value)"><input inputmode="decimal" value="${adNv(x[1])}" oninput="adRate('${k}',${i},1,this.value)">
+        <span class="kp" id="ad-kp-${k}-${i}">${adKeep(t,i)}</span><button class="pt-mini" style="margin:0" onclick="adTier('${k}',${i})">✕</button></div>`).join('')+
+      `<button class="pt-mini" onclick="adTier('${k}',-1)">+ Add tier</button></div>`;
+  });
+  h+=`<div id="ad-rerr" class="pt-err"></div><button class="cta" style="margin-top:12px" onclick="adRatesSave(this)">Save new rates</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pt-mini" onclick="adRatesUndo()">Undo my edits</button>${r.isDefault?'':'<button class="pt-mini" onclick="adRatesReset(this)">Reset to default</button>'}</div>`;
+  adIn(h);
+  adRateCheck();
+}
+function adNv(v){ return (v===''||v==null||!isFinite(Number(v)))?'':esc(v); }
+function adKeep(t,i){
+  const x=t.tiers[i]; if(!x) return '';
+  const f=Number(x[0]), p=Number(x[1]);
+  if(!(f>=0)||!(p>=0)) return '—';
+  return '$'+(f*(1-p/100)).toFixed(2)+' of $'+f.toFixed(2);
+}
+function adRate(k,i,j,v){
+  const t=AD.edit[k]; const n=v===''?NaN:Number(String(v).replace(/[$,%\s]/g,''));
+  if(i<0) t.min=n; else t.tiers[i][j]=n;
+  if(i>=0){ const el=document.getElementById('ad-kp-'+k+'-'+i); if(el) el.textContent=adKeep(t,i); }
+  adRateCheck();
+}
+function adTier(k,i){
+  const t=AD.edit[k];
+  if(i<0){ const last=t.tiers[t.tiers.length-1]; t.tiers.push(last?[Number(last[0])*2||100,Math.max(0,Number(last[1])-1)]:[20,12]); }
+  else { if(t.tiers.length<=1){ ptAlert('A table needs at least one tier.'); return; } t.tiers.splice(i,1); }
+  adRenderRates();
+}
+// Mirrors consignRatesValid_ in consign.gs, so mistakes show while typing. The server re-checks.
+function adRateErrors(e){
+  const errs=[];
+  ['en','jp','slab'].forEach(k=>{
+    const r=e[k]; if(!r||!r.tiers||!r.tiers.length){ errs.push(PT_RATE_NAMES[k]+': no tiers'); return; }
+    if(!(Number(r.min)>=0)) errs.push(PT_RATE_NAMES[k]+': minimum must be 0 or more');
+    const tiers=r.tiers.map(x=>[Number(x[0]),Number(x[1])]).sort((a,b)=>a[0]-b[0]);
+    let prev=null;
+    tiers.forEach((x,i)=>{
+      if(!(x[0]>=0)) errs.push(PT_RATE_NAMES[k]+' tier '+(i+1)+': "from" must be a number');
+      if(!(x[1]>=0&&x[1]<=50)) errs.push(PT_RATE_NAMES[k]+' tier '+(i+1)+': % must be between 0 and 50');
+      if(prev){
+        if(!(x[0]>prev[0])) errs.push(PT_RATE_NAMES[k]+': two tiers start at $'+x[0]);
+        else { const below=(x[0]-0.01)*(1-prev[1]/100), at=x[0]*(1-x[1]/100);
+          if(!(at>below)) errs.push(PT_RATE_NAMES[k]+' at $'+x[0]+': the owner would get less ($'+at.toFixed(2)+') than at $'+(x[0]-0.01).toFixed(2)+' ($'+below.toFixed(2)+') — lower the % or move the boundary'); }
+      }
+      prev=x;
+    });
+  });
+  return errs;
+}
+function adRateCheck(){ const el=document.getElementById('ad-rerr'); if(!el) return []; const errs=adRateErrors(AD.edit); el.textContent=errs.join('\n'); return errs; }
+function adRatesUndo(){ AD.edit=JSON.parse(JSON.stringify(AD.rates.rates)); adRenderRates(); }
+async function adRatesSave(btn){
+  const errs=adRateCheck(); if(errs.length){ ptAlert('Fix the rate table first:\n'+errs[0]); return; }
+  if(!(await ptConfirm('Save these as the rates for new consignments? Existing consignors keep theirs.'))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminRatesSave',{rates:AD.edit});
+    if(!r.ok){ const el=document.getElementById('ad-rerr'); if(el) el.textContent=(r.errors||[]).join('\n')||ptErr(r); ptAlert(ptErr(r)); return; }
+    ptAlert(r.message||'Saved');
+    AD.rates=await api('adminRates'); AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates();
+  });
+}
+async function adRatesReset(btn){
+  if(!(await ptConfirm('Go back to the default rates for new consignments?'))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminRatesSave',{reset:true});
+    ptAlert(r.ok?(r.message||'Reset'):ptErr(r));
+    AD.rates=await api('adminRates'); AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates();
+  });
+}
+
 </script>
 </body>
 </html>
