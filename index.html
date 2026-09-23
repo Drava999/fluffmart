@@ -3285,7 +3285,7 @@ async function sendOffer(){
   if(!offer||offer<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('Enter a valid amount.'); return; }
   const r=await api('makeOffer',{cardId:OFFER_CARD.id,offer});
   closeOffer(); closeCardView();
-  const msg=r.ok?(r.message||'Offer sent!'):'Couldn\'t send offer, try again.';
+  const msg=r.ok?(r.message||'Offer sent!'):(r.message||'Couldn\'t send offer, try again.');  // fp26: show the server's reason (sold, banned, too many)
   tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
 }
 
@@ -3483,9 +3483,20 @@ async function checkout(){
       STATE.resvId=null;                        // consumed
       // Already on screen with the right number and QR — just unlock the upload
       // rather than redrawing and restarting the countdown.
-      if(INVOICE && INVOICE._pending && String(INVOICE.orderId)===String(r.orderId)){
+      /* The QR drawn early used the CART's prices and credit. The server
+         prices from the sheet and clips credit to the real balance, so the
+         two can differ (a price changed while the cart sat open, credit spent
+         elsewhere). Paying the early QR then meant paying the wrong amount
+         while #orders expected the right one. Same number = just unlock;
+         different number = redraw with the server's figures and say why. */
+      const sameAmt = INVOICE && Math.abs(Number(INVOICE.total||0)-Number(r.total||0))<0.01;
+      if(INVOICE && INVOICE._pending && String(INVOICE.orderId)===String(r.orderId) && sameAmt){
         INVOICE._pending=false;
         const rb=document.getElementById('resvNote'); if(rb) rb.remove();
+      } else if(INVOICE && INVOICE._pending && String(INVOICE.orderId)===String(r.orderId) && !wasClosed){
+        const wasAmt=Number(INVOICE.total||0);
+        showInvoice(r);
+        (tg&&tg.showAlert?tg.showAlert:alert)('Heads up — your total is $'+Number(r.total||0).toFixed(2)+', not $'+wasAmt.toFixed(2)+' (a price or your credit changed while the cart was open). The QR has been updated — please pay this one 🐾');
       } else if(!wasClosed){
         showInvoice(r);
       }
@@ -5306,7 +5317,7 @@ async function submitBuyback(){
     document.getElementById('bb-msg').value='';
     const m=r.message||'Sent! We\'ll message you back shortly.';
     tg&&tg.showAlert?tg.showAlert(m):alert(m);
-  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Couldn\'t send, try again.'); }
+  } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Couldn\'t send, try again.'); }
 }
 
 async function sendSupport(btn){
