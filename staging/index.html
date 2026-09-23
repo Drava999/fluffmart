@@ -1839,6 +1839,7 @@ body.pc #v-credit{max-width:640px}
   <!-- MY CONSIGNMENT -->
   <div class="view hidden" id="v-consign">
     <div class="section-t">My shelf</div>
+    <div id="cz-upd" class="note" style="text-align:left;margin:-6px 4px 6px;min-height:14px"></div>
     <div id="cz-body"></div>
   </div>
 
@@ -2646,9 +2647,28 @@ function togglePolicy(){
 }
 
 /* ============ API ============ */
+/* My shelf + Admin READS go to the portal Worker, which answers from D1 in a
+   fraction of a second (and passes anything it can't answer to Apps Script
+   itself). If that Worker isn't deployed or doesn't answer, the app quietly
+   goes back to the shop Worker for the rest of the session. Every write, and
+   every refresh right after one ({live:1}), still goes the usual way. */
+const PORTAL_API_URL = IS_STAGING
+  ? "https://fluffmart-portal-staging.shrimaniac.workers.dev/api"
+  : "https://fluffmart-portal.shrimaniac.workers.dev/api";
+const PORTAL_READS = {consignMe:1,consignInfo:1,adminDash:1,adminBox:1,adminOrder:1,adminStock:1,adminConsignors:1,adminConsignor:1,adminMoney:1};
+let PORTAL_DOWN=false;
 async function api(action, payload={}){
   if(!API_URL){ return mock(action,payload); }
   const initData = tg ? tg.initData : '';
+  if(PORTAL_API_URL && PORTAL_READS[action] && !payload.live && !PORTAL_DOWN){
+    try{
+      const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),20000);
+      const pr=await fetch(PORTAL_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action, initData, ...payload}),signal:ctl.signal});
+      clearTimeout(tm);
+      if(pr.ok){ const out=JSON.parse(await pr.text()); if(out && out.error==='auth_failed') onAuthExpired(out.why); return out; }
+    }catch(e){}
+    PORTAL_DOWN=true;   // not deployed / unreachable: use the shop Worker from here on
+  }
   const res = await fetch(API_URL, {
     method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({action, initData, ...payload})
@@ -2796,7 +2816,7 @@ async function bootApp(){
   const [ov,invr]=await Promise.all([api('overview'),api('inventory')]);
   const r={ok:true,overview:ov,inventory:invr};
   if(r&&r.ok){
-    if(r.overview&&r.overview.ok) applyOverview(r.overview);
+    if(r.overview&&r.overview.ok){ applyOverview(r.overview); setTimeout(ptPrefetch,1500); ptOpenBoxLink(); }
     if(r.inventory&&r.inventory.ok){ STATE.inventory=mergeInventory(r.inventory.items||[]); STATE.invTs=Date.now(); renderStore(); renderActiveChips(); }
     try{ localStorage.setItem(FM_CK+'boot',JSON.stringify({overview:r.overview,inventory:(r.inventory&&r.inventory.items)||[]})); }catch(e){}
   } else { loadOverview(); loadStore(); }
@@ -6169,11 +6189,60 @@ function ptReqsHtml(reqs){
 
 /* ---------- My consignment ---------- */
 let CZ=null, CZ_TAB='shelf', CZ_OPEN=-1, CZ_PHOTOS=[];
+/* ---- speed: show the last copy at once, refresh behind it ----------------
+   Every portal screen used to wait on a full Apps Script round trip (several
+   seconds) before drawing anything. Now: the last answer (kept on this device)
+   paints instantly with "Updating…", the fresh one replaces it, and the app
+   preloads your shelf / today's admin board a moment after it opens, so the
+   first tap is usually instant too. */
+const PT_INFLIGHT={};
+// Keyed by Telegram user too, so a second account on the same phone never sees the first one's copy.
+function ptKey(k){ let u=''; try{ u=String((tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.id)||''); }catch(e){} return FM_CK+'pt_'+u+'_'+k; }
+function ptSave(k,v){ try{ if(v&&v.ok) localStorage.setItem(ptKey(k),JSON.stringify(v)); }catch(e){} }
+function ptLoad(k){ try{ return JSON.parse(localStorage.getItem(ptKey(k))||'null'); }catch(e){ return null; } }
+function ptFetch(action,payload,key){
+  const k=key||action;
+  if(PT_INFLIGHT[k]) return PT_INFLIGHT[k];
+  const p=api(action,payload||{}).then(r=>{ ptSave(k,r); return r; }).catch(()=>({ok:false,error:'network'})).finally(()=>{ delete PT_INFLIGHT[k]; });
+  PT_INFLIGHT[k]=p; return p;
+}
+function ptUpd(id,on){ const el=document.getElementById(id); if(el) el.textContent=on?'Updating…':''; }
+let PT_PREFETCHED=false;
+/* "Open in app" on a #shipping job: ?box=<id> (via the bot) or startapp=box_<id>
+   (direct Mini App link). Opens Admin → Today with that box's pack list open. */
+function ptBoxParam(){
+  try{
+    const q=new URLSearchParams(location.search).get('box'); if(q) return q;
+    const sp=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param; const m=/^box_([A-Za-z0-9-]{2,40})$/.exec(sp||''); if(m) return m[1];
+  }catch(e){}
+  return '';
+}
+let PT_BOX_DONE=false;
+async function ptOpenBoxLink(){
+  if(PT_BOX_DONE||!STATE.isAdmin) return;
+  const pid=ptBoxParam(); if(!pid) return;
+  PT_BOX_DONE=true;
+  const k=adKey('box',pid);
+  AD.focus=pid; AD.open[k]=1; AD_TAB='today';
+  openAdmin();
+  AD.det[k]=await api('adminBox',{id:pid});
+  if(AD_TAB==='today') adRenderToday();
+}
+function ptPrefetch(){
+  if(PT_PREFETCHED) return; PT_PREFETCHED=true;
+  if(STATE.isConsignor) ptFetch('consignMe');
+  if(STATE.isAdmin) ptFetch('adminDash',{},'addash');
+}
 async function openConsign(){
   go('consign');
-  const b=document.getElementById('cz-body'); ptSkel(b);
-  const r=await api('consignMe');
-  CZ=r; CZ_OPEN=-1; renderConsign();
+  const b=document.getElementById('cz-body');
+  const saved=CZ&&CZ.ok?CZ:ptLoad('consignMe');
+  if(saved&&saved.ok){ CZ=saved; renderConsign(); } else ptSkel(b);
+  ptUpd('cz-upd',true);
+  const r=await ptFetch('consignMe');
+  ptUpd('cz-upd',false);
+  if((r&&r.ok) || !(CZ&&CZ.ok)){ CZ=r; renderConsign(); }
+  else { const el=document.getElementById('cz-upd'); if(el) el.textContent='Couldn\'t refresh — showing your last saved copy.'; }
 }
 function czTab(t){ CZ_TAB=t; CZ_OPEN=-1; renderConsign(); }
 function renderConsign(){
@@ -6233,7 +6302,7 @@ async function czSendPrice(btn,i){
   await guard(btn, async()=>{
     const r=await api('consignPriceRequest',{cardId:c.id,price:price,floor:floor,note:ptVal('cz-nn')});
     ptAlert(r.ok?(r.message||'Sent!'):ptErr(r));
-    if(r.ok){ CZ_OPEN=-1; const m=await api('consignMe'); if(m&&m.ok){ CZ=m; } renderConsign(); }
+    if(r.ok){ CZ_OPEN=-1; const m=await api('consignMe',{live:1}); if(m&&m.ok){ CZ=m; } renderConsign(); }
   });
 }
 async function czPayout(btn){
@@ -6241,7 +6310,7 @@ async function czPayout(btn){
   await guard(btn, async()=>{
     const r=await api('consignPayoutRequest');
     ptAlert(r.ok?(r.message||'Requested!'):ptErr(r));
-    const m=await api('consignMe'); if(m&&m.ok) CZ=m; renderConsign();
+    const m=await api('consignMe',{live:1}); if(m&&m.ok) CZ=m; renderConsign();
   });
 }
 function czPaynowForm(){
@@ -6272,7 +6341,7 @@ async function czSendMore(btn){
   await guard(btn, async()=>{
     const r=await api('consignSubmit',{message:msg,photos:CZ_PHOTOS});
     ptAlert(r.ok?(r.message||'Sent!'):ptErr(r));
-    if(r.ok){ CZ_PHOTOS=[]; CZ_TAB='requests'; const m=await api('consignMe'); if(m&&m.ok) CZ=m; renderConsign(); }
+    if(r.ok){ CZ_PHOTOS=[]; CZ_TAB='requests'; const m=await api('consignMe',{live:1}); if(m&&m.ok) CZ=m; renderConsign(); }
   });
 }
 
@@ -6283,10 +6352,41 @@ function adTab(t){ AD_TAB=t; AD.cur=null; AD.cardOpen=-1; adLoad(); }
 function adHead(){ return ptTabs([['today','Today'],['consign','Consignment'],['rates','Rates']],AD_TAB,'adTab'); }
 async function adLoad(){
   const b=document.getElementById('ad-body'); if(!b) return;
-  b.innerHTML=adHead()+'<div id="ad-in"></div>'; ptSkel(document.getElementById('ad-in'));
-  if(AD_TAB==='today'){ AD.dash=await api('adminDash',{fresh:AD.fresh?1:0}); AD.fresh=false; adRenderToday(); }
-  else if(AD_TAB==='consign'){ const [l,q]=await Promise.all([api('adminConsignors'),api('adminConsignRequests')]); AD.list=l; AD.reqs=q; adRenderConsign(); }
-  else { AD.rates=await api('adminRates'); AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates(); }
+  const tab=AD_TAB;
+  b.innerHTML=adHead()+'<div id="ad-upd" class="note" style="text-align:left;margin:-4px 2px 6px;min-height:14px"></div><div id="ad-in"></div>';
+  const still=()=>AD_TAB===tab&&document.getElementById('ad-in');
+  if(tab==='today'){
+    const saved=!AD.fresh&&(AD.dash&&AD.dash.ok?AD.dash:ptLoad('addash'));
+    if(saved&&saved.ok){ AD.dash=saved; adRenderToday(); } else ptSkel(document.getElementById('ad-in'));
+    ptUpd('ad-upd',true);
+    const r=AD.fresh?await ptFetch('adminDash',{fresh:1,live:1},'addash'):await ptFetch('adminDash',{},'addash');
+    AD.events=null; AD.evLoading=false;
+    Object.keys(AD.det).forEach(k=>{ if(k.indexOf('mny:')===0) delete AD.det[k]; });   // money lines follow the fresh numbers
+    AD.fresh=false;
+    if(!still()) return; ptUpd('ad-upd',false);
+    if(r&&r.ok || !(AD.dash&&AD.dash.ok)){ AD.dash=r; adRenderToday(); }
+  }
+  else if(tab==='consign'){
+    const saved=AD.list&&AD.list.ok?AD.list:ptLoad('adcn');
+    if(saved&&saved.ok){ AD.list=saved; AD.reqs={ok:true,requests:saved.requests||[]}; adRenderConsign(); } else ptSkel(document.getElementById('ad-in'));
+    ptUpd('ad-upd',true);
+    await adReloadConsign();
+    if(!still()) return; ptUpd('ad-upd',false);
+    if(!AD.cur) adRenderConsign();
+  }
+  else {
+    ptSkel(document.getElementById('ad-in'));
+    AD.rates=await api('adminRates'); if(!still()) return;
+    AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates();
+  }
+}
+// One call for the whole Consignment tab (the server now sends the requests with the list).
+async function adReloadConsign(live){
+  const l=await ptFetch('adminConsignors',live?{live:1}:{},'adcn');
+  if(l&&l.ok){
+    AD.list=l;
+    AD.reqs=l.requests?{ok:true,requests:l.requests}:await api('adminConsignRequests');  // older server
+  } else if(!(AD.list&&AD.list.ok)) { AD.list=l; AD.reqs={ok:false}; }
 }
 function adIn(html){ const el=document.getElementById('ad-in'); if(el) el.innerHTML=html; }
 function adOpenLink(i){ const v=AD.dash&&AD.dash.jobs&&AD.dash.jobs.verify[i]; if(!v||!v.link) return; if(tg&&tg.openTelegramLink&&/^https:\/\/t\.me\//.test(v.link)) tg.openTelegramLink(v.link); else openExt(v.link); }
@@ -6311,7 +6411,7 @@ async function adToggle(kind,list,i){
 function adSrc(list,i){
   const d=AD.dash||{}, j=d.jobs||{}, s=d.stock||{};
   if(list==='stock') return {id:['nophoto','stuck','stale','below'][i]};
-  if(list==='events'){ const e=(s.events||[])[i]; return e?{id:e.kind+'-'+e.id,kind:e.kind,evId:e.id}:null; }
+  if(list==='events'){ const ev=(s.events!=null?s.events:(AD.events&&AD.events.events))||[]; const e=ev[i]; return e?{id:e.kind+'-'+e.id,kind:e.kind,evId:e.id}:null; }
   return (j[list]||[])[i]||null;
 }
 function adDM(un,id){
@@ -6344,6 +6444,7 @@ function adBoxHtml(b){
   if(b.delivery==='ship') h+=`<div style="margin-top:6px;font-size:13px"><b>To:</b> ${esc(b.name||'—')}<br>${esc(b.address||'(no address)')}${b.phone?'<br>📞 '+esc(b.phone):''}</div>`;
   else if(b.delivery==='pickup') h+=`<div class="s" style="margin-top:6px;font-size:12px">${esc(b.pickupNote||'Self-pickup')}</div>`;
   h+=adBuyerHtml(b.buyer);
+  h+=adBoxActions(b);
   h+=`<div class="pt-h">Pack list · ${b.cards} card${b.cards===1?'':'s'} · $${Number(b.value||0).toFixed(2)}</div>`;
   b.orders.forEach(o=>{
     const ref=o.status==='Refunded';
@@ -6352,6 +6453,36 @@ function adBoxHtml(b){
        (ref?'':o.items.map((c,i)=>adCardLine(c,'t_'+b.id+'_'+o.id+'_'+i,`<div class="s" style="font-size:11.5px">$${Number(c.price||0).toFixed(2)}</div>`)).join(''));
   });
   return h;
+}
+/* The box's own buttons. Same server code as Telegram's /ship and /collected;
+   the server re-checks everything, these only hide buttons that can't work. */
+function adBoxActions(b){
+  const c=b.can||{}, id=esc(b.id);
+  let h='';
+  if(c.openOrders) h+=`<div class="pt-err">⛔ ${c.openOrders} order${c.openOrders>1?'s':''} in this box still unpaid or unverified — it can't go out yet.</div>`;
+  const packedBy=(b.orders||[]).map(o=>o.packedBy).filter(Boolean)[0];
+  if(packedBy&&!c.pack) h+=`<div class="s" style="font-size:12px;color:var(--mint-deep)">📦 Packed by ${esc(packedBy)}</div>`;
+  let btn='';
+  if(c.pack) btn+=`<button class="pt-mini pri" onclick="adBoxAct(this,'pack','${id}')">📦 Mark packed</button>`;
+  if(c.ship) btn+=`<div class="pt-inl" style="margin-top:6px"><input id="ad-trk-${id}" placeholder="Tracking number" autocapitalize="characters"><button class="pt-mini pri" style="margin:0" onclick="adBoxAct(this,'ship','${id}')">🚚 Mark shipped</button></div>`;
+  if(c.collect) btn+=`<button class="pt-mini pri" onclick="adBoxAct(this,'collect','${id}')">🤝 Handed over</button>`;
+  return h+(btn?`<div style="margin:6px 0 2px">${btn}</div>`:'');
+}
+async function adBoxAct(btn,kind,id){
+  const pl={id:id};
+  if(kind==='ship'){
+    const tr=ptVal('ad-trk-'+id).replace(/\s+/g,'');
+    if(!tr){ ptAlert('Type the tracking number first.'); return; }
+    pl.tracking=tr;
+    if(!(await ptConfirm('Mark '+id+' shipped with tracking '+tr+'? The buyer is told straight away.'))) return;
+  }
+  if(kind==='collect'&&!(await ptConfirm('Mark '+id+' handed over? The buyer is told straight away.'))) return;
+  await guard(btn, async()=>{
+    const r=await api({pack:'adminPack',ship:'adminShip',collect:'adminCollect'}[kind],pl);
+    ptAlert(r.message||(r.ok?'Done':ptErr(r)));
+    if(r.box&&r.box.ok) AD.det[adKey('box',id)]=r.box;
+    if(r.ok){ AD.fresh=true; adLoad(); } else adRenderToday();
+  });
 }
 function adLeft(ms){ if(!ms) return ''; const d=ms-Date.now(); if(d<=0) return 'overdue'; const h=Math.floor(d/3600000), m=Math.floor(d%3600000/60000); return h>=48?Math.floor(h/24)+'d left':h?h+'h '+m+'m left':m+'m left'; }
 function adOrderHtml(r){
@@ -6385,6 +6516,65 @@ function adEventHtml(r){
   }).join('');
   return h;
 }
+/* ---- Money: where it came from ----
+   Tap Today / 7 days / This month to switch period. Each source (App shop,
+   Claims, Auctions, every /sell channel, Refunds, Buybacks) opens the actual
+   sales behind it; "Every line" opens them all. From the Transactions tab. */
+const AD_MP_LABEL={today:'Today',week:'Last 7 days',month:'This month'};
+const adMoneyStr=v=>(Number(v)<0?'−':'')+'$'+Math.abs(Number(v)||0).toFixed(2);
+function adMoneyHtml(m){
+  if(!m||!m.periods){   // older server: headline numbers only
+    return `<div class="pt-stats">
+      <div class="pstat"><div class="pn">$${Number(m&&m.today||0).toFixed(0)}</div><div class="pl">Today</div></div>
+      <div class="pstat"><div class="pn">$${Number(m&&m.week||0).toFixed(0)}</div><div class="pl">7 days</div></div>
+      <div class="pstat"><div class="pn">$${Number(m&&m.month||0).toFixed(0)}</div><div class="pl">This month</div></div></div>`;
+  }
+  const cur=AD.mp||'month', P=m.periods[cur]||{sources:[]};
+  const tile=(k,lab)=>`<button class="pstat" style="cursor:pointer;${k===cur?'border:2px solid var(--berry)':''}" onclick="AD.mp='${k}';adRenderToday()"><div class="pn">$${Number(m.periods[k].sales||0).toFixed(0)}</div><div class="pl">${lab}</div></button>`;
+  let h=`<div class="pt-stats">${tile('today','Today')}${tile('week','7 days')}${tile('month','This month')}</div>`;
+  h+=`<div class="panel" style="padding:4px 12px"><div class="pt-row"><div class="l"><div class="t">${AD_MP_LABEL[cur]}: $${Number(P.sales).toFixed(2)}</div>
+      <div class="s">${P.count} sale${P.count===1?'':'s'} · profit ${adMoneyStr(P.profit)}${P.refunds?` · refunds −$${Math.abs(P.refunds).toFixed(2)}`:''}</div></div></div>`;
+  if(!P.sources.length) h+=`<p class="note" style="text-align:left">Nothing booked ${cur==='today'?'today':'in this period'} yet.</p>`;
+  P.sources.forEach((sr,i)=>{
+    const k=adKey('mny',cur+'|'+sr.key);
+    h+=`<div class="pt-row" style="cursor:pointer" onclick="adMoneyToggle(${i})"><div class="l"><div class="t">${esc(sr.label)}</div>
+        <div class="s">${sr.count} line${sr.count===1?'':'s'}${sr.out?' · money out — not in sales':' · profit '+adMoneyStr(sr.profit)}</div></div>
+        <div class="r ${sr.out||sr.amount<0?'pt-neg':''}">${sr.amount<0?'−':''}$${Math.abs(sr.amount).toFixed(2)} ${AD.open[k]?'▾':'▸'}</div></div>`+
+       (AD.open[k]?`<div class="pt-form" style="margin:0 0 8px">${AD.det[k]?adMoneyRowsHtml(AD.det[k]):'<div class="skelcard" style="height:60px"></div>'}</div>`:'');
+  });
+  const ka=adKey('mny',cur+'|');
+  h+=`<div class="pt-row" style="cursor:pointer" onclick="adMoneyToggle(-1)"><div class="l"><div class="t">Every line</div><div class="s">All sales, refunds and buybacks, newest first</div></div><div class="r">${AD.open[ka]?'▾':'▸'}</div></div>`+
+     (AD.open[ka]?`<div class="pt-form" style="margin:0 0 8px">${AD.det[ka]?adMoneyRowsHtml(AD.det[ka]):'<div class="skelcard" style="height:60px"></div>'}</div>`:'');
+  if(cur==='month'&&m.costMissing) h+=`<p class="note" style="text-align:left">${m.costMissing} sale${m.costMissing>1?'s':''} this month had no cost recorded, so their profit is the full price.</p>`;
+  return h+'</div>';
+}
+async function adMoneyToggle(i){
+  const m=AD.dash&&AD.dash.money; if(!m||!m.periods) return;
+  const cur=AD.mp||'month', sr=i<0?null:(m.periods[cur].sources||[])[i];
+  if(i>=0&&!sr) return;
+  const k=adKey('mny',cur+'|'+(sr?sr.key:''));
+  if(AD.open[k]){ delete AD.open[k]; adRenderToday(); return; }
+  AD.open[k]=1; adRenderToday();
+  if(!AD.det[k]){ AD.det[k]=await api('adminMoney',{period:cur,source:sr?sr.key:''}); if(AD.open[k]) adRenderToday(); }
+}
+function adMoneyRowsHtml(r){
+  if(!r||!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
+  if(!r.rows.length) return '<p class="note" style="text-align:left">No lines.</p>';
+  return r.rows.map(x=>{
+    const when=new Date(x.at).toLocaleString([], {day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+    const idp=[x.set,x.number?'#'+x.number:''].filter(Boolean).map(esc).join(' ');
+    return `<div class="pt-row"><div class="l"><div class="t">${esc(x.name||'(no name)')}${idp?' <span style="color:var(--hint);font-weight:400">'+idp+'</span>':''}</div>
+      <div class="s">${when} · ${esc(x.source)}${x.buyer?' · '+esc(x.buyer):''}${x.orderId?' · #'+esc(x.orderId):''}${x.type==='acquisition'?'':' · profit '+adMoneyStr(x.profit)}${x.notes?'<br>'+esc(x.notes):''}</div></div>
+      <div class="r ${x.amount<0||x.type==='acquisition'?'pt-neg':''}">${x.amount<0?'−':''}$${Math.abs(x.amount).toFixed(2)}</div></div>`;
+  }).join('')+(r.total>r.rows.length?`<p class="note">Showing the newest ${r.rows.length} of ${r.total}.</p>`:'');
+}
+async function adLoadEvents(){
+  AD.evLoading=true;
+  const r=await api('adminEvents',AD.fresh?{live:1}:{});
+  AD.evLoading=false;
+  AD.events=(r&&r.ok)?r:{events:[],stuckHolds:null};
+  if(AD_TAB==='today'&&document.getElementById('ad-in')) adRenderToday();
+}
 function adRenderToday(){
   const d=AD.dash;
   if(!d||!d.ok){ adIn(`<div class="empty"><p>${esc(ptErr(d))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
@@ -6396,22 +6586,28 @@ function adRenderToday(){
   const sec=(title,list,fmt,empty)=>`<div class="pt-h">${title} <span class="pt-tag">${(list||[]).length}</span></div>`+
     ((list&&list.length)?'<div class="panel" style="padding:4px 12px">'+list.map(fmt).join('')+'</div>':`<p class="note" style="text-align:left;margin:0 2px">${empty}</p>`);
   const dl=x=>x.delivery==='ship'?'📮':x.delivery==='pickup'?'🤝':'';
-  let h=`<div class="pt-stats">
-      <div class="pstat"><div class="pn">$${Number(m.today||0).toFixed(0)}</div><div class="pl">Today</div></div>
-      <div class="pstat"><div class="pn">$${Number(m.week||0).toFixed(0)}</div><div class="pl">7 days</div></div>
-      <div class="pstat"><div class="pn">$${Number(m.month||0).toFixed(0)}</div><div class="pl">This month</div></div></div>
-    <p class="note" style="text-align:left;margin:-4px 2px 6px">Month: ${Number(m.monthCount||0)} sales · profit $${Number(m.monthProfit||0).toFixed(2)} (sales net of refunds). Tap any line for details.</p>`;
+  let h=adMoneyHtml(m);
+  if(AD.focus){
+    const inList=['pack','ship','handover','overHold'].some(l=>(j[l]||[]).some(x=>x.id===AD.focus));
+    if(!inList) h+=`<div class="pt-h">Opened from Telegram</div><div class="panel" style="padding:4px 12px">`+
+      `<div class="pt-row"><div class="l"><div class="t">📦 ${esc(AD.focus)}</div></div></div>`+det('box',AD.focus,adBoxHtml)+'</div>';
+  }
   h+=sec('To verify',j.verify,(v,i)=>row('ord','verify',i,v.id,`#${esc(v.id)}${v.postage?' <span class="pt-tag">postage</span>':''}`,`${esc(v.buyer)} · $${Number(v.total||0).toFixed(2)}${v.since?' · waiting since '+new Date(v.since).toLocaleString([], {day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):''}`)+det('ord',v.id,adOrderHtml),'Nothing waiting 🎉');
   h+=sec('To pack',j.pack,(x,i)=>row('box','pack',i,x.id,`${dl(x)} ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} card${x.cards===1?'':'s'} · $${Number(x.value||0).toFixed(2)} · ${x.orders} order${x.orders>1?'s':''}`)+det('box',x.id,adBoxHtml),'Nothing to pack.');
   h+=sec('To ship (postage paid)',j.ship,(x,i)=>row('box','ship',i,x.id,`📮 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml),'Nothing to ship.');
   h+=sec('To hand over',j.handover,(x,i)=>row('box','handover',i,x.id,`🤝 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml),'No pickups waiting.');
   h+=sec('Boxes past their hold',j.overHold,(x,i)=>row('box','overHold',i,x.id,esc(x.id),esc(x.buyer),`<span class="pt-neg">${x.days}d</span>`)+det('box',x.id,adBoxHtml),'None.');
   h+=sec('Unpaid claim wins',j.claims,(x,i)=>row('ord','claims',i,x.id,`#${esc(x.id)}`,`${esc(x.buyer)} · $${Number(x.total||0).toFixed(2)}`,`${x.days}d`)+det('ord',x.id,adOrderHtml),'None.');
-  const sk=[['nophoto','On sale with no photo',s.noPhoto,''],['stuck','Stuck on a drop/auction hold',s.stuckHolds,'Held, but no live drop or auction has them'],
+  // D1 doesn't hold drops/auctions: those two come from Apps Script, a moment later.
+  const evd=(s.events==null)?AD.events:{events:s.events,stuckHolds:s.stuckHolds};
+  if(s.events==null&&!AD.events&&!AD.evLoading) adLoadEvents();
+  const evList=evd?evd.events:null, stuckN=evd?evd.stuckHolds:null;
+  const sk=[['nophoto','On sale with no photo',s.noPhoto,''],['stuck','Stuck on a drop/auction hold',stuckN==null?'…':stuckN,'Held, but no live drop or auction has them'],
             ['stale',`Listed over ${s.staleDays||60} days`,s.stale,'Candidates for the next drop or auction'],['below',`Priced under ${s.belowPct||80}% of market`,s.below,'Check before someone else does']];
   h+=`<div class="pt-h">Stock · ${Number(s.onSale||0)} on sale · $${Number(s.stockValue||0).toFixed(0)}</div><div class="panel" style="padding:4px 12px">`+
-    sk.map((x,i)=>row('stk','stock',i,x[0],x[1],x[3],`<span class="${x[2]?'pt-neg':''}">${Number(x[2]||0)}</span>`)+det('stk',x[0],adStockHtml)).join('')+'</div>';
-  h+=sec('Open drops &amp; auctions',s.events,(e,i)=>row('ev','events',i,e.kind+'-'+e.id,`${esc(e.short||'')} ${esc(e.title||'')}`,`${esc(e.kind)} · ${esc(e.state||'')} · ${Number(e.cards||0)} cards · ${Number(e.ageHrs||0)}h old`)+det('ev',e.kind+'-'+e.id,adEventHtml),'None open.');
+    sk.map((x,i)=>row('stk','stock',i,x[0],x[1],x[3],`<span class="${x[2]&&x[2]!=='…'?'pt-neg':''}">${x[2]==='…'?'…':Number(x[2]||0)}</span>`)+det('stk',x[0],adStockHtml)).join('')+'</div>';
+  if(evList==null) h+=`<div class="pt-h">Open drops &amp; auctions</div><p class="note" style="text-align:left;margin:0 2px">Loading…</p>`;
+  else h+=sec('Open drops &amp; auctions',evList,(e,i)=>row('ev','events',i,e.kind+'-'+e.id,`${esc(e.short||'')} ${esc(e.title||'')}`,`${esc(e.kind)} · ${esc(e.state||'')} · ${Number(e.cards||0)} cards · ${Number(e.ageHrs||0)}h old`)+det('ev',e.kind+'-'+e.id,adEventHtml),'None open.');
   h+=`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>
     <p class="note">Refunds, cancels, strikes and restores stay in Telegram. ${esc(d.version||'')} · as of ${new Date(d.at||Date.now()).toLocaleTimeString()}${d.cached?' (cached)':''}
       · <a href="#" onclick="AD.fresh=true;AD.det={};adLoad();return false">Refresh</a></p>`;
@@ -6454,7 +6650,7 @@ async function adDecide(btn,i,approve){
   await guard(btn, async()=>{
     const r=await api('adminConsignDecide',{reqId:q.id,approve:!!approve,note:ptVal('ad-rq-'+i)});
     ptAlert(r.ok?(r.message||'Done'):ptErr(r));
-    const [l,rq]=await Promise.all([api('adminConsignors'),api('adminConsignRequests')]); AD.list=l; AD.reqs=rq; adRenderConsign();
+    await adReloadConsign(true); adRenderConsign();
   });
 }
 function adOpenByHandle(h){ const l=AD.list&&AD.list.consignors||[]; const i=l.findIndex(x=>x.id===String(h).toLowerCase()||x.id===h); if(i>=0) adOpen(i); }
@@ -6464,7 +6660,7 @@ async function adNew(btn){
   await guard(btn, async()=>{
     const r=await api('adminConsignNew',{handle:handle,lang:ptVal('ad-nl')||'en',name:ptVal('ad-nn'),paynow:ptVal('ad-np')});
     ptAlert(r.ok?(r.message||'Registered'):ptErr(r));
-    if(r.ok){ AD.list=await api('adminConsignors'); adRenderConsign(); }
+    if(r.ok){ await adReloadConsign(true); adRenderConsign(); }
   });
 }
 async function adOpen(i){
@@ -6473,7 +6669,7 @@ async function adOpen(i){
   AD.cur=await api('adminConsignor',{id:x.id}); AD.cardOpen=-1; AD.curTab='shelf';
   adRenderOne(); window.scrollTo(0,0);
 }
-async function adReloadOne(){ if(!AD.cur||!AD.cur.id) return; const r=await api('adminConsignor',{id:AD.cur.id}); if(r&&r.ok) AD.cur=r; adRenderOne(); }
+async function adReloadOne(){ if(!AD.cur||!AD.cur.id) return; const r=await api('adminConsignor',{id:AD.cur.id,live:1}); if(r&&r.ok) AD.cur=r; adRenderOne(); }
 function adOneTab(t){ AD.curTab=t; AD.cardOpen=-1; adRenderOne(); }
 function adRenderOne(){
   const c=AD.cur;
