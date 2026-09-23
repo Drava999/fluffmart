@@ -1564,6 +1564,98 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
   color:var(--fawn-deep);font-family:inherit;font-size:12px;font-weight:800;border:none}
 
 @media print{ .rline{cursor:default} .rcpt-body .pics,.st-go{display:none!important} }
+/* ══ PC MODE (18b) ═════════════════════════════════════════════════════════
+   body.pc-scoped, so it outranks the 600px phone-column media query above
+   without editing it (a media query adds no specificity; a class does).
+   TWO layouts: narrow = icon rail, .pc-wide = full rail. Telegram Desktop
+   opens a Mini App in a phone-sized window, so narrow is the one you see
+   first and it has to be good on its own. */
+/* No overflow-y here (fix pack 19 S1): it stacked two scrollbars at the right edge. */
+body.pc{--pc-rail:62px;--pc-col:1160px;--pc-safetop:0px;
+  padding-bottom:0;background:var(--bg)}
+body.pc.pc-wide{--pc-rail:236px}
+
+body.pc #app{width:auto;max-width:none;margin:0 0 0 var(--pc-rail);
+  min-height:100vh;background:var(--bg);box-shadow:none;padding-bottom:56px}
+body.pc .wrap{max-width:var(--pc-col);margin:0 auto;padding:18px 16px 0}
+body.pc.pc-wide .wrap{padding:30px 32px 0}
+/* The rail carries the brand now, so the in-page header is duplication. */
+body.pc .top{display:none}
+
+/* ── the rail ── */
+body.pc .nav{top:0;bottom:0;left:0;right:auto;height:100vh;
+  width:var(--pc-rail);max-width:none;margin:0;transform:none;
+  flex-direction:column;align-items:stretch;gap:2px;
+  padding:calc(12px + var(--pc-safetop)) 8px calc(12px + env(safe-area-inset-bottom));
+  border-top:none;border-right:1px solid var(--line);overflow-y:auto;overflow-x:hidden}
+body.pc.pc-wide .nav{padding-left:12px;padding-right:12px}
+body.pc .nav button{flex:0 0 auto;flex-direction:row;justify-content:center;
+  align-items:center;gap:0;width:100%;margin:0;padding:11px 0;
+  border-radius:12px;text-align:center;position:relative;
+  /* Kills the label text node in the narrow rail. You can't select a bare text
+     node in CSS, but you can zero the font it inherits and put the icon's back. */
+  font-size:0}
+body.pc.pc-wide .nav button{justify-content:flex-start;gap:12px;
+  padding:11px 14px;font-size:13.5px;text-align:left}
+body.pc .nav button .ni{font-size:19px;width:24px;text-align:center;flex:0 0 24px}
+body.pc .nav button:hover{background:var(--ruff)}
+body.pc .nav button.on{background:var(--ruff);color:var(--fawn-deep)}
+/* navHop is charming a thumb's width away, twitchy in a static sidebar. */
+body.pc .nav button.on .ni{animation:none;transform:none}
+body.pc .cart-dot{font-size:10px;position:absolute;top:4px;right:8px;margin:0}
+body.pc.pc-wide .cart-dot{position:static;margin-left:auto}
+
+body.pc .pc-brand{display:flex;align-items:center;gap:10px;cursor:pointer;
+  justify-content:center;padding:4px 0 14px;margin-bottom:6px;
+  border-bottom:1px solid var(--line)}
+body.pc.pc-wide .pc-brand{justify-content:flex-start;padding:4px 12px 16px}
+body.pc .pc-brand img{width:32px;height:32px;border-radius:9px;object-fit:cover;flex:0 0 32px}
+body.pc .pc-brand .pb-x{display:none}
+body.pc.pc-wide .pc-brand .pb-x{display:block}
+body.pc .pc-brand .pb-t{font-family:'Fraunces',serif;font-weight:600;font-size:15.5px;
+  color:var(--fawn-deep);line-height:1.15;letter-spacing:-.01em}
+body.pc .pc-brand .sub{font-size:10.5px;color:var(--hint);font-weight:700;line-height:1.3;margin-top:2px}
+.pc-brand,.pc-fsbtn{display:none}
+
+/* ⛶ — a real click, which is what some clients want before granting fullscreen. */
+body.pc .pc-fsbtn{display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:auto;padding:10px 0;border-radius:12px;font-size:0;
+  color:var(--hint);border-top:1px solid var(--line)}
+body.pc.pc-wide .pc-fsbtn{justify-content:flex-start;padding:10px 14px;font-size:12.5px;gap:12px}
+body.pc .pc-fsbtn:hover{background:var(--ruff);color:var(--fawn-deep)}
+body.pc .pc-fsbtn .ni{font-size:17px;width:24px;text-align:center;flex:0 0 24px}
+
+/* ── content ── */
+/* auto-fill, not a fixed three: the tile size is held constant and the window
+   decides how many fit, so a 13" laptop and a 27" monitor are both right. */
+body.pc .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+body.pc.pc-wide .grid{grid-template-columns:repeat(auto-fill,minmax(186px,1fr));gap:16px}
+body.pc .doc{max-width:580px}
+body.pc.pc-wide .chips{flex-wrap:wrap;overflow-x:visible}
+
+/* ── sheets become a right-hand drawer ── */
+body.pc .sheet{left:auto;right:0;top:0;bottom:0;width:min(440px,92vw);max-width:none;
+  margin:0;max-height:none;border-radius:0;border-left:1px solid var(--line);
+  transform:translateX(100%)}
+body.pc .sheet.show{transform:translateX(0)}
+body.pc .sheet .sh-hd{padding:calc(20px + var(--pc-safetop)) 20px 10px}
+body.pc .sheet .body{padding:0 20px 20px}
+
+/* ── cart bar ── */
+body.pc .cartbar{left:auto;right:16px;bottom:18px;width:auto;min-width:0;
+  max-width:calc(100vw - var(--pc-rail) - 32px);transform:translateY(200%)}
+body.pc.pc-wide .cartbar{right:28px;bottom:26px;min-width:330px;max-width:420px}
+body.pc .cartbar.show{transform:translateY(0)}
+
+/* ── mouse and keyboard affordances ── */
+body.pc .grid>*{transition:transform .15s ease,box-shadow .15s ease}
+body.pc .grid>*:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(74,53,36,.16)}
+body.pc .feat:hover,body.pc .tbtn:hover,body.pc .stat-go:hover{background:var(--ruff)}
+body.pc button:focus-visible,body.pc input:focus-visible,
+body.pc select:focus-visible{outline:2px solid var(--berry);outline-offset:2px}
+/* Custom scrollbars removed (fix pack 19 S1). */
+/* Store credit page: readable column on a wide screen. */
+body.pc #v-credit{max-width:640px}
 </style>
 </head>
 <body>
@@ -2720,8 +2812,13 @@ function renderUnpaidBanner(){
 }
 function renderLoyalty(r){
   const el=document.getElementById('ov-loyalty'); if(!el) return;
-  const thr=r.rewardThreshold||100, rc=r.rewardCredit||3, spend=r.spend||0;
-  const into=spend%thr, pct=Math.min(100,Math.round(into/thr*100)), toGo=(thr-into);
+  /* fix pack 19 S2: bad config / negative spend can't render a backwards bar. */
+  const thrRaw=Number(r.rewardThreshold), rc=Number(r.rewardCredit)||3;
+  const thr=(isFinite(thrRaw)&&thrRaw>0)?thrRaw:100;
+  const spend=Number(r.spend)||0;
+  const into=Math.max(0,spend%thr);
+  const pct=Math.max(0,Math.min(100,Math.round(into/thr*100)));
+  const toGo=Math.max(0,thr-into);
   const refLink=r.referralLink||'';
   el.innerHTML=`
     <div class="loyal">
@@ -5665,6 +5762,170 @@ function closeGuide(){
 function maybeFirstRun(){
   try{ if(!localStorage.getItem('fm_guide_start')) setTimeout(()=>openGuide('start'),900); }catch(e){}
 }
+/* ============ PC MODE (18b) ============ */
+/* tdesktop and macos are the NATIVE desktop apps -- they cannot be a phone, so
+   they get the rail immediately, at whatever size Telegram opens the window.
+   That size is small: Telegram Desktop opens a Mini App phone-shaped, roughly
+   400-500px wide, which is why the previous version's innerWidth >= 900 check
+   meant nothing ever switched on.
+   web/weba/webk IS as often a phone browser as a desktop one, so that path
+   keeps the width + real-pointer test. */
+const PC_NATIVE=/^(tdesktop|macos)$/;
+const PC_MAYBE=/^(web|weba|webk|unknown)?$/;
+let PC_ON=false, PC_WIDE=false, PC_GREET_HOME=null, PC_FS_TRIED=false, PC_LOGO_TAPS=0;
+
+function pcPlatform(){ return String((tg&&tg.platform)||''); }
+function pcWanted(){
+  const p=pcPlatform();
+  if(PC_NATIVE.test(p)) return true;              // native desktop: always
+  if(!PC_MAYBE.test(p)) return false;             // ios / android: never
+  if(window.innerWidth<900) return false;
+  try{ if(!window.matchMedia('(pointer:fine)').matches) return false; }catch(e){}
+  return true;
+}
+function pcIsWide(){ return window.innerWidth>=880; }
+
+/* Fullscreen is an ATTEMPT, not the mechanism. Bot API 8.0, and Telegram's docs
+   don't commit to it working on desktop at all -- the feature is written up
+   around phones and games. The layout is already correct without it. */
+function pcGoFullscreen(){
+  try{
+    if(!tg) return false;
+    if(tg.isFullscreen) return true;
+    if(typeof tg.isVersionAtLeast==='function' && !tg.isVersionAtLeast('8.0')) return false;
+    if(typeof tg.requestFullscreen!=='function') return false;
+    tg.requestFullscreen();
+    return true;
+  }catch(e){ return false; }
+}
+function pcToggleFullscreen(){
+  try{
+    if(tg&&tg.isFullscreen&&typeof tg.exitFullscreen==='function'){ tg.exitFullscreen(); return; }
+  }catch(e){}
+  if(!pcGoFullscreen()) pcAlert('Your Telegram doesn’t support full screen for mini apps.\n\nDrag the window wider instead — the layout grows with it.');
+}
+function pcAlert(m){ try{ (tg&&tg.showAlert)?tg.showAlert(m):alert(m); }catch(e){ alert(m); } }
+
+/* In fullscreen Telegram draws its own close button OVER the page, so the rail
+   needs to start below it or the logo sits under it. */
+function pcSafeTop(){
+  let t=0;
+  try{ t=Number((tg&&tg.contentSafeAreaInset&&tg.contentSafeAreaInset.top)||0)||0; }catch(e){}
+  try{ if(!t) t=Number((tg&&tg.safeAreaInset&&tg.safeAreaInset.top)||0)||0; }catch(e){}
+  document.body.style.setProperty('--pc-safetop', t+'px');
+}
+
+function pcDiagnostic(){
+  let v='?'; try{ v=String((tg&&tg.version)||'?'); }catch(e){}
+  pcAlert(
+    'FloofMart PC mode\n\n'+
+    'platform: '+(pcPlatform()||'(none — not in Telegram)')+'\n'+
+    'Bot API: '+v+'\n'+
+    'window: '+window.innerWidth+' × '+window.innerHeight+'\n'+
+    'pc mode: '+(PC_ON?'ON':'off')+(PC_ON?(PC_WIDE?' (wide)':' (narrow rail)'):'')+'\n'+
+    'fullscreen: '+(tg&&typeof tg.requestFullscreen==='function'?'supported':'not supported')+
+      (tg&&tg.isFullscreen?' · currently on':''));
+}
+
+function pcBuildRail(){
+  const nav=document.getElementById('nav');
+  if(!nav||nav.querySelector('.pc-brand')) return;
+
+  const b=document.createElement('div'); b.className='pc-brand';
+  const img=document.createElement('img');
+  img.src='logo.png'; img.alt='';
+  img.onerror=function(){ this.replaceWith(document.createTextNode('\u{1F411}')); };
+  const txt=document.createElement('div'); txt.className='pb-x';
+  const t=document.createElement('div'); t.className='pb-t'; t.textContent='FloofMart TCG';
+  txt.appendChild(t);
+  /* MOVED, not copied. Everything that writes the greeting does it by id, so it
+     works the same in its new home — and a copy would go stale the moment
+     loadOverview() rewrote the original. */
+  const g=document.getElementById('greeting');
+  if(g){ PC_GREET_HOME=g.parentElement; txt.appendChild(g); }
+  b.appendChild(img); b.appendChild(txt);
+  /* Three clicks on the logo = the diagnostic. You shouldn't need a console to
+     find out why a layout didn't change. */
+  b.onclick=function(){
+    PC_LOGO_TAPS++;
+    setTimeout(()=>{ PC_LOGO_TAPS=0; }, 1200);
+    if(PC_LOGO_TAPS>=3){ PC_LOGO_TAPS=0; pcDiagnostic(); }
+  };
+  nav.insertBefore(b,nav.firstChild);
+
+  const fs=document.createElement('button');
+  fs.className='pc-fsbtn';
+  fs.innerHTML='<span class="ni">⛶</span>Full screen';
+  fs.onclick=pcToggleFullscreen;
+  nav.appendChild(fs);
+}
+function pcTearDownRail(){
+  const b=document.querySelector('.pc-brand');
+  const g=document.getElementById('greeting');
+  if(g&&PC_GREET_HOME) PC_GREET_HOME.appendChild(g);
+  if(b) b.remove();
+  const fs=document.querySelector('.pc-fsbtn'); if(fs) fs.remove();
+}
+
+function applyPcMode(){
+  const on=pcWanted(), wide=on&&pcIsWide();
+  if(on!==PC_ON){
+    PC_ON=on;
+    document.body.classList.toggle('pc',on);
+    if(on) pcBuildRail(); else pcTearDownRail();
+  }
+  if(wide!==PC_WIDE){ PC_WIDE=wide; document.body.classList.toggle('pc-wide',wide); }
+  if(PC_ON) pcSafeTop();
+  /* ONE automatic attempt, and only on native desktop. Deferred because this
+     block runs ABOVE init(), so tg.ready() hasn't been called yet — which is
+     the other half of why the first version did nothing. */
+  if(PC_ON&&!PC_FS_TRIED&&PC_NATIVE.test(pcPlatform())){
+    PC_FS_TRIED=true;
+    setTimeout(pcGoFullscreen,500);
+  }
+}
+
+/* Keyboard. Only ever bound on a PC, so a phone pays nothing for it. */
+function pcKeys(e){
+  if(!PC_ON) return;
+  const t=e.target, typing=t&&(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||t.isContentEditable);
+  if(e.key==='Escape'){
+    // Topmost first, or Esc closes the page behind the thing you were looking at.
+    const zoom=document.getElementById('zoomWrap');
+    if(zoom&&zoom.classList.contains('show')){ closeZoom(); return; }
+    const cv=document.getElementById('cardView');
+    if(cv&&cv.classList.contains('show')){ closeCardView(); return; }
+    if(document.querySelector('.sheet.show')){ closeCart(); return; }
+    if(typing&&t.blur) t.blur();
+    return;
+  }
+  if(typing) return;
+  if(e.key==='/'||((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k')){
+    e.preventDefault();
+    if(STATE.tab!=='store') go('store');
+    const q=document.getElementById('q'); if(q){ q.focus(); q.select&&q.select(); }
+    return;
+  }
+  if(e.key==='ArrowLeft') swipeMainTab(-1);
+  else if(e.key==='ArrowRight') swipeMainTab(1);
+}
+
+(function pcInit(){
+  applyPcMode();
+  let t=null;
+  window.addEventListener('resize',()=>{ clearTimeout(t); t=setTimeout(applyPcMode,120); });
+  try{ if(tg&&tg.onEvent){
+    tg.onEvent('viewportChanged',applyPcMode);
+    tg.onEvent('fullscreenChanged',()=>{ pcSafeTop(); applyPcMode(); });
+    tg.onEvent('fullscreenFailed',()=>{ /* layout is already right without it */ });
+    tg.onEvent('safeAreaChanged',pcSafeTop);
+    tg.onEvent('contentSafeAreaChanged',pcSafeTop);
+  } }catch(e){}
+  document.addEventListener('keydown',pcKeys);
+  /* Belt to the deferred attempt above: by now init() has definitely run. */
+  setTimeout(applyPcMode,900);
+})();
+
 /* ============ INIT ============ */
 (function init(){
   if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#C98B5E');
