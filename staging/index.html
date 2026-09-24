@@ -7571,12 +7571,15 @@ function adThumb(c,w){
     style="width:${w}px;height:${h}px;object-fit:cover;border-radius:4px;flex:none;cursor:zoom-in"
     onclick="event.preventDefault();event.stopPropagation();openZoom(this.dataset.big)">`;
 }
-/* v13.16: inside a lot, cards sit in CARD NUMBER order -- the number before the
-   slash, set ignored (10/103, 9/206, 11/300 -> 9, 10, 11), letters ignored
-   (TG15/TG30 -> 15, SWSH050 -> 50), no number last. Same rule as lotsNum_ in
-   lots.gs. Used by an open lot, "Not in a lot", the pick route and Pull from. */
-function lotNum(c){ const m=/\d+/.exec(String((c&&c.number)||'').split('/')[0]); return m?Number(m[0]):Infinity; }
-function lotByNum(a,b){ const x=lotNum(a.card), y=lotNum(b.card); return (x===y?0:x<y?-1:1)||String((a.card&&a.card.name)||'').toLowerCase().localeCompare(String((b.card&&b.card.name)||'').toLowerCase()); }
+/* v13.16.1: inside a lot, cards sit in order of the number AFTER the slash (the
+   set's size), smallest in front; the same back number goes by the number before
+   the slash (10/103, 9/206, 11/300 -> 103, 206, 300; 5/102 before 63/102).
+   Letters ignored (TG15/TG30 -> 30, then 15); no slash goes after, no number last.
+   Same rule as lotsNum_ in lots.gs. Used by an open lot, "Not in a lot", the pick
+   route and Pull from. */
+function lotNum(c){ const p=String((c&&c.number)||'').split('/'), d=x=>{ const m=/\d+/.exec(String(x||'')); return m?Number(m[0]):Infinity; }; return {back:p.length>1?d(p[1]):Infinity, front:d(p[0])}; }
+function lotByNum(a,b){ const x=lotNum(a.card), y=lotNum(b.card), c=(u,v)=>u===v?0:u<v?-1:1;
+  return c(x.back,y.back)||c(x.front,y.front)||String((a.card&&a.card.name)||'').toLowerCase().localeCompare(String((b.card&&b.card.name)||'').toLowerCase()); }
 // Lines that come grouped by lot: lots keep the server's order, cards inside go by number.
 function lotSortLines(lines){
   const rank={}; (lines||[]).forEach((l,i)=>{ if(rank[l.lot]===undefined) rank[l.lot]=i; });
@@ -7639,7 +7642,7 @@ function adLotBodyHtml(code){
   if(!d) return h+'<div class="skelcard" style="height:60px"></div></div>';
   if(!d.ok) return h+`<p class="pt-err">${esc(ptErr(d))}</p></div>`;
   if(!d.lines.length) return h+'<p class="note">Empty — everything in it has gone. You can reuse the divider.</p></div>';
-  h+=`<div class="s" style="font-size:11.5px;color:var(--hint);margin:0 0 4px">In card-number order, smallest at the front.</div>`;
+  h+=`<div class="s" style="font-size:11.5px;color:var(--hint);margin:0 0 4px">In order of the number after the slash, smallest at the front.</div>`;
   return h+d.lines.slice().sort(lotByNum).map(z=>{
     const mv=AD.lotMv===code+'|'+z.key, nx=(AD.lots&&AD.lots.next)||'';
     return `<div class="ad-lotln" data-lot="${esc(code)}" data-key="${esc(z.key)}"><div class="pt-inl" style="margin:3px 0;align-items:center;gap:8px">${adThumb(z.card,30)}<span style="font-size:13px;flex:1;min-width:140px"><b>${z.n}×</b> ${adLotCard(z.card)} <span class="s" style="font-size:11.5px;color:var(--hint)">${adLotWhereHtml(z.key,code)}</span></span>`+
@@ -7683,7 +7686,7 @@ function adRenderLots(){
   </div>`;
   const a=`<div id="adls-unloc">${adLotUnlocSec()}</div><div id="adls-over">${adLotOverSec()}</div>`;
   const b=`<div id="adls-lots">${adLotListSec()}</div>`;
-  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">Cards shown in number order, as they sit in a lot. When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. Tap any picture to enlarge it. · <a href="#" onclick="AD.fresh=true;AD.det={};AD.atmN=null;adLoad();return false">Refresh</a></p>`);
+  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">Cards shown in the order they sit in a lot (number after the slash, smallest first). When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. Tap any picture to enlarge it. · <a href="#" onclick="AD.fresh=true;AD.det={};AD.atmN=null;adLoad();return false">Refresh</a></p>`);
   adLotSync(); adLotNextSync();
   window.scrollTo(0,y);
   adLotsWhereLoad();
@@ -7797,7 +7800,7 @@ function adPickHtml(r){
   if(!r) return '<div class="skelcard" style="height:80px"></div>';
   if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
   if(!r.lines.length) return '<p class="note">Nothing to pull.</p>';
-  r.lines=lotSortLines(r.lines);                         // v13.16: card-number order inside each lot
+  r.lines=lotSortLines(r.lines);                         // card-number order inside each lot (lotByNum)
   const done=adPickDone(), onRoute={};
   r.lines.forEach(l=>{ onRoute[adPickLineKey(l)]=1; });
   let pruned=false; Object.keys(done).forEach(k=>{ if(!onRoute[k]){ delete done[k]; pruned=true; } }); if(pruned) adPickSaveDone(done);
