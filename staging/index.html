@@ -1724,7 +1724,12 @@ body.pc #v-credit{max-width:640px}
 .evl-clock b{font-variant-numeric:tabular-nums}
 .evl-sum{font-size:12.5px;margin-top:4px}
 .evl-ctl{margin:0 0 6px}
-.evl-msg{font-size:12.5px;margin-top:6px;padding:6px 8px;border-radius:8px;background:var(--line)}
+.evl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.evl-grid .pt-mini{margin:0;width:100%}
+#pt-toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,12px);max-width:min(92vw,420px);padding:10px 14px;border-radius:12px;background:#2A1024;color:#fff;font-size:13px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity 180ms ease,transform 180ms cubic-bezier(.23,1,.32,1);z-index:9999;text-align:center}
+#pt-toast.show{opacity:1;transform:translate(-50%,0)}
+:root[data-theme="dark"] #pt-toast{background:#F6E1D6;color:#2A1024}
+@media (prefers-reduced-motion:reduce){#pt-toast{transition:none}}
 .evl-it{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
 .evl-it:last-child{border-bottom:0}
 .evl-it.none .nm{opacity:.85}
@@ -1736,7 +1741,8 @@ body.pc #v-credit{max-width:640px}
 .evl-line.back{color:var(--text)}
 .evl-line.gone{color:var(--hint);text-decoration:line-through}
 .evl-t{color:var(--hint);font-size:11.5px}
-.evl-btns{display:flex;gap:6px}
+.evl-btns{display:flex;gap:6px;margin-left:auto}
+.evl-btns .pt-mini{padding:6px 10px;font-size:12px;min-height:36px}
 .evl-btns .pt-mini,.evl-act .pt-mini{margin:0}
 .evl-act{margin-top:4px}
 .evl-x{flex:none;min-width:36px;min-height:36px;border:0;border-radius:10px;background:transparent;color:var(--hint);font-size:15px;cursor:pointer}
@@ -7225,7 +7231,7 @@ function adRenderShelf(){
   let ev=`<div class="pt-h">Drops &amp; auctions</div>`;
   if(evList==null) ev+=`<p class="note" style="text-align:left;margin:0 2px">Loading…</p>`;
   else {
-    const dr=evList.filter(e=>e.state==='draft').length, lv=evList.length-dr;
+    const dr=evList.filter(e=>e.state==='draft').length, lv=evList.filter(e=>e.state==='live').length;
     ev+=`<button class="feat" onclick="adTab('events')"><div class="ic">🎯</div><div><h3>${lv} live · ${dr} draft${dr===1?'':'s'}</h3><p>Build, post and follow them in Events</p></div><span class="chev">›</span></button>`;
   }
   adIn(`<div class="ad-cols"><div>${stock}</div><div>${ev}</div></div>`+adFoot(d));
@@ -7251,9 +7257,21 @@ async function adEvCall(action,payload){ try{ return await api(action,payload||{
 function adEvList(){ return (AD.events&&AD.events.events)||[]; }
 function adEvCur(){ return AD.ev.open?AD.ev.det[AD.ev.open]:null; }
 function adEvDraftItems(d){ return ((d&&d.items)||[]).filter(it=>it.status==='staged'||it.status==='draft'); }
-function adEvRowSub(e){ return `${e.state||''} · ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}${e.ageHrs?' · '+Number(e.ageHrs)+'h old':''}`; }
+function adEvRowSub(e){
+  const ago=h=>h<1?'just now':h<48?Math.floor(h)+'h ago':Math.floor(h/24)+'d ago';
+  if(e.state==='done'||e.state==='cancelled') return `${e.state==='cancelled'?'cancelled':'closed'} ${ago(Number(e.ageHrs||0))} · ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}`;
+  return `${e.state||''} · ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}${e.ageHrs?' · '+Number(e.ageHrs)+'h old':''}`;
+}
+const adEvDone=e=>e&&(e.state==='done'||e.state==='cancelled');
 function adEvBoxHtml(k){ const cut=k.indexOf(':'); return `<div class="pt-form" style="margin:0 0 8px">${adEvDetHtml(k.slice(0,cut),k.slice(cut+1))}</div>`; }
 // Minutes since Telegram signed this session (it only renews when the shop is reopened).
+/* v13.17.1: a short confirmation that fades by itself, bottom of the screen. */
+function ptToast(msg){
+  let t=document.getElementById('pt-toast');
+  if(!t){ t=document.createElement('div'); t.id='pt-toast'; t.setAttribute('role','status'); t.setAttribute('aria-live','polite'); document.body.appendChild(t); }
+  t.textContent=String(msg||''); t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3200);
+}
 function adSigninAgeMins(){ try{ const a=Number(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.auth_date); return a?(Date.now()/1000-a)/60:null; }catch(e){ return null; } }
 
 function adRenderEvents(){
@@ -7265,7 +7283,7 @@ function adRenderEvents(){
   const rowFor=({e,i})=>{ const k=adEvK(e.kind,e.id), dom='ev_'+adDom(k), open=AD.ev.open===k;
     return `<div class="pt-row" style="cursor:pointer" onclick="adEvToggle(${i})"><div class="l"><div class="t">${e.kind==='auction'?'🔨':'🎯'} ${esc(e.short||'')} ${esc(e.title||'')}</div>`+
       `<div class="s" id="evs-${adDom(k)}">${esc(adEvRowSub(e))}</div></div><div class="r">${adXArrow(dom,open)}</div></div>`+adXBox(dom,open?adEvBoxHtml(k):''); };
-  const drafts=all.filter(x=>x.e.state==='draft'), live=all.filter(x=>x.e.state!=='draft');
+  const drafts=all.filter(x=>x.e.state==='draft'), live=all.filter(x=>x.e.state==='live'), hist=all.filter(x=>adEvDone(x.e));
   // The two ways to start are peers, so they look the same (pink is kept for Post / Add / Mark packed).
   let top=`<div class="ev-new"><button class="pt-mini big" onclick="adEvNewForm('drop')">🎯 New drop</button><button class="pt-mini big" onclick="adEvNewForm('auction')">🔨 New auction</button></div>`;
   if(AD.ev.newKind) top+=adEvNewFormHtml(AD.ev.newKind);
@@ -7275,7 +7293,11 @@ function adRenderEvents(){
   const b=`<div class="pt-h">Live now <span class="pt-tag">${live.length}</span></div>`+(live.length
       ?'<div class="panel" style="padding:4px 12px">'+live.map(rowFor).join('')+'</div>'
       :'<p class="note" style="text-align:left;margin:0 2px">Nothing live.</p>');
-  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">Posting, closing, extending, forfeiting and cancelling here run the same code as the Telegram commands, which still work too.${r.at?' · as of '+new Date(r.at).toLocaleTimeString():''} · <a href="#" onclick="AD.fresh=true;AD.ev.det={};adLoad();return false">Refresh</a></p>`);
+  // v13.17.1: closed ones move to History (last 14 days) -- still openable, to forfeit or re-invoice.
+  const c=`<div id="ev-hist"><div class="pt-h">History — last 14 days <span class="pt-tag">${hist.length}</span></div>`+(hist.length
+      ?'<div class="panel" style="padding:4px 12px">'+hist.map(rowFor).join('')+'</div>'
+      :'<p class="note" style="text-align:left;margin:0 2px">Closed drops and auctions show here.</p>')+'</div>';
+  adIn(top+`<div class="ad-cols"><div>${b}${a}</div><div>${c}</div></div><p class="note">Posting, closing, extending, forfeiting and cancelling here run the same code as the Telegram commands, which still work too.${r.at?' · as of '+new Date(r.at).toLocaleTimeString():''} · <a href="#" onclick="AD.fresh=true;AD.ev.det={};adLoad();return false">Refresh</a></p>`);
   window.scrollTo(0,y);
   if(lab){ const el=[...document.querySelectorAll('#ad-in [aria-label]')].find(x=>x.getAttribute('aria-label')===lab);
     if(el){ el.focus({preventScroll:true}); if(keep){ el.value=keep.v; try{ el.setSelectionRange(keep.s,keep.e); }catch(x){} } } }
@@ -7314,7 +7336,13 @@ function adEvApply(r,kind,id){
     const n=(ev.items||[]).filter(it=>['staged','draft','live'].indexOf(it.status)>=0).length;
     const row={kind,id,short:ev.short,title:ev.title,state:ev.state,cards:n,ageHrs:x?x.ageHrs:0,startMs:x?x.startMs:Date.now()};
     // v13.17: live -> closed stays where it is (patched); only a draft being posted moves sections.
-    if(!x){ L.unshift(row); redraw=true; } else { if(x.state!==row.state&&x.state==='draft') redraw=true; Object.assign(x,row); }
+    if(!x){ L.unshift(row); redraw=true; }
+    else {
+      const wasLive=x.state==='live', nowDone=adEvDone(row);
+      if(x.state!==row.state&&x.state==='draft') redraw=true;
+      if(wasLive&&nowDone){ row.ageHrs=0; row.startMs=Date.now(); if(!adEvMoveToHistory(k)) redraw=true; }
+      Object.assign(x,row);
+    }
   }
   if(r&&r.binned){
     delete AD.ev.det[k]; if(AD.ev.open===k){ AD.ev.open=''; adEvPollStop(); }
@@ -7332,6 +7360,17 @@ function adEvApply(r,kind,id){
   if(AD.ev.open===k) adEvPatch(k);
 }
 
+// A live one just closed: move its line (and the open box under it) into History, in place.
+function adEvMoveToHistory(k){
+  const box=document.getElementById('xd-ev_'+adDom(k)), row=box&&box.previousElementSibling, from=box&&box.parentNode;
+  const hist=document.getElementById('ev-hist'), panel=hist&&hist.querySelector('.panel');
+  if(!box||!row||!panel||!from) return false;
+  panel.insertBefore(box,panel.firstChild); panel.insertBefore(row,box);
+  const bump=(el,d)=>{ const t=el&&el.querySelector('.pt-tag'); if(t) t.textContent=Math.max(0,Number(t.textContent)+d); };
+  bump(hist,1); bump(from.previousElementSibling,-1);
+  if(!from.children.length) from.outerHTML='<p class="note" style="text-align:left;margin:0 2px">Nothing live.</p>';
+  return true;
+}
 function adEvDetHtml(kind,id){
   const d=AD.ev.det[adEvK(kind,id)];
   if(!d) return '<div class="skelcard" style="height:80px"></div>';
@@ -7445,14 +7484,14 @@ function adEvLiveHead(d){
     `<div class="evl-sum">${adEvLiveSum(d)}</div></div>`;
 }
 function adEvLiveCtl(d){
-  const k=adEvK(d.kind,d.id), live=d.state==='live', msg=AD.ev.msg[k];
-  if(!live) return `<div class="evl-ctl">${msg?`<div class="evl-msg">${esc(msg)}</div>`:''}<div class="s" style="font-size:12px;color:var(--hint)">Closed — unpaid winners can still be forfeited or sent their invoice again below.</div></div>`;
-  return `<div class="evl-ctl"><div class="ev-foot" style="margin:0">`+
+  if(d.state!=='live') return `<div class="evl-ctl"><div class="s" style="font-size:12px;color:var(--hint)">${d.state==='cancelled'?'Cancelled.':'Closed.'} Unpaid winners can still be forfeited or sent their invoice again below.</div></div>`;
+  const auc=d.kind==='auction';
+  // v13.17.1: a tidy 2-column grid -- the two you use during a sale on top, the rarer two below.
+  return `<div class="evl-ctl"><div class="evl-grid">`+
     `<button class="pt-mini big pri" onclick="adEvEnd(this)">⏹ Close now</button>`+
-    (d.kind==='auction'?`<button class="pt-mini big" onclick="adEvExtend(this,10)">⏱ +10 min</button>`:'')+
-    (d.kind==='auction'?`<button class="pt-mini big" onclick="adEvBoard(this)">🔄 Refresh bid board</button>`:'')+
-    `<button class="pt-mini big danger" onclick="adEvCancel(this)">✖ Cancel ${d.kind}</button></div>`+
-    (msg?`<div class="evl-msg">${esc(msg)}</div>`:'')+`</div>`;
+    (auc?`<button class="pt-mini big" onclick="adEvExtend(this,10)">⏱ +10 min</button>`:'')+
+    (auc?`<button class="pt-mini big" onclick="adEvBoard(this)">🔄 Redraw board</button>`:'')+
+    `<button class="pt-mini big danger" onclick="adEvCancel(this)">✖ Cancel ${d.kind}</button></div></div>`;
 }
 function adEvWho(c){ return esc(c.who||c.tid||'?'); }
 function adEvLiveItem(d,it){
@@ -7518,8 +7557,8 @@ async function adEvLiveDo(btn,action,payload,okNote){
   try{ await guard(btn,async()=>{ r=await adEvCall(action,Object.assign({kind:d.kind,id:d.id},payload||{})); }); }
   finally{ AD.ev.busy=false; }
   if(!r) return null;
-  AD.ev.msg[k]=r.ok?(r.message||okNote||'Done.'):'';
-  if(!r.ok) ptAlert(r.message||ptErr(r));
+  // Success: a short note that fades by itself (no box left behind). A refusal still pops up.
+  if(r.ok){ const m=r.message||okNote; if(m) ptToast(m); } else ptAlert(r.message||ptErr(r));
   if(r.binned) adEvApply(r,d.kind,d.id);
   else if(r.event) adEvApply(r,d.kind,d.id);
   else adEvPatch(k);
@@ -7545,7 +7584,7 @@ async function adEvExtend(btn,mins){
   if(!(await ptConfirm(`Add ${mins} minutes to ${d.short}?\n\nIt will close at ${new Date(base).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}, and the channel is told.`))) return;
   await adEvLiveDo(btn,'adminEventExtend',{mins});
 }
-async function adEvBoard(btn){ await adEvLiveDo(btn,'adminEventBoard',{},'Bid board redrawn.'); }
+async function adEvBoard(btn){ await adEvLiveDo(btn,'adminEventBoard',{},'Bid board redrawn in the channel.'); }
 async function adEvCancel(btn){
   const d=adEvCur(); if(!d||!adEvLiveFresh('Cancelling')) return;
   const its=(d.items||[]).filter(it=>it.status!=='cancelled');
