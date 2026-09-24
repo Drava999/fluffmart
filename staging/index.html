@@ -6365,7 +6365,7 @@ async function czSendMore(btn){
 /* Admin is its own tab now (bottom bar on a phone, left rail on a PC), with four
    sections: Dashboard (money + jobs), Shelf (stock health + open drops/auctions),
    Consignment (people, requests, rates) and Config. */
-let AD_TAB='dash', AD={dash:null,list:null,reqs:null,cur:null,rates:null,edit:null,cardOpen:-1,show:'all',csub:'people',cfg:null,ssub:'health',lots:null,lotTick:{},lotOpen:{},pick:null,pickOpen:false,lotShow:60};
+let AD_TAB='dash', AD={dash:null,list:null,reqs:null,cur:null,rates:null,edit:null,cardOpen:-1,show:'all',csub:'people',cfg:null,ssub:'health',lots:null,lotTick:{},lotOpen:{},pick:null,pickOpen:false,lotShow:60,lotQ:'',lotTo:'',lotKeys:[]};
 function openAdmin(){ go('admin'); adTab(AD_TAB); }
 function adTab(t){ if(t==='today') t='dash'; if(t==='rates'){ t='consign'; AD.csub='rates'; } AD_TAB=t; AD.cur=null; AD.cardOpen=-1; adLoad(); }
 function adHead(){ return ptTabs([['dash','📋 Dashboard'],['shelf','🗂️ Shelf'],['consign','🐑 Consignment'],['config','⚙️ Config']],AD_TAB,'adTab'); }
@@ -6493,7 +6493,7 @@ function adBoxHtml(b){
   else if(b.delivery==='pickup') h+=`<div class="s" style="margin-top:6px;font-size:12px">${esc(b.pickupNote||'Self-pickup')}</div>`;
   h+=adBuyerHtml(b.buyer);
   h+=adBoxActions(b);
-  if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">📍 Pull from</div>`+b.picks.map(x=>`<div style="font-size:13px;padding:2px 0"><b>${x.lot?esc(x.lot):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</div>`).join('');
+  if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">📍 Pull from</div>`+b.picks.map(x=>`<div style="font-size:13px;padding:2px 0;display:flex;gap:8px;align-items:center">${adThumb(x.card,30)}<span><b>${x.lot?esc(x.lot):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</span></div>`).join('');
   h+=`<div class="pt-h">Pack list · ${b.cards} card${b.cards===1?'':'s'} · $${Number(b.value||0).toFixed(2)}</div>`;
   b.orders.forEach(o=>{
     const ref=o.status==='Refunded';
@@ -6740,27 +6740,71 @@ function adLotCard(c){
   const cond=[c.grade?('Graded '+c.grade):'',c.condition||''].filter(Boolean).map(esc).join(', ');
   return `${esc(c.name||'?')}${idp?` <span style="color:var(--hint);font-size:11.5px">(${idp})</span>`:''}${cond?` <span style="color:var(--hint);font-size:11.5px">${cond}</span>`:''}${c.photoKey?` <b style="color:var(--berry)">[#${esc(c.photoKey)}]</b>`:''}`;
 }
+// Small card picture; tap it to open the full-size zoom viewer.
+function adThumb(c,w){
+  w=w||34; const h=Math.round(w*1.4), u=c&&c.image;
+  if(!u) return `<div class="noimg" style="width:${w}px;height:${h}px;flex:none;border-radius:4px"></div>`;
+  return `<img src="${esc(imgUrl(u,200))}" data-big="${esc(imgUrl(u,1600))}" loading="lazy" alt="" title="Tap to enlarge"
+    style="width:${w}px;height:${h}px;object-fit:cover;border-radius:4px;flex:none;cursor:zoom-in"
+    onclick="event.preventDefault();event.stopPropagation();openZoom(this.dataset.big)">`;
+}
+function adLotMatch(u){
+  const q=(AD.lotQ||'').trim().toLowerCase(); if(!q) return true;
+  const c=u.card||{};
+  return [c.name,c.set,c.number,c.photoKey,c.portfolio,c.variance].join(' ').toLowerCase().indexOf(q)>=0;
+}
+function adLotShown(){ return ((AD.lots&&AD.lots.unlocated)||[]).filter(adLotMatch); }
 function adLotTicked(){ return ((AD.lots&&AD.lots.unlocated)||[]).filter(u=>AD.lotTick[u.key]); }
-function adLotBtnText(){ const r=AD.lots||{}, tk=adLotTicked(), n=tk.length?tk.reduce((s,u)=>s+u.n,0):((r.totals||{}).unlocated||0); return `Put ${tk.length?n+' ticked':'all '+n} in this lot`; }
-function adLotTick(i,el){ const u=(AD.lots.unlocated||[])[i]; if(!u) return; AD.lotTick[u.key]=!!el.checked; const b=document.getElementById('ad-lotbtn'); if(b) b.textContent=adLotBtnText(); }
+function adLotBtnText(){
+  const tk=adLotTicked();
+  return tk.length?`Put ${tk.reduce((s,u)=>s+u.n,0)} ticked card${tk.reduce((s,u)=>s+u.n,0)===1?'':'s'} in this lot`:'Tick cards below first';
+}
+function adLotSync(){
+  const b=document.getElementById('ad-lotbtn'); if(b){ b.textContent=adLotBtnText(); b.disabled=!adLotTicked().length; }
+  const n=document.getElementById('ad-lotn'); if(n){ const tk=adLotTicked(); n.textContent=tk.length?tk.length+' ticked':''; }
+}
+function adLotTick(key,el){ AD.lotTick[key]=!!el.checked; adLotSync(); }
+function adLotTickShown(on){ adLotShown().forEach(u=>{ if(on) AD.lotTick[u.key]=true; else delete AD.lotTick[u.key]; }); adLotDrawList(); adLotSync(); }
+function adLotSearch(v){ AD.lotQ=v; adLotDrawList(); }
+function adLotListHtml(){
+  const all=(AD.lots&&AD.lots.unlocated)||[], sh=adLotShown();
+  if(!all.length) return `<p class="note" style="text-align:left;margin:0 2px">Every card in stock is in a lot 🎉</p>`;
+  if(!sh.length) return `<p class="note" style="text-align:left;margin:0 2px">No card matches “${esc(AD.lotQ||'')}”.</p>`;
+  AD.lotKeys=sh.map(u=>u.key);
+  let h='<div class="panel" style="padding:2px 12px">'+sh.slice(0,AD.lotShow).map((u,i)=>`<label class="pt-row" style="cursor:pointer;align-items:center;gap:10px">
+      ${adThumb(u.card)}
+      <div class="l" style="flex:1"><div class="t" style="font-size:13.5px">${adLotCard(u.card)}</div><div class="s">${u.n} cop${u.n===1?'y':'ies'}${u.card.portfolio?' · '+esc(u.card.portfolio):''}</div></div>
+      <div class="r"><input type="checkbox" style="width:22px;height:22px" ${AD.lotTick[u.key]?'checked':''} onchange="adLotTick(AD.lotKeys[${i}],this)"></div></label>`).join('')+'</div>';
+  if(sh.length>AD.lotShow) h+=`<p class="note"><a href="#" onclick="AD.lotShow+=200;adLotDrawList();return false">Show more (${sh.length-AD.lotShow} more)</a></p>`;
+  return h;
+}
+function adLotDrawList(){ const el=document.getElementById('ad-unloc'); if(el) el.innerHTML=adLotListHtml(); }
 function adRenderLots(){
   const r=AD.lots;
   if(!r||!r.ok){ adIn(`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
   const y=window.scrollY, t=r.totals||{};
-  let a=`<div class="pt-h">📍 ${t.lots||0} lot${t.lots===1?'':'s'} · ${t.located||0} card${t.located===1?'':'s'} shelved</div>`;
-  if(!t.lots) a+=`<p class="note" style="text-align:left;margin:0 2px 6px">Every Collectr import now gets a lot code — the import receipt tells you which. File that stack behind a divider with the code, in any order. Put the cards you already have into <b>L0000</b> below.</p>`;
-  a+=`<div class="pt-h">Not in a lot <span class="pt-tag ${t.unlocated?'warn':''}">${t.unlocated||0}</span></div>`;
-  const un=r.unlocated||[];
-  if(un.length){
-    a+='<div class="panel" style="padding:4px 12px">'+un.slice(0,AD.lotShow).map((u,i)=>`<label class="pt-row" style="cursor:pointer"><div class="l"><div class="t">${adLotCard(u.card)}</div><div class="s">${u.n} cop${u.n===1?'y':'ies'}${u.card.portfolio?' · '+esc(u.card.portfolio):''}</div></div><div class="r"><input type="checkbox" style="width:20px;height:20px" ${AD.lotTick[u.key]?'checked':''} onchange="adLotTick(${i},this)"></div></label>`).join('')+'</div>';
-    if(un.length>AD.lotShow) a+=`<p class="note"><a href="#" onclick="AD.lotShow+=200;adRenderLots();return false">Show more (${un.length-AD.lotShow} more)</a></p>`;
-    a+=`<div class="pt-inl" style="margin-top:6px"><input id="ad-lotto" value="${esc(t.lots?(r.next||''):'L0000')}" autocapitalize="characters" maxlength="12" style="max-width:120px"><button id="ad-lotbtn" class="pt-mini pri" style="margin:0" onclick="adLotAssign(this)">${adLotBtnText()}</button></div>
-      <p class="note" style="text-align:left;margin:4px 2px">Tick some to put just those in; tick none for all. A new code starts a new lot.</p>`;
-  } else a+=`<p class="note" style="text-align:left;margin:0 2px">Every card in stock is in a lot 🎉</p>`;
+  const target=AD.lotTo||(t.lots?(r.next||''):'L0000');
+  // 1. The tools, at the top: which lot, search, tick helpers, the button.
+  let top=`<div class="panel" style="padding:12px;display:grid;gap:8px;margin-bottom:10px">
+    <div style="font-size:13px"><b>📍 ${t.lots||0} lot${t.lots===1?'':'s'}</b> · ${t.located||0} shelved · <span class="${t.unlocated?'pt-neg':''}">${t.unlocated||0} not in a lot</span>${t.over?` · <span class="pt-neg">${t.over} to take out</span>`:''}</div>
+    <div class="pt-inl" style="margin:0;flex-wrap:wrap;gap:6px">
+      <input id="ad-lotto" value="${esc(target)}" oninput="AD.lotTo=this.value.toUpperCase()" autocapitalize="characters" maxlength="12" style="max-width:110px" aria-label="Lot code">
+      <button id="ad-lotbtn" class="pt-mini pri" style="margin:0" onclick="adLotAssign(this)" ${adLotTicked().length?'':'disabled'}>${adLotBtnText()}</button>
+      <button class="pt-mini" style="margin:0" onclick="adLotNewCode()">New code</button>
+    </div>
+    <div class="pt-inl" style="margin:0;flex-wrap:wrap;gap:6px">
+      <input id="ad-lotq" value="${esc(AD.lotQ||'')}" oninput="adLotSearch(this.value)" placeholder="Search name, set, number, #key" style="flex:1;min-width:160px" aria-label="Search cards not in a lot">
+      <button class="pt-mini" style="margin:0" onclick="adLotTickShown(true)">Tick all matching</button>
+      <button class="pt-mini" style="margin:0" onclick="adLotTickShown(false)">Clear</button>
+      <span id="ad-lotn" class="s" style="font-size:12px;color:var(--hint)"></span>
+    </div>
+    ${t.lots?'':`<p class="note" style="text-align:left;margin:0">First time: tap <b>Tick all matching</b>, keep <b>L0000</b> and put everything in. Label that storage L0000. Every Collectr import after that gets its own code.</p>`}
+  </div>`;
+  let a=`<div class="pt-h">Not in a lot <span class="pt-tag ${t.unlocated?'warn':''}">${t.unlocated||0}</span></div><div id="ad-unloc">${adLotListHtml()}</div>`;
   const ov=r.over||[];
   if(ov.length){
-    a+=`<div class="pt-h">In a lot, but not in stock <span class="pt-tag warn">${t.over||0}</span></div><p class="note" style="text-align:left;margin:0 2px 4px">Gone some other way (a refund after packing, a hand edit). Take it out of that lot, then tap −1.</p><div class="panel" style="padding:4px 12px">`+
-      ov.map((o,i)=>`<div class="pt-row"><div class="l"><div class="t">${adLotCard(o.card)}</div><div class="s">${o.n} extra · in ${o.lots.map(l=>esc(l.lot)+' ×'+l.qty).join(', ')}</div></div><div class="r" style="flex-wrap:wrap;justify-content:flex-end">${o.lots.map((l,j)=>`<button class="pt-mini" style="margin:2px" onclick="adLotAdjO(this,${i},${j})">−1 ${esc(l.lot)}</button>`).join('')}</div></div>`).join('')+'</div>';
+    a+=`<div class="pt-h">In a lot, but not in stock <span class="pt-tag warn">${t.over||0}</span></div><p class="note" style="text-align:left;margin:0 2px 4px">Gone some other way (a refund after packing, a hand edit). Take it out of that lot, then tap −1.</p><div class="panel" style="padding:2px 12px">`+
+      ov.map((o,i)=>`<div class="pt-row" style="align-items:center;gap:10px">${adThumb(o.card)}<div class="l" style="flex:1"><div class="t" style="font-size:13.5px">${adLotCard(o.card)}</div><div class="s">${o.n} extra · in ${o.lots.map(l=>esc(l.lot)+' ×'+l.qty).join(', ')}</div></div><div class="r" style="flex-wrap:wrap;justify-content:flex-end">${o.lots.map((l,j)=>`<button class="pt-mini" style="margin:2px" onclick="adLotAdjO(this,${i},${j})">−1 ${esc(l.lot)}</button>`).join('')}</div></div>`).join('')+'</div>';
   }
   let b=`<div class="pt-h">Lots <span class="pt-tag">${(r.lots||[]).length}</span></div>`;
   if(!(r.lots||[]).length) b+=`<p class="note" style="text-align:left;margin:0 2px">No lots yet.</p>`;
@@ -6768,13 +6812,23 @@ function adRenderLots(){
     const open=AD.lotOpen[l.lot], d=AD.det['lot:'+l.lot];
     const when=l.created?new Date(l.created).toLocaleDateString([], {day:'numeric',month:'short',year:'2-digit'}):'';
     let x=`<div class="pt-row" style="cursor:pointer" onclick="adLotOpen('${esc(l.lot)}')"><div class="l"><div class="t">📍 <b>${esc(l.lot)}</b></div><div class="s">${l.copies} card${l.copies===1?'':'s'} · ${l.cards} kind${l.cards===1?'':'s'}${when?' · '+when:''}${l.portfolio?' · '+esc(l.portfolio):''}${l.source&&l.source!=='import'?' · '+esc(l.source):''}</div></div><div class="r">${open?'▾':'▸'}</div></div>`;
-    if(open) x+=`<div class="pt-form" style="margin:0 0 8px">${!d?'<div class="skelcard" style="height:60px"></div>':!d.ok?`<p class="pt-err">${esc(ptErr(d))}</p>`:!d.lines.length?'<p class="note">Empty — everything in it has gone. You can reuse the divider.</p>':
-      d.lines.map((z,i)=>`<div class="pt-inl" style="margin:3px 0;align-items:center"><span style="font-size:13px;flex:1"><b>${z.n}×</b> ${adLotCard(z.card)}</span><button class="pt-mini" style="margin:0" onclick="adLotAdjL(this,'${esc(l.lot)}',${i},-1)">−1</button><button class="pt-mini" style="margin:0" onclick="adLotAdjL(this,'${esc(l.lot)}',${i},1)">+1</button></div>`).join('')}</div>`;
+    if(open) x+=`<div class="pt-form" style="margin:0 0 8px">
+      <button class="pt-mini" style="margin:0 0 6px" onclick="adLotAddHere('${esc(l.lot)}')">＋ Add cards to ${esc(l.lot)}</button>
+      ${!d?'<div class="skelcard" style="height:60px"></div>':!d.ok?`<p class="pt-err">${esc(ptErr(d))}</p>`:!d.lines.length?'<p class="note">Empty — everything in it has gone. You can reuse the divider.</p>':
+      d.lines.map((z,i)=>`<div class="pt-inl" style="margin:3px 0;align-items:center;gap:8px">${adThumb(z.card,30)}<span style="font-size:13px;flex:1"><b>${z.n}×</b> ${adLotCard(z.card)}</span><button class="pt-mini" style="margin:0" onclick="adLotAdjL(this,'${esc(l.lot)}',${i},-1)">−1</button><button class="pt-mini" style="margin:0" onclick="adLotAdjL(this,'${esc(l.lot)}',${i},1)">+1</button></div>`).join('')}</div>`;
     return x;
   }).join('')+'</div>';
-  adIn(`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. · <a href="#" onclick="AD.fresh=true;AD.det={};adLoad();return false">Refresh</a></p>`);
+  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. Tap any picture to enlarge it. · <a href="#" onclick="AD.fresh=true;AD.det={};adLoad();return false">Refresh</a></p>`);
+  adLotSync();
   window.scrollTo(0,y);
 }
+// "＋ Add cards to L0007": target that lot, jump to the tools at the top.
+function adLotAddHere(code){
+  AD.lotTo=code; const i=document.getElementById('ad-lotto'); if(i) i.value=code;
+  window.scrollTo({top:0,behavior:'smooth'});
+  const q=document.getElementById('ad-lotq'); if(q) setTimeout(()=>q.focus(),300);
+}
+function adLotNewCode(){ const r=AD.lots||{}; AD.lotTo=r.next||''; const i=document.getElementById('ad-lotto'); if(i) i.value=AD.lotTo; }
 async function adLotsLive(){ const r=await api('adminLots',{live:1}); if(r&&r.ok){ AD.lots=r; ptSave('adlots',r); } if(AD_TAB==='shelf'&&AD.ssub==='lots') adRenderLots(); }
 async function adLotOpen(code){
   if(AD.lotOpen[code]){ delete AD.lotOpen[code]; adRenderLots(); return; }
@@ -6786,12 +6840,13 @@ async function adLotAssign(btn){
   const lot=ptVal('ad-lotto').toUpperCase().replace(/\s+/g,'');
   if(!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(lot)){ ptAlert('Lot codes are letters, numbers and dashes (up to 12), e.g. L0000 or BIN3.'); return; }
   const tk=adLotTicked();
-  const n=tk.length?tk.reduce((s,u)=>s+u.n,0):((AD.lots.totals||{}).unlocated||0);
+  if(!tk.length){ ptAlert('Tick the cards to put in '+lot+' first (or tap Tick all matching).'); return; }
+  const n=tk.reduce((s,u)=>s+u.n,0);
   if(!(await ptConfirm(`Put ${n} card${n===1?'':'s'} in lot ${lot}? File them behind a divider marked ${lot}.`))) return;
   await guard(btn, async()=>{
-    const r=await api('adminLotAssign',tk.length?{lot:lot,keys:tk.map(u=>u.key)}:{lot:lot});
+    const r=await api('adminLotAssign',{lot:lot,keys:tk.map(u=>u.key)});
     ptAlert(r.message||(r.ok?'Done':ptErr(r)));
-    if(r.ok){ AD.lotTick={}; delete AD.det['lot:'+lot]; await adLotsLive(); }
+    if(r.ok){ AD.lotTick={}; delete AD.det['lot:'+lot]; if(AD.lotOpen[lot]) AD.det['lot:'+lot]=await api('adminLot',{lot:lot,live:1}); await adLotsLive(); }
   });
 }
 async function adLotAdj(btn,lot,key,delta){
@@ -6816,7 +6871,7 @@ function adPickHtml(r){
   let h=`<div class="s" style="font-size:12px">${r.cards} card${r.cards===1?'':'s'} for ${r.boxes} box${r.boxes===1?'':'es'}, in shelf order.${r.unlocated?` <span class="pt-neg">${r.unlocated} not in a lot</span>`:''}</div>`, last=null;
   r.lines.forEach(l=>{
     if(l.lot!==last){ last=l.lot; h+=`<div class="pt-h" style="margin-top:8px">${l.lot?'📍 '+esc(l.lot):'❓ Not in a lot'}</div>`; }
-    h+=`<div style="font-size:13px;padding:3px 0">${l.n>1?'<b>'+l.n+'×</b> ':''}${adLotCard(l.card)} → <b>${esc(l.box)}</b></div>`;
+    h+=`<div style="font-size:13px;padding:3px 0;display:flex;gap:8px;align-items:center">${adThumb(l.card,30)}<span>${l.n>1?'<b>'+l.n+'×</b> ':''}${adLotCard(l.card)} → <b>${esc(l.box)}</b></span></div>`;
   });
   return h;
 }
