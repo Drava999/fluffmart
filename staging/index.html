@@ -1718,6 +1718,36 @@ body.pc #v-credit{max-width:640px}
 .ad-lotcp input,.ad-lotmv input{width:64px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-family:inherit}
 .ad-lotmv #ad-mvto{width:104px;text-transform:uppercase}
 .ad-wh{color:var(--hint)}
+/* v13.17 live drop / auction view */
+.evl-head{font-size:13px;margin:0 0 6px}
+.evl-clock{margin-left:4px}
+.evl-clock b{font-variant-numeric:tabular-nums}
+.evl-sum{font-size:12.5px;margin-top:4px}
+.evl-ctl{margin:0 0 6px}
+.evl-msg{font-size:12.5px;margin-top:6px;padding:6px 8px;border-radius:8px;background:var(--line)}
+.evl-it{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+.evl-it:last-child{border-bottom:0}
+.evl-it.none .nm{opacity:.85}
+.evl-it .nm{font-size:13.5px;font-weight:700;overflow-wrap:anywhere}
+.evl-it .sub{font-size:11.5px;color:var(--hint);margin-top:1px}
+.evl-st{font-size:12.5px;margin-top:4px}
+.evl-line{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;padding:3px 0}
+.evl-line.lead b{color:var(--fawn-deep)}
+.evl-line.back{color:var(--text)}
+.evl-line.gone{color:var(--hint);text-decoration:line-through}
+.evl-t{color:var(--hint);font-size:11.5px}
+.evl-btns{display:flex;gap:6px}
+.evl-btns .pt-mini,.evl-act .pt-mini{margin:0}
+.evl-act{margin-top:4px}
+.evl-x{flex:none;min-width:36px;min-height:36px;border:0;border-radius:10px;background:transparent;color:var(--hint);font-size:15px;cursor:pointer}
+.evl-x:active{background:var(--line)}
+.evl-more{border:0;background:transparent;color:var(--fawn-deep);font-weight:800;font-size:12.5px;padding:6px 0;min-height:40px;cursor:pointer}
+.ad-where{font-size:12.5px;margin-top:3px;color:var(--text)}
+.ad-where b{color:var(--fawn-deep);font-size:13.5px}
+.ad-lotqw{position:relative;flex:1;min-width:160px;display:flex}
+.ad-lotqw input{flex:1;min-width:0;padding-right:40px!important}
+.ad-lotqx{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:8px;background:transparent;color:var(--hint);font-size:15px;cursor:pointer}
+.ad-lotqx:active{background:var(--line)}
 .ev-rm{flex:none;min-width:40px;min-height:40px;border:0;background:transparent;color:var(--hint);font-size:17px;border-radius:10px;touch-action:manipulation;cursor:pointer;transition:transform 120ms cubic-bezier(.23,1,.32,1)}
 .ev-rm:active{transform:scale(.94);background:var(--line)}
 .ev-sum{font-size:12.5px;font-weight:700;color:var(--fawn-deep);margin:8px 0 2px}
@@ -6535,8 +6565,9 @@ async function czSendMore(btn){
    Consignment (people, requests, rates) and Config. */
 let AD_TAB='dash', AD={dash:null,list:null,reqs:null,cur:null,rates:null,edit:null,cardOpen:-1,show:'all',csub:'people',cfg:null,ssub:'health',lots:null,lotTick:{},lotOpen:{},pick:null,pickOpen:false,lotShow:60,lotQ:'',lotTo:'',lotKeys:[]};
 function openAdmin(){ go('admin'); adTab(AD_TAB); }
-function adTab(t){ if(t==='today') t='dash'; if(t==='rates'){ t='consign'; AD.csub='rates'; } AD_TAB=t; AD.cur=null; AD.cardOpen=-1; adLoad(); }
-function adHead(){ return ptTabs([['dash','📋 Dashboard'],['shelf','🗂️ Shelf'],['consign','🐑 Consignment'],['config','⚙️ Config']],AD_TAB,'adTab'); }
+function adTab(t){ if(t==='today') t='dash'; if(t==='rates'){ t='consign'; AD.csub='rates'; } if(t!=='events'&&typeof adEvPollStop==='function') adEvPollStop(); AD_TAB=t; AD.cur=null; AD.cardOpen=-1; adLoad(); }
+// v13.17: drops & auctions are their own tab (they were under Shelf).
+function adHead(){ return ptTabs([['dash','📋 Dashboard'],['events','🎯 Events'],['shelf','🗂️ Shelf'],['consign','🐑 Consignment'],['config','⚙️ Config']],AD_TAB,'adTab'); }
 async function adLoad(){
   const b=document.getElementById('ad-body'); if(!b) return;
   const tab=AD_TAB;
@@ -6555,7 +6586,7 @@ async function adLoad(){
     if(r&&r.ok || !(AD.dash&&AD.dash.ok)){ AD.dash=r; adRenderToday(); }
     adRefetchOpen();
   }
-  else if(tab==='shelf'&&AD.ssub==='events'){   // 🎯 Events
+  else if(tab==='events'){   // 🎯 Events (reads come from D1's snapshot)
     const saved=!AD.fresh&&(AD.events&&AD.events.ok?AD.events:ptLoad('adevents'));
     if(saved&&saved.ok){ AD.events=saved; adRenderEvents(); } else ptSkel(document.getElementById('ad-in'));
     ptUpd('ad-upd',true);
@@ -6613,11 +6644,11 @@ function adIn(html){
   const el=document.getElementById('ad-in'); if(!el) return;
   // Consignment has two parts: people & requests, and the rate tables.
   if(AD_TAB==='consign'&&!AD.cur) html=ptTabs([['people','People & requests'],['rates','Rates']],AD.csub,'adCsub')+html;
-  if(AD_TAB==='shelf') html=ptTabs([['health','Stock health'],['events','🎯 Events'],['lots','📍 Lots']],AD.ssub,'adSsub')+html;
+  if(AD_TAB==='shelf') html=ptTabs([['health','Stock health'],['lots','📍 Lots']],AD.ssub,'adSsub')+html;
   el.innerHTML=html;
 }
 function adCsub(t){ AD.csub=t; AD.cur=null; adLoad(); }
-function adSsub(t){ AD.ssub=t; adLoad(); }
+function adSsub(t){ if(t==='events'){ adTab('events'); return; } AD.ssub=t; adLoad(); }
 function adOpenLink(i){ const v=AD.dash&&AD.dash.jobs&&AD.dash.jobs.verify[i]; if(!v||!v.link) return; if(tg&&tg.openTelegramLink&&/^https:\/\/t\.me\//.test(v.link)) tg.openTelegramLink(v.link); else openExt(v.link); }
 
 /* Every line on Today opens to the detail an admin needs to act on it: the
@@ -6756,13 +6787,20 @@ function adBoxHtml(b){
   h+=adBoxActions(b);
   if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">📍 Pull from</div>`+lotSortLines(b.picks).map(x=>`<div style="font-size:13px;padding:2px 0;display:flex;gap:8px;align-items:center">${adThumb(x.card,30)}<span><b>${x.lot?esc(x.lot):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</span></div>`).join('');
   h+=`<div class="pt-h">Pack list · ${b.cards} card${b.cards===1?'':'s'} · $${Number(b.value||0).toFixed(2)}</div>`;
+  // v13.16.4: every card says which lot to pull it from (same plan as Pull from and the pick route).
+  const where={}; (b.picks||[]).forEach(x=>{ const id=x.card&&x.card.id; if(id) (where[id]=where[id]||[]).push(x); });
   b.orders.forEach(o=>{
     const ref=o.status==='Refunded';
     h+=`<div style="font-size:12px;font-weight:800;margin-top:6px">#${esc(o.id)} · $${Number(o.total).toFixed(2)} · ${esc(o.status)}${ref?' — <span class="pt-neg">DON\'T PACK</span>':''}</div>`+
        (o.note?`<div style="font-size:12px;background:var(--line);padding:4px 8px;border-radius:8px;margin:3px 0">📝 ${esc(o.note)}</div>`:'')+
-       (ref?'':o.items.map((c,i)=>adCardLine(c,'t_'+b.id+'_'+o.id+'_'+i,`<div class="s" style="font-size:11.5px">$${Number(c.price||0).toFixed(2)}</div>`)).join(''));
+       (ref?'':o.items.map((c,i)=>adCardLine(c,'t_'+b.id+'_'+o.id+'_'+i,`<div class="s" style="font-size:11.5px">$${Number(c.price||0).toFixed(2)}</div>`+(b.picks?adPackWhere(where[c.id]):''))).join(''));
   });
   return h;
+}
+function adPackWhere(ps){
+  if(!ps||!ps.length) return '';
+  const lots=ps.filter(x=>x.lot), none=ps.filter(x=>!x.lot).reduce((s,x)=>s+x.n,0), many=ps.reduce((s,x)=>s+x.n,0)>1;
+  return `<div class="ad-where">${lots.map(x=>`📍 <b>${esc(x.lot)}</b>${many?' ×'+x.n:''}`).join(' · ')}${none?`${lots.length?' · ':''}<span class="pt-neg">❓ ${many?none+'× ':''}not in a lot</span>`:''}</div>`;
 }
 /* The box's own buttons. Same server code as Telegram's /ship and /collected;
    the server re-checks everything, these only hide buttons that can't work. */
@@ -6826,6 +6864,22 @@ function adReconcileDash(k){
   const L=k&&AD.open[k], el=L&&document.getElementById('xd-'+adDom(L+'|'+k));
   if(el&&el.parentNode) try{ el.parentNode.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){}
 }
+async function adOrdForfeit(btn,id){
+  const age=adSigninAgeMins();
+  if(age!=null&&age>60){ ptAlert('Forfeiting needs the shop opened in the last hour. Close the shop, reopen it from the bot and try again.'); return; }
+  if(!(await ptConfirm(`Forfeit ${id}?\n\nThe unpaid order is cancelled, the card goes back in stock and passes to the next in line (first backup, or the auction runner-up), who is invoiced by DM.\n\nIf they’ve already paid, the server refuses.`))) return;
+  await guard(btn, async()=>{
+    let r; try{ r=await api('adminEventForfeit',{orderId:id}); }catch(e){ r={ok:false,error:'network'}; }
+    ptAlert(r.message||(r.ok?'Forfeited.':ptErr(r)));
+    if(r.ok){ const k=adKey('ord',id); delete AD.det[k]; adDashSync(k); }
+  });
+}
+async function adOrdResend(btn,tid){
+  await guard(btn, async()=>{
+    let r; try{ r=await api('adminEventResend',{tid:tid}); }catch(e){ r={ok:false,error:'network'}; }
+    ptAlert(r.message||(r.ok?'Sent.':ptErr(r)));
+  });
+}
 function adLeft(ms){ if(!ms) return ''; const d=ms-Date.now(); if(d<=0) return 'overdue'; const h=Math.floor(d/3600000), m=Math.floor(d%3600000/60000); return h>=48?Math.floor(h/24)+'d left':h?h+'h '+m+'m left':m+'m left'; }
 function adOrderHtml(r){
   if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
@@ -6837,6 +6891,8 @@ function adOrderHtml(r){
   if(r.otherUnpaid&&r.otherUnpaid.length) h+=`<div class="s" style="font-size:12px">Also unpaid: ${r.otherUnpaid.map(x=>esc(x.id)+' ($'+Number(x.total).toFixed(2)+', '+esc(x.status)+')').join(' · ')}</div>`;
   if(o.note) h+=`<div style="font-size:12px;background:var(--line);padding:4px 8px;border-radius:8px;margin:4px 0">📝 ${esc(o.note)}</div>`;
   h+=`<div class="pt-h">Cards · ${o.items.length}</div>`+o.items.map(c=>adCardLine(c,'',`<div class="s" style="font-size:11.5px">$${Number(c.price||0).toFixed(2)}</div>`)).join('');
+  // v13.17: an unpaid claim or auction win can be passed on from here.
+  if(/^(CL|AU)/.test(String(o.id))&&o.status==='Awaiting Payment') h+=`<div class="ev-foot" style="margin:6px 0"><button class="pt-mini" onclick="adOrdForfeit(this,'${esc(o.id)}')">↩️ Forfeit → next in line</button>${r.buyer&&r.buyer.id?`<button class="pt-mini" onclick="adOrdResend(this,'${esc(r.buyer.id)}')">📨 Resend invoice</button>`:''}</div>`;
   const proof=/^https:\/\//.test(r.proof)?r.proof:'', vl=r.verifyLink||'';
   if(proof||vl) h+=`<div>${vl?`<button class="pt-mini pri" onclick="adOpenUrl('${esc(vl)}')">Open verify message</button>`:''}${proof&&proof!==vl?`<button class="pt-mini" onclick="adOpenUrl('${esc(proof)}')">Screenshot</button>`:''}</div>`;
   return h;
@@ -7093,7 +7149,7 @@ async function adLoadEvents(){
   if(AD_TAB==='shelf'&&document.getElementById('ad-in')) adRenderToday();
 }
 // Dashboard and Shelf both come from the same D1 dashboard call.
-function adRenderToday(){ if(AD_TAB==='shelf') { if(AD.ssub==='lots') adRenderLots(); else if(AD.ssub==='events') adRenderEvents(); else adRenderShelf(); } else adRenderDash(); }
+function adRenderToday(){ if(AD_TAB==='events') { adRenderEvents(); return; } if(AD_TAB==='shelf') { if(AD.ssub==='lots') adRenderLots(); else adRenderShelf(); } else adRenderDash(); }
 /* A line = its row + its detail box, wrapped with data-k so adSyncList can keep it.
    The row opens by id (data-id), so it still works after the list changes order. */
 function adBits(){
@@ -7170,7 +7226,7 @@ function adRenderShelf(){
   if(evList==null) ev+=`<p class="note" style="text-align:left;margin:0 2px">Loading…</p>`;
   else {
     const dr=evList.filter(e=>e.state==='draft').length, lv=evList.length-dr;
-    ev+=`<button class="feat" onclick="adSsub('events')"><div class="ic">🎯</div><div><h3>${lv} live · ${dr} draft${dr===1?'':'s'}</h3><p>Build, post and follow them in Events</p></div><span class="chev">›</span></button>`;
+    ev+=`<button class="feat" onclick="adTab('events')"><div class="ic">🎯</div><div><h3>${lv} live · ${dr} draft${dr===1?'':'s'}</h3><p>Build, post and follow them in Events</p></div><span class="chev">›</span></button>`;
   }
   adIn(`<div class="ad-cols"><div>${stock}</div><div>${ev}</div></div>`+adFoot(d));
   window.scrollTo(0,y);
@@ -7219,7 +7275,7 @@ function adRenderEvents(){
   const b=`<div class="pt-h">Live now <span class="pt-tag">${live.length}</span></div>`+(live.length
       ?'<div class="panel" style="padding:4px 12px">'+live.map(rowFor).join('')+'</div>'
       :'<p class="note" style="text-align:left;margin:0 2px">Nothing live.</p>');
-  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">Posting here runs the same code as <b>/drop go</b>. Closing, extending, forfeiting and cancelling a live one stay in Telegram for now.${r.at?' · as of '+new Date(r.at).toLocaleTimeString():''} · <a href="#" onclick="AD.fresh=true;AD.ev.det={};adLoad();return false">Refresh</a></p>`);
+  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">Posting, closing, extending, forfeiting and cancelling here run the same code as the Telegram commands, which still work too.${r.at?' · as of '+new Date(r.at).toLocaleTimeString():''} · <a href="#" onclick="AD.fresh=true;AD.ev.det={};adLoad();return false">Refresh</a></p>`);
   window.scrollTo(0,y);
   if(lab){ const el=[...document.querySelectorAll('#ad-in [aria-label]')].find(x=>x.getAttribute('aria-label')===lab);
     if(el){ el.focus({preventScroll:true}); if(keep){ el.value=keep.v; try{ el.setSelectionRange(keep.s,keep.e); }catch(x){} } } }
@@ -7227,7 +7283,7 @@ function adRenderEvents(){
 function adEvToggle(i){
   const e=adEvList()[i]; if(!e) return;
   const k=adEvK(e.kind,e.id);
-  if(AD.ev.open===k){ AD.ev.open=''; if(!adXSet('ev_'+adDom(k),false)) adRenderEvents(); return; }
+  if(AD.ev.open===k){ AD.ev.open=''; adEvPollStop(); if(!adXSet('ev_'+adDom(k),false)) adRenderEvents(); return; }
   if(AD.ev.open) adXSet('ev_'+adDom(AD.ev.open),false);
   AD.ev.open=k;
   if(!adXSet('ev_'+adDom(k),true,adEvBoxHtml(k))) adRenderEvents();
@@ -7240,8 +7296,9 @@ async function adEvLoadDet(k){
   const r=await adEvCall('adminEvent',(!e||e.state==='draft')?{kind,id,live:1}:{kind,id});
   const had=!!AD.ev.det[k];
   AD.ev.det[k]=r;
-  if(AD.ev.open!==k||!(AD_TAB==='shelf'&&AD.ssub==='events')) return;
-  if(had&&r&&r.ok&&r.state==='draft') adEvPatch(k); else adXSet('ev_'+adDom(k),true,adEvBoxHtml(k));
+  if(AD.ev.open!==k||!(AD_TAB==='events')) return;
+  if(had&&r&&r.ok&&(r.state==='draft'||adEvLivePatch(k))) { if(r.state==='draft') adEvPatch(k); } else adXSet('ev_'+adDom(k),true,adEvBoxHtml(k));
+  if(r&&r.ok&&r.state==='live') adEvPollStart(); else adEvPollStop();
   if(r&&r.ok&&r.state==='draft') adEvCardsPrefetch();          // the picker is usually next
 }
 /* Apply a write's answer. Same shape as before (still a draft, same list) -> patch
@@ -7256,15 +7313,19 @@ function adEvApply(r,kind,id){
     const ev=r.event, L=AD.events.events, x=L.find(e=>e.kind===kind&&e.id===id);
     const n=(ev.items||[]).filter(it=>['staged','draft','live'].indexOf(it.status)>=0).length;
     const row={kind,id,short:ev.short,title:ev.title,state:ev.state,cards:n,ageHrs:x?x.ageHrs:0,startMs:x?x.startMs:Date.now()};
-    if(!x){ L.unshift(row); redraw=true; } else { if(x.state!==row.state) redraw=true; Object.assign(x,row); }
+    // v13.17: live -> closed stays where it is (patched); only a draft being posted moves sections.
+    if(!x){ L.unshift(row); redraw=true; } else { if(x.state!==row.state&&x.state==='draft') redraw=true; Object.assign(x,row); }
   }
   if(r&&r.binned){
-    delete AD.ev.det[k]; if(AD.ev.open===k) AD.ev.open='';
+    delete AD.ev.det[k]; if(AD.ev.open===k){ AD.ev.open=''; adEvPollStop(); }
     if(AD.events&&AD.events.events) AD.events.events=AD.events.events.filter(e=>!(e.kind===kind&&e.id===id));
-    redraw=true;
+    // Take just its line out, in place (the count tag too); redraw only if that empties the list.
+    const box=document.getElementById('xd-ev_'+adDom(k)), row=box&&box.previousElementSibling, panel=box&&box.parentNode;
+    if(box&&row&&panel&&panel.children.length>2){ row.remove(); box.remove(); const tag=panel.previousElementSibling&&panel.previousElementSibling.querySelector('.pt-tag'); if(tag) tag.textContent=Math.max(0,Number(tag.textContent)-1); }
+    else redraw=true;
   }
   ptSave('adevents',AD.events);
-  if(!(AD_TAB==='shelf'&&AD.ssub==='events')) return;
+  if(!(AD_TAB==='events')) return;
   if(redraw) { adRenderEvents(); return; }
   const e=adEvList().find(x=>x.kind===kind&&x.id===id), sub=document.getElementById('evs-'+adDom(k));
   if(e&&sub) sub.textContent=adEvRowSub(e);
@@ -7275,7 +7336,7 @@ function adEvDetHtml(kind,id){
   const d=AD.ev.det[adEvK(kind,id)];
   if(!d) return '<div class="skelcard" style="height:80px"></div>';
   if(!d.ok) return `<p class="pt-err">${esc(ptErr(d))}</p>`;
-  if(d.state!=='draft') return adEventHtml(d)+`<p class="note" style="text-align:left;margin:8px 0 0">Live. Close it, extend it or forfeit a winner in Telegram: <b>${kind==='auction'?'/auction':'/drop'} use ${esc(d.short)}</b>, then <b>who</b> or <b>end</b>.</p>`;
+  if(d.state!=='draft') return adEvLiveHtml(d);
   return adEvBuilderHtml(d);
 }
 // The builder is five parts with ids, so each can be updated on its own.
@@ -7322,6 +7383,7 @@ function adEvPatch(k){
   const d=AD.ev.det[k], box=document.getElementById('xd-ev_'+adDom(k));
   if(!box||!d||!d.ok) return;
   const wrap=box.querySelector('#evb-items');
+  if(d.state!=='draft'&&adEvLivePatch(k)) return;
   if(d.state!=='draft'||!wrap){ adXSet('ev_'+adDom(k),true,adEvBoxHtml(k)); return; }
   const items=adEvDraftItems(d); AD.ev.items=items;
   const want={}; items.forEach(it=>{ want[it.dropId]=1; });
@@ -7343,6 +7405,173 @@ function adEvPatch(k){
   if(sum) sum.innerHTML=adEvSumHtml(d,items);
   if(foot) foot.innerHTML=adEvFootHtml(d,items);
   if(clk&&!clk.contains(document.activeElement)) clk.innerHTML=adEvClockHtml(d);
+}
+
+/* ---- v13.17: a LIVE drop or auction, at a glance, and its controls ----
+   Everything about it on one screen: for a drop, each card's winners (paid or
+   not), the backup queue and the slots nobody has claimed; for an auction, each
+   lot's bids highest first, the leader, and lots with no bids. It updates IN
+   PLACE -- while it's open it re-reads every 15 s (the cheap D1 copy) and only
+   the lines that changed are swapped; the countdown ticks every second.
+   Controls: Close now · +10 min (auction) · Refresh board · Cancel, and per card
+   Forfeit → next in line · Resend invoice · Remove a bid. Every one that is
+   public or moves money asks first and needs the shop opened in the last hour
+   (the server checks both again). */
+AD.ev.msg={}; AD.ev.bidsAll={};
+const AD_EV_POLL_MS=15000;
+function adEvIsLive(d){ return d&&d.ok&&d.state!=='draft'; }
+function adEvLeft(ms){ if(!ms) return ''; const s=Math.round((ms-Date.now())/1000); if(s<=0) return 'closing…'; const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return h?h+'h '+m+'m':m?m+'m '+String(x).padStart(2,'0')+'s':x+'s'; }
+function adEvClaimsOf(it){
+  const cl=(it.claims||[]).filter(c=>!/cancel/i.test(c.status||''));
+  const win=cl.filter(c=>c.status==='winner'||c.status==='invoiced'), back=cl.filter(c=>c.status==='backup'), gone=cl.filter(c=>c.status==='forfeited');
+  const taken=win.reduce((s,c)=>s+Number(c.qty||1),0);
+  return {win,back,gone,taken,left:Math.max(0,Number(it.qty||1)-taken)};
+}
+// The line under the title: how it's going, in numbers.
+function adEvLiveSum(d){
+  const its=(d.items||[]).filter(it=>it.status!=='cancelled');
+  if(d.kind==='auction'){
+    const bid=its.filter(it=>it.bids&&it.bids.n), total=bid.reduce((s,it)=>s+Number(it.bids.top||0),0), n=bid.reduce((s,it)=>s+Number(it.bids.n||0),0);
+    return `<b>${its.length}</b> lot${its.length===1?'':'s'} · <b>${bid.length}</b> with bids · <b>${n}</b> bid${n===1?'':'s'} · top bids <b>${adEvMoney(total)}</b>${its.length-bid.length?` · <span class="pt-neg">${its.length-bid.length} no bids yet</span>`:''}`;
+  }
+  let slots=0, taken=0, backs=0, unpaid=0;
+  its.forEach(it=>{ const c=adEvClaimsOf(it); slots+=Number(it.qty||1); taken+=c.taken; backs+=c.back.length; unpaid+=c.win.filter(w=>w.status!=='paid').length; });
+  return `<b>${its.length}</b> card${its.length===1?'':'s'} · <b>${taken}</b> of ${slots} slot${slots===1?'':'s'} claimed${slots-taken?` · <span class="pt-neg">${slots-taken} unclaimed</span>`:''} · <b>${backs}</b> backup${backs===1?'':'s'}`;
+}
+function adEvLiveHead(d){
+  const live=d.state==='live';
+  return `<div class="evl-head"><span class="pt-tag ${live?'ok':''}">${live?'● LIVE':esc(d.state||'')}</span>`+
+    (d.kind==='auction'&&d.closes?` <span class="evl-clock">⏰ <b data-closes="${Number(d.closes)}">${live?adEvLeft(d.closes):'closed'}</b> · closes ${new Date(d.closes).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span>`:'')+
+    `<div class="evl-sum">${adEvLiveSum(d)}</div></div>`;
+}
+function adEvLiveCtl(d){
+  const k=adEvK(d.kind,d.id), live=d.state==='live', msg=AD.ev.msg[k];
+  if(!live) return `<div class="evl-ctl">${msg?`<div class="evl-msg">${esc(msg)}</div>`:''}<div class="s" style="font-size:12px;color:var(--hint)">Closed — unpaid winners can still be forfeited or sent their invoice again below.</div></div>`;
+  return `<div class="evl-ctl"><div class="ev-foot" style="margin:0">`+
+    `<button class="pt-mini big pri" onclick="adEvEnd(this)">⏹ Close now</button>`+
+    (d.kind==='auction'?`<button class="pt-mini big" onclick="adEvExtend(this,10)">⏱ +10 min</button>`:'')+
+    (d.kind==='auction'?`<button class="pt-mini big" onclick="adEvBoard(this)">🔄 Refresh bid board</button>`:'')+
+    `<button class="pt-mini big danger" onclick="adEvCancel(this)">✖ Cancel ${d.kind}</button></div>`+
+    (msg?`<div class="evl-msg">${esc(msg)}</div>`:'')+`</div>`;
+}
+function adEvWho(c){ return esc(c.who||c.tid||'?'); }
+function adEvLiveItem(d,it){
+  const c=it.card||{}, did=esc(it.dropId), lot=AD.ev.lotOf[c.id], auc=d.kind==='auction', live=d.state==='live';
+  let body='';
+  if(auc){
+    const b=it.bids||{n:0,list:[]}, list=b.list||[], all=!!AD.ev.bidsAll[it.dropId], shown=all?list:list.slice(0,3);
+    body+=b.n?`<div class="evl-st">🔨 <b>${b.n}</b> bid${b.n===1?'':'s'} · top <b>${adEvMoney(b.top)}</b> by <b>${esc(b.who)}</b>${it.floor&&b.top<it.floor?' <span class="pt-neg">under floor '+adEvMoney(it.floor)+'</span>':''}</div>`
+              :`<div class="evl-st pt-neg">No bids yet · starts at ${adEvMoney(it.price)}</div>`;
+    body+=shown.map((x,j)=>`<div class="evl-line${j===0?' lead':''}"><span>${j===0?'🏆':(j+1)+'.'} <b>${adEvMoney(x.amount)}</b> ${adEvWho(x)} <span class="evl-t">${x.at?new Date(x.at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''}</span></span>`+
+      (live&&x.key?`<button class="evl-x" data-lot="${did}" data-key="${esc(x.key)}" data-who="${esc(x.who)}" data-amt="${Number(x.amount)}" onclick="adEvBidVoid(this)" aria-label="Remove ${esc(x.who)}’s ${adEvMoney(x.amount)} bid">✕</button>`:'')+`</div>`).join('');
+    if(list.length>3) body+=`<button class="evl-more" onclick="AD.ev.bidsAll['${did}']=${all?'false':'true'};adEvPatch(AD.ev.open)">${all?'Show top 3':'All '+list.length+' bids ▸'}</button>`;
+    if(!live&&b.n) body+=`<div class="evl-act"><button class="pt-mini" data-drop="${did}" onclick="adEvForfeit(this)">↩️ Forfeit winner → runner-up</button></div>`;
+  } else {
+    const cl=adEvClaimsOf(it);
+    body+=`<div class="evl-st">${cl.taken?`✋ <b>${cl.taken}</b> of ${Number(it.qty||1)} claimed`:'<span class="pt-neg">Unclaimed</span>'}${cl.left&&cl.taken?` · <span class="pt-neg">${cl.left} left</span>`:''} · ${adEvMoney(it.price)}${Number(it.qty||1)>1?' each':''}</div>`;
+    body+=cl.win.map(w=>`<div class="evl-line"><span>🏆 ${adEvWho(w)}${Number(w.qty||1)>1?' ×'+Number(w.qty):''}${w.order?' · <span class="evl-t">'+esc(w.order)+'</span>':''}${w.status==='invoiced'?' <span class="pt-tag">invoiced</span>':''}</span>`+
+      (w.tid?`<span class="evl-btns"><button class="pt-mini" data-tid="${esc(w.tid)}" onclick="adEvResend(this)">📨 Resend</button><button class="pt-mini" data-drop="${did}" data-tid="${esc(w.tid)}" data-who="${esc(w.who)}" onclick="adEvForfeit(this)">↩️ Forfeit</button></span>`:'')+`</div>`).join('');
+    if(cl.back.length) body+=`<div class="evl-line back"><span>⏳ Backups: ${cl.back.map((x,j)=>(j+1)+'. '+adEvWho(x)).join(' · ')}</span></div>`;
+    if(cl.gone.length) body+=`<div class="evl-line gone"><span>Forfeited: ${cl.gone.map(adEvWho).join(', ')}</span></div>`;
+  }
+  return `<div class="evl-it${auc?(it.bids&&it.bids.n?'':' none'):(adEvClaimsOf(it).taken?'':' none')}" data-k="lv:${did}">${adThumb(c)}<div style="flex:1;min-width:0">`+
+    `<div class="nm">${adLotCard(c)}</div><div class="sub">${lot?'📍 '+esc(lot)+' · ':''}${esc(it.dropId)}${c.consignor?' · '+esc(c.consignor)+'’s':''}</div>${body}</div></div>`;
+}
+// The whole live view: three parts, each updated on its own (adSyncSec keeps unchanged lines).
+function adEvLiveInner(d){
+  const its=(d.items||[]).filter(it=>it.status!=='cancelled');
+  // Most in need of a look first: unclaimed / no bids on top? No -- keep the post order, it matches the channel.
+  return `<div class="evl-top">${adEvLiveHead(d)}</div><div class="evl-ctlw">${adEvLiveCtl(d)}</div>`+
+    `<div class="evl-items" data-sync>${its.map(it=>adEvLiveItem(d,it)).join('')}</div>`+
+    `<p class="note" style="text-align:left;margin:6px 0 0">Updates by itself every 15 s while open${d.at?'':''}. Reports from the bot go to your DM.</p>`;
+}
+function adEvLiveHtml(d){ return `<div class="evl" id="evl-${adDom(adEvK(d.kind,d.id))}">${adEvLiveInner(d)}</div>`; }
+function adEvLivePatch(k){
+  const d=AD.ev.det[k], el=document.getElementById('evl-'+adDom(k));
+  if(!el||!adEvIsLive(d)) return false;
+  adSyncSec(el,adEvLiveInner(d)); return true;
+}
+// While a live one is open: re-read it every 15 s (D1 copy, cheap) and tick the clock every second.
+function adEvPollStart(){
+  adEvPollStop();
+  AD.ev.tick=setInterval(()=>{ document.querySelectorAll('.evl [data-closes]').forEach(b=>{ const t=adEvLeft(Number(b.getAttribute('data-closes'))); if(b.textContent!==t) b.textContent=t; }); },1000);
+  AD.ev.poll=setInterval(async()=>{
+    const k=AD.ev.open, d=k&&AD.ev.det[k];
+    // Only while it's live, on screen, and not mid-action. Each read is the D1 snapshot: 2 rows, no writes.
+    if(!k||!d||d.state!=='live'||AD_TAB!=='events'||document.hidden||AD.ev.busy){ if(!k||AD_TAB!=='events'||(d&&d.ok&&d.state!=='live')) adEvPollStop(); return; }
+    const r=await adEvCall('adminEvent',{kind:d.kind,id:d.id});
+    if(r&&r.ok&&AD.ev.open===k&&!AD.ev.busy){ AD.ev.det[k]=r; adEvLivePatch(k); adEvRowSubSet(r.kind,r.id); }
+  },AD_EV_POLL_MS);
+}
+function adEvPollStop(){ clearInterval(AD.ev.tick); clearInterval(AD.ev.poll); AD.ev.tick=AD.ev.poll=null; }
+function adEvRowSubSet(kind,id){
+  const e=adEvList().find(x=>x.kind===kind&&x.id===id), d=AD.ev.det[adEvK(kind,id)];
+  if(e&&d&&d.ok){ e.state=d.state; }
+  const sub=document.getElementById('evs-'+adDom(adEvK(kind,id))); if(e&&sub) sub.textContent=adEvRowSub(e);
+}
+// Every live action: guard the button, pause the poll, apply the fresh event in place.
+async function adEvLiveDo(btn,action,payload,okNote){
+  const d=adEvCur(); if(!d) return null;
+  const k=adEvK(d.kind,d.id);
+  let r=null;
+  AD.ev.busy=true;
+  try{ await guard(btn,async()=>{ r=await adEvCall(action,Object.assign({kind:d.kind,id:d.id},payload||{})); }); }
+  finally{ AD.ev.busy=false; }
+  if(!r) return null;
+  AD.ev.msg[k]=r.ok?(r.message||okNote||'Done.'):'';
+  if(!r.ok) ptAlert(r.message||ptErr(r));
+  if(r.binned) adEvApply(r,d.kind,d.id);
+  else if(r.event) adEvApply(r,d.kind,d.id);
+  else adEvPatch(k);
+  return r;
+}
+function adEvLiveFresh(what){
+  const age=adSigninAgeMins();
+  if(age!=null&&age>60){ ptAlert(what+' needs the shop opened in the last hour. Close the shop, reopen it from the bot and try again.'); return false; }
+  return true;
+}
+async function adEvEnd(btn){
+  const d=adEvCur(); if(!d||!adEvLiveFresh('Closing')) return;
+  const its=(d.items||[]).filter(it=>it.status!=='cancelled');
+  const q=d.kind==='auction'
+    ? `Close ${d.short} now?\n\nBidding stops. The top bidder on each of the ${its.filter(it=>it.bids&&it.bids.n).length} lot(s) with bids is invoiced by DM; lots with no bids go back on sale.`
+    : `Close ${d.short} now?\n\nClaiming stops and every winner is invoiced by DM. Backups stay in line in case someone doesn’t pay; unclaimed cards go back on sale.`;
+  if(!(await ptConfirm(q))) return;
+  await adEvLiveDo(btn,'adminEventEnd',{});
+}
+async function adEvExtend(btn,mins){
+  const d=adEvCur(); if(!d||!adEvLiveFresh('Extending')) return;
+  const base=Math.max(Number(d.closes||0),Date.now())+mins*60000;
+  if(!(await ptConfirm(`Add ${mins} minutes to ${d.short}?\n\nIt will close at ${new Date(base).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}, and the channel is told.`))) return;
+  await adEvLiveDo(btn,'adminEventExtend',{mins});
+}
+async function adEvBoard(btn){ await adEvLiveDo(btn,'adminEventBoard',{},'Bid board redrawn.'); }
+async function adEvCancel(btn){
+  const d=adEvCur(); if(!d||!adEvLiveFresh('Cancelling')) return;
+  const its=(d.items||[]).filter(it=>it.status!=='cancelled');
+  const people=d.kind==='auction'?new Set([].concat(...its.map(it=>((it.bids&&it.bids.list)||[]).map(b=>b.tid)))).size
+                                 :new Set([].concat(...its.map(it=>(it.claims||[]).filter(c=>!/cancel|forfeit/i.test(c.status||'')).map(c=>c.tid)))).size;
+  if(!(await ptConfirm(`Cancel ${d.short}${d.title?' “'+d.title+'”':''}?\n\nIt comes down in the channel${people?' and the '+people+' '+(people===1?'person':'people')+' who '+(d.kind==='auction'?'bid':'claimed')+' are told':''}. Its cards go back on sale.`))) return;
+  if(!(await ptConfirm(`Really cancel ${d.short}? This can’t be undone.`))) return;
+  await adEvLiveDo(btn,'adminEventCancel',{});
+}
+async function adEvForfeit(btn){
+  const d=adEvCur(); if(!d||!adEvLiveFresh('Forfeiting')) return;
+  const dropId=btn.getAttribute('data-drop'), tid=btn.getAttribute('data-tid')||'', who=btn.getAttribute('data-who')||'the winner';
+  const it=(d.items||[]).find(x=>String(x.dropId)===dropId); if(!it) return;
+  let next='';
+  if(d.kind==='auction'){ const l=(it.bids&&it.bids.list)||[]; next=l[1]?`the runner-up (${l[1].who}, ${adEvMoney(l[1].amount)})`:'nobody — it goes back on sale'; }
+  else { const b=adEvClaimsOf(it).back[0]; next=b?`the first backup (${b.who})`:'nobody — there are no backups, so it goes back on sale'; }
+  if(!(await ptConfirm(`Forfeit ${d.kind==='auction'?'the winner':who} on ${it.card&&it.card.name}?\n\nTheir unpaid order is cancelled and the card passes to ${next}${/nobody/.test(next)?'':', who is invoiced by DM'}.\n\nIf they’ve already paid, the server refuses.`))) return;
+  await adEvLiveDo(btn,'adminEventForfeit',d.kind==='auction'?{dropId}:{dropId,who:tid});
+}
+async function adEvResend(btn){ await adEvLiveDo(btn,'adminEventResend',{tid:btn.getAttribute('data-tid')}); }
+async function adEvBidVoid(btn){
+  const d=adEvCur(); if(!d||!adEvLiveFresh('Removing a bid')) return;
+  const lotId=btn.getAttribute('data-lot'), key=btn.getAttribute('data-key'), who=btn.getAttribute('data-who'), amt=Number(btn.getAttribute('data-amt'));
+  const it=(d.items||[]).find(x=>String(x.dropId)===lotId), l=(it&&it.bids&&it.bids.list)||[], i=l.findIndex(x=>x.key===key), nx=l.filter((x,j)=>j!==i)[0];
+  if(!(await ptConfirm(`Remove ${who}’s ${adEvMoney(amt)} bid on ${it&&it.card&&it.card.name}?\n\n${i===0?(nx?`${nx.who} (${adEvMoney(nx.amount)}) becomes the top bid.`:'It has no other bids.'):'The top bid doesn’t change.'} ${who} is told it was removed. The bid is kept on record, marked removed.`))) return;
+  await adEvLiveDo(btn,'adminEventBidVoid',{lotId,key});
 }
 
 function adEvNewForm(kind){
@@ -7437,7 +7666,7 @@ async function adEvBin(btn){
 function adEvFromStock(stockKind,evKind){
   const r=AD.det[adKey('stk',stockKind)];
   AD.ev.pre=((r&&r.cards)||[]).filter(c=>String(c.status||'available').toLowerCase()==='available'&&Number(c.qty)>0).map(c=>String(c.id));
-  AD.ev.newKind=evKind; AD.ssub='events'; adLoad();
+  AD.ev.newKind=evKind; adTab('events');
 }
 
 /* The picker: a bottom sheet. The card list is fetched in the background as soon as
@@ -7607,7 +7836,8 @@ const adLotKeyOf=el=>{ const x=el.closest('[data-k]'); return x?x.getAttribute('
 function adLotTick(el){ const k=adLotKeyOf(el); if(!k) return; AD.lotTick[k]=!!el.checked; adLotDrawList(); adLotSync(); }
 function adLotSetN(el){ const k=adLotKeyOf(el); if(!k) return; AD.lotN[k]=el.value; adLotSync(); }
 function adLotTickShown(on){ adLotShown().forEach(u=>{ if(on) AD.lotTick[u.key]=true; else delete AD.lotTick[u.key]; }); adLotDrawList(); adLotSync(); }
-function adLotSearch(v){ AD.lotQ=v; adLotDrawList(); }
+function adLotSearch(v){ AD.lotQ=v; const x=document.getElementById('ad-lotqx'); if(x) x.hidden=!v; adLotDrawList(); }
+function adLotSearchClear(){ const q=document.getElementById('ad-lotq'); if(q){ q.value=''; q.focus(); } adLotSearch(''); }
 // "also 2× in L0002" -- where the other copies of this card are filed.
 function adLotWhereTxt(key,ex){ const w=(AD.lotWhere[key]||[]).filter(x=>x.lot!==ex&&x.qty>0); return w.length?(ex?'also ':'')+w.map(x=>x.qty+'× in '+x.lot).join(', ')+(ex?'':' already'):''; }
 function adLotWhereShow(key,ex){ const t=adLotWhereTxt(key,ex); return t&&!ex?' · '+t:t; }
@@ -7638,7 +7868,7 @@ function adLotOverSec(){
 }
 function adLotBodyHtml(code){
   const d=AD.det['lot:'+code];
-  let h=`<div class="pt-form" style="margin:0 0 8px"><button class="pt-mini" style="margin:0 0 6px" onclick="adLotAddHere('${esc(code)}')">＋ Add cards to ${esc(code)}</button>`;
+  let h=`<div class="pt-form" style="margin:0 0 8px"><div class="ev-foot" style="margin:0 0 6px"><button class="pt-mini" onclick="adLotAddHere('${esc(code)}')">＋ Add cards to ${esc(code)}</button><button class="pt-mini danger" onclick="adLotDelete(this,'${esc(code)}')">🗑 Delete lot</button></div>`;
   if(!d) return h+'<div class="skelcard" style="height:60px"></div></div>';
   if(!d.ok) return h+`<p class="pt-err">${esc(ptErr(d))}</p></div>`;
   if(!d.lines.length) return h+'<p class="note">Empty — everything in it has gone. You can reuse the divider.</p></div>';
@@ -7674,12 +7904,13 @@ function adRenderLots(){
     <div class="pt-inl" style="margin:0;flex-wrap:wrap;gap:6px">
       <input id="ad-lotto" value="${esc(target)}" oninput="AD.lotTo=this.value.toUpperCase();adLotNextSync()" autocapitalize="characters" maxlength="12" style="max-width:110px" aria-label="Lot code">
       <button id="ad-lotbtn" class="pt-mini pri" style="margin:0" onclick="adLotAssign(this)" ${adLotTicked().length?'':'disabled'}>${adLotBtnText()}</button>
-      <button id="ad-lotnext" class="pt-mini" style="margin:0" onclick="adLotNewCode()" title="Each Collectr import gets its own lot code. This fills in the next one nobody has used yet.">${adLotNextLabel(target)}</button>
+      <button id="ad-lotnext" class="pt-mini" style="margin:0" onclick="adLotNewCode()">＋ New lot</button>
     </div>
+    <div id="ad-lotinfo" class="s" style="font-size:12px;color:var(--hint);margin-top:-2px"></div>
     <div class="pt-inl" style="margin:0;flex-wrap:wrap;gap:6px">
-      <input id="ad-lotq" value="${esc(AD.lotQ||'')}" oninput="adLotSearch(this.value)" placeholder="Search name, set, number, #key" style="flex:1;min-width:160px" aria-label="Search cards not in a lot">
+      <span class="ad-lotqw"><input id="ad-lotq" value="${esc(AD.lotQ||'')}" oninput="adLotSearch(this.value)" placeholder="Search name, set, number, #key" aria-label="Search cards not in a lot"><button id="ad-lotqx" type="button" class="ad-lotqx" onclick="adLotSearchClear()" aria-label="Clear search" ${AD.lotQ?'':'hidden'}>✕</button></span>
       <button class="pt-mini" style="margin:0" onclick="adLotTickShown(true)">Tick all matching</button>
-      <button class="pt-mini" style="margin:0" onclick="adLotTickShown(false)">Clear</button>
+      <button class="pt-mini" style="margin:0" onclick="adLotTickShown(false)">Untick all</button>
       <span id="ad-lotn" class="s" style="font-size:12px;color:var(--hint)"></span>
     </div>
     ${t.lots?'':`<p class="note" style="text-align:left;margin:0">First time: tap <b>Tick all matching</b>, keep <b>L0000</b> and put everything in. Label that storage L0000. Every Collectr import after that gets its own code.</p>`}
@@ -7735,8 +7966,17 @@ function adLotAddHere(code){
 /* v13.15: 'New code' only ever filled in the next unused lot code, so tapping it
    again did nothing -- which looked broken. It now says what it does, and shows
    when the box already holds that code. */
-function adLotNextLabel(v){ const nx=(AD.lots&&AD.lots.next)||''; return !nx?'Next free code':String(v||'').toUpperCase()===nx?'✓ '+esc(nx)+' is the next free code':'Use next free code ('+esc(nx)+')'; }
-function adLotNextSync(){ const b=document.getElementById('ad-lotnext'), nx=(AD.lots&&AD.lots.next)||''; if(!b) return; b.textContent=adLotNextLabel(ptVal('ad-lotto')).replace(/&amp;/g,'&'); b.disabled=!!nx&&ptVal('ad-lotto').toUpperCase()===nx; }
+/* v13.16.4: "＋ New lot" fills in the next unused L-code and is always tappable.
+   The line under the code box says what that code is -- a new lot, or an
+   existing one and how full it is -- so it's clear where the cards will go. */
+function adLotInfo(v){
+  const c=String(v||'').toUpperCase().replace(/\s+/g,''), r=AD.lots||{};
+  if(!c) return 'Type a lot code, or tap ＋ New lot.';
+  if(!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(c)) return 'Lot codes are letters, numbers and dashes (up to 12).';
+  const l=(r.lots||[]).find(x=>x.lot===c);
+  return l?`📍 ${c} is an existing lot · ${l.copies} card${l.copies===1?'':'s'} in it now — ticked cards are added to it.`:`✨ ${c} is a new lot — label a new divider ${c}.`;
+}
+function adLotNextSync(){ const i=document.getElementById('ad-lotinfo'); if(i) i.textContent=adLotInfo(ptVal('ad-lotto')); }
 function adLotNewCode(){ const r=AD.lots||{}; AD.lotTo=r.next||''; const i=document.getElementById('ad-lotto'); if(i) i.value=AD.lotTo; adLotNextSync(); }
 async function adLotOpen(code){
   if(AD.lotOpen[code]){ delete AD.lotOpen[code]; if(AD.lotMv.indexOf(code+'|')===0) AD.lotMv=''; adLotsRedraw(); return; }
@@ -7768,6 +8008,18 @@ function adLotAdjO(btn,i,j){ const o=(AD.lots.over||[])[i]; const l=o&&o.lots[j]
 function adLotAdjEl(btn,delta){ const x=btn.closest('.ad-lotln'); if(x) adLotAdj(btn,x.getAttribute('data-lot'),x.getAttribute('data-key'),delta); }
 function adLotMvOpen(btn){ const x=btn.closest('.ad-lotln'); if(!x) return; const k=x.getAttribute('data-lot')+'|'+x.getAttribute('data-key'); AD.lotMv=AD.lotMv===k?'':k; adLotsRedraw();
   const to=document.getElementById('ad-mvto'); if(to) try{ to.focus({preventScroll:true}); to.select(); }catch(e){} }
+// v13.16.4: delete a lot. Its cards stay in stock and go back to "Not in a lot".
+async function adLotDelete(btn,code){
+  const l=((AD.lots&&AD.lots.lots)||[]).find(x=>x.lot===code), n=l?l.copies:0;
+  if(!(await ptConfirm(n?`Delete lot ${code}?
+
+Its ${n} card${n===1?'':'s'} stay in stock and go back to “Not in a lot”, so you can file ${n===1?'it':'them'} somewhere else.`:`Delete the empty lot ${code}?`))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminLotDelete',{lot:code});
+    ptAlert(r.message||(r.ok?'Deleted':ptErr(r)));
+    if(r.ok){ delete AD.lotOpen[code]; delete AD.det['lot:'+code]; if(AD.lotMv.indexOf(code+'|')===0) AD.lotMv=''; await adLotsAfter([]); }
+  });
+}
 // v13.16: move copies of a card to another lot (a new code makes a new lot).
 async function adLotMove(btn){
   const x=btn.closest('.ad-lotln'); if(!x) return;
