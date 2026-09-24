@@ -1694,6 +1694,17 @@ body.pc #v-credit{max-width:640px}
 .pt-thumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px}
 .pt-in,.pt-inl input,.pt-inl select,.pt-tier input,.pt-form textarea{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit;outline:none;box-sizing:border-box}
 .pt-form textarea,.panel textarea.pt-in{width:100%}
+
+/* ===== Admin tab =====
+   Phone: Admin is one more button on the bottom bar. PC mode (body.pc --
+   Telegram Desktop or a wide window) already turns that bar into a left rail
+   and widens the page; there the admin sections sit side by side. */
+.ad-cols{display:block}
+.pt-cfg-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line)}
+.pt-cfg-row:last-child{border-bottom:0}
+.pt-cfg-row .pt-inl{grid-column:1 / -1}
+body.pc .ad-cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start}
+body.pc .pt-tabs .chip{font-size:13.5px;padding:8px 16px}
 </style>
 </head>
 <body>
@@ -1845,7 +1856,6 @@ body.pc #v-credit{max-width:640px}
 
   <!-- ADMIN -->
   <div class="view hidden" id="v-admin">
-    <button class="back-btn" onclick="go('profile')">‹ Back</button>
     <div class="section-t">Admin</div>
     <div id="ad-body"></div>
   </div>
@@ -1966,6 +1976,7 @@ body.pc #v-credit{max-width:640px}
   <button data-t="cart" onclick="openCart()"><span class="ni" data-ic="cart">🛒</span>Cart<span class="cart-dot hidden" id="cartDot">0</span></button>
   <button data-t="buyback" onclick="go('buyback')"><span class="ni" data-ic="sell">💰</span>Sell</button>
   <button data-t="consign" id="nav-consign" class="hidden" onclick="openConsign()"><span class="ni" data-ic="shelf">🐑</span>My shelf</button>
+  <button data-t="admin" id="nav-admin" class="hidden" onclick="openAdmin()"><span class="ni" data-ic="admin">🛠️</span>Admin</button>
   <button data-t="profile" onclick="go('profile')"><span class="ni" data-ic="me">👤</span>Me</button>
 </div>
 
@@ -2655,7 +2666,7 @@ function togglePolicy(){
 const PORTAL_API_URL = IS_STAGING
   ? "https://fluffmart-portal-staging.shrimaniac.workers.dev/api"
   : "https://fluffmart-portal.shrimaniac.workers.dev/api";
-const PORTAL_READS = {consignMe:1,consignInfo:1,adminDash:1,adminBox:1,adminOrder:1,adminStock:1,adminConsignors:1,adminConsignor:1,adminMoney:1};
+const PORTAL_READS = {consignMe:1,consignInfo:1,adminDash:1,adminBox:1,adminOrder:1,adminStock:1,adminConsignors:1,adminConsignor:1,adminMoney:1,adminRates:1,adminConfig:1,adminEvents:1,adminEvent:1,adminLots:1,adminLot:1,adminPick:1};
 let PORTAL_DOWN=false;
 async function api(action, payload={}){
   if(!API_URL){ return mock(action,payload); }
@@ -2834,7 +2845,10 @@ function applyOverview(r){
   STATE.isConsignor = !!r.isConsignor;
   { const cb=document.getElementById('p-consign-btn'), ab=document.getElementById('p-admin-btn');
     if(cb) cb.classList.toggle('hidden',!STATE.isConsignor); if(ab) ab.classList.toggle('hidden',!STATE.isAdmin);
-    const nc=document.getElementById('nav-consign'); if(nc) nc.classList.toggle('hidden',!STATE.isConsignor); }
+    const nc=document.getElementById('nav-consign'); if(nc) nc.classList.toggle('hidden',!STATE.isConsignor);
+    const na=document.getElementById('nav-admin'); if(na) na.classList.toggle('hidden',!STATE.isAdmin);
+    if(ab) ab.classList.add('hidden');   // Admin moved to its own tab
+    document.body.classList.toggle('is-admin',!!STATE.isAdmin); }
   if (r.paynowMobile && !STATE.payInfo) {
     STATE.payInfo = { mobile: r.paynowMobile, name: r.paynowName, mins: Number(r.paymentWindowMins || 10),
                       grace: Number(r.paymentGraceMins == null ? 5 : r.paymentGraceMins) };
@@ -5637,7 +5651,7 @@ function backToProfile(){ document.getElementById('v-credit').classList.add('hid
    active, something an emoji cannot do. Sized in em, so the holder's existing
    font-size drives them (21px in the nav, 19px in a feat row). */
 const IC_EMOJI = {home:'🏠',orders:'📦',store:'🛍️',cart:'🛒',sell:'💰',me:'👤',
-  help:'🆘',shelf:'🐑',card:'🃏',sealed:'📦',bundle:'📚',spark:'✨',bell:'🔔',credit:'💳',
+  help:'🆘',shelf:'🐑',admin:'🛠️',card:'🃏',sealed:'📦',bundle:'📚',spark:'✨',bell:'🔔',credit:'💳',
   ship:'🚚',hands:'🤝',chat:'💬',invoice:'🧾'};
 
 function _ic(body,soft,accent){
@@ -5680,6 +5694,8 @@ const IC_SVG = {
             '<path d="M4 8.8h8v7.2H4z"/>'),
   hands: _ic('<path d="M3.6 12.4l3.2-2.6 4 1.4 2.4-.6"/><path d="M20.4 12.4l-3.2-2.6-3.6 1.2"/><path d="M6.8 9.8 12 13l5.2-3.2"/><path d="M8.6 15.6h6.8"/>',
              null,'<circle cx="12" cy="13" r="1.6" opacity=".5"/>'),
+  admin: _ic('<path d="M12 3.6 5.4 6.2v5.1c0 4.1 2.8 7.5 6.6 8.9 3.8-1.4 6.6-4.8 6.6-8.9V6.2z"/><path d="M9.2 12.1l2 2 3.8-4"/>',
+              '<path d="M12 4.7 6.4 6.9v4.4c0 3.5 2.3 6.4 5.6 7.7z"/>'),
   shelf: _ic('<path d="M4.4 12.6 11.4 5.6h6.4a.8.8 0 0 1 .8.8v6.4l-7 7a1.2 1.2 0 0 1-1.7 0l-4.5-4.5a1.2 1.2 0 0 1 0-1.7z"/><circle cx="15.2" cy="8.8" r="1.3"/>',
               '<path d="M5.4 12.9 11.8 6.5h5.9v5.9l-6.4 6.4z"/>'),
   chat: _ic('<path d="M12 4.8c-4.2 0-7.6 2.7-7.6 6.1 0 1.9 1.1 3.6 2.8 4.7l-.7 3.1 3.4-1.7c.7.1 1.4.2 2.1.2 4.2 0 7.6-2.7 7.6-6.3S16.2 4.8 12 4.8z"/>',
@@ -6223,10 +6239,10 @@ async function ptOpenBoxLink(){
   const pid=ptBoxParam(); if(!pid) return;
   PT_BOX_DONE=true;
   const k=adKey('box',pid);
-  AD.focus=pid; AD.open[k]=1; AD_TAB='today';
+  AD.focus=pid; AD.open[k]=1; AD_TAB='dash';
   openAdmin();
   AD.det[k]=await api('adminBox',{id:pid});
-  if(AD_TAB==='today') adRenderToday();
+  if(AD_TAB==='dash') adRenderToday();
 }
 function ptPrefetch(){
   if(PT_PREFETCHED) return; PT_PREFETCHED=true;
@@ -6346,16 +6362,20 @@ async function czSendMore(btn){
 }
 
 /* ---------- Admin ---------- */
-let AD_TAB='today', AD={dash:null,list:null,reqs:null,cur:null,rates:null,edit:null,cardOpen:-1,show:'all'};
+/* Admin is its own tab now (bottom bar on a phone, left rail on a PC), with four
+   sections: Dashboard (money + jobs), Shelf (stock health + open drops/auctions),
+   Consignment (people, requests, rates) and Config. */
+let AD_TAB='dash', AD={dash:null,list:null,reqs:null,cur:null,rates:null,edit:null,cardOpen:-1,show:'all',csub:'people',cfg:null,ssub:'health',lots:null,lotTick:{},lotOpen:{},pick:null,pickOpen:false,lotShow:60};
 function openAdmin(){ go('admin'); adTab(AD_TAB); }
-function adTab(t){ AD_TAB=t; AD.cur=null; AD.cardOpen=-1; adLoad(); }
-function adHead(){ return ptTabs([['today','Today'],['consign','Consignment'],['rates','Rates']],AD_TAB,'adTab'); }
+function adTab(t){ if(t==='today') t='dash'; if(t==='rates'){ t='consign'; AD.csub='rates'; } AD_TAB=t; AD.cur=null; AD.cardOpen=-1; adLoad(); }
+function adHead(){ return ptTabs([['dash','📋 Dashboard'],['shelf','🗂️ Shelf'],['consign','🐑 Consignment'],['config','⚙️ Config']],AD_TAB,'adTab'); }
 async function adLoad(){
   const b=document.getElementById('ad-body'); if(!b) return;
   const tab=AD_TAB;
   b.innerHTML=adHead()+'<div id="ad-upd" class="note" style="text-align:left;margin:-4px 2px 6px;min-height:14px"></div><div id="ad-in"></div>';
   const still=()=>AD_TAB===tab&&document.getElementById('ad-in');
-  if(tab==='today'){
+  if(tab==='dash'||(tab==='shelf'&&AD.ssub!=='lots')){
+    if(tab==='dash'){ AD.pickOpen=false; AD.pick=null; }
     const saved=!AD.fresh&&(AD.dash&&AD.dash.ok?AD.dash:ptLoad('addash'));
     if(saved&&saved.ok){ AD.dash=saved; adRenderToday(); } else ptSkel(document.getElementById('ad-in'));
     ptUpd('ad-upd',true);
@@ -6366,6 +6386,31 @@ async function adLoad(){
     if(!still()) return; ptUpd('ad-upd',false);
     if(r&&r.ok || !(AD.dash&&AD.dash.ok)){ AD.dash=r; adRenderToday(); }
   }
+  else if(tab==='shelf'){   // 📍 Lots
+    const saved=!AD.fresh&&(AD.lots&&AD.lots.ok?AD.lots:ptLoad('adlots'));
+    if(saved&&saved.ok){ AD.lots=saved; adRenderLots(); } else ptSkel(document.getElementById('ad-in'));
+    ptUpd('ad-upd',true);
+    const r=await ptFetch('adminLots',AD.fresh?{live:1}:{},'adlots');
+    AD.fresh=false;
+    if(!still()) return; ptUpd('ad-upd',false);
+    if((r&&r.ok) || !(AD.lots&&AD.lots.ok)){ AD.lots=r; adRenderLots(); }
+  }
+  else if(tab==='consign'&&AD.csub==='rates'){
+    const saved=AD.rates&&AD.rates.ok?AD.rates:ptLoad('adrates');
+    if(saved&&saved.ok){ AD.rates=saved; AD.edit=JSON.parse(JSON.stringify(saved.rates)); adRenderRates(); } else ptSkel(document.getElementById('ad-in'));
+    ptUpd('ad-upd',true);
+    const r=await ptFetch('adminRates',{},'adrates');
+    if(!still()) return; ptUpd('ad-upd',false);
+    if(r&&r.ok){ AD.rates=r; AD.edit=JSON.parse(JSON.stringify(r.rates)); adRenderRates(); } else if(!(AD.rates&&AD.rates.ok)){ AD.rates=r; adRenderRates(); }
+  }
+  else if(tab==='config'){
+    const saved=AD.cfg&&AD.cfg.ok?AD.cfg:ptLoad('adcfg');
+    if(saved&&saved.ok){ AD.cfg=saved; adRenderConfig(); } else ptSkel(document.getElementById('ad-in'));
+    ptUpd('ad-upd',true);
+    const r=await ptFetch('adminConfig',{},'adcfg');
+    if(!still()) return; ptUpd('ad-upd',false);
+    if((r&&r.ok) || !(AD.cfg&&AD.cfg.ok)){ AD.cfg=r; adRenderConfig(); }
+  }
   else if(tab==='consign'){
     const saved=AD.list&&AD.list.ok?AD.list:ptLoad('adcn');
     if(saved&&saved.ok){ AD.list=saved; AD.reqs={ok:true,requests:saved.requests||[]}; adRenderConsign(); } else ptSkel(document.getElementById('ad-in'));
@@ -6373,11 +6418,6 @@ async function adLoad(){
     await adReloadConsign();
     if(!still()) return; ptUpd('ad-upd',false);
     if(!AD.cur) adRenderConsign();
-  }
-  else {
-    ptSkel(document.getElementById('ad-in'));
-    AD.rates=await api('adminRates'); if(!still()) return;
-    AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates();
   }
 }
 // One call for the whole Consignment tab (the server now sends the requests with the list).
@@ -6388,7 +6428,15 @@ async function adReloadConsign(live){
     AD.reqs=l.requests?{ok:true,requests:l.requests}:await api('adminConsignRequests');  // older server
   } else if(!(AD.list&&AD.list.ok)) { AD.list=l; AD.reqs={ok:false}; }
 }
-function adIn(html){ const el=document.getElementById('ad-in'); if(el) el.innerHTML=html; }
+function adIn(html){
+  const el=document.getElementById('ad-in'); if(!el) return;
+  // Consignment has two parts: people & requests, and the rate tables.
+  if(AD_TAB==='consign'&&!AD.cur) html=ptTabs([['people','People & requests'],['rates','Rates']],AD.csub,'adCsub')+html;
+  if(AD_TAB==='shelf') html=ptTabs([['health','Stock health'],['lots','📍 Lots']],AD.ssub,'adSsub')+html;
+  el.innerHTML=html;
+}
+function adCsub(t){ AD.csub=t; AD.cur=null; adLoad(); }
+function adSsub(t){ AD.ssub=t; adLoad(); }
 function adOpenLink(i){ const v=AD.dash&&AD.dash.jobs&&AD.dash.jobs.verify[i]; if(!v||!v.link) return; if(tg&&tg.openTelegramLink&&/^https:\/\/t\.me\//.test(v.link)) tg.openTelegramLink(v.link); else openExt(v.link); }
 
 /* Every line on Today opens to the detail an admin needs to act on it: the
@@ -6410,7 +6458,7 @@ async function adToggle(kind,list,i){
 }
 function adSrc(list,i){
   const d=AD.dash||{}, j=d.jobs||{}, s=d.stock||{};
-  if(list==='stock') return {id:['nophoto','stuck','stale','below'][i]};
+  if(list==='stock') return {id:['nophoto','below','above','stale','stuck'][i]};
   if(list==='events'){ const ev=(s.events!=null?s.events:(AD.events&&AD.events.events))||[]; const e=ev[i]; return e?{id:e.kind+'-'+e.id,kind:e.kind,evId:e.id}:null; }
   return (j[list]||[])[i]||null;
 }
@@ -6445,6 +6493,7 @@ function adBoxHtml(b){
   else if(b.delivery==='pickup') h+=`<div class="s" style="margin-top:6px;font-size:12px">${esc(b.pickupNote||'Self-pickup')}</div>`;
   h+=adBuyerHtml(b.buyer);
   h+=adBoxActions(b);
+  if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">📍 Pull from</div>`+b.picks.map(x=>`<div style="font-size:13px;padding:2px 0"><b>${x.lot?esc(x.lot):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</div>`).join('');
   h+=`<div class="pt-h">Pack list · ${b.cards} card${b.cards===1?'':'s'} · $${Number(b.value||0).toFixed(2)}</div>`;
   b.orders.forEach(o=>{
     const ref=o.status==='Refunded';
@@ -6568,51 +6617,208 @@ function adMoneyRowsHtml(r){
       <div class="r ${x.amount<0||x.type==='acquisition'?'pt-neg':''}">${x.amount<0?'−':''}$${Math.abs(x.amount).toFixed(2)}</div></div>`;
   }).join('')+(r.total>r.rows.length?`<p class="note">Showing the newest ${r.rows.length} of ${r.total}.</p>`:'');
 }
+/* ---- Config ----
+   Only the settings the server allows are editable, each checked there against
+   a range. Locked ones (PayNow, channels, links, the consignment prefix…) are
+   shown read-only with the reason. Saving needs a sign-in from the last 15
+   minutes, and every change is posted to #log. */
+function adRenderConfig(){
+  const r=AD.cfg;
+  if(!r||!r.ok){ adIn(`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
+  const groups=[]; r.fields.forEach(f=>{ if(groups.indexOf(f.group)<0) groups.push(f.group); });
+  const input=(f,i)=>{
+    const id='ad-cf-'+i, v=f.value!==''?f.value:f.def;
+    if(f.type==='enum') return `<select id="${id}">${(f.opts||[]).map(o=>`<option value="${esc(o)}"${o===v?' selected':''}>${esc(o)}</option>`).join('')}</select>`;
+    if(f.type==='text') return `<input id="${id}" maxlength="${f.max||200}" value="${esc(v)}">`;
+    return `<input id="${id}" inputmode="decimal" value="${esc(v)}" placeholder="${f.min} – ${f.max}">`;
+  };
+  const col=g=>`<div class="pt-h">${esc(g)}</div><div class="panel" style="padding:2px 12px">`+r.fields.map((f,i)=>f.group!==g?'':
+    `<div class="pt-cfg-row"><div><div class="t" style="font-weight:700;font-size:13px">${esc(f.label)}</div>
+       <div class="s" style="font-size:11px;color:var(--hint)">${esc(f.key)}${f.isDefault?' · default':''}${f.type!=='text'&&f.type!=='enum'?' · '+f.min+'–'+f.max:''}</div></div>
+       <div class="r" style="font-weight:800;font-size:13px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.value!==''?f.value:f.def)}</div>
+       <div class="pt-inl">${input(f,i)}<button class="pt-mini pri" style="margin:0" onclick="adCfgSave(this,${i})">Save</button>${f.isDefault?'':`<button class="pt-mini" style="margin:0" onclick="adCfgSave(this,${i},true)">Default</button>`}</div></div>`).join('')+'</div>';
+  const half=Math.ceil(groups.length/2);
+  let h=`<div class="panel"><div class="note" style="text-align:left;margin:0">Changes apply straight away and are posted to #log. Settings that move money, send private data or put links in front of buyers can only be changed in the Sheet.</div></div>`;
+  h+=`<div class="ad-cols"><div>${groups.slice(0,half).map(col).join('')}</div><div>${groups.slice(half).map(col).join('')}`+
+     `<div class="pt-h">🔒 Sheet only</div><div class="panel" style="padding:2px 12px">`+r.locked.map(x=>
+       `<div class="pt-row"><div class="l"><div class="t" style="font-size:13px">${esc(x.key)}</div><div class="s">${esc(x.why)}</div></div><div class="r" style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.value||'—')}</div></div>`).join('')+`</div></div></div>`;
+  adIn(h);
+}
+async function adCfgSave(btn,i,reset){
+  const f=AD.cfg&&AD.cfg.fields[i]; if(!f) return;
+  const v=reset?'':ptVal('ad-cf-'+i);
+  if(!reset&&v===''){ ptAlert('Type a value first.'); return; }
+  if(!(await ptConfirm(reset?`Put "${f.label}" back to its default (${f.def})?`:`Set "${f.label}" to ${v}?`))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminConfigSet',reset?{key:f.key,reset:true}:{key:f.key,value:v});
+    ptAlert(r.message||(r.ok?'Saved':ptErr(r)));
+    if(r.ok){ const n=await api('adminConfig',{live:1}); if(n&&n.ok){ AD.cfg=n; ptSave('adcfg',n); } adRenderConfig(); }
+  });
+}
 async function adLoadEvents(){
   AD.evLoading=true;
   const r=await api('adminEvents',AD.fresh?{live:1}:{});
   AD.evLoading=false;
   AD.events=(r&&r.ok)?r:{events:[],stuckHolds:null};
-  if(AD_TAB==='today'&&document.getElementById('ad-in')) adRenderToday();
+  if(AD_TAB==='shelf'&&document.getElementById('ad-in')) adRenderToday();
 }
-function adRenderToday(){
-  const d=AD.dash;
-  if(!d||!d.ok){ adIn(`<div class="empty"><p>${esc(ptErr(d))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
-  const y=window.scrollY;
-  const j=d.jobs||{}, s=d.stock||{}, m=d.money||{}, c=d.consign||{};
+// Dashboard and Shelf both come from the same D1 dashboard call.
+function adRenderToday(){ if(AD_TAB==='shelf') { if(AD.ssub==='lots') adRenderLots(); else adRenderShelf(); } else adRenderDash(); }
+function adBits(){
   const det=(kind,id,fn)=>{ const k=adKey(kind,id); if(!AD.open[k]) return ''; const r=AD.det[k];
     return `<div class="pt-form" style="margin:0 0 8px">${r?fn(r):'<div class="skelcard" style="height:80px"></div>'}</div>`; };
   const row=(kind,list,i,id,title,sub,right)=>`<div class="pt-row" style="cursor:pointer" onclick="adToggle('${kind}','${list}',${i})"><div class="l"><div class="t">${title}</div><div class="s">${sub}</div></div><div class="r">${right||''} ${AD.open[adKey(kind,id)]?'▾':'▸'}</div></div>`;
   const sec=(title,list,fmt,empty)=>`<div class="pt-h">${title} <span class="pt-tag">${(list||[]).length}</span></div>`+
     ((list&&list.length)?'<div class="panel" style="padding:4px 12px">'+list.map(fmt).join('')+'</div>':`<p class="note" style="text-align:left;margin:0 2px">${empty}</p>`);
+  return {det,row,sec};
+}
+function adFoot(d){
+  return `<p class="note">Refunds, cancels, strikes and restores stay in Telegram. ${esc(d.version||'')} · as of ${new Date(d.at||Date.now()).toLocaleTimeString()}${d.cached?' (cached)':''}
+      · <a href="#" onclick="AD.fresh=true;AD.det={};adLoad();return false">Refresh</a></p>`;
+}
+function adRenderDash(){
+  const d=AD.dash;
+  if(!d||!d.ok){ adIn(`<div class="empty"><p>${esc(ptErr(d))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
+  const y=window.scrollY, {det,row,sec}=adBits();
+  const j=d.jobs||{}, m=d.money||{}, c=d.consign||{};
   const dl=x=>x.delivery==='ship'?'📮':x.delivery==='pickup'?'🤝':'';
-  let h=adMoneyHtml(m);
+  let jobs='';
   if(AD.focus){
     const inList=['pack','ship','handover','overHold'].some(l=>(j[l]||[]).some(x=>x.id===AD.focus));
-    if(!inList) h+=`<div class="pt-h">Opened from Telegram</div><div class="panel" style="padding:4px 12px">`+
+    if(!inList) jobs+=`<div class="pt-h">Opened from Telegram</div><div class="panel" style="padding:4px 12px">`+
       `<div class="pt-row"><div class="l"><div class="t">📦 ${esc(AD.focus)}</div></div></div>`+det('box',AD.focus,adBoxHtml)+'</div>';
   }
-  h+=sec('To verify',j.verify,(v,i)=>row('ord','verify',i,v.id,`#${esc(v.id)}${v.postage?' <span class="pt-tag">postage</span>':''}`,`${esc(v.buyer)} · $${Number(v.total||0).toFixed(2)}${v.since?' · waiting since '+new Date(v.since).toLocaleString([], {day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):''}`)+det('ord',v.id,adOrderHtml),'Nothing waiting 🎉');
-  h+=sec('To pack',j.pack,(x,i)=>row('box','pack',i,x.id,`${dl(x)} ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} card${x.cards===1?'':'s'} · $${Number(x.value||0).toFixed(2)} · ${x.orders} order${x.orders>1?'s':''}`)+det('box',x.id,adBoxHtml),'Nothing to pack.');
-  h+=sec('To ship (postage paid)',j.ship,(x,i)=>row('box','ship',i,x.id,`📮 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml),'Nothing to ship.');
-  h+=sec('To hand over',j.handover,(x,i)=>row('box','handover',i,x.id,`🤝 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml),'No pickups waiting.');
-  h+=sec('Boxes past their hold',j.overHold,(x,i)=>row('box','overHold',i,x.id,esc(x.id),esc(x.buyer),`<span class="pt-neg">${x.days}d</span>`)+det('box',x.id,adBoxHtml),'None.');
-  h+=sec('Unpaid claim wins',j.claims,(x,i)=>row('ord','claims',i,x.id,`#${esc(x.id)}`,`${esc(x.buyer)} · $${Number(x.total||0).toFixed(2)}`,`${x.days}d`)+det('ord',x.id,adOrderHtml),'None.');
-  // D1 doesn't hold drops/auctions: those two come from Apps Script, a moment later.
+  jobs+=sec('To verify',j.verify,(v,i)=>row('ord','verify',i,v.id,`#${esc(v.id)}${v.postage?' <span class="pt-tag">postage</span>':''}`,`${esc(v.buyer)} · $${Number(v.total||0).toFixed(2)}${v.since?' · waiting since '+new Date(v.since).toLocaleString([], {day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):''}`)+det('ord',v.id,adOrderHtml),'Nothing waiting 🎉');
+  jobs+=sec('To pack',j.pack,(x,i)=>row('box','pack',i,x.id,`${dl(x)} ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} card${x.cards===1?'':'s'} · $${Number(x.value||0).toFixed(2)} · ${x.orders} order${x.orders>1?'s':''}`)+det('box',x.id,adBoxHtml),'Nothing to pack.');
+  if((j.pack||[]).length) jobs+=`<button class="pt-mini" style="margin:6px 0 0" onclick="adPickToggle()">🧭 Pick route for ${j.pack.length===1?'this box':'all '+j.pack.length+' boxes'} ${AD.pickOpen?'▾':'▸'}</button>`+
+    (AD.pickOpen?`<div class="pt-form" style="margin:6px 0 8px">${adPickHtml(AD.pick)}</div>`:'');
+  jobs+=sec('To ship (postage paid)',j.ship,(x,i)=>row('box','ship',i,x.id,`📮 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml),'Nothing to ship.');
+  jobs+=sec('To hand over',j.handover,(x,i)=>row('box','handover',i,x.id,`🤝 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml),'No pickups waiting.');
+  jobs+=sec('Boxes past their hold',j.overHold,(x,i)=>row('box','overHold',i,x.id,esc(x.id),esc(x.buyer),`<span class="pt-neg">${x.days}d</span>`)+det('box',x.id,adBoxHtml),'None.');
+  jobs+=sec('Unpaid claim wins',j.claims,(x,i)=>row('ord','claims',i,x.id,`#${esc(x.id)}`,`${esc(x.buyer)} · $${Number(x.total||0).toFixed(2)}`,`${x.days}d`)+det('ord',x.id,adOrderHtml),'None.');
+  const money=adMoneyHtml(m)+`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>`;
+  adIn(`<div class="ad-cols"><div>${jobs}</div><div>${money}</div></div>`+adFoot(d));
+  window.scrollTo(0,y);
+}
+function adRenderShelf(){
+  const d=AD.dash;
+  if(!d||!d.ok){ adIn(`<div class="empty"><p>${esc(ptErr(d))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
+  const y=window.scrollY, {det,row,sec}=adBits();
+  const s=d.stock||{};
+  // Drops/auctions come separately (D1 snapshot, else Apps Script).
   const evd=(s.events==null)?AD.events:{events:s.events,stuckHolds:s.stuckHolds};
   if(s.events==null&&!AD.events&&!AD.evLoading) adLoadEvents();
   const evList=evd?evd.events:null, stuckN=evd?evd.stuckHolds:null;
-  const sk=[['nophoto','On sale with no photo',s.noPhoto,''],['stuck','Stuck on a drop/auction hold',stuckN==null?'…':stuckN,'Held, but no live drop or auction has them'],
-            ['stale',`Listed over ${s.staleDays||60} days`,s.stale,'Candidates for the next drop or auction'],['below',`Priced under ${s.belowPct||80}% of market`,s.below,'Check before someone else does']];
-  h+=`<div class="pt-h">Stock · ${Number(s.onSale||0)} on sale · $${Number(s.stockValue||0).toFixed(0)}</div><div class="panel" style="padding:4px 12px">`+
+  const sk=[['nophoto','On sale with no photo',s.noPhoto,'Buyers skip cards without a photo'],
+            ['below',`Priced under ${s.belowPct||80}% of market`,s.below,'Check before someone else does'],
+            ['above',`Priced over ${s.abovePct||125}% of market`,s.above==null?'…':s.above,'Likely to sit — worth a look'],
+            ['stale',`Listed over ${s.staleDays||60} days`,s.stale,'Candidates for the next drop or auction'],
+            ['stuck','Stuck on a drop/auction hold',stuckN==null?'…':stuckN,'Held, but no live drop or auction has them']];
+  const stock=`<div class="pt-h">Stock · ${Number(s.onSale||0)} on sale · $${Number(s.stockValue||0).toFixed(0)}</div><div class="panel" style="padding:4px 12px">`+
     sk.map((x,i)=>row('stk','stock',i,x[0],x[1],x[3],`<span class="${x[2]&&x[2]!=='…'?'pt-neg':''}">${x[2]==='…'?'…':Number(x[2]||0)}</span>`)+det('stk',x[0],adStockHtml)).join('')+'</div>';
-  if(evList==null) h+=`<div class="pt-h">Open drops &amp; auctions</div><p class="note" style="text-align:left;margin:0 2px">Loading…</p>`;
-  else h+=sec('Open drops &amp; auctions',evList,(e,i)=>row('ev','events',i,e.kind+'-'+e.id,`${esc(e.short||'')} ${esc(e.title||'')}`,`${esc(e.kind)} · ${esc(e.state||'')} · ${Number(e.cards||0)} cards · ${Number(e.ageHrs||0)}h old`)+det('ev',e.kind+'-'+e.id,adEventHtml),'None open.');
-  h+=`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>
-    <p class="note">Refunds, cancels, strikes and restores stay in Telegram. ${esc(d.version||'')} · as of ${new Date(d.at||Date.now()).toLocaleTimeString()}${d.cached?' (cached)':''}
-      · <a href="#" onclick="AD.fresh=true;AD.det={};adLoad();return false">Refresh</a></p>`;
-  adIn(h);
+  let ev='';
+  if(evList==null) ev=`<div class="pt-h">Open drops &amp; auctions</div><p class="note" style="text-align:left;margin:0 2px">Loading…</p>`;
+  else ev=sec('Open drops &amp; auctions',evList,(e,i)=>row('ev','events',i,e.kind+'-'+e.id,`${e.kind==='auction'?'🔨':'🎯'} ${esc(e.short||'')} ${esc(e.title||'')}`,`${esc(e.state||'')} · ${Number(e.cards||0)} cards · ${Number(e.ageHrs||0)}h old`)+det('ev',e.kind+'-'+e.id,adEventHtml),'None open.')+
+    (evd&&evd.at?`<p class="note" style="text-align:left;margin:4px 2px">Drops &amp; auctions as of ${new Date(evd.at).toLocaleTimeString()} · <a href="#" onclick="adEventsLive();return false">Refresh</a></p>`:'');
+  adIn(`<div class="ad-cols"><div>${stock}</div><div>${ev}</div></div>`+adFoot(d));
   window.scrollTo(0,y);
+}
+async function adEventsLive(){
+  AD.evLoading=true; Object.keys(AD.det).forEach(k=>{ if(k.indexOf('ev:')===0) delete AD.det[k]; });
+  const r=await api('adminEvents',{live:1}); AD.evLoading=false;
+  if(r&&r.ok) AD.events=r;
+  if(AD_TAB==='shelf') adRenderToday();
+}
+
+/* ---- 📍 Lots (chaos storage) ----
+   Each Collectr import is one lot, filed unsorted behind a divider with its
+   code. Here: every lot and what's in it, cards in stock that aren't in a lot
+   yet (put them in one), and lots still listing cards that have gone. */
+function adLotCard(c){
+  c=c||{};
+  const idp=[c.set,c.number?('#'+c.number):'',c.variance].filter(Boolean).map(esc).join(' · ');
+  const cond=[c.grade?('Graded '+c.grade):'',c.condition||''].filter(Boolean).map(esc).join(', ');
+  return `${esc(c.name||'?')}${idp?` <span style="color:var(--hint);font-size:11.5px">(${idp})</span>`:''}${cond?` <span style="color:var(--hint);font-size:11.5px">${cond}</span>`:''}${c.photoKey?` <b style="color:var(--berry)">[#${esc(c.photoKey)}]</b>`:''}`;
+}
+function adLotTicked(){ return ((AD.lots&&AD.lots.unlocated)||[]).filter(u=>AD.lotTick[u.key]); }
+function adLotBtnText(){ const r=AD.lots||{}, tk=adLotTicked(), n=tk.length?tk.reduce((s,u)=>s+u.n,0):((r.totals||{}).unlocated||0); return `Put ${tk.length?n+' ticked':'all '+n} in this lot`; }
+function adLotTick(i,el){ const u=(AD.lots.unlocated||[])[i]; if(!u) return; AD.lotTick[u.key]=!!el.checked; const b=document.getElementById('ad-lotbtn'); if(b) b.textContent=adLotBtnText(); }
+function adRenderLots(){
+  const r=AD.lots;
+  if(!r||!r.ok){ adIn(`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
+  const y=window.scrollY, t=r.totals||{};
+  let a=`<div class="pt-h">📍 ${t.lots||0} lot${t.lots===1?'':'s'} · ${t.located||0} card${t.located===1?'':'s'} shelved</div>`;
+  if(!t.lots) a+=`<p class="note" style="text-align:left;margin:0 2px 6px">Every Collectr import now gets a lot code — the import receipt tells you which. File that stack behind a divider with the code, in any order. Put the cards you already have into <b>L0000</b> below.</p>`;
+  a+=`<div class="pt-h">Not in a lot <span class="pt-tag ${t.unlocated?'warn':''}">${t.unlocated||0}</span></div>`;
+  const un=r.unlocated||[];
+  if(un.length){
+    a+='<div class="panel" style="padding:4px 12px">'+un.slice(0,AD.lotShow).map((u,i)=>`<label class="pt-row" style="cursor:pointer"><div class="l"><div class="t">${adLotCard(u.card)}</div><div class="s">${u.n} cop${u.n===1?'y':'ies'}${u.card.portfolio?' · '+esc(u.card.portfolio):''}</div></div><div class="r"><input type="checkbox" style="width:20px;height:20px" ${AD.lotTick[u.key]?'checked':''} onchange="adLotTick(${i},this)"></div></label>`).join('')+'</div>';
+    if(un.length>AD.lotShow) a+=`<p class="note"><a href="#" onclick="AD.lotShow+=200;adRenderLots();return false">Show more (${un.length-AD.lotShow} more)</a></p>`;
+    a+=`<div class="pt-inl" style="margin-top:6px"><input id="ad-lotto" value="${esc(t.lots?(r.next||''):'L0000')}" autocapitalize="characters" maxlength="12" style="max-width:120px"><button id="ad-lotbtn" class="pt-mini pri" style="margin:0" onclick="adLotAssign(this)">${adLotBtnText()}</button></div>
+      <p class="note" style="text-align:left;margin:4px 2px">Tick some to put just those in; tick none for all. A new code starts a new lot.</p>`;
+  } else a+=`<p class="note" style="text-align:left;margin:0 2px">Every card in stock is in a lot 🎉</p>`;
+  const ov=r.over||[];
+  if(ov.length){
+    a+=`<div class="pt-h">In a lot, but not in stock <span class="pt-tag warn">${t.over||0}</span></div><p class="note" style="text-align:left;margin:0 2px 4px">Gone some other way (a refund after packing, a hand edit). Take it out of that lot, then tap −1.</p><div class="panel" style="padding:4px 12px">`+
+      ov.map((o,i)=>`<div class="pt-row"><div class="l"><div class="t">${adLotCard(o.card)}</div><div class="s">${o.n} extra · in ${o.lots.map(l=>esc(l.lot)+' ×'+l.qty).join(', ')}</div></div><div class="r" style="flex-wrap:wrap;justify-content:flex-end">${o.lots.map((l,j)=>`<button class="pt-mini" style="margin:2px" onclick="adLotAdjO(this,${i},${j})">−1 ${esc(l.lot)}</button>`).join('')}</div></div>`).join('')+'</div>';
+  }
+  let b=`<div class="pt-h">Lots <span class="pt-tag">${(r.lots||[]).length}</span></div>`;
+  if(!(r.lots||[]).length) b+=`<p class="note" style="text-align:left;margin:0 2px">No lots yet.</p>`;
+  else b+='<div class="panel" style="padding:4px 12px">'+r.lots.map(l=>{
+    const open=AD.lotOpen[l.lot], d=AD.det['lot:'+l.lot];
+    const when=l.created?new Date(l.created).toLocaleDateString([], {day:'numeric',month:'short',year:'2-digit'}):'';
+    let x=`<div class="pt-row" style="cursor:pointer" onclick="adLotOpen('${esc(l.lot)}')"><div class="l"><div class="t">📍 <b>${esc(l.lot)}</b></div><div class="s">${l.copies} card${l.copies===1?'':'s'} · ${l.cards} kind${l.cards===1?'':'s'}${when?' · '+when:''}${l.portfolio?' · '+esc(l.portfolio):''}${l.source&&l.source!=='import'?' · '+esc(l.source):''}</div></div><div class="r">${open?'▾':'▸'}</div></div>`;
+    if(open) x+=`<div class="pt-form" style="margin:0 0 8px">${!d?'<div class="skelcard" style="height:60px"></div>':!d.ok?`<p class="pt-err">${esc(ptErr(d))}</p>`:!d.lines.length?'<p class="note">Empty — everything in it has gone. You can reuse the divider.</p>':
+      d.lines.map((z,i)=>`<div class="pt-inl" style="margin:3px 0;align-items:center"><span style="font-size:13px;flex:1"><b>${z.n}×</b> ${adLotCard(z.card)}</span><button class="pt-mini" style="margin:0" onclick="adLotAdjL(this,'${esc(l.lot)}',${i},-1)">−1</button><button class="pt-mini" style="margin:0" onclick="adLotAdjL(this,'${esc(l.lot)}',${i},1)">+1</button></div>`).join('')}</div>`;
+    return x;
+  }).join('')+'</div>';
+  adIn(`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. · <a href="#" onclick="AD.fresh=true;AD.det={};adLoad();return false">Refresh</a></p>`);
+  window.scrollTo(0,y);
+}
+async function adLotsLive(){ const r=await api('adminLots',{live:1}); if(r&&r.ok){ AD.lots=r; ptSave('adlots',r); } if(AD_TAB==='shelf'&&AD.ssub==='lots') adRenderLots(); }
+async function adLotOpen(code){
+  if(AD.lotOpen[code]){ delete AD.lotOpen[code]; adRenderLots(); return; }
+  AD.lotOpen[code]=1; adRenderLots();
+  AD.det['lot:'+code]=await api('adminLot',{lot:code});
+  if(AD.lotOpen[code]&&AD_TAB==='shelf'&&AD.ssub==='lots') adRenderLots();
+}
+async function adLotAssign(btn){
+  const lot=ptVal('ad-lotto').toUpperCase().replace(/\s+/g,'');
+  if(!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(lot)){ ptAlert('Lot codes are letters, numbers and dashes (up to 12), e.g. L0000 or BIN3.'); return; }
+  const tk=adLotTicked();
+  const n=tk.length?tk.reduce((s,u)=>s+u.n,0):((AD.lots.totals||{}).unlocated||0);
+  if(!(await ptConfirm(`Put ${n} card${n===1?'':'s'} in lot ${lot}? File them behind a divider marked ${lot}.`))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminLotAssign',tk.length?{lot:lot,keys:tk.map(u=>u.key)}:{lot:lot});
+    ptAlert(r.message||(r.ok?'Done':ptErr(r)));
+    if(r.ok){ AD.lotTick={}; delete AD.det['lot:'+lot]; await adLotsLive(); }
+  });
+}
+async function adLotAdj(btn,lot,key,delta){
+  await guard(btn, async()=>{
+    const r=await api('adminLotAdjust',{lot:lot,key:key,delta:delta});
+    if(!r.ok) ptAlert(r.message||ptErr(r));
+    if(AD.lotOpen[lot]) AD.det['lot:'+lot]=await api('adminLot',{lot:lot,live:1}); else delete AD.det['lot:'+lot];
+    await adLotsLive();
+  });
+}
+function adLotAdjO(btn,i,j){ const o=(AD.lots.over||[])[i]; const l=o&&o.lots[j]; if(l) adLotAdj(btn,l.lot,o.key,-1); }
+function adLotAdjL(btn,lot,i,delta){ const d=AD.det['lot:'+lot]; const z=d&&d.lines&&d.lines[i]; if(z) adLotAdj(btn,lot,z.key,delta); }
+// Dashboard: one walk of the shelf for every box waiting to be packed.
+async function adPickToggle(){
+  AD.pickOpen=!AD.pickOpen; if(AD.pickOpen) AD.pick=null; adRenderDash();
+  if(AD.pickOpen){ AD.pick=await api('adminPick',AD.fresh?{live:1}:{}); if(AD.pickOpen&&AD_TAB==='dash') adRenderDash(); }
+}
+function adPickHtml(r){
+  if(!r) return '<div class="skelcard" style="height:80px"></div>';
+  if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
+  if(!r.lines.length) return '<p class="note">Nothing to pull.</p>';
+  let h=`<div class="s" style="font-size:12px">${r.cards} card${r.cards===1?'':'s'} for ${r.boxes} box${r.boxes===1?'':'es'}, in shelf order.${r.unlocated?` <span class="pt-neg">${r.unlocated} not in a lot</span>`:''}</div>`, last=null;
+  r.lines.forEach(l=>{
+    if(l.lot!==last){ last=l.lot; h+=`<div class="pt-h" style="margin-top:8px">${l.lot?'📍 '+esc(l.lot):'❓ Not in a lot'}</div>`; }
+    h+=`<div style="font-size:13px;padding:3px 0">${l.n>1?'<b>'+l.n+'×</b> ':''}${adLotCard(l.card)} → <b>${esc(l.box)}</b></div>`;
+  });
+  return h;
 }
 
 function adRenderConsign(){
@@ -6819,7 +7025,7 @@ async function adRatesSave(btn){
     const r=await api('adminRatesSave',{rates:AD.edit});
     if(!r.ok){ const el=document.getElementById('ad-rerr'); if(el) el.textContent=(r.errors||[]).join('\n')||ptErr(r); ptAlert(ptErr(r)); return; }
     ptAlert(r.message||'Saved');
-    AD.rates=await api('adminRates'); AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates();
+    AD.rates=await api('adminRates',{live:1}); ptSave('adrates',AD.rates); AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates();
   });
 }
 async function adRatesReset(btn){
@@ -6827,7 +7033,7 @@ async function adRatesReset(btn){
   await guard(btn, async()=>{
     const r=await api('adminRatesSave',{reset:true});
     ptAlert(r.ok?(r.message||'Reset'):ptErr(r));
-    AD.rates=await api('adminRates'); AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates();
+    AD.rates=await api('adminRates',{live:1}); ptSave('adrates',AD.rates); AD.edit=AD.rates&&AD.rates.ok?JSON.parse(JSON.stringify(AD.rates.rates)):null; adRenderRates();
   });
 }
 
