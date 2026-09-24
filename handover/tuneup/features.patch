@@ -1,0 +1,76 @@
+--- a/index.html
++++ b/index.html
+@@ -1747,6 +1747,16 @@
+ /* 7 · card view: smaller scale gap, snappier */
+ .cv-panel{transform:scale(.96);transition:transform 200ms cubic-bezier(.23,1,.32,1)}
+ .cv-scrim,.cardview{transition-duration:150ms}
++
++/* ===== FloofMart proposed features ===== */
++.pcard .img .jnew{left:8px;right:auto;top:auto;bottom:8px}
++.fly{position:fixed;z-index:9999;pointer-events:none;border-radius:10px;box-shadow:0 8px 20px rgba(90,58,78,.3)}
++.cv-inner{transition:transform 400ms cubic-bezier(.23,1,.32,1)}
++.cv-card.tilting .cv-inner{transition:transform 80ms linear}
++.cv-card .sheen{position:absolute;inset:0;border-radius:12px;pointer-events:none;mix-blend-mode:color-dodge;opacity:0;transition:opacity 300ms ease;z-index:2;
++  background:radial-gradient(circle at var(--mx,50%) var(--my,30%),rgba(255,255,255,.55),transparent 42%),
++  linear-gradient(115deg,transparent 22%,rgba(255,140,220,.35) 42%,rgba(140,220,255,.35) 56%,transparent 76%)}
++.cv-card.tilting .sheen{opacity:.8}
+ </style>
+ </head>
+ <body>
+@@ -3219,7 +3229,7 @@
+         (c.imageType==='stock'?'<div class="stockflag">stock image</div>':'')+
+         (faces.length?'':'<div class="stockflag" style="background:#c2405e">no photo</div>')+
+         (stockTag?'<div class="stock-tag">'+stockTag+'</div>':'')+
+-        (soldOut?'<div class="soldout">Claimed</div>':'')+'</div>'+
++        (soldOut?'<div class="soldout">Claimed</div>':'')+((window.FM_isNew&&FM_isNew(c))?'<span class="jnew">NEW</span>':'')+'</div>'+
+       '<div class="body">'+
+         '<div class="rar">'+esc(rarityLabel(c))+'</div>'+
+         '<div class="nm">'+esc(c.name)+'</div>'+
+@@ -6568,5 +6578,47 @@
+   addEventListener('DOMContentLoaded',()=>{ tag(); switches(); syncChrome(); });
+ })();
+ </script>
++<script>
++/* ===== FloofMart proposed features ===== */
++(function(){
++  const reduced=()=>document.documentElement.getAttribute('data-motion')==='reduced';
++  // F1 · "New since your last visit": cards added after this person's previous visit get the NEW tag.
++  // First visit shows none. The time is saved whenever the app is hidden, through _store (CloudStorage + localStorage).
++  let LAST_SEEN=0;
++  try{ if(typeof _load==='function') _load('fm_last_seen',v=>{ LAST_SEEN=+v||0; if(typeof renderStore==='function') renderStore(); }); }catch(e){}
++  window.FM_isNew=c=>LAST_SEEN>0&&Number(c&&c.dateAdded)>LAST_SEEN;
++  const markSeen=()=>{ try{ if(typeof _store==='function') _store('fm_last_seen',String(Date.now())); }catch(e){} };
++  document.addEventListener('visibilitychange',()=>{ if(document.hidden) markSeen(); });
++  addEventListener('pagehide',markSeen);
++  // F2 · Fly-to-cart: the card photo travels to the Cart tab, so you see where it went.
++  const _add=window.addToCart;
++  window.addToCart=function(id){
++    try{ if(!reduced()){
++      const src=document.querySelector('.pcard[onclick*="'+id+'"] .img img')||document.querySelector('#cardView .cv-front img');
++      const dst=document.querySelector('.nav [data-t="cart"]');
++      if(src&&dst){ const a=src.getBoundingClientRect(), b=dst.getBoundingClientRect();
++        const f=src.cloneNode(); f.className='fly'; Object.assign(f.style,{left:a.left+'px',top:a.top+'px',width:a.width+'px',height:a.height+'px'});
++        document.body.appendChild(f);
++        const dx=b.left+b.width/2-(a.left+a.width/2), dy=b.top+b.height/2-(a.top+a.height/2);
++        f.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${dx}px,${dy}px) scale(.12)`,opacity:.4}],
++          {duration:560,easing:'cubic-bezier(.77,0,.175,1)'}).onfinish=()=>f.remove(); } }
++    }catch(e){}
++    return _add.apply(this,arguments);
++  };
++  // F3 · Holo tilt on rare cards in the card view (pointer here; gyroscope via Telegram DeviceOrientation in the app).
++  const RARE=/illustration|special art|secret|mega attack|hyper/i;
++  document.addEventListener('pointermove',e=>{
++    const card=e.target.closest&&e.target.closest('#cardView .cv-card'); if(!card||reduced()) return;
++    if(!card.dataset.rare){ const nm=(document.querySelector('#cardView .cv-tag')||{}).textContent||''; card.dataset.rare=RARE.test(nm)?'1':'0';
++      if(card.dataset.rare==='1'&&!card.querySelector('.sheen')){ const s=document.createElement('div'); s.className='sheen'; card.appendChild(s);} }
++    if(card.dataset.rare!=='1') return;
++    const r=card.getBoundingClientRect(), x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
++    card.classList.add('tilting'); card.querySelector('.cv-inner').style.transform=`rotateY(${(x-.5)*18}deg) rotateX(${(.5-y)*18}deg)`+(card.classList.contains('flipped')?' rotateY(180deg)':'');
++    card.style.setProperty('--mx',x*100+'%'); card.style.setProperty('--my',y*100+'%');
++  });
++  document.addEventListener('pointerout',e=>{ const card=e.target.closest&&e.target.closest('#cardView .cv-card'); if(!card||card.contains(e.relatedTarget)) return;
++    card.classList.remove('tilting'); const i=card.querySelector('.cv-inner'); if(i) i.style.transform=''; });
++})();
++</script>
+ </body>
+ </html>
