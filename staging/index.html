@@ -2803,7 +2803,11 @@ const PORTAL_API_URL = IS_STAGING
   : "https://fluffmart-portal.shrimaniac.workers.dev/api";
 const PORTAL_READS = {consignMe:1,consignInfo:1,adminDash:1,adminBox:1,adminOrder:1,adminStock:1,adminConsignors:1,adminConsignor:1,adminMoney:1,adminRates:1,adminConfig:1,adminEvents:1,adminEvent:1,adminLots:1,adminLot:1,adminPick:1};
 let PORTAL_DOWN=false;
-async function api(action, payload={}){
+/* v13.15: the server said "no sign-in" although this request carried one -- it was
+   lost on the way. The server checks sign-in BEFORE doing anything, so nothing ran:
+   send it once more, quietly, before asking anyone to reopen the shop. */
+const apiLostSignin=(out,initData,retried)=>!retried&&!!initData&&!!out&&out.error==='auth_failed'&&(out.why==='no_initdata'||out.why==='error');
+async function api(action, payload={}, _retried){
   if(!API_URL){ return mock(action,payload); }
   const initData = tg ? tg.initData : '';
   if(PORTAL_API_URL && PORTAL_READS[action] && !payload.live && !PORTAL_DOWN){
@@ -2811,7 +2815,9 @@ async function api(action, payload={}){
       const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),20000);
       const pr=await fetch(PORTAL_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action, initData, ...payload}),signal:ctl.signal});
       clearTimeout(tm);
-      if(pr.ok){ const out=JSON.parse(await pr.text()); if(out && out.error==='auth_failed') onAuthExpired(out.why); return out; }
+      if(pr.ok){ const out=JSON.parse(await pr.text());
+        if(apiLostSignin(out,initData,_retried)){ await new Promise(r=>setTimeout(r,400)); return api(action,payload,true); }
+        if(out && out.error==='auth_failed') onAuthExpired(out.why); return out; }
     }catch(e){}
     PORTAL_DOWN=true;   // not deployed / unreachable: use the shop Worker from here on
   }
@@ -2826,6 +2832,7 @@ async function api(action, payload={}){
     // Not JSON — surface the first slice so we can see what actually came back.
     return { ok:false, error:'nonjson', status:res.status, raw:String(raw).slice(0,400) };
   }
+  if(apiLostSignin(out,initData,_retried)){ await new Promise(r=>setTimeout(r,400)); return api(action,payload,true); }
   if(out && out.error==='auth_failed') onAuthExpired(out.why);
   else if(out && out._auth && action==='overview') onAuthExpired(out._auth);
   return out;
@@ -2844,7 +2851,9 @@ const AUTH_MSGS={
 function onAuthExpired(why){
   if(AUTH_WARNED) return; AUTH_WARNED=true;
   const m=AUTH_MSGS[why]||AUTH_MSGS.expired;
-  (tg&&tg.showAlert)?tg.showAlert(m):alert(m);
+  // v13.15: tg.showAlert THROWS on older Telegram apps, which cancelled the request
+  // this warning was about. ptAlert falls back to the browser's own dialog.
+  try{ ptAlert(m); }catch(e){ try{ alert(m); }catch(x){} }
 }
 function mock(action,p){
   if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:40,shipFlat:3,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping — free over S$40',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FloofMartBot?start=ref_1',openParcel:null,unpaidOrders:0};
@@ -6379,7 +6388,7 @@ async function ptOpenBoxLink(){
   const pid=ptBoxParam(); if(!pid) return;
   PT_BOX_DONE=true;
   const k=adKey('box',pid);
-  AD.focus=pid; AD.open[k]=1; AD_TAB='dash';
+  AD.focus=pid; AD.open[k]='focus'; AD_TAB='dash';
   openAdmin();
   AD.det[k]=await api('adminBox',{id:pid});
   if(AD_TAB==='dash') adRenderToday();
@@ -6525,6 +6534,7 @@ async function adLoad(){
     AD.fresh=false;
     if(!still()) return; ptUpd('ad-upd',false);
     if(r&&r.ok || !(AD.dash&&AD.dash.ok)){ AD.dash=r; adRenderToday(); }
+    adRefetchOpen();
   }
   else if(tab==='shelf'&&AD.ssub==='events'){   // 🎯 Events
     const saved=!AD.fresh&&(AD.events&&AD.events.ok?AD.events:ptLoad('adevents'));
@@ -6545,6 +6555,7 @@ async function adLoad(){
     AD.fresh=false;
     if(!still()) return; ptUpd('ad-upd',false);
     if((r&&r.ok) || !(AD.lots&&AD.lots.ok)){ AD.lots=r; adRenderLots(); }
+    Object.keys(AD.lotOpen).forEach(code=>{ if(!AD.det['lot:'+code]) api('adminLot',{lot:code}).then(x=>{ AD.det['lot:'+code]=x; if(AD_TAB==='shelf'&&AD.ssub==='lots') adRenderLots(); }).catch(()=>{}); });
   }
   else if(tab==='consign'&&AD.csub==='rates'){
     const saved=AD.rates&&AD.rates.ok?AD.rates:ptLoad('adrates');
@@ -6595,18 +6606,50 @@ function adOpenLink(i){ const v=AD.dash&&AD.dash.jobs&&AD.dash.jobs.verify[i]; i
    behind a stock count. Loaded on tap, so Today itself stays quick. */
 AD.open={}; AD.det={}; AD.ticks={};
 function adKey(kind,id){ return kind+':'+id; }
+/* v13.15: an expandable line carries ids on its arrow and its detail box, so
+   opening, closing and filling it touch only that line -- not the whole tab
+   (which recreated every thumbnail and lost your place each time). */
+function adDom(s){ return String(s).replace(/[^A-Za-z0-9_-]/g,'_'); }
+function adXArrow(dom,open){ return `<span id="xa-${dom}">${open?'▾':'▸'}</span>`; }
+function adXBox(dom,html){ return `<div id="xd-${dom}">${html||''}</div>`; }
+function adXSet(dom,open,html){ const a=document.getElementById('xa-'+dom), b=document.getElementById('xd-'+dom); if(!a||!b) return false; a.textContent=open?'▾':'▸'; b.innerHTML=open?(html||''):''; return true; }
+/* v13.15: a line remembers WHICH list it is open in. A box can sit in two lists at
+   once (To pack and To ship); it used to open in both, with two tracking-number
+   fields of the same id -- so Mark shipped could read the empty one. Now it opens
+   in one place, and tapping it in the other list moves it there. */
 async function adToggle(kind,list,i){
   const src=adSrc(list,i); if(!src) return;
   const k=adKey(kind,src.id);
-  if(AD.open[k]){ delete AD.open[k]; adRenderToday(); return; }
-  AD.open[k]=1; adRenderToday();
-  if(!AD.det[k]){
-    const act={box:'adminBox',ord:'adminOrder',stk:'adminStock',ev:'adminEvent'}[kind];
-    const pl=kind==='stk'?{kind:src.id}:kind==='ev'?{kind:src.kind,id:src.evId}:{id:src.id};
-    AD.det[k]=await api(act,pl);
-    if(AD.open[k]) adRenderToday();
-  }
+  const prev=AD.open[k];
+  if(prev===list){ delete AD.open[k]; if(!adXSet(adDom(list+'|'+k),false)) adRenderToday(); return; }
+  if(prev) adXSet(adDom(prev+'|'+k),false);            // open in another list: close it there
+  AD.open[k]=list;
+  if(!adXSet(adDom(list+'|'+k),true,adDetHtml(k))) adRenderToday();
+  if(!AD.det[k]) await adFetchDet(k,src);
 }
+const AD_DET_ACT={box:'adminBox',ord:'adminOrder',stk:'adminStock',ev:'adminEvent',mny:'adminMoney'};
+AD.detLoading={};
+async function adFetchDet(k,src){
+  const cut=k.indexOf(':'), kind=k.slice(0,cut), id=k.slice(cut+1), act=AD_DET_ACT[kind];
+  if(!act||AD.detLoading[k]) return;
+  let pl;
+  if(kind==='stk') pl={kind:id};
+  else if(kind==='mny'){ const b=id.indexOf('|'); pl={period:id.slice(0,b),source:id.slice(b+1)}; }
+  else if(kind==='ev'){ if(!src) return; pl={kind:src.kind,id:src.evId}; }
+  else pl={id};
+  AD.detLoading[k]=1;
+  try{ AD.det[k]=await api(act,pl); }catch(e){ AD.det[k]={ok:false,error:'network'}; }
+  finally{ delete AD.detLoading[k]; }
+  adPaintDet(k);
+}
+const AD_DET_FN={box:b=>adBoxHtml(b),ord:o=>adOrderHtml(o),stk:x=>adStockHtml(x),ev:e=>adEventHtml(e),mny:m=>adMoneyRowsHtml(m)};
+function adDetHtml(k){ const kind=k.slice(0,k.indexOf(':')), r=AD.det[k];
+  return `<div class="pt-form" style="margin:0 0 8px">${r?AD_DET_FN[kind](r):'<div class="skelcard" style="height:'+(kind==='mny'?60:80)+'px"></div>'}</div>`; }
+// Fill ONE open line with its detail (or redraw the tab if that line isn't on screen).
+function adPaintDet(k){ const l=AD.open[k]; if(!l) return; if(!adXSet(adDom(l+'|'+k),true,adDetHtml(k))) adRenderToday(); }
+/* After coming back to a tab, or Refresh, the details were dropped but the lines
+   stayed open -- and nothing fetched them again, so they spun forever. */
+function adRefetchOpen(){ Object.keys(AD.open).forEach(k=>{ if(!AD.det[k]) adFetchDet(k); }); }
 function adSrc(list,i){
   const d=AD.dash||{}, j=d.jobs||{}, s=d.stock||{};
   if(list==='stock') return {id:['nophoto','below','above','stale','stuck'][i]};
@@ -6734,7 +6777,7 @@ function adMoneyHtml(m){
       <div class="pstat"><div class="pn">$${Number(m&&m.month||0).toFixed(0)}</div><div class="pl">This month</div></div></div>`;
   }
   const cur=AD.mp||'month', P=m.periods[cur]||{sources:[]};
-  const tile=(k,lab)=>`<button class="pstat" style="cursor:pointer;${k===cur?'border:2px solid var(--berry)':''}" onclick="AD.mp='${k}';adRenderToday()"><div class="pn">$${Number(m.periods[k].sales||0).toFixed(0)}</div><div class="pl">${lab}</div></button>`;
+  const tile=(k,lab)=>`<button class="pstat" style="cursor:pointer;${k===cur?'border:2px solid var(--berry)':''}" onclick="AD.mp='${k}';adPaintMoney()"><div class="pn">$${Number(m.periods[k].sales||0).toFixed(0)}</div><div class="pl">${lab}</div></button>`;
   let h=`<div class="pt-stats">${tile('today','Today')}${tile('week','7 days')}${tile('month','This month')}</div>`;
   h+=`<div class="panel" style="padding:4px 12px"><div class="pt-row"><div class="l"><div class="t">${AD_MP_LABEL[cur]}: $${Number(P.sales).toFixed(2)}</div>
       <div class="s">${P.count} sale${P.count===1?'':'s'} · profit ${adMoneyStr(P.profit)}${P.refunds?` · refunds −$${Math.abs(P.refunds).toFixed(2)}`:''}</div></div></div>`;
@@ -6743,23 +6786,27 @@ function adMoneyHtml(m){
     const k=adKey('mny',cur+'|'+sr.key);
     h+=`<div class="pt-row" style="cursor:pointer" onclick="adMoneyToggle(${i})"><div class="l"><div class="t">${esc(sr.label)}</div>
         <div class="s">${sr.count} line${sr.count===1?'':'s'}${sr.out?' · money out — not in sales':' · profit '+adMoneyStr(sr.profit)}</div></div>
-        <div class="r ${sr.out||sr.amount<0?'pt-neg':''}">${sr.amount<0?'−':''}$${Math.abs(sr.amount).toFixed(2)} ${AD.open[k]?'▾':'▸'}</div></div>`+
-       (AD.open[k]?`<div class="pt-form" style="margin:0 0 8px">${AD.det[k]?adMoneyRowsHtml(AD.det[k]):'<div class="skelcard" style="height:60px"></div>'}</div>`:'');
+        <div class="r ${sr.out||sr.amount<0?'pt-neg':''}">${sr.amount<0?'−':''}$${Math.abs(sr.amount).toFixed(2)} ${adXArrow(adDom('money|'+k),!!AD.open[k])}</div></div>`+
+       adXBox(adDom('money|'+k),AD.open[k]?adDetHtml(k):'');
   });
   const ka=adKey('mny',cur+'|');
-  h+=`<div class="pt-row" style="cursor:pointer" onclick="adMoneyToggle(-1)"><div class="l"><div class="t">Every line</div><div class="s">All sales, refunds and buybacks, newest first</div></div><div class="r">${AD.open[ka]?'▾':'▸'}</div></div>`+
-     (AD.open[ka]?`<div class="pt-form" style="margin:0 0 8px">${AD.det[ka]?adMoneyRowsHtml(AD.det[ka]):'<div class="skelcard" style="height:60px"></div>'}</div>`:'');
+  h+=`<div class="pt-row" style="cursor:pointer" onclick="adMoneyToggle(-1)"><div class="l"><div class="t">Every line</div><div class="s">All sales, refunds and buybacks, newest first</div></div><div class="r">${adXArrow(adDom('money|'+ka),!!AD.open[ka])}</div></div>`+
+     adXBox(adDom('money|'+ka),AD.open[ka]?adDetHtml(ka):'');
   if(cur==='month'&&m.costMissing) h+=`<p class="note" style="text-align:left">${m.costMissing} sale${m.costMissing>1?'s':''} this month had no cost recorded, so their profit is the full price.</p>`;
   return h+'</div>';
 }
+// Today / 7 days / This month: redraw only the money panel.
+function adPaintMoney(){ const el=document.getElementById('ad-money'), m=AD.dash&&AD.dash.money; if(el&&m) el.innerHTML=adMoneyHtml(m); else adRenderToday(); }
 async function adMoneyToggle(i){
   const m=AD.dash&&AD.dash.money; if(!m||!m.periods) return;
   const cur=AD.mp||'month', sr=i<0?null:(m.periods[cur].sources||[])[i];
   if(i>=0&&!sr) return;
   const k=adKey('mny',cur+'|'+(sr?sr.key:''));
-  if(AD.open[k]){ delete AD.open[k]; adRenderToday(); return; }
-  AD.open[k]=1; adRenderToday();
-  if(!AD.det[k]){ AD.det[k]=await api('adminMoney',{period:cur,source:sr?sr.key:''}); if(AD.open[k]) adRenderToday(); }
+  const dom=adDom('money|'+k);
+  if(AD.open[k]){ delete AD.open[k]; if(!adXSet(dom,false)) adRenderToday(); return; }
+  AD.open[k]='money';
+  if(!adXSet(dom,true,adDetHtml(k))) adRenderToday();
+  if(!AD.det[k]) await adFetchDet(k);
 }
 function adMoneyRowsHtml(r){
   if(!r||!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
@@ -6820,9 +6867,8 @@ async function adLoadEvents(){
 // Dashboard and Shelf both come from the same D1 dashboard call.
 function adRenderToday(){ if(AD_TAB==='shelf') { if(AD.ssub==='lots') adRenderLots(); else if(AD.ssub==='events') adRenderEvents(); else adRenderShelf(); } else adRenderDash(); }
 function adBits(){
-  const det=(kind,id,fn)=>{ const k=adKey(kind,id); if(!AD.open[k]) return ''; const r=AD.det[k];
-    return `<div class="pt-form" style="margin:0 0 8px">${r?fn(r):'<div class="skelcard" style="height:80px"></div>'}</div>`; };
-  const row=(kind,list,i,id,title,sub,right)=>`<div class="pt-row" style="cursor:pointer" onclick="adToggle('${kind}','${list}',${i})"><div class="l"><div class="t">${title}</div><div class="s">${sub}</div></div><div class="r">${right||''} ${AD.open[adKey(kind,id)]?'▾':'▸'}</div></div>`;
+  const det=(kind,id,fn,list)=>{ const k=adKey(kind,id); return adXBox(adDom(list+'|'+k), AD.open[k]===list?adDetHtml(k):''); };
+  const row=(kind,list,i,id,title,sub,right)=>`<div class="pt-row" style="cursor:pointer" onclick="adToggle('${kind}','${list}',${i})"><div class="l"><div class="t">${title}</div><div class="s">${sub}</div></div><div class="r">${right||''} ${adXArrow(adDom(list+'|'+adKey(kind,id)),AD.open[adKey(kind,id)]===list)}</div></div>`;
   const sec=(title,list,fmt,empty)=>`<div class="pt-h">${title} <span class="pt-tag">${(list||[]).length}</span></div>`+
     ((list&&list.length)?'<div class="panel" style="padding:4px 12px">'+list.map(fmt).join('')+'</div>':`<p class="note" style="text-align:left;margin:0 2px">${empty}</p>`);
   return {det,row,sec};
@@ -6839,24 +6885,25 @@ function adRenderDash(){
   const dl=x=>x.delivery==='ship'?'📮':x.delivery==='pickup'?'🤝':'';
   let jobs='';
   if(AD.focus){
-    const inList=['pack','ship','handover','overHold'].some(l=>(j[l]||[]).some(x=>x.id===AD.focus));
+    const fk=adKey('box',AD.focus), inL=['pack','ship','handover','overHold'].find(l=>(j[l]||[]).some(x=>x.id===AD.focus)), inList=!!inL;
+    if(inL&&AD.open[fk]==='focus') AD.open[fk]=inL;
     if(!inList) jobs+=`<div class="pt-h">Opened from Telegram</div><div class="panel" style="padding:4px 12px">`+
-      `<div class="pt-row"><div class="l"><div class="t">📦 ${esc(AD.focus)}</div></div></div>`+det('box',AD.focus,adBoxHtml)+'</div>';
+      `<div class="pt-row"><div class="l"><div class="t">📦 ${esc(AD.focus)}</div></div></div>`+det('box',AD.focus,adBoxHtml,'focus')+'</div>';
   }
-  jobs+=sec('To verify',j.verify,(v,i)=>row('ord','verify',i,v.id,`#${esc(v.id)}${v.postage?' <span class="pt-tag">postage</span>':''}`,`${esc(v.buyer)} · $${Number(v.total||0).toFixed(2)}${v.since?' · waiting since '+new Date(v.since).toLocaleString([], {day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):''}`)+det('ord',v.id,adOrderHtml),'Nothing waiting 🎉');
+  jobs+=sec('To verify',j.verify,(v,i)=>row('ord','verify',i,v.id,`#${esc(v.id)}${v.postage?' <span class="pt-tag">postage</span>':''}`,`${esc(v.buyer)} · $${Number(v.total||0).toFixed(2)}${v.since?' · waiting since '+new Date(v.since).toLocaleString([], {day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):''}`)+det('ord',v.id,adOrderHtml,'verify'),'Nothing waiting 🎉');
   // v13.15: pull first, then pack. The one walk of the shelf for every box sits
   // ABOVE the boxes, in the order the job is actually done.
   const pk=j.pack||[];
   jobs+=`<div class="pt-h">To pack <span class="pt-tag">${pk.length}</span></div>`;
   if(pk.length) jobs+=`<button class="pt-mini big" style="margin:0 0 8px" onclick="adPickToggle()">🧭 Pick route — ${pk.length===1?'this box':'all '+pk.length+' boxes'} ${AD.pickOpen?'▾':'▸'}</button>`+
     (AD.pickOpen?`<div class="pt-form" id="ad-pick" style="margin:0 0 8px">${adPickHtml(AD.pick)}</div>`:'');
-  jobs+=pk.length?'<div class="panel" style="padding:4px 12px">'+pk.map((x,i)=>row('box','pack',i,x.id,`${dl(x)} ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} card${x.cards===1?'':'s'} · $${Number(x.value||0).toFixed(2)} · ${x.orders} order${x.orders>1?'s':''}`)+det('box',x.id,adBoxHtml)).join('')+'</div>'
+  jobs+=pk.length?'<div class="panel" style="padding:4px 12px">'+pk.map((x,i)=>row('box','pack',i,x.id,`${dl(x)} ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} card${x.cards===1?'':'s'} · $${Number(x.value||0).toFixed(2)} · ${x.orders} order${x.orders>1?'s':''}`)+det('box',x.id,adBoxHtml,'pack')).join('')+'</div>'
     :'<p class="note" style="text-align:left;margin:0 2px">Nothing to pack.</p>';
-  jobs+=sec('To ship (postage paid)',j.ship,(x,i)=>row('box','ship',i,x.id,`📮 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml),'Nothing to ship.');
-  jobs+=sec('To hand over',j.handover,(x,i)=>row('box','handover',i,x.id,`🤝 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml),'No pickups waiting.');
-  jobs+=sec('Boxes past their hold',j.overHold,(x,i)=>row('box','overHold',i,x.id,esc(x.id),esc(x.buyer),`<span class="pt-neg">${x.days}d</span>`)+det('box',x.id,adBoxHtml),'None.');
-  jobs+=sec('Unpaid claim wins',j.claims,(x,i)=>row('ord','claims',i,x.id,`#${esc(x.id)}`,`${esc(x.buyer)} · $${Number(x.total||0).toFixed(2)}`,`${x.days}d`)+det('ord',x.id,adOrderHtml),'None.');
-  const money=adMoneyHtml(m)+`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>`;
+  jobs+=sec('To ship (postage paid)',j.ship,(x,i)=>row('box','ship',i,x.id,`📮 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml,'ship'),'Nothing to ship.');
+  jobs+=sec('To hand over',j.handover,(x,i)=>row('box','handover',i,x.id,`🤝 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml,'handover'),'No pickups waiting.');
+  jobs+=sec('Boxes past their hold',j.overHold,(x,i)=>row('box','overHold',i,x.id,esc(x.id),esc(x.buyer),`<span class="pt-neg">${x.days}d</span>`)+det('box',x.id,adBoxHtml,'overHold'),'None.');
+  jobs+=sec('Unpaid claim wins',j.claims,(x,i)=>row('ord','claims',i,x.id,`#${esc(x.id)}`,`${esc(x.buyer)} · $${Number(x.total||0).toFixed(2)}`,`${x.days}d`)+det('ord',x.id,adOrderHtml,'claims'),'None.');
+  const money=`<div id="ad-money">${adMoneyHtml(m)}</div>`+`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>`;
   adIn(`<div class="ad-cols"><div>${jobs}</div><div>${money}</div></div>`+adFoot(d));
   window.scrollTo(0,y);
 }
@@ -6875,7 +6922,7 @@ function adRenderShelf(){
             ['stale',`Listed over ${s.staleDays||60} days`,s.stale,'Candidates for the next drop or auction'],
             ['stuck','Stuck on a drop/auction hold',stuckN==null?'…':stuckN,'Held, but no live drop or auction has them']];
   const stock=`<div class="pt-h">Stock · ${Number(s.onSale||0)} on sale · $${Number(s.stockValue||0).toFixed(0)}</div><div class="panel" style="padding:4px 12px">`+
-    sk.map((x,i)=>row('stk','stock',i,x[0],x[1],x[3],`<span class="${x[2]&&x[2]!=='…'?'pt-neg':''}">${x[2]==='…'?'…':Number(x[2]||0)}</span>`)+det('stk',x[0],adStockHtml)).join('')+'</div>';
+    sk.map((x,i)=>row('stk','stock',i,x[0],x[1],x[3],`<span class="${x[2]&&x[2]!=='…'?'pt-neg':''}">${x[2]==='…'?'…':Number(x[2]||0)}</span>`)+det('stk',x[0],adStockHtml,'stock')).join('')+'</div>';
   // v13.15: drops & auctions have their own tab (🎯 Events) -- build, post, follow.
   let ev=`<div class="pt-h">Drops &amp; auctions</div>`;
   if(evList==null) ev+=`<p class="note" style="text-align:left;margin:0 2px">Loading…</p>`;
@@ -6892,26 +6939,37 @@ function adRenderShelf(){
    "another admin is already posting". Live ones are read-only here: closing,
    extending, forfeiting and cancelling stay in Telegram for now, because
    people have claimed or bid in public.
-   Edits, ticks and removals are instant and unconfirmed (they're undoable and
-   done dozens of times a session); only Post and Bin ask first. */
-AD.ev={open:'',det:{},items:[],newKind:'',pre:null,cards:null,cardsAt:0,pick:null,lotOf:{}};
+   The screen updates IN PLACE: a price edit touches that card's tag and the
+   totals, removing a card takes out that row the moment you tap (the server
+   confirms after), adding shows placeholder rows straight away. Only a change
+   of shape -- a new draft, one posted or binned -- redraws the tab.
+   Edits, ticks and removals are unconfirmed (they're undoable and done dozens
+   of times a session); only Post and Bin ask first. */
+AD.ev={open:'',det:{},items:[],newKind:'',pre:null,cards:null,cardsAt:0,cardsLoading:null,pick:null,lotOf:{},adding:0};
 const adEvK=(kind,id)=>kind+':'+id;
 const adEvMoney=v=>'$'+Number(v||0).toFixed(2);
 const adEvDur=m=>m>=60&&m%60===0?(m/60)+'h':m+' min';
 async function adEvCall(action,payload){ try{ return await api(action,payload||{}); }catch(e){ return {ok:false,error:'network'}; } }
 function adEvList(){ return (AD.events&&AD.events.events)||[]; }
 function adEvCur(){ return AD.ev.open?AD.ev.det[AD.ev.open]:null; }
+function adEvDraftItems(d){ return ((d&&d.items)||[]).filter(it=>it.status==='staged'||it.status==='draft'); }
+function adEvRowSub(e){ return `${e.state||''} · ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}${e.ageHrs?' · '+Number(e.ageHrs)+'h old':''}`; }
+function adEvBoxHtml(k){ const cut=k.indexOf(':'); return `<div class="pt-form" style="margin:0 0 8px">${adEvDetHtml(k.slice(0,cut),k.slice(cut+1))}</div>`; }
+// Minutes since Telegram signed this session (it only renews when the shop is reopened).
+function adSigninAgeMins(){ try{ const a=Number(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.auth_date); return a?(Date.now()/1000-a)/60:null; }catch(e){ return null; } }
 
 function adRenderEvents(){
   const r=AD.events;
   if(!r||(!r.ok&&!r.events)){ adIn(`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
-  const y=window.scrollY, all=adEvList().map((e,i)=>({e,i}));
-  const rowFor=({e,i})=>{ const open=AD.ev.open===adEvK(e.kind,e.id);
+  // Keep the place: scroll, and whichever field you were typing in.
+  const y=window.scrollY, ae=document.activeElement, lab=ae&&ae.getAttribute&&ae.getAttribute('aria-label'), keep=ae&&ae.tagName==='INPUT'?{v:ae.value,s:ae.selectionStart,e:ae.selectionEnd}:null;
+  const all=adEvList().map((e,i)=>({e,i}));
+  const rowFor=({e,i})=>{ const k=adEvK(e.kind,e.id), dom='ev_'+adDom(k), open=AD.ev.open===k;
     return `<div class="pt-row" style="cursor:pointer" onclick="adEvToggle(${i})"><div class="l"><div class="t">${e.kind==='auction'?'🔨':'🎯'} ${esc(e.short||'')} ${esc(e.title||'')}</div>`+
-      `<div class="s">${esc(e.state||'')} · ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}${e.ageHrs?' · '+Number(e.ageHrs)+'h old':''}</div></div><div class="r">${open?'▾':'▸'}</div></div>`+
-      (open?`<div class="pt-form" style="margin:0 0 8px">${adEvDetHtml(e.kind,e.id)}</div>`:''); };
+      `<div class="s" id="evs-${adDom(k)}">${esc(adEvRowSub(e))}</div></div><div class="r">${adXArrow(dom,open)}</div></div>`+adXBox(dom,open?adEvBoxHtml(k):''); };
   const drafts=all.filter(x=>x.e.state==='draft'), live=all.filter(x=>x.e.state!=='draft');
-  let top=`<div class="ev-new"><button class="pt-mini big pri" onclick="adEvNewForm('drop')">🎯 New drop</button><button class="pt-mini big" onclick="adEvNewForm('auction')">🔨 New auction</button></div>`;
+  // The two ways to start are peers, so they look the same (pink is kept for Post / Add / Mark packed).
+  let top=`<div class="ev-new"><button class="pt-mini big" onclick="adEvNewForm('drop')">🎯 New drop</button><button class="pt-mini big" onclick="adEvNewForm('auction')">🔨 New auction</button></div>`;
   if(AD.ev.newKind) top+=adEvNewFormHtml(AD.ev.newKind);
   const a=`<div class="pt-h">Drafts — being built <span class="pt-tag">${drafts.length}</span></div>`+(drafts.length
       ?'<div class="panel" style="padding:4px 12px">'+drafts.map(rowFor).join('')+'</div>'
@@ -6921,38 +6979,54 @@ function adRenderEvents(){
       :'<p class="note" style="text-align:left;margin:0 2px">Nothing live.</p>');
   adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">Posting here runs the same code as <b>/drop go</b>. Closing, extending, forfeiting and cancelling a live one stay in Telegram for now.${r.at?' · as of '+new Date(r.at).toLocaleTimeString():''} · <a href="#" onclick="AD.fresh=true;AD.ev.det={};adLoad();return false">Refresh</a></p>`);
   window.scrollTo(0,y);
+  if(lab){ const el=[...document.querySelectorAll('#ad-in [aria-label]')].find(x=>x.getAttribute('aria-label')===lab);
+    if(el){ el.focus({preventScroll:true}); if(keep){ el.value=keep.v; try{ el.setSelectionRange(keep.s,keep.e); }catch(x){} } } }
 }
 function adEvToggle(i){
   const e=adEvList()[i]; if(!e) return;
   const k=adEvK(e.kind,e.id);
-  if(AD.ev.open===k){ AD.ev.open=''; adRenderEvents(); return; }
-  AD.ev.open=k; adRenderEvents(); adEvLoadDet(k);
+  if(AD.ev.open===k){ AD.ev.open=''; if(!adXSet('ev_'+adDom(k),false)) adRenderEvents(); return; }
+  if(AD.ev.open) adXSet('ev_'+adDom(AD.ev.open),false);
+  AD.ev.open=k;
+  if(!adXSet('ev_'+adDom(k),true,adEvBoxHtml(k))) adRenderEvents();
+  adEvLoadDet(k);
 }
 async function adEvLoadDet(k){
   const cut=k.indexOf(':'), kind=k.slice(0,cut), id=k.slice(cut+1);
   const e=adEvList().find(x=>x.kind===kind&&x.id===id);
   // A draft is being edited right now: read it from the Sheet, not D1's copy.
   const r=await adEvCall('adminEvent',(!e||e.state==='draft')?{kind,id,live:1}:{kind,id});
+  const had=!!AD.ev.det[k];
   AD.ev.det[k]=r;
-  if(AD.ev.open===k&&AD_TAB==='shelf'&&AD.ssub==='events') adRenderEvents();
+  if(AD.ev.open!==k||!(AD_TAB==='shelf'&&AD.ssub==='events')) return;
+  if(had&&r&&r.ok&&r.state==='draft') adEvPatch(k); else adXSet('ev_'+adDom(k),true,adEvBoxHtml(k));
+  if(r&&r.ok&&r.state==='draft') adEvCardsPrefetch();          // the picker is usually next
 }
-// Apply a write's answer: the event as it is now, and its line in the list.
+/* Apply a write's answer. Same shape as before (still a draft, same list) -> patch
+   just that event. A new draft, or one that moved (posted) or went (binned) -> the
+   list itself changed, so the tab is redrawn. */
 function adEvApply(r,kind,id){
   const k=adEvK(kind,id);
+  let redraw=false;
   if(r&&r.event){
     AD.ev.det[k]=r.event;
     if(!AD.events||!AD.events.events) AD.events={ok:true,at:Date.now(),events:[],stuckHolds:null};
     const ev=r.event, L=AD.events.events, x=L.find(e=>e.kind===kind&&e.id===id);
     const n=(ev.items||[]).filter(it=>['staged','draft','live'].indexOf(it.status)>=0).length;
     const row={kind,id,short:ev.short,title:ev.title,state:ev.state,cards:n,ageHrs:x?x.ageHrs:0,startMs:x?x.startMs:Date.now()};
-    if(x) Object.assign(x,row); else L.unshift(row);
+    if(!x){ L.unshift(row); redraw=true; } else { if(x.state!==row.state) redraw=true; Object.assign(x,row); }
   }
   if(r&&r.binned){
     delete AD.ev.det[k]; if(AD.ev.open===k) AD.ev.open='';
     if(AD.events&&AD.events.events) AD.events.events=AD.events.events.filter(e=>!(e.kind===kind&&e.id===id));
+    redraw=true;
   }
   ptSave('adevents',AD.events);
-  if(AD_TAB==='shelf'&&AD.ssub==='events') adRenderEvents();
+  if(!(AD_TAB==='shelf'&&AD.ssub==='events')) return;
+  if(redraw) { adRenderEvents(); return; }
+  const e=adEvList().find(x=>x.kind===kind&&x.id===id), sub=document.getElementById('evs-'+adDom(k));
+  if(e&&sub) sub.textContent=adEvRowSub(e);
+  if(AD.ev.open===k) adEvPatch(k);
 }
 
 function adEvDetHtml(kind,id){
@@ -6962,38 +7036,71 @@ function adEvDetHtml(kind,id){
   if(d.state!=='draft') return adEventHtml(d)+`<p class="note" style="text-align:left;margin:8px 0 0">Live. Close it, extend it or forfeit a winner in Telegram: <b>${kind==='auction'?'/auction':'/drop'} use ${esc(d.short)}</b>, then <b>who</b> or <b>end</b>.</p>`;
   return adEvBuilderHtml(d);
 }
+// The builder is five parts with ids, so each can be updated on its own.
 function adEvBuilderHtml(d){
-  const auc=d.kind==='auction';
-  const items=(d.items||[]).filter(it=>it.status==='staged'||it.status==='draft');
-  AD.ev.items=items;
-  const m=Number(d.durMins||0), timed=!!(m||d.closes);
-  let h='';
-  if(auc){
-    h+=`<div style="font-size:13px;margin:0 0 4px"><b>⏰ ${m?'Runs '+adEvDur(m)+' once posted':d.closes?'Closes '+new Date(d.closes).toLocaleString():'How long does it run?'}</b></div>
-      <div class="ev-in" style="margin:0 0 8px">${[[60,'1h'],[180,'3h'],[1440,'24h']].map(x=>`<button class="pt-mini${m===x[0]?' pri':''}" style="margin:0" onclick="adEvClock(this,${x[0]})">${x[1]}</button>`).join('')}
-        <input id="ev-min" class="ev-num qty" inputmode="numeric" enterkeyhint="done" placeholder="min" aria-label="Minutes it runs" onkeydown="if(event.key==='Enter')adEvClockCustom(this.nextElementSibling)"><button class="pt-mini" style="margin:0" onclick="adEvClockCustom(this)">Set</button></div>`;
-  }
-  if(!items.length) h+='<p class="note" style="text-align:left;margin:4px 0">No cards yet — tap <b>＋ Add cards</b>.</p>';
-  else h+=items.map((it,i)=>adEvItemHtml(d,it,i)).join('');
-  if(items.length){
-    const slots=items.reduce((s,it)=>s+Number(it.qty||1),0), tot=items.reduce((s,it)=>s+Number(it.price||0)*(auc?1:Number(it.qty||1)),0);
-    h+=`<div class="ev-sum">${items.length} ${auc?'lot':'card'}${items.length===1?'':'s'}${auc?'':' · '+slots+' slot'+(slots===1?'':'s')} · ${adEvMoney(tot)} ${auc?'in starting bids':'if it all goes'}</div>`;
-  }
+  const items=adEvDraftItems(d); AD.ev.items=items;
+  return `<div class="evb">`+(d.kind==='auction'?`<div id="evb-clock">${adEvClockHtml(d)}</div>`:'')+
+    `<div id="evb-items">${items.length?items.map((it,i)=>adEvItemHtml(d,it,i)).join(''):adEvEmptyHtml()}${adEvAddingHtml()}</div>`+
+    `<div id="evb-sum">${adEvSumHtml(d,items)}</div><div id="evb-foot">${adEvFootHtml(d,items)}</div></div>`;
+}
+const adEvEmptyHtml=()=>'<p class="note ev-empty" style="text-align:left;margin:4px 0">No cards yet — tap <b>＋ Add cards</b>.</p>';
+const adEvAddingHtml=()=>AD.ev.adding?Array.from({length:Math.min(AD.ev.adding,6)},()=>'<div class="ev-it ev-adding"><div class="skelcard" style="height:48px;flex:1"></div></div>').join(''):'';
+function adEvClockHtml(d){
+  const m=Number(d.durMins||0);
+  return `<div style="font-size:13px;margin:0 0 4px"><b>⏰ ${m?'Runs '+adEvDur(m)+' once posted':d.closes?'Closes '+new Date(d.closes).toLocaleString():'How long does it run?'}</b></div>
+    <div class="ev-in" style="margin:0 0 8px">${[[60,'1h'],[180,'3h'],[1440,'24h']].map(x=>`<button class="pt-mini${m===x[0]?' pri':''}" style="margin:0" onclick="adEvClock(this,${x[0]})">${x[1]}</button>`).join('')}
+      <input id="ev-min" class="ev-num qty" inputmode="numeric" enterkeyhint="done" placeholder="min" aria-label="Minutes it runs" onkeydown="if(event.key==='Enter')adEvClockCustom(this.nextElementSibling)"><button class="pt-mini" style="margin:0" onclick="adEvClockCustom(this)">Set</button></div>`;
+}
+function adEvSumHtml(d,items){
+  if(!items.length) return '';
+  const auc=d.kind==='auction', slots=items.reduce((s,it)=>s+Number(it.qty||1),0), tot=items.reduce((s,it)=>s+Number(it.price||0)*(auc?1:Number(it.qty||1)),0);
+  return `<div class="ev-sum">${items.length} ${auc?'lot':'card'}${items.length===1?'':'s'}${auc?'':' · '+slots+' slot'+(slots===1?'':'s')} · ${adEvMoney(tot)} ${auc?'in starting bids':'if it all goes'}</div>`;
+}
+function adEvFootHtml(d,items){
+  const auc=d.kind==='auction', timed=!!(Number(d.durMins||0)||d.closes);
   const why=!items.length?'Add a card first.':(auc&&!timed)?'Pick how long it runs first.':'';
-  h+=`<div class="ev-foot"><button class="pt-mini big" onclick="adEvPickOpen('${d.kind}','${esc(d.id)}')">＋ Add cards</button>`+
-     `<button class="pt-mini big pri" ${why?'disabled':''} onclick="adEvGo(this)">▶ Post ${esc(d.short)}</button>`+
-     `<button class="pt-mini big danger" onclick="adEvBin(this)">🗑 Bin draft</button></div>`+
-     (why?`<div class="s" style="font-size:12px;color:var(--hint);margin-top:6px">${why}</div>`:'');
-  return h;
+  return `<div class="ev-foot"><button class="pt-mini big" onclick="adEvPickOpen('${d.kind}','${esc(d.id)}')">＋ Add cards</button>`+
+    `<button class="pt-mini big pri" ${why?'disabled':''} onclick="adEvGo(this)">▶ Post ${esc(d.short)}</button>`+
+    `<button class="pt-mini big danger" onclick="adEvBin(this)">🗑 Bin draft</button></div>`+
+    (why?`<div class="s" style="font-size:12px;color:var(--hint);margin-top:6px">${why}</div>`:'');
 }
 function adEvItemHtml(d,it,i){
-  const auc=d.kind==='auction', c=it.card||{}, lot=AD.ev.lotOf[c.id];
+  const auc=d.kind==='auction', c=it.card||{}, lot=AD.ev.lotOf[c.id], did=esc(it.dropId);
   const inputs=auc
-    ? `SB $<input class="ev-num" inputmode="decimal" enterkeyhint="done" value="${Number(it.price||0).toFixed(2)}" aria-label="Starting bid for ${esc(c.name)}" onchange="adEvSet(this,${i},'start')">`
-    : `<input class="ev-num qty" inputmode="numeric" enterkeyhint="done" value="${Number(it.qty||1)}" aria-label="Copies of ${esc(c.name)}" onchange="adEvSet(this,${i},'qty')"> of ${Number(it.stock||0)} × $<input class="ev-num" inputmode="decimal" enterkeyhint="done" value="${Number(it.price||0).toFixed(2)}" aria-label="Price for ${esc(c.name)}" onchange="adEvSet(this,${i},'price')">${Number(it.price)<=0?' <span class="pt-tag warn">FREE</span>':''}`;
-  return `<div class="ev-it">${adThumb(c)}<div style="flex:1;min-width:0"><div class="nm">${i+1}. ${adLotCard(c)}</div>`+
+    ? `SB $<input class="ev-num" data-f="start" inputmode="decimal" enterkeyhint="done" value="${Number(it.price||0).toFixed(2)}" aria-label="Starting bid for ${esc(c.name)}" onchange="adEvSet(this,'${did}','start')">`
+    : `<input class="ev-num qty" data-f="qty" inputmode="numeric" enterkeyhint="done" value="${Number(it.qty||1)}" aria-label="Copies of ${esc(c.name)}" onchange="adEvSet(this,'${did}','qty')"> of ${Number(it.stock||0)} × $<input class="ev-num" data-f="price" inputmode="decimal" enterkeyhint="done" value="${Number(it.price||0).toFixed(2)}" aria-label="Price for ${esc(c.name)}" onchange="adEvSet(this,'${did}','price')"><span class="ev-free">${Number(it.price)<=0?' <span class="pt-tag warn">FREE</span>':''}</span>`;
+  return `<div class="ev-it" data-drop="${did}">${adThumb(c)}<div style="flex:1;min-width:0"><div class="nm"><span class="ev-n">${i+1}</span>. ${adLotCard(c)}</div>`+
     `<div class="sub">${lot?'📍 '+esc(lot)+' · ':''}${esc(c.id)}${c.consignor?' · '+esc(c.consignor)+'’s':''}${it.floor?' · <span class="pt-neg">floor '+adEvMoney(it.floor)+'</span>':''}</div>`+
-    `<div class="ev-in">${inputs}</div></div><button class="ev-rm" aria-label="Take ${esc(c.name)} out" onclick="adEvRm(this,${i})">✕</button></div>`;
+    `<div class="ev-in">${inputs}</div></div><button class="ev-rm" aria-label="Take ${esc(c.name)} out" onclick="adEvRm(this,'${did}')">✕</button></div>`;
+}
+/* Bring the open builder in line with its data WITHOUT redrawing it: rows that went
+   are removed, new ones slotted in, numbers, values (unless you're typing in that
+   box), FREE tags, totals, clock and buttons updated. Thumbnails and focus stay put. */
+function adEvPatch(k){
+  const d=AD.ev.det[k], box=document.getElementById('xd-ev_'+adDom(k));
+  if(!box||!d||!d.ok) return;
+  const wrap=box.querySelector('#evb-items');
+  if(d.state!=='draft'||!wrap){ adXSet('ev_'+adDom(k),true,adEvBoxHtml(k)); return; }
+  const items=adEvDraftItems(d); AD.ev.items=items;
+  const want={}; items.forEach(it=>{ want[it.dropId]=1; });
+  [...wrap.children].forEach(el=>{ if(!(el.dataset&&el.dataset.drop&&want[el.dataset.drop])) el.remove(); });   // gone, placeholders, "no cards"
+  items.forEach((it,i)=>{
+    let el=[...wrap.children].find(x=>x.dataset.drop===String(it.dropId));
+    if(!el){ const t=document.createElement('div'); t.innerHTML=adEvItemHtml(d,it,i); el=t.firstElementChild; }
+    else {
+      el.querySelector('.ev-n').textContent=i+1;
+      el.querySelectorAll('input[data-f]').forEach(inp=>{ if(inp===document.activeElement) return;
+        const v=inp.dataset.f==='qty'?String(Number(it.qty||1)):Number(it.price||0).toFixed(2); if(inp.value!==v) inp.value=v; inp.classList.remove('saving'); });
+      const fr=el.querySelector('.ev-free'); if(fr) fr.innerHTML=Number(it.price)<=0?' <span class="pt-tag warn">FREE</span>':'';
+    }
+    if(wrap.children[i]!==el) wrap.insertBefore(el,wrap.children[i]||null);
+  });
+  if(!items.length) wrap.insertAdjacentHTML('beforeend',adEvEmptyHtml());
+  if(AD.ev.adding) wrap.insertAdjacentHTML('beforeend',adEvAddingHtml());
+  const sum=box.querySelector('#evb-sum'), foot=box.querySelector('#evb-foot'), clk=box.querySelector('#evb-clock');
+  if(sum) sum.innerHTML=adEvSumHtml(d,items);
+  if(foot) foot.innerHTML=adEvFootHtml(d,items);
+  if(clk&&!clk.contains(document.activeElement)) clk.innerHTML=adEvClockHtml(d);
 }
 
 function adEvNewForm(kind){
@@ -7020,24 +7127,29 @@ async function adEvCreate(btn){
   });
 }
 
-async function adEvSet(el,i,field){
-  const d=adEvCur(), it=AD.ev.items[i]; if(!d||!it) return;
+async function adEvSet(el,dropId,field){
+  const d=adEvCur(); if(!d) return;
   const v=String(el.value||'').trim(), n=Number(v.replace(/[$,\s]/g,''));
   if(v===''||!isFinite(n)||n<0){ el.classList.add('bad'); ptAlert('Give a number.'); return; }
-  el.classList.remove('bad'); el.classList.add('saving'); el.disabled=true;
-  const r=await adEvCall('adminEventSet',{kind:d.kind,id:d.id,dropId:it.dropId,field,value:v});
-  el.disabled=false; el.classList.remove('saving');
-  adEvApply(r,d.kind,d.id);                    // redraw first: a refusal puts back what the server has
+  el.classList.remove('bad'); el.classList.add('saving');     // no lock-out: keep editing other cards meanwhile
+  const r=await adEvCall('adminEventSet',{kind:d.kind,id:d.id,dropId,field,value:v});
+  el.classList.remove('saving');
+  if(!r.ok&&r.event){                                        // refused: this box goes back to what the server has
+    const it=adEvDraftItems(r.event).find(x=>String(x.dropId)===String(dropId));
+    if(it) el.value=field==='qty'?String(Number(it.qty||1)):Number(it.price||0).toFixed(2);
+  }
+  adEvApply(r,d.kind,d.id);
   if(!r.ok) ptAlert(r.message||ptErr(r));
 }
-async function adEvRm(btn,i){
-  const d=adEvCur(), it=AD.ev.items[i]; if(!d||!it) return;
-  await guard(btn,async()=>{
-    const r=await adEvCall('adminEventRm',{kind:d.kind,id:d.id,dropId:it.dropId});
-    if(r.ok) AD.ev.cardsAt=0;                  // back on sale: the picker refetches
-    adEvApply(r,d.kind,d.id);
-    if(!r.ok) ptAlert(r.message||ptErr(r));
-  });
+async function adEvRm(btn,dropId){
+  const d=adEvCur(); if(!d) return;
+  // Gone from the screen now; the server confirms after (a refusal puts it back).
+  const row=btn.closest('.ev-it'); if(row){ row.style.display='none'; }
+  const r=await adEvCall('adminEventRm',{kind:d.kind,id:d.id,dropId});
+  if(r.ok) AD.ev.cardsAt=0;                    // back on sale: the picker refetches
+  if(row&&!r.ok) row.style.display='';
+  adEvApply(r,d.kind,d.id);
+  if(!r.ok) ptAlert(r.message||ptErr(r));
 }
 async function adEvClock(btn,mins){
   const d=adEvCur(); if(!d) return;
@@ -7054,9 +7166,14 @@ function adEvClockCustom(btn){
 }
 async function adEvGo(btn){
   const d=adEvCur(); if(!d) return;
+  // Posting wants a sign-in from the last hour (the server checks too). Say so now, not after a wait.
+  const age=adSigninAgeMins();
+  if(age!=null&&age>60){ ptAlert('Posting needs the shop opened in the last hour. Close the shop, reopen it from the bot and tap Post again — your draft is saved.'); return; }
   const n=AD.ev.items.length, auc=d.kind==='auction', m=Number(d.durMins||0);
   const run=auc?(m?' Bidding opens and runs '+adEvDur(m)+'.':' Bidding opens.'):' People can claim straight away.';
-  if(!(await ptConfirm(`Post ${d.short}${d.title?' “'+d.title+'”':''} to the ${auc?'auction':'claims'} channel now?\n\n${n} ${auc?'lot':'card'}${n===1?' goes':'s go'} live.${run}`))) return;
+  // Telegram limits how fast a bot can post, so each card takes a moment.
+  const secs=Math.max(5,Math.round(auc?n*0.5+4:n*1.4+3));
+  if(!(await ptConfirm(`Post ${d.short}${d.title?' “'+d.title+'”':''} to the ${auc?'auction':'claims'} channel now?\n\n${n} ${auc?'lot':'card'}${n===1?' goes':'s go'} live.${run}\n\nPosting takes about ${secs}s — keep the shop open.`))) return;
   await guard(btn,async()=>{
     const r=await adEvCall('adminEventGo',{kind:d.kind,id:d.id});
     adEvApply(r,d.kind,d.id);
@@ -7081,10 +7198,22 @@ function adEvFromStock(stockKind,evKind){
   AD.ev.newKind=evKind; AD.ssub='events'; adLoad();
 }
 
-/* The picker: a bottom sheet. Opens instantly with a skeleton; the list comes
-   from the server (every card on sale, with its 📍 lot and any floor) and is
-   kept for 30s. Search redraws only the list, so the keyboard stays up. */
-async function adEvPickOpen(kind,id,preIds){
+/* The picker: a bottom sheet. The card list is fetched in the background as soon as
+   a draft is opened, and kept for 30s -- so the sheet opens instantly with it. If
+   it's older than that, the old list shows at once and the fresh one replaces it
+   when it lands (your ticks and search are kept). Search redraws only the list. */
+function adEvCardsPrefetch(){
+  if(AD.ev.cardsLoading||(AD.ev.cards&&AD.ev.cards.ok&&Date.now()-AD.ev.cardsAt<30000)) return AD.ev.cardsLoading;
+  AD.ev.cardsLoading=adEvCall('adminEventCards',{}).then(r=>{
+    if(r.ok){ AD.ev.cards=r; AD.ev.cardsAt=Date.now(); r.cards.forEach(c=>{ if(c.lot) AD.ev.lotOf[c.id]=c.lot; }); }
+    else if(!(AD.ev.cards&&AD.ev.cards.ok)) AD.ev.cards=r;
+    AD.ev.cardsLoading=null;
+    if(AD.ev.pick) adEvPickDraw();
+    return r;
+  });
+  return AD.ev.cardsLoading;
+}
+function adEvPickOpen(kind,id,preIds){
   const d=AD.ev.det[adEvK(kind,id)];
   AD.ev.pick={kind,id,short:(d&&d.short)||'',q:'',sort:'az',tick:{},keys:[],show:80};
   (preIds||[]).forEach(c=>{ AD.ev.pick.tick[c]=1; });
@@ -7092,12 +7221,7 @@ async function adEvPickOpen(kind,id,preIds){
   document.getElementById('evSheetBody').innerHTML='';
   document.getElementById('evScrim').classList.add('show'); document.getElementById('evSheet').classList.add('show');
   adEvPickDraw();
-  if(!AD.ev.cards||!AD.ev.cards.ok||Date.now()-AD.ev.cardsAt>30000){
-    const r=await adEvCall('adminEventCards',{});
-    AD.ev.cards=r;
-    if(r.ok){ AD.ev.cardsAt=Date.now(); r.cards.forEach(c=>{ if(c.lot) AD.ev.lotOf[c.id]=c.lot; }); }
-    if(AD.ev.pick) adEvPickDraw();
-  }
+  adEvCardsPrefetch();
 }
 function adEvPickClose(){
   document.getElementById('evScrim').classList.remove('show'); document.getElementById('evSheet').classList.remove('show');
@@ -7154,6 +7278,9 @@ function adEvPickFoot(){
   foot.innerHTML=`<div class="s" style="font-size:12px;color:var(--hint);margin-bottom:8px">${auc?'Starting bid = half the shop price, or the consignor’s floor if that’s higher. Change it after.':'Every copy goes in at the shop price. Change qty or price after.'}</div>`+
     `<button class="pt-mini big pri" style="margin:0;width:100%" ${n?'':'disabled'} onclick="adEvPickAdd(this)">${n?`Add ${n} ${auc?'lot':'card'}${n===1?'':'s'} to ${esc(P.short)}`:'Tick the cards to add'}</button>`;
 }
+/* Add: the sheet closes at once and placeholder rows stand in the builder while the
+   server writes them (one tap = one lock, one read, one write). Anything refused
+   reopens the picker with just those still ticked. */
 async function adEvPickAdd(btn){
   const P=AD.ev.pick; if(!P) return;
   const byId={}; ((AD.ev.cards&&AD.ev.cards.cards)||[]).forEach(c=>{ byId[c.id]=c; });
@@ -7163,22 +7290,25 @@ async function adEvPickAdd(btn){
     const c=byId[id]||{}, half=Math.round(Number(c.price||0)*50)/100;   // what the server would default to
     return {cardId:id,price:Math.max(half,Number(c.floor||0))};
   });
-  await guard(btn,async()=>{
-    let added=[], failed=[], last=null;
-    for(let i=0;i<items.length;i+=40){               // the server takes 40 a tap
-      const r=await adEvCall('adminEventAdd',{kind:P.kind,id:P.id,items:items.slice(i,i+40)});
-      if(r.event) last=r;
-      added=added.concat(r.added||[]); failed=failed.concat(r.failed||[]);
-      if(!r.added&&!r.failed){ failed.push({cardId:'',message:r.message||ptErr(r)}); break; }
-    }
-    const gone={}; added.forEach(a=>{ gone[a.cardId]=1; delete P.tick[a.cardId]; if(byId[a.cardId]&&byId[a.cardId].lot) AD.ev.lotOf[a.cardId]=byId[a.cardId].lot; });
-    if(AD.ev.cards&&AD.ev.cards.cards) AD.ev.cards.cards=AD.ev.cards.cards.filter(c=>!gone[c.id]);   // held now
-    if(last) adEvApply(last,P.kind,P.id);
-    if(!failed.length){ adEvPickClose(); return; }
-    adEvPickList();                                  // the ones that didn't go in stay ticked
-    ptAlert((added.length?`Added ${added.length}. `:'')+`${failed.length} not added:\n`+
-      failed.slice(0,6).map(f=>'• '+(f.cardId&&byId[f.cardId]?byId[f.cardId].name+': ':'')+f.message).join('\n')+(failed.length>6?'\n…':''));
-  });
+  const kind=P.kind, id=P.id, k=adEvK(kind,id);
+  adEvPickClose();
+  AD.ev.adding=ids.length; if(AD.ev.open===k) adEvPatch(k);
+  let added=[], failed=[], last=null;
+  for(let i=0;i<items.length;i+=40){               // the server takes 40 a tap
+    const r=await adEvCall('adminEventAdd',{kind,id,items:items.slice(i,i+40)});
+    if(r.event) last=r;
+    added=added.concat(r.added||[]); failed=failed.concat(r.failed||[]);
+    if(!r.added&&!r.failed){ failed.push({cardId:'',message:r.message||ptErr(r)}); break; }
+  }
+  AD.ev.adding=0;
+  const gone={}; added.forEach(a=>{ gone[a.cardId]=1; if(byId[a.cardId]&&byId[a.cardId].lot) AD.ev.lotOf[a.cardId]=byId[a.cardId].lot; });
+  if(AD.ev.cards&&AD.ev.cards.cards) AD.ev.cards.cards=AD.ev.cards.cards.filter(c=>!gone[c.id]);   // held now
+  if(last) adEvApply(last,kind,id); else if(AD.ev.open===k) adEvPatch(k);
+  if(!failed.length) return;
+  const again=failed.map(f=>f.cardId).filter(Boolean);
+  if(again.length) adEvPickOpen(kind,id,again);
+  ptAlert((added.length?`Added ${added.length}. `:'')+`${failed.length} not added:\n`+
+    failed.slice(0,6).map(f=>'• '+(f.cardId&&byId[f.cardId]?byId[f.cardId].name+': ':'')+f.message).join('\n')+(failed.length>6?'\n…':''));
 }
 
 /* ---- 📍 Lots (chaos storage) ----
@@ -7239,9 +7369,9 @@ function adRenderLots(){
   let top=`<div class="panel" style="padding:12px;display:grid;gap:8px;margin-bottom:10px">
     <div style="font-size:13px"><b>📍 ${t.lots||0} lot${t.lots===1?'':'s'}</b> · ${t.located||0} shelved · <span class="${t.unlocated?'pt-neg':''}">${t.unlocated||0} not in a lot</span>${t.over?` · <span class="pt-neg">${t.over} to take out</span>`:''}</div>
     <div class="pt-inl" style="margin:0;flex-wrap:wrap;gap:6px">
-      <input id="ad-lotto" value="${esc(target)}" oninput="AD.lotTo=this.value.toUpperCase()" autocapitalize="characters" maxlength="12" style="max-width:110px" aria-label="Lot code">
+      <input id="ad-lotto" value="${esc(target)}" oninput="AD.lotTo=this.value.toUpperCase();adLotNextSync()" autocapitalize="characters" maxlength="12" style="max-width:110px" aria-label="Lot code">
       <button id="ad-lotbtn" class="pt-mini pri" style="margin:0" onclick="adLotAssign(this)" ${adLotTicked().length?'':'disabled'}>${adLotBtnText()}</button>
-      <button class="pt-mini" style="margin:0" onclick="adLotNewCode()">New code</button>
+      <button id="ad-lotnext" class="pt-mini" style="margin:0" onclick="adLotNewCode()" title="Each Collectr import gets its own lot code. This fills in the next one nobody has used yet.">${adLotNextLabel(target)}</button>
     </div>
     <div class="pt-inl" style="margin:0;flex-wrap:wrap;gap:6px">
       <input id="ad-lotq" value="${esc(AD.lotQ||'')}" oninput="adLotSearch(this.value)" placeholder="Search name, set, number, #key" style="flex:1;min-width:160px" aria-label="Search cards not in a lot">
@@ -7270,7 +7400,7 @@ function adRenderLots(){
     return x;
   }).join('')+'</div>';
   adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. Tap any picture to enlarge it. · <a href="#" onclick="AD.fresh=true;AD.det={};adLoad();return false">Refresh</a></p>`);
-  adLotSync();
+  adLotSync(); adLotNextSync();
   window.scrollTo(0,y);
 }
 // "＋ Add cards to L0007": target that lot, jump to the tools at the top.
@@ -7279,7 +7409,12 @@ function adLotAddHere(code){
   window.scrollTo({top:0,behavior:'smooth'});
   const q=document.getElementById('ad-lotq'); if(q) setTimeout(()=>q.focus(),300);
 }
-function adLotNewCode(){ const r=AD.lots||{}; AD.lotTo=r.next||''; const i=document.getElementById('ad-lotto'); if(i) i.value=AD.lotTo; }
+/* v13.15: 'New code' only ever filled in the next unused lot code, so tapping it
+   again did nothing -- which looked broken. It now says what it does, and shows
+   when the box already holds that code. */
+function adLotNextLabel(v){ const nx=(AD.lots&&AD.lots.next)||''; return !nx?'Next free code':String(v||'').toUpperCase()===nx?'✓ '+esc(nx)+' is the next free code':'Use next free code ('+esc(nx)+')'; }
+function adLotNextSync(){ const b=document.getElementById('ad-lotnext'), nx=(AD.lots&&AD.lots.next)||''; if(!b) return; b.textContent=adLotNextLabel(ptVal('ad-lotto')).replace(/&amp;/g,'&'); b.disabled=!!nx&&ptVal('ad-lotto').toUpperCase()===nx; }
+function adLotNewCode(){ const r=AD.lots||{}; AD.lotTo=r.next||''; const i=document.getElementById('ad-lotto'); if(i) i.value=AD.lotTo; adLotNextSync(); }
 async function adLotsLive(){ const r=await api('adminLots',{live:1}); if(r&&r.ok){ AD.lots=r; ptSave('adlots',r); } if(AD_TAB==='shelf'&&AD.ssub==='lots') adRenderLots(); }
 async function adLotOpen(code){
   if(AD.lotOpen[code]){ delete AD.lotOpen[code]; adRenderLots(); return; }
