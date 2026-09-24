@@ -1699,6 +1699,25 @@ body.pc #v-credit{max-width:640px}
 .ev-num.qty{width:58px}
 .ev-num.bad{border-color:var(--berry)}
 .ev-num.saving{opacity:.55}
+/* v13.16 pricing on Stock health */
+.ad-prrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.ad-prrow .pt-mini{margin:0}
+.ad-prbulk{margin:0 0 8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px}
+.ad-prbulk summary{font-size:13px;font-weight:800;color:var(--fawn-deep);cursor:pointer;min-height:24px;list-style-position:inside}
+.ad-prbulk select{flex:1 1 130px}
+.ad-prall{display:flex;gap:6px;align-items:center;font-size:13px;font-weight:700;cursor:pointer}
+.ad-prall input{width:20px;height:20px;accent-color:var(--berry)}
+.ad-prpv{margin-top:8px;max-height:320px;overflow:auto;border-top:1px dashed var(--line)}
+.ad-prpvl{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.ad-prpvl>span:first-child{min-width:0;overflow-wrap:anywhere}
+.ad-prpvl>span:last-child{flex:none;text-align:right}
+/* v13.16 lots: copies stepper, move form */
+.ad-lotcp{display:flex;gap:6px;align-items:center;font-size:12.5px;margin-top:5px;color:var(--text)}
+.ad-lotmv{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;margin:2px 0 8px;padding:8px;border-radius:10px;background:var(--line)}
+.ad-lotmv .pt-mini{margin:0}
+.ad-lotcp input,.ad-lotmv input{width:64px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-family:inherit}
+.ad-lotmv #ad-mvto{width:104px;text-transform:uppercase}
+.ad-wh{color:var(--hint)}
 .ev-rm{flex:none;min-width:40px;min-height:40px;border:0;background:transparent;color:var(--hint);font-size:17px;border-radius:10px;touch-action:manipulation;cursor:pointer;transition:transform 120ms cubic-bezier(.23,1,.32,1)}
 .ev-rm:active{transform:scale(.94);background:var(--line)}
 .ev-sum{font-size:12.5px;font-weight:700;color:var(--fawn-deep);margin:8px 0 2px}
@@ -6555,7 +6574,7 @@ async function adLoad(){
     AD.fresh=false;
     if(!still()) return; ptUpd('ad-upd',false);
     if((r&&r.ok) || !(AD.lots&&AD.lots.ok)){ AD.lots=r; adRenderLots(); }
-    Object.keys(AD.lotOpen).forEach(code=>{ if(!AD.det['lot:'+code]) api('adminLot',{lot:code}).then(x=>{ AD.det['lot:'+code]=x; if(AD_TAB==='shelf'&&AD.ssub==='lots') adRenderLots(); }).catch(()=>{}); });
+    Object.keys(AD.lotOpen).forEach(code=>{ if(!AD.det['lot:'+code]) api('adminLot',{lot:code}).then(x=>{ AD.det['lot:'+code]=x; adLotsRedraw(); adLotsWhereLoad(); }).catch(()=>{}); });
   }
   else if(tab==='consign'&&AD.csub==='rates'){
     const saved=AD.rates&&AD.rates.ok?AD.rates:ptLoad('adrates');
@@ -6617,8 +6636,8 @@ function adXSet(dom,open,html){ const a=document.getElementById('xa-'+dom), b=do
    once (To pack and To ship); it used to open in both, with two tracking-number
    fields of the same id -- so Mark shipped could read the empty one. Now it opens
    in one place, and tapping it in the other list moves it there. */
-async function adToggle(kind,list,i){
-  const src=adSrc(list,i); if(!src) return;
+async function adToggle(kind,list,id){
+  const src=adSrc(list,id); if(!src) return;
   const k=adKey(kind,src.id);
   const prev=AD.open[k];
   if(prev===list){ delete AD.open[k]; if(!adXSet(adDom(list+'|'+k),false)) adRenderToday(); return; }
@@ -6633,7 +6652,7 @@ async function adFetchDet(k,src){
   const cut=k.indexOf(':'), kind=k.slice(0,cut), id=k.slice(cut+1), act=AD_DET_ACT[kind];
   if(!act||AD.detLoading[k]) return;
   let pl;
-  if(kind==='stk') pl={kind:id};
+  if(kind==='stk') pl=id==='atmarket'?{kind:id,live:1}:{kind:id};   // the at-market list is Apps Script only
   else if(kind==='mny'){ const b=id.indexOf('|'); pl={period:id.slice(0,b),source:id.slice(b+1)}; }
   else if(kind==='ev'){ if(!src) return; pl={kind:src.kind,id:src.evId}; }
   else pl={id};
@@ -6650,18 +6669,66 @@ function adPaintDet(k){ const l=AD.open[k]; if(!l) return; if(!adXSet(adDom(l+'|
 /* After coming back to a tab, or Refresh, the details were dropped but the lines
    stayed open -- and nothing fetched them again, so they spun forever. */
 function adRefetchOpen(){ Object.keys(AD.open).forEach(k=>{ if(!AD.det[k]) adFetchDet(k); }); }
-function adSrc(list,i){
+// Lines are found by id, not position, so a list can change under an open line.
+function adSrc(list,id){
   const d=AD.dash||{}, j=d.jobs||{}, s=d.stock||{};
-  if(list==='stock') return {id:['nophoto','below','above','stale','stuck'][i]};
-  if(list==='events'){ const ev=(s.events!=null?s.events:(AD.events&&AD.events.events))||[]; const e=ev[i]; return e?{id:e.kind+'-'+e.id,kind:e.kind,evId:e.id}:null; }
-  return (j[list]||[])[i]||null;
+  if(list==='stock') return {id:String(id)};
+  if(list==='focus') return AD.focus===id?{id:id}:null;
+  if(list==='events'){ const ev=(s.events!=null?s.events:(AD.events&&AD.events.events))||[]; const e=ev.find(x=>x.kind+'-'+x.id===id); return e?{id:id,kind:e.kind,evId:e.id}:null; }
+  return (j[list]||[]).find(x=>String(x.id)===String(id))||null;
+}
+/* v13.16: update a section IN PLACE from freshly rendered html. Lines are matched
+   by data-k: a line still there keeps its node (thumbnails, an open pack list,
+   whatever you were typing), only changed text is swapped, gone lines leave and
+   new ones slot in. A field that moves with its line (the tracking box, when a
+   packed box moves to To ship) keeps what you typed and keeps focus. */
+function adSyncSec(el,html){
+  const tmp=document.createElement('div'); tmp.innerHTML=html;
+  const oldK=[...el.children], newK=[...tmp.children];
+  const same=oldK.length===newK.length&&oldK.every((o,i)=>o.tagName===newK[i].tagName&&o.hasAttribute('data-sync')===newK[i].hasAttribute('data-sync'));
+  if(!same){ adKeepInputs(el,()=>el.replaceChildren(...newK)); return; }
+  oldK.forEach((o,i)=>{ const n=newK[i];
+    if(o.hasAttribute('data-sync')) adSyncList(o,n);
+    else if(o.id==='ad-pick') return;                          // the route refreshes itself (adPickRedraw)
+    else if(o.outerHTML!==n.outerHTML) o.replaceWith(n);
+  });
+}
+function adSyncList(box,fresh){
+  adKeepInputs(box,()=>{
+    const have={}; [...box.children].forEach(c=>{ const k=c.getAttribute('data-k'); if(k) have[k]=c; });
+    const want=[...fresh.children];
+    want.forEach((n,i)=>{
+      const k=n.getAttribute('data-k'), o=k&&have[k];
+      let node=n;
+      if(o){ delete have[k]; node=o;
+        if(o.outerHTML!==n.outerHTML){
+          // A row + its detail box: swap only the part that changed (an open pack list stays put).
+          if(o.children.length===2&&n.children.length===2&&o.firstElementChild.classList.contains('pt-row')){
+            const [or,od]=[o.firstElementChild,o.lastElementChild], [nr,nd]=[n.firstElementChild,n.lastElementChild];
+            if(or.outerHTML!==nr.outerHTML) or.replaceWith(nr);
+            if(od.outerHTML!==nd.outerHTML) od.replaceWith(nd);   // opened, closed or changed (typed text is carried over)
+          } else { o.replaceWith(n); node=n; }
+        }
+      }
+      if(box.children[i]!==node) box.insertBefore(node,box.children[i]||null);
+    });
+    Object.keys(have).forEach(k=>have[k].remove());
+  });
+}
+// Run fn (which may drop nodes), then give fields with the same id back their text and focus.
+function adKeepInputs(root,fn){
+  const vals={}, ae=document.activeElement, fid=ae&&root.contains(ae)&&ae.id;
+  root.querySelectorAll('input[id],textarea[id]').forEach(x=>{ if(x.type!=='checkbox'&&x.value) vals[x.id]=x.value; });
+  fn();
+  Object.keys(vals).forEach(id=>{ const x=document.getElementById(id); if(x&&!x.value) x.value=vals[id]; });
+  if(fid&&document.activeElement!==document.getElementById(fid)){ const x=document.getElementById(fid); if(x) try{ x.focus({preventScroll:true}); }catch(e){} }
 }
 function adDM(un,id){
   if(un){ const u='https://t.me/'+un; if(tg&&tg.openTelegramLink) tg.openTelegramLink(u); else openExt(u); return; }
   try{ navigator.clipboard.writeText(String(id)); ptAlert('No @username — their Telegram id '+id+' is copied. Reply through the bot from #support, or search the id in Telegram.'); }catch(e){ ptAlert('Their Telegram id: '+id); }
 }
 function adOpenUrl(u){ if(!u) return; if(tg&&tg.openTelegramLink&&/^https:\/\/t\.me\//.test(u)) tg.openTelegramLink(u); else openExt(u); }
-function adTick(k,el){ AD.ticks[k]=!!el.checked; }
+function adTick(k,el){ AD.ticks[k]=!!el.checked; if(k.indexOf('pr_')===0) adPrCount(k.split('_')[1]); }
 function adBuyerHtml(b){
   if(!b) return '';
   const st=b.strikes?`<span class="pt-tag ${b.strikes>=b.banAt-1?'warn':''}">${b.strikes}/${b.banAt} strikes</span>`:'';
@@ -6687,7 +6754,7 @@ function adBoxHtml(b){
   else if(b.delivery==='pickup') h+=`<div class="s" style="margin-top:6px;font-size:12px">${esc(b.pickupNote||'Self-pickup')}</div>`;
   h+=adBuyerHtml(b.buyer);
   h+=adBoxActions(b);
-  if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">📍 Pull from</div>`+b.picks.map(x=>`<div style="font-size:13px;padding:2px 0;display:flex;gap:8px;align-items:center">${adThumb(x.card,30)}<span><b>${x.lot?esc(x.lot):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</span></div>`).join('');
+  if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">📍 Pull from</div>`+lotSortLines(b.picks).map(x=>`<div style="font-size:13px;padding:2px 0;display:flex;gap:8px;align-items:center">${adThumb(x.card,30)}<span><b>${x.lot?esc(x.lot):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</span></div>`).join('');
   h+=`<div class="pt-h">Pack list · ${b.cards} card${b.cards===1?'':'s'} · $${Number(b.value||0).toFixed(2)}</div>`;
   b.orders.forEach(o=>{
     const ref=o.status==='Refunded';
@@ -6722,10 +6789,42 @@ async function adBoxAct(btn,kind,id){
   if(kind==='collect'&&!(await ptConfirm('Mark '+id+' handed over? The buyer is told straight away.'))) return;
   await guard(btn, async()=>{
     const r=await api({pack:'adminPack',ship:'adminShip',collect:'adminCollect'}[kind],pl);
+    const k=adKey('box',id);
+    // v13.16: no reload. The box repaints from the server's answer, then the job
+    // lists catch up in the background and the box moves (still open) to its next list.
+    if(r.box&&r.box.ok){ AD.det[k]=r.box; adPaintDet(k); }
+    if(r.ok) adDashSync(k);
     ptAlert(r.message||(r.ok?'Done':ptErr(r)));
-    if(r.box&&r.box.ok) AD.det[adKey('box',id)]=r.box;
-    if(r.ok){ AD.fresh=true; adLoad(); } else adRenderToday();
   });
+}
+async function adDashSync(k){
+  const seq=AD.syncSeq=(AD.syncSeq||0)+1;
+  ptUpd('ad-upd',true);
+  let r; try{ r=await api('adminDash',{fresh:1,live:1}); }catch(e){ r=null; }
+  if(seq!==AD.syncSeq) return;
+  ptUpd('ad-upd',false);
+  if(!(r&&r.ok)) return;
+  ptSave('addash',r); AD.dash=r;
+  if(AD_TAB!=='dash'||!document.getElementById('ad-in')) return;
+  adReconcileDash(k);
+  if(AD.pickOpen){ const p=await api('adminPick',{live:1}).catch(()=>null); if(p&&AD.pickOpen){ AD.pick=p; adPickRedraw(); } }
+}
+const AD_JOB_LISTS={box:['pack','ship','handover','overHold'],ord:['verify','claims']};
+function adReconcileDash(k){
+  const d=AD.dash, j=(d&&d.jobs)||{};
+  // An open line whose list it left follows it to the list it's in now (packed -> To ship).
+  Object.keys(AD.open).forEach(ok=>{
+    const kind=ok.slice(0,ok.indexOf(':')), id=ok.slice(ok.indexOf(':')+1), L=AD.open[ok], lists=AD_JOB_LISTS[kind];
+    if(!lists||lists.indexOf(L)<0||(j[L]||[]).some(x=>String(x.id)===id)) return;
+    const to=lists.find(l=>(j[l]||[]).some(x=>String(x.id)===id));
+    if(to) AD.open[ok]=to; else delete AD.open[ok];
+  });
+  const secs=adJobSecs(d);
+  if(!d||!d.ok||secs.some(([key])=>!document.getElementById('adsec-'+key))){ adRenderDash(); return; }
+  secs.forEach(([key,html])=>adSyncSec(document.getElementById('adsec-'+key),html));
+  // Keep the box you just acted on in view as it moves.
+  const L=k&&AD.open[k], el=L&&document.getElementById('xd-'+adDom(L+'|'+k));
+  if(el&&el.parentNode) try{ el.parentNode.scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){}
 }
 function adLeft(ms){ if(!ms) return ''; const d=ms-Date.now(); if(d<=0) return 'overdue'; const h=Math.floor(d/3600000), m=Math.floor(d%3600000/60000); return h>=48?Math.floor(h/24)+'d left':h?h+'h '+m+'m left':m+'m left'; }
 function adOrderHtml(r){
@@ -6744,13 +6843,142 @@ function adOrderHtml(r){
 }
 function adStockHtml(r){
   if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
-  if(!r.cards.length) return '<p class="note" style="text-align:left">None 🎉</p>';
+  if(!r.cards.length){ const last=AD.pr.last[r.kind]; delete AD.pr.last[r.kind];   // what a bulk change just did, if it emptied the list
+    return '<p class="note" style="text-align:left">None 🎉</p>'+(last?`<div class="${last.skipped&&last.skipped.length?'pt-err':'pt-ok'}" style="font-size:12.5px">${esc(last.message||'')}${(last.skipped||[]).map(x=>'<br>• '+esc(x.name)+': '+esc(x.why)).join('')}</div>`:''); }
   // Slow stock is exactly what a drop or auction is for: one tap from spotting it to moving it.
   const cta=(r.kind==='stale'||r.kind==='above')?`<div class="ev-foot" style="margin:0 0 6px">
       <button class="pt-mini" onclick="adEvFromStock('${r.kind}','drop')">🎯 New drop with these</button>
       <button class="pt-mini" onclick="adEvFromStock('${r.kind}','auction')">🔨 New auction with these</button></div>`:'';
-  return cta+r.cards.map(c=>adCardLine(c,'',`<div class="s" style="font-size:11.5px">$${Number(c.price).toFixed(2)}${c.market?' · market $'+Number(c.market).toFixed(2):''} · qty ${c.qty}${c.days!=null?' · listed '+c.days+'d':''}${r.kind==='stuck'?' · '+esc(c.status)+(c.heldBy?' by '+esc(c.heldBy):''):''} · <span style="color:var(--hint)">${esc(c.id)}</span></div>`)).join('')+
+  const pr=r.kind!=='stuck';                              // held cards are priced in their drop/auction
+  return cta+(pr?adPrBulkHtml(r.kind):'')+r.cards.map(c=>`<div data-pk="${esc(r.kind+'|'+c.id)}">`+adCardLine(c,pr?adPrTickKey(r.kind,c.id):'',`<div class="s" style="font-size:11.5px"><b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>${c.market?' · market $'+Number(c.market).toFixed(2):''} · qty ${c.qty}${c.days!=null?' · listed '+c.days+'d':''}${c.consignor?' · floor checked on save':''}${r.kind==='stuck'?' · '+esc(c.status)+(c.heldBy?' by '+esc(c.heldBy):''):''} · <span style="color:var(--hint)">${esc(c.id)}</span></div>`+(pr?adPrOneHtml(r.kind,c):''))+'</div>').join('')+
     (r.total>r.cards.length?`<p class="note">Showing ${r.cards.length} of ${r.total}.</p>`:'');
+}
+/* ---- v13.16: pricing on Stock health ----
+   Each card: a price box (saves when you leave it or press Enter), "Use market"
+   and "−5%". Many cards: tick them, pick a rule and a rounding, Preview shows
+   every before → after, Apply asks once. The server re-checks everything
+   (floors, held cards) and says which it skipped and why. Lines update in
+   place; a card that no longer belongs on a list leaves it. */
+AD.pr={rule:'market',pct:5,round:'none',pv:{},last:{}};
+const adPrTickKey=(kind,id)=>'pr_'+kind+'_'+adDom(id);
+const adPrMoney=v=>'$'+Number(v||0).toFixed(2);
+function adPrOneHtml(kind,c){
+  const mk=Number(c.market||0), m5=Math.round(Number(c.price||0)*95)/100;
+  return `<div class="ad-prrow"><input class="ev-num" inputmode="decimal" value="${Number(c.price).toFixed(2)}" aria-label="Price for ${esc(c.name)}" onkeydown="if(event.key==='Enter')this.blur()" onchange="adPrSave(this,this.value)">`+
+    (mk&&Math.round(mk*100)!==Math.round(Number(c.price)*100)?`<button class="pt-mini" onclick="adPrSave(this,${mk})">Use market ${adPrMoney(mk)}</button>`:'')+
+    (m5>0?`<button class="pt-mini" onclick="adPrSave(this,${m5})" aria-label="Lower by 5% to ${adPrMoney(m5)}">−5%</button>`:'')+`</div>`;
+}
+function adPrBulkHtml(kind){
+  const P=AD.pr, sel=(id,v,opts)=>`<select id="${id}" onchange="adPrOpt(this)">${opts.map(([k,l])=>`<option value="${k}"${k===v?' selected':''}>${l}</option>`).join('')}</select>`;
+  return `<details class="ad-prbulk" ${P.pv[kind]?'open':''}><summary>Change many prices at once</summary>
+    <div class="pt-inl" style="margin-top:6px"><label class="ad-prall"><input type="checkbox" onchange="adPrTickAll('${kind}',this.checked)"> Tick all</label><span class="s" id="adpr-n-${kind}" style="font-size:12px;color:var(--hint)">${adPrTicked(kind).length} ticked</span></div>
+    <div class="pt-inl" style="margin-top:6px">${sel('adpr-rule-'+kind,P.rule,[['market','Set to market'],['minus','Market − %'],['plus','Market + %']])}
+      <input id="adpr-pct-${kind}" inputmode="decimal" value="${P.pct}" aria-label="Percent" style="max-width:74px" onchange="adPrOpt(this)"${P.rule==='market'?' disabled':''}>
+      ${sel('adpr-round-'+kind,P.round,[['none','No rounding'],['49','End in .49'],['99','End in .99'],['whole','Whole dollars']])}</div>
+    <button class="pt-mini" onclick="adPrPreview('${kind}')">Preview</button>
+    <div id="adpr-pv-${kind}">${P.pv[kind]?adPrPvHtml(kind):''}</div></details>`;
+}
+function adPrCards(kind){ const d=AD.det['stk:'+kind]; return (d&&d.ok&&d.cards)||[]; }
+function adPrTicked(kind){ return adPrCards(kind).filter(c=>AD.ticks[adPrTickKey(kind,c.id)]); }
+function adPrCount(kind){ const el=document.getElementById('adpr-n-'+kind); if(el) el.textContent=adPrTicked(kind).length+' ticked'; }
+function adPrTickAll(kind,on){
+  adPrCards(kind).forEach(c=>{ const k=adPrTickKey(kind,c.id); AD.ticks[k]=on; });
+  document.querySelectorAll(`[data-pk^="${kind}|"] input[type=checkbox]`).forEach(x=>{ x.checked=on; });
+  adPrCount(kind);
+}
+function adPrOpt(el){
+  const kind=el.id.replace(/^adpr-(rule|pct|round)-/,''), P=AD.pr;
+  P.rule=ptVal('adpr-rule-'+kind)||'market'; P.round=ptVal('adpr-round-'+kind)||'none';
+  const n=Number(ptVal('adpr-pct-'+kind)); P.pct=n>0&&n<90?n:5;
+  const pc=document.getElementById('adpr-pct-'+kind); if(pc) pc.disabled=P.rule==='market';
+  if(P.pv[kind]) adPrPreview(kind);                        // an open preview follows the rule
+}
+// The rule, applied to one market price. Rounding goes to the NEAREST .49 / .99 / dollar.
+function adPrRule(mk){
+  const P=AD.pr; let v=Number(mk||0); if(!(v>0)) return 0;
+  if(P.rule==='minus') v*=1-P.pct/100; else if(P.rule==='plus') v*=1+P.pct/100;
+  if(P.round==='49'||P.round==='99'){ const e=P.round==='49'?.49:.99; v=Math.max(e,Math.round(v-e)+e); }
+  else if(P.round==='whole') v=Math.max(1,Math.round(v));
+  return Math.round(v*100)/100;
+}
+function adPrPreview(kind){
+  const cards=adPrTicked(kind);
+  if(!cards.length){ ptAlert('Tick the cards to change first.'); return; }
+  AD.pr.pv[kind]={rows:cards.map(c=>({id:c.id,name:c.name,from:Number(c.price),to:adPrRule(c.market),cons:!!c.consignor})),res:null};
+  const el=document.getElementById('adpr-pv-'+kind); if(el) el.innerHTML=adPrPvHtml(kind);
+}
+function adPrPvHtml(kind){
+  const pv=AD.pr.pv[kind]; if(!pv) return '';
+  const go=pv.rows.filter(x=>x.to>0&&x.to!==x.from);
+  let h=`<div class="ad-prpv">`+pv.rows.map(x=>`<div class="ad-prpvl"><span>${esc(x.name)}</span><span>${!(x.to>0)?'<span class="pt-neg">no market price — skipped</span>':x.to===x.from?'<span style="color:var(--hint)">no change</span>':adPrMoney(x.from)+' → <b>'+adPrMoney(x.to)+'</b>'+(x.cons?' <span class="pt-tag">consigned</span>':'')}</span></div>`).join('')+`</div>`;
+  if(pv.res) h+=`<div class="${pv.res.skipped&&pv.res.skipped.length?'pt-err':'pt-ok'}" style="font-size:12.5px">${esc(pv.res.message||'')}${(pv.res.skipped||[]).map(s=>'<br>• '+esc(s.name)+': '+esc(s.why)).join('')}</div>`;
+  h+=`<div class="ev-foot">${go.length?`<button class="pt-mini pri" onclick="adPrApply(this,'${kind}')">Apply ${go.length} price${go.length===1?'':'s'}</button>`:''}<button class="pt-mini" onclick="delete AD.pr.pv['${kind}'];document.getElementById('adpr-pv-${kind}').innerHTML=''">Close preview</button></div>`;
+  return h;
+}
+async function adPrApply(btn,kind){
+  const pv=AD.pr.pv[kind]; if(!pv) return;
+  const go=pv.rows.filter(x=>x.to>0&&x.to!==x.from); if(!go.length) return;
+  const cons=go.filter(x=>x.cons).length;
+  if(!(await ptConfirm(`Change ${go.length} price${go.length===1?'':'s'}? Buyers see the new prices straight away.${cons?`\n\n${cons} consigned card${cons===1?' is':'s are'} checked against the owner's floor; any under it are skipped.`:''}`))) return;
+  await guard(btn, async()=>{
+    let r; try{ r=await api('adminPriceBulk',{items:go.map(x=>({cardId:x.id,price:x.to}))}); }catch(e){ r={ok:false,error:'network'}; }
+    if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+    AD.pr.last[kind]=r;
+    (r.cards||[]).forEach(c=>{ adPrApplyCard(c,c.lists); AD.ticks[adPrTickKey(kind,c.id)]=false; });
+    delete AD.pr.last[kind];
+    pv.rows=pv.rows.filter(x=>(r.skipped||[]).some(s=>s.cardId===x.id)); pv.res=r;
+    const el=document.getElementById('adpr-pv-'+kind); if(el) el.innerHTML=pv.rows.length||r.skipped.length?adPrPvHtml(kind):`<div class="pt-ok" style="font-size:12.5px">${esc(r.message)}</div>`;
+    if(!pv.rows.length) delete AD.pr.pv[kind];
+    adPrCount(kind); adStockCountsSync();
+  });
+}
+async function adPrSave(el,v){
+  const box=el.closest('[data-pk]'); if(!box) return;
+  const pk=box.getAttribute('data-pk'), kind=pk.slice(0,pk.indexOf('|')), id=pk.slice(pk.indexOf('|')+1);
+  const c=adPrCards(kind).find(x=>String(x.id)===id); if(!c) return;
+  const inp=box.querySelector('input.ev-num'), n=Math.round(Number(String(v).replace(/[$,\s]/g,''))*100)/100;
+  if(!(n>0)){ ptAlert('Type a price above $0.'); if(inp) inp.value=Number(c.price).toFixed(2); return; }
+  if(n===Math.round(Number(c.price)*100)/100){ if(inp) inp.value=n.toFixed(2); return; }
+  if(inp){ inp.value=n.toFixed(2); inp.classList.add('saving'); inp.classList.remove('bad'); }
+  let r; try{ r=await api('adminPriceSet',{cardId:id,price:n}); }catch(e){ r={ok:false,error:'network'}; }
+  if(inp) inp.classList.remove('saving');
+  if(!r.ok){ if(inp){ inp.classList.add('bad'); inp.value=Number(c.price).toFixed(2); } ptAlert(r.message||ptErr(r)); return; }
+  adPrApplyCard(r.card,r.lists); adStockCountsSync();
+}
+// A card's new price, everywhere it's shown on Stock health: updated, or gone from a list it no longer fits.
+function adPrApplyCard(card,lists){
+  if(!card) return; lists=lists||[];
+  ['nophoto','below','above','stale','atmarket'].forEach(kind=>{
+    const d=AD.det['stk:'+kind]; if(!d||!d.ok) return;
+    const c=(d.cards||[]).find(x=>String(x.id)===String(card.id));
+    if(!c){ if(lists.indexOf(kind)>=0) delete AD.det['stk:'+kind]; return; }   // joins a list we hold: load it fresh next time
+    const el=document.querySelector(`[data-pk="${CSS.escape(kind+'|'+card.id)}"]`);
+    if(lists.indexOf(kind)<0){
+      d.cards=d.cards.filter(x=>x!==c); d.total=Math.max(0,(d.total||1)-1);
+      if(el) el.remove();
+      if(!d.cards.length&&AD.open['stk:'+kind]) adPaintDet('stk:'+kind);
+      return;
+    }
+    c.price=card.price;
+    if(el){ const b=el.querySelector('.adpr-cur'); if(b) b.textContent=adPrMoney(card.price);
+      const one=el.querySelector('.ad-prrow'); if(one){ const t=document.createElement('div'); t.innerHTML=adPrOneHtml(kind,c); one.replaceWith(t.firstElementChild); } }
+  });
+}
+/* Stock health counts after a price change: one fresh dashboard read (debounced),
+   then only the numbers change. */
+function adStockCountsSync(){
+  clearTimeout(AD.stkT);
+  AD.stkT=setTimeout(async()=>{
+    let r; try{ r=await api('adminDash',{fresh:1,live:1}); }catch(e){ return; }
+    if(r&&r.ok){ AD.dash=r; ptSave('addash',r); }
+    const a=await api('adminStock',{kind:'atmarket',live:1}).catch(()=>null);
+    if(a&&a.ok){ AD.atmN=a.total; if(!AD.open['stk:atmarket']) AD.det['stk:atmarket']=a; }
+    adStockCountsPaint();
+  },1200);
+}
+function adStockCountsPaint(){
+  const s=(AD.dash&&AD.dash.stock)||{}, n={nophoto:s.noPhoto,below:s.below,above:s.above,stale:s.stale,atmarket:AD.atmN};
+  Object.keys(n).forEach(k=>{ const el=document.getElementById('ad-stkn-'+k); if(el&&n[k]!=null){ el.textContent=Number(n[k]||0); el.className=Number(n[k])?'pt-neg':''; } });
 }
 function adEventHtml(r){
   if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
@@ -6866,43 +7094,54 @@ async function adLoadEvents(){
 }
 // Dashboard and Shelf both come from the same D1 dashboard call.
 function adRenderToday(){ if(AD_TAB==='shelf') { if(AD.ssub==='lots') adRenderLots(); else if(AD.ssub==='events') adRenderEvents(); else adRenderShelf(); } else adRenderDash(); }
+/* A line = its row + its detail box, wrapped with data-k so adSyncList can keep it.
+   The row opens by id (data-id), so it still works after the list changes order. */
 function adBits(){
   const det=(kind,id,fn,list)=>{ const k=adKey(kind,id); return adXBox(adDom(list+'|'+k), AD.open[k]===list?adDetHtml(k):''); };
-  const row=(kind,list,i,id,title,sub,right)=>`<div class="pt-row" style="cursor:pointer" onclick="adToggle('${kind}','${list}',${i})"><div class="l"><div class="t">${title}</div><div class="s">${sub}</div></div><div class="r">${right||''} ${adXArrow(adDom(list+'|'+adKey(kind,id)),AD.open[adKey(kind,id)]===list)}</div></div>`;
+  const row=(kind,list,id,title,sub,right)=>{ const k=adKey(kind,id);
+    return `<div data-k="${esc(k)}"><div class="pt-row" style="cursor:pointer" data-id="${esc(id)}" onclick="adToggle('${kind}','${list}',this.dataset.id)"><div class="l"><div class="t">${title}</div><div class="s">${sub}</div></div><div class="r">${right||''} ${adXArrow(adDom(list+'|'+k),AD.open[k]===list)}</div></div>`+det(kind,id,null,list)+'</div>'; };
+  const panel=items=>`<div class="panel" style="padding:4px 12px" data-sync>${items}</div>`;
   const sec=(title,list,fmt,empty)=>`<div class="pt-h">${title} <span class="pt-tag">${(list||[]).length}</span></div>`+
-    ((list&&list.length)?'<div class="panel" style="padding:4px 12px">'+list.map(fmt).join('')+'</div>':`<p class="note" style="text-align:left;margin:0 2px">${empty}</p>`);
-  return {det,row,sec};
+    ((list&&list.length)?panel(list.map(fmt).join('')):`<p class="note" style="text-align:left;margin:0 2px">${empty}</p>`);
+  return {det,row,sec,panel};
 }
 function adFoot(d){
   return `<p class="note">Refunds, cancels, strikes and restores stay in Telegram. ${esc(d.version||'')} · as of ${new Date(d.at||Date.now()).toLocaleTimeString()}${d.cached?' (cached)':''}
-      · <a href="#" onclick="AD.fresh=true;AD.det={};adLoad();return false">Refresh</a></p>`;
+      · <a href="#" onclick="AD.fresh=true;AD.det={};AD.atmN=null;adLoad();return false">Refresh</a></p>`;
+}
+// The Dashboard's job lists as [section, html] -- shared by the full draw and the in-place update.
+function adJobSecs(d){
+  const {det,row,sec,panel}=adBits();
+  const j=(d&&d.jobs)||{};
+  const dl=x=>x.delivery==='ship'?'📮':x.delivery==='pickup'?'🤝':'';
+  let focus='';
+  if(AD.focus){
+    const fk=adKey('box',AD.focus), inL=AD_JOB_LISTS.box.find(l=>(j[l]||[]).some(x=>x.id===AD.focus));
+    if(inL&&AD.open[fk]==='focus') AD.open[fk]=inL;
+    if(!inL) focus=`<div class="pt-h">Opened from Telegram</div><div class="panel" style="padding:4px 12px">`+
+      `<div class="pt-row"><div class="l"><div class="t">📦 ${esc(AD.focus)}</div></div></div>`+det('box',AD.focus,adBoxHtml,'focus')+'</div>';
+  }
+  const verify=sec('To verify',j.verify,v=>row('ord','verify',v.id,`#${esc(v.id)}${v.postage?' <span class="pt-tag">postage</span>':''}`,`${esc(v.buyer)} · $${Number(v.total||0).toFixed(2)}${v.since?' · waiting since '+new Date(v.since).toLocaleString([], {day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):''}`),'Nothing waiting 🎉');
+  // v13.15: pull first, then pack. The one walk of the shelf for every box sits
+  // ABOVE the boxes, in the order the job is actually done.
+  const pk=j.pack||[];
+  let pack=`<div class="pt-h">To pack <span class="pt-tag">${pk.length}</span></div>`;
+  if(pk.length) pack+=`<button class="pt-mini big" style="margin:0 0 8px" onclick="adPickToggle()">🧭 Pick route — ${pk.length===1?'this box':'all '+pk.length+' boxes'} ${AD.pickOpen?'▾':'▸'}</button>`+
+    (AD.pickOpen?`<div class="pt-form" id="ad-pick" style="margin:0 0 8px">${adPickHtml(AD.pick)}</div>`:'');
+  pack+=pk.length?panel(pk.map(x=>row('box','pack',x.id,`${dl(x)} ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} card${x.cards===1?'':'s'} · $${Number(x.value||0).toFixed(2)} · ${x.orders} order${x.orders>1?'s':''}`)).join(''))
+    :'<p class="note" style="text-align:left;margin:0 2px">Nothing to pack.</p>';
+  return [['focus',focus],['verify',verify],['pack',pack],
+    ['ship',sec('To ship (postage paid)',j.ship,x=>row('box','ship',x.id,`📮 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`),'Nothing to ship.')],
+    ['handover',sec('To hand over',j.handover,x=>row('box','handover',x.id,`🤝 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`),'No pickups waiting.')],
+    ['overHold',sec('Boxes past their hold',j.overHold,x=>row('box','overHold',x.id,esc(x.id),esc(x.buyer),`<span class="pt-neg">${x.days}d</span>`),'None.')],
+    ['claims',sec('Unpaid claim wins',j.claims,x=>row('ord','claims',x.id,`#${esc(x.id)}`,`${esc(x.buyer)} · $${Number(x.total||0).toFixed(2)}`,`${x.days}d`),'None.')]];
 }
 function adRenderDash(){
   const d=AD.dash;
   if(!d||!d.ok){ adIn(`<div class="empty"><p>${esc(ptErr(d))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
-  const y=window.scrollY, {det,row,sec}=adBits();
-  const j=d.jobs||{}, m=d.money||{}, c=d.consign||{};
-  const dl=x=>x.delivery==='ship'?'📮':x.delivery==='pickup'?'🤝':'';
-  let jobs='';
-  if(AD.focus){
-    const fk=adKey('box',AD.focus), inL=['pack','ship','handover','overHold'].find(l=>(j[l]||[]).some(x=>x.id===AD.focus)), inList=!!inL;
-    if(inL&&AD.open[fk]==='focus') AD.open[fk]=inL;
-    if(!inList) jobs+=`<div class="pt-h">Opened from Telegram</div><div class="panel" style="padding:4px 12px">`+
-      `<div class="pt-row"><div class="l"><div class="t">📦 ${esc(AD.focus)}</div></div></div>`+det('box',AD.focus,adBoxHtml,'focus')+'</div>';
-  }
-  jobs+=sec('To verify',j.verify,(v,i)=>row('ord','verify',i,v.id,`#${esc(v.id)}${v.postage?' <span class="pt-tag">postage</span>':''}`,`${esc(v.buyer)} · $${Number(v.total||0).toFixed(2)}${v.since?' · waiting since '+new Date(v.since).toLocaleString([], {day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):''}`)+det('ord',v.id,adOrderHtml,'verify'),'Nothing waiting 🎉');
-  // v13.15: pull first, then pack. The one walk of the shelf for every box sits
-  // ABOVE the boxes, in the order the job is actually done.
-  const pk=j.pack||[];
-  jobs+=`<div class="pt-h">To pack <span class="pt-tag">${pk.length}</span></div>`;
-  if(pk.length) jobs+=`<button class="pt-mini big" style="margin:0 0 8px" onclick="adPickToggle()">🧭 Pick route — ${pk.length===1?'this box':'all '+pk.length+' boxes'} ${AD.pickOpen?'▾':'▸'}</button>`+
-    (AD.pickOpen?`<div class="pt-form" id="ad-pick" style="margin:0 0 8px">${adPickHtml(AD.pick)}</div>`:'');
-  jobs+=pk.length?'<div class="panel" style="padding:4px 12px">'+pk.map((x,i)=>row('box','pack',i,x.id,`${dl(x)} ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} card${x.cards===1?'':'s'} · $${Number(x.value||0).toFixed(2)} · ${x.orders} order${x.orders>1?'s':''}`)+det('box',x.id,adBoxHtml,'pack')).join('')+'</div>'
-    :'<p class="note" style="text-align:left;margin:0 2px">Nothing to pack.</p>';
-  jobs+=sec('To ship (postage paid)',j.ship,(x,i)=>row('box','ship',i,x.id,`📮 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml,'ship'),'Nothing to ship.');
-  jobs+=sec('To hand over',j.handover,(x,i)=>row('box','handover',i,x.id,`🤝 ${esc(x.id)}`,`${esc(x.buyer)} · ${x.cards||0} cards`)+det('box',x.id,adBoxHtml,'handover'),'No pickups waiting.');
-  jobs+=sec('Boxes past their hold',j.overHold,(x,i)=>row('box','overHold',i,x.id,esc(x.id),esc(x.buyer),`<span class="pt-neg">${x.days}d</span>`)+det('box',x.id,adBoxHtml,'overHold'),'None.');
-  jobs+=sec('Unpaid claim wins',j.claims,(x,i)=>row('ord','claims',i,x.id,`#${esc(x.id)}`,`${esc(x.buyer)} · $${Number(x.total||0).toFixed(2)}`,`${x.days}d`)+det('ord',x.id,adOrderHtml,'claims'),'None.');
+  const y=window.scrollY;
+  const m=d.money||{}, c=d.consign||{};
+  const jobs=adJobSecs(d).map(([key,html])=>`<div id="adsec-${key}">${html}</div>`).join('');
   const money=`<div id="ad-money">${adMoneyHtml(m)}</div>`+`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>`;
   adIn(`<div class="ad-cols"><div>${jobs}</div><div>${money}</div></div>`+adFoot(d));
   window.scrollTo(0,y);
@@ -6920,9 +7159,12 @@ function adRenderShelf(){
             ['below',`Priced under ${s.belowPct||80}% of market`,s.below,'Check before someone else does'],
             ['above',`Priced over ${s.abovePct||125}% of market`,s.above==null?'…':s.above,'Likely to sit — worth a look'],
             ['stale',`Listed over ${s.staleDays||60} days`,s.stale,'Candidates for the next drop or auction'],
+            ['atmarket','Priced exactly at market',AD.atmN==null?'…':AD.atmN,'Often never priced by hand — worth a look'],
             ['stuck','Stuck on a drop/auction hold',stuckN==null?'…':stuckN,'Held, but no live drop or auction has them']];
+  // v13.16: the at-market list isn't in the quick dashboard, so its count loads on its own.
+  if(AD.atmN==null&&!AD.atmLoading){ AD.atmLoading=true; api('adminStock',{kind:'atmarket',live:1}).then(a=>{ if(a&&a.ok){ AD.atmN=a.total; if(!AD.det['stk:atmarket']) AD.det['stk:atmarket']=a; adStockCountsPaint(); } }).catch(()=>{}).finally(()=>{ AD.atmLoading=false; }); }
   const stock=`<div class="pt-h">Stock · ${Number(s.onSale||0)} on sale · $${Number(s.stockValue||0).toFixed(0)}</div><div class="panel" style="padding:4px 12px">`+
-    sk.map((x,i)=>row('stk','stock',i,x[0],x[1],x[3],`<span class="${x[2]&&x[2]!=='…'?'pt-neg':''}">${x[2]==='…'?'…':Number(x[2]||0)}</span>`)+det('stk',x[0],adStockHtml,'stock')).join('')+'</div>';
+    sk.map(x=>row('stk','stock',x[0],x[1],x[3],`<span id="ad-stkn-${x[0]}" class="${x[2]&&x[2]!=='…'?'pt-neg':''}">${x[2]==='…'?'…':Number(x[2]||0)}</span>`)).join('')+'</div>';
   // v13.15: drops & auctions have their own tab (🎯 Events) -- build, post, follow.
   let ev=`<div class="pt-h">Drops &amp; auctions</div>`;
   if(evList==null) ev+=`<p class="note" style="text-align:left;margin:0 2px">Loading…</p>`;
@@ -7329,37 +7571,95 @@ function adThumb(c,w){
     style="width:${w}px;height:${h}px;object-fit:cover;border-radius:4px;flex:none;cursor:zoom-in"
     onclick="event.preventDefault();event.stopPropagation();openZoom(this.dataset.big)">`;
 }
+/* v13.16: inside a lot, cards sit in CARD NUMBER order -- the number before the
+   slash, set ignored (10/103, 9/206, 11/300 -> 9, 10, 11), letters ignored
+   (TG15/TG30 -> 15, SWSH050 -> 50), no number last. Same rule as lotsNum_ in
+   lots.gs. Used by an open lot, "Not in a lot", the pick route and Pull from. */
+function lotNum(c){ const m=/\d+/.exec(String((c&&c.number)||'').split('/')[0]); return m?Number(m[0]):Infinity; }
+function lotByNum(a,b){ const x=lotNum(a.card), y=lotNum(b.card); return (x===y?0:x<y?-1:1)||String((a.card&&a.card.name)||'').toLowerCase().localeCompare(String((b.card&&b.card.name)||'').toLowerCase()); }
+// Lines that come grouped by lot: lots keep the server's order, cards inside go by number.
+function lotSortLines(lines){
+  const rank={}; (lines||[]).forEach((l,i)=>{ if(rank[l.lot]===undefined) rank[l.lot]=i; });
+  return (lines||[]).map((l,i)=>({l,i})).sort((a,b)=>(rank[a.l.lot]-rank[b.l.lot])||lotByNum(a.l,b.l)||(a.i-b.i)).map(x=>x.l);
+}
 function adLotMatch(u){
   const q=(AD.lotQ||'').trim().toLowerCase(); if(!q) return true;
   const c=u.card||{};
   return [c.name,c.set,c.number,c.photoKey,c.portfolio,c.variance].join(' ').toLowerCase().indexOf(q)>=0;
 }
-function adLotShown(){ return ((AD.lots&&AD.lots.unlocated)||[]).filter(adLotMatch); }
+function adLotShown(){ return ((AD.lots&&AD.lots.unlocated)||[]).filter(adLotMatch).sort(lotByNum); }
 function adLotTicked(){ return ((AD.lots&&AD.lots.unlocated)||[]).filter(u=>AD.lotTick[u.key]); }
+// How many copies of a ticked card go in: all of them unless you chose fewer.
+AD.lotN={}; AD.lotWhere={}; AD.lotMv='';
+function adLotCopies(u){ const n=Math.round(Number(AD.lotN[u.key])); return n>=1&&n<u.n?n:u.n; }
 function adLotBtnText(){
-  const tk=adLotTicked();
-  return tk.length?`Put ${tk.reduce((s,u)=>s+u.n,0)} ticked card${tk.reduce((s,u)=>s+u.n,0)===1?'':'s'} in this lot`:'Tick cards below first';
+  const n=adLotTicked().reduce((s,u)=>s+adLotCopies(u),0);
+  return n?`Put ${n} ticked card${n===1?'':'s'} in this lot`:'Tick cards below first';
 }
 function adLotSync(){
   const b=document.getElementById('ad-lotbtn'); if(b){ b.textContent=adLotBtnText(); b.disabled=!adLotTicked().length; }
   const n=document.getElementById('ad-lotn'); if(n){ const tk=adLotTicked(); n.textContent=tk.length?tk.length+' ticked':''; }
 }
-function adLotTick(key,el){ AD.lotTick[key]=!!el.checked; adLotSync(); }
+const adLotKeyOf=el=>{ const x=el.closest('[data-k]'); return x?x.getAttribute('data-k').slice(2):''; };
+function adLotTick(el){ const k=adLotKeyOf(el); if(!k) return; AD.lotTick[k]=!!el.checked; adLotDrawList(); adLotSync(); }
+function adLotSetN(el){ const k=adLotKeyOf(el); if(!k) return; AD.lotN[k]=el.value; adLotSync(); }
 function adLotTickShown(on){ adLotShown().forEach(u=>{ if(on) AD.lotTick[u.key]=true; else delete AD.lotTick[u.key]; }); adLotDrawList(); adLotSync(); }
 function adLotSearch(v){ AD.lotQ=v; adLotDrawList(); }
-function adLotListHtml(){
-  const all=(AD.lots&&AD.lots.unlocated)||[], sh=adLotShown();
-  if(!all.length) return `<p class="note" style="text-align:left;margin:0 2px">Every card in stock is in a lot 🎉</p>`;
-  if(!sh.length) return `<p class="note" style="text-align:left;margin:0 2px">No card matches “${esc(AD.lotQ||'')}”.</p>`;
-  AD.lotKeys=sh.map(u=>u.key);
-  let h='<div class="panel" style="padding:2px 12px">'+sh.slice(0,AD.lotShow).map((u,i)=>`<label class="pt-row" style="cursor:pointer;align-items:center;gap:10px">
+// "also 2× in L0002" -- where the other copies of this card are filed.
+function adLotWhereTxt(key,ex){ const w=(AD.lotWhere[key]||[]).filter(x=>x.lot!==ex&&x.qty>0); return w.length?(ex?'also ':'')+w.map(x=>x.qty+'× in '+x.lot).join(', ')+(ex?'':' already'):''; }
+function adLotWhereShow(key,ex){ const t=adLotWhereTxt(key,ex); return t&&!ex?' · '+t:t; }
+const adLotWhereHtml=(key,ex)=>`<span class="ad-wh" data-wk="${esc(key)}" data-ex="${esc(ex||'')}">${esc(adLotWhereShow(key,ex))}</span>`;
+function adLotItemHtml(u){
+  const on=!!AD.lotTick[u.key];
+  return `<label class="pt-row" data-k="u:${esc(u.key)}" style="cursor:pointer;align-items:center;gap:10px">
       ${adThumb(u.card)}
-      <div class="l" style="flex:1"><div class="t" style="font-size:13.5px">${adLotCard(u.card)}</div><div class="s">${u.n} cop${u.n===1?'y':'ies'}${u.card.portfolio?' · '+esc(u.card.portfolio):''}</div></div>
-      <div class="r"><input type="checkbox" style="width:22px;height:22px" ${AD.lotTick[u.key]?'checked':''} onchange="adLotTick(AD.lotKeys[${i}],this)"></div></label>`).join('')+'</div>';
-  if(sh.length>AD.lotShow) h+=`<p class="note"><a href="#" onclick="AD.lotShow+=200;adLotDrawList();return false">Show more (${sh.length-AD.lotShow} more)</a></p>`;
+      <div class="l" style="flex:1"><div class="t" style="font-size:13.5px">${adLotCard(u.card)}</div><div class="s">${u.n} cop${u.n===1?'y':'ies'}${u.card.portfolio?' · '+esc(u.card.portfolio):''}${adLotWhereHtml(u.key,'')}</div>
+      ${on&&u.n>1?`<div class="ad-lotcp" onclick="event.preventDefault()">Put <input type="number" inputmode="numeric" min="1" max="${u.n}" value="${adLotCopies(u)}" aria-label="Copies of ${esc(u.card.name)} to put in" onclick="event.stopPropagation()" onchange="adLotSetN(this)" oninput="adLotSetN(this)"> of ${u.n} in this lot</div>`:''}</div>
+      <div class="r"><input type="checkbox" style="width:22px;height:22px" ${on?'checked':''} onchange="adLotTick(this)" aria-label="Tick ${esc(u.card.name)}"></div></label>`;
+}
+function adLotUnlocSec(){
+  const t=(AD.lots&&AD.lots.totals)||{}, all=(AD.lots&&AD.lots.unlocated)||[], sh=adLotShown();
+  let h=`<div class="pt-h">Not in a lot <span class="pt-tag ${t.unlocated?'warn':''}">${t.unlocated||0}</span></div>`;
+  if(!all.length) return h+`<p class="note" style="text-align:left;margin:0 2px">Every card in stock is in a lot 🎉</p>`;
+  if(!sh.length) return h+`<p class="note" style="text-align:left;margin:0 2px">No card matches “${esc(AD.lotQ||'')}”.</p>`;
+  h+=`<div class="panel" style="padding:2px 12px" data-sync>`+sh.slice(0,AD.lotShow).map(adLotItemHtml).join('')+'</div>';
+  if(sh.length>AD.lotShow) h+=`<p class="note"><a href="#" onclick="AD.lotShow+=200;adLotDrawList();adLotsWhereLoad();return false">Show more (${sh.length-AD.lotShow} more)</a></p>`;
   return h;
 }
-function adLotDrawList(){ const el=document.getElementById('ad-unloc'); if(el) el.innerHTML=adLotListHtml(); }
+function adLotDrawList(){ const el=document.getElementById('adls-unloc'); if(el) adSyncSec(el,adLotUnlocSec()); }
+function adLotOverSec(){
+  const r=AD.lots||{}, t=r.totals||{}, ov=r.over||[];
+  if(!ov.length) return '';
+  return `<div class="pt-h">In a lot, but not in stock <span class="pt-tag warn">${t.over||0}</span></div><p class="note" style="text-align:left;margin:0 2px 4px">Gone some other way (a refund after packing, a hand edit). Take it out of that lot, then tap −1.</p><div class="panel" style="padding:2px 12px">`+
+    ov.map((o,i)=>`<div class="pt-row" style="align-items:center;gap:10px">${adThumb(o.card)}<div class="l" style="flex:1"><div class="t" style="font-size:13.5px">${adLotCard(o.card)}</div><div class="s">${o.n} extra · in ${o.lots.map(l=>esc(l.lot)+' ×'+l.qty).join(', ')}</div></div><div class="r" style="flex-wrap:wrap;justify-content:flex-end">${o.lots.map((l,j)=>`<button class="pt-mini" style="margin:2px" onclick="adLotAdjO(this,${i},${j})">−1 ${esc(l.lot)}</button>`).join('')}</div></div>`).join('')+'</div>';
+}
+function adLotBodyHtml(code){
+  const d=AD.det['lot:'+code];
+  let h=`<div class="pt-form" style="margin:0 0 8px"><button class="pt-mini" style="margin:0 0 6px" onclick="adLotAddHere('${esc(code)}')">＋ Add cards to ${esc(code)}</button>`;
+  if(!d) return h+'<div class="skelcard" style="height:60px"></div></div>';
+  if(!d.ok) return h+`<p class="pt-err">${esc(ptErr(d))}</p></div>`;
+  if(!d.lines.length) return h+'<p class="note">Empty — everything in it has gone. You can reuse the divider.</p></div>';
+  h+=`<div class="s" style="font-size:11.5px;color:var(--hint);margin:0 0 4px">In card-number order, smallest at the front.</div>`;
+  return h+d.lines.slice().sort(lotByNum).map(z=>{
+    const mv=AD.lotMv===code+'|'+z.key, nx=(AD.lots&&AD.lots.next)||'';
+    return `<div class="ad-lotln" data-lot="${esc(code)}" data-key="${esc(z.key)}"><div class="pt-inl" style="margin:3px 0;align-items:center;gap:8px">${adThumb(z.card,30)}<span style="font-size:13px;flex:1;min-width:140px"><b>${z.n}×</b> ${adLotCard(z.card)} <span class="s" style="font-size:11.5px;color:var(--hint)">${adLotWhereHtml(z.key,code)}</span></span>`+
+      `<button class="pt-mini" style="margin:0" onclick="adLotAdjEl(this,-1)" aria-label="One fewer">−1</button><button class="pt-mini" style="margin:0" onclick="adLotAdjEl(this,1)" aria-label="One more">+1</button><button class="pt-mini" style="margin:0" onclick="adLotMvOpen(this)">Move…</button></div>`+
+      (mv?`<div class="ad-lotmv">Move <input id="ad-mvn" type="number" inputmode="numeric" min="1" max="${z.n}" value="${z.n}" aria-label="How many to move"> of ${z.n} to <input id="ad-mvto" value="${esc(nx)}" autocapitalize="characters" maxlength="12" aria-label="Lot to move them to"><button class="pt-mini pri" onclick="adLotMove(this)">Move</button><button class="pt-mini" onclick="AD.lotMv='';adLotsRedraw()">Cancel</button></div>`:'')+`</div>`;
+  }).join('')+'</div>';
+}
+function adLotListSec(){
+  const r=AD.lots||{};
+  let b=`<div class="pt-h">Lots <span class="pt-tag">${(r.lots||[]).length}</span></div>`;
+  if(!(r.lots||[]).length) return b+`<p class="note" style="text-align:left;margin:0 2px">No lots yet.</p>`;
+  return b+'<div class="panel" style="padding:4px 12px" data-sync>'+r.lots.map(l=>{
+    const open=AD.lotOpen[l.lot];
+    const when=l.created?new Date(l.created).toLocaleDateString([], {day:'numeric',month:'short',year:'2-digit'}):'';
+    return `<div data-k="lot:${esc(l.lot)}"><div class="pt-row" style="cursor:pointer" onclick="adLotOpen('${esc(l.lot)}')"><div class="l"><div class="t">📍 <b>${esc(l.lot)}</b></div><div class="s">${l.copies} card${l.copies===1?'':'s'} · ${l.cards} kind${l.cards===1?'':'s'}${when?' · '+when:''}${l.portfolio?' · '+esc(l.portfolio):''}${l.source&&l.source!=='import'?' · '+esc(l.source):''}</div></div><div class="r">${open?'▾':'▸'}</div></div>`+
+      `<div class="ad-lotbody">${open?adLotBodyHtml(l.lot):''}</div></div>`;
+  }).join('')+'</div>';
+}
+function adLotTotalsHtml(){ const t=(AD.lots&&AD.lots.totals)||{};
+  return `<b>📍 ${t.lots||0} lot${t.lots===1?'':'s'}</b> · ${t.located||0} shelved · <span class="${t.unlocated?'pt-neg':''}">${t.unlocated||0} not in a lot</span>${t.over?` · <span class="pt-neg">${t.over} to take out</span>`:''}`; }
 function adRenderLots(){
   const r=AD.lots;
   if(!r||!r.ok){ adIn(`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
@@ -7367,7 +7667,7 @@ function adRenderLots(){
   const target=AD.lotTo||(t.lots?(r.next||''):'L0000');
   // 1. The tools, at the top: which lot, search, tick helpers, the button.
   let top=`<div class="panel" style="padding:12px;display:grid;gap:8px;margin-bottom:10px">
-    <div style="font-size:13px"><b>📍 ${t.lots||0} lot${t.lots===1?'':'s'}</b> · ${t.located||0} shelved · <span class="${t.unlocated?'pt-neg':''}">${t.unlocated||0} not in a lot</span>${t.over?` · <span class="pt-neg">${t.over} to take out</span>`:''}</div>
+    <div style="font-size:13px" id="ad-lottot">${adLotTotalsHtml()}</div>
     <div class="pt-inl" style="margin:0;flex-wrap:wrap;gap:6px">
       <input id="ad-lotto" value="${esc(target)}" oninput="AD.lotTo=this.value.toUpperCase();adLotNextSync()" autocapitalize="characters" maxlength="12" style="max-width:110px" aria-label="Lot code">
       <button id="ad-lotbtn" class="pt-mini pri" style="margin:0" onclick="adLotAssign(this)" ${adLotTicked().length?'':'disabled'}>${adLotBtnText()}</button>
@@ -7381,31 +7681,51 @@ function adRenderLots(){
     </div>
     ${t.lots?'':`<p class="note" style="text-align:left;margin:0">First time: tap <b>Tick all matching</b>, keep <b>L0000</b> and put everything in. Label that storage L0000. Every Collectr import after that gets its own code.</p>`}
   </div>`;
-  let a=`<div class="pt-h">Not in a lot <span class="pt-tag ${t.unlocated?'warn':''}">${t.unlocated||0}</span></div><div id="ad-unloc">${adLotListHtml()}</div>`;
-  const ov=r.over||[];
-  if(ov.length){
-    a+=`<div class="pt-h">In a lot, but not in stock <span class="pt-tag warn">${t.over||0}</span></div><p class="note" style="text-align:left;margin:0 2px 4px">Gone some other way (a refund after packing, a hand edit). Take it out of that lot, then tap −1.</p><div class="panel" style="padding:2px 12px">`+
-      ov.map((o,i)=>`<div class="pt-row" style="align-items:center;gap:10px">${adThumb(o.card)}<div class="l" style="flex:1"><div class="t" style="font-size:13.5px">${adLotCard(o.card)}</div><div class="s">${o.n} extra · in ${o.lots.map(l=>esc(l.lot)+' ×'+l.qty).join(', ')}</div></div><div class="r" style="flex-wrap:wrap;justify-content:flex-end">${o.lots.map((l,j)=>`<button class="pt-mini" style="margin:2px" onclick="adLotAdjO(this,${i},${j})">−1 ${esc(l.lot)}</button>`).join('')}</div></div>`).join('')+'</div>';
-  }
-  let b=`<div class="pt-h">Lots <span class="pt-tag">${(r.lots||[]).length}</span></div>`;
-  if(!(r.lots||[]).length) b+=`<p class="note" style="text-align:left;margin:0 2px">No lots yet.</p>`;
-  else b+='<div class="panel" style="padding:4px 12px">'+r.lots.map(l=>{
-    const open=AD.lotOpen[l.lot], d=AD.det['lot:'+l.lot];
-    const when=l.created?new Date(l.created).toLocaleDateString([], {day:'numeric',month:'short',year:'2-digit'}):'';
-    let x=`<div class="pt-row" style="cursor:pointer" onclick="adLotOpen('${esc(l.lot)}')"><div class="l"><div class="t">📍 <b>${esc(l.lot)}</b></div><div class="s">${l.copies} card${l.copies===1?'':'s'} · ${l.cards} kind${l.cards===1?'':'s'}${when?' · '+when:''}${l.portfolio?' · '+esc(l.portfolio):''}${l.source&&l.source!=='import'?' · '+esc(l.source):''}</div></div><div class="r">${open?'▾':'▸'}</div></div>`;
-    if(open) x+=`<div class="pt-form" style="margin:0 0 8px">
-      <button class="pt-mini" style="margin:0 0 6px" onclick="adLotAddHere('${esc(l.lot)}')">＋ Add cards to ${esc(l.lot)}</button>
-      ${!d?'<div class="skelcard" style="height:60px"></div>':!d.ok?`<p class="pt-err">${esc(ptErr(d))}</p>`:!d.lines.length?'<p class="note">Empty — everything in it has gone. You can reuse the divider.</p>':
-      d.lines.map((z,i)=>`<div class="pt-inl" style="margin:3px 0;align-items:center;gap:8px">${adThumb(z.card,30)}<span style="font-size:13px;flex:1"><b>${z.n}×</b> ${adLotCard(z.card)}</span><button class="pt-mini" style="margin:0" onclick="adLotAdjL(this,'${esc(l.lot)}',${i},-1)">−1</button><button class="pt-mini" style="margin:0" onclick="adLotAdjL(this,'${esc(l.lot)}',${i},1)">+1</button></div>`).join('')}</div>`;
-    return x;
-  }).join('')+'</div>';
-  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. Tap any picture to enlarge it. · <a href="#" onclick="AD.fresh=true;AD.det={};adLoad();return false">Refresh</a></p>`);
+  const a=`<div id="adls-unloc">${adLotUnlocSec()}</div><div id="adls-over">${adLotOverSec()}</div>`;
+  const b=`<div id="adls-lots">${adLotListSec()}</div>`;
+  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">Cards shown in number order, as they sit in a lot. When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. Tap any picture to enlarge it. · <a href="#" onclick="AD.fresh=true;AD.det={};AD.atmN=null;adLoad();return false">Refresh</a></p>`);
   adLotSync(); adLotNextSync();
   window.scrollTo(0,y);
+  adLotsWhereLoad();
+}
+/* v13.16: every change on this screen (tick, file, ±1, move, open a lot)
+   updates the parts it touched in place -- no redraw of the whole tab. */
+function adLotsRedraw(){
+  if(!(AD_TAB==='shelf'&&AD.ssub==='lots')) return;
+  const s={unloc:adLotUnlocSec(),over:adLotOverSec(),lots:adLotListSec()};
+  if(Object.keys(s).some(k=>!document.getElementById('adls-'+k))){ adRenderLots(); return; }
+  Object.keys(s).forEach(k=>adSyncSec(document.getElementById('adls-'+k),s[k]));
+  const tt=document.getElementById('ad-lottot'); if(tt) tt.innerHTML=adLotTotalsHtml();
+  adLotSync(); adLotNextSync();
+}
+// Fetch where each card on screen is filed, then fill in the "also in" notes.
+async function adLotsWhereLoad(){
+  const keys=adLotShown().slice(0,AD.lotShow).map(u=>u.key);
+  Object.keys(AD.lotOpen).forEach(code=>{ const d=AD.det['lot:'+code]; if(d&&d.ok) d.lines.forEach(z=>keys.push(z.key)); });
+  if(!keys.length) return;
+  const seq=AD.lotWhSeq=(AD.lotWhSeq||0)+1;
+  let r; try{ r=await api('adminLotWhere',{keys:[...new Set(keys)].slice(0,1000)}); }catch(e){ return; }
+  if(seq!==AD.lotWhSeq||!r||!r.ok) return;
+  keys.forEach(k=>{ AD.lotWhere[k]=r.where[k]||[]; });
+  document.querySelectorAll('.ad-wh').forEach(el=>{
+    const t=adLotWhereShow(el.getAttribute('data-wk'),el.getAttribute('data-ex')||'');
+    if(el.textContent!==t) el.textContent=t;
+  });
+}
+// After a write: fresh numbers for the screen and for each open lot it touched, then patch in place.
+async function adLotsAfter(lots){
+  const opens=[...new Set(lots)].filter(l=>AD.lotOpen[l]);
+  lots.forEach(l=>{ if(!AD.lotOpen[l]) delete AD.det['lot:'+l]; });
+  const got=await Promise.all([api('adminLots',{live:1}).catch(()=>null)].concat(opens.map(l=>api('adminLot',{lot:l,live:1}).catch(()=>null))));
+  const r=got[0];
+  if(r&&r.ok){ AD.lots=r; ptSave('adlots',r); }
+  opens.forEach((l,i)=>{ if(got[i+1]) AD.det['lot:'+l]=got[i+1]; });
+  adLotsRedraw(); adLotsWhereLoad();
 }
 // "＋ Add cards to L0007": target that lot, jump to the tools at the top.
 function adLotAddHere(code){
   AD.lotTo=code; const i=document.getElementById('ad-lotto'); if(i) i.value=code;
+  adLotNextSync();
   window.scrollTo({top:0,behavior:'smooth'});
   const q=document.getElementById('ad-lotq'); if(q) setTimeout(()=>q.focus(),300);
 }
@@ -7415,36 +7735,50 @@ function adLotAddHere(code){
 function adLotNextLabel(v){ const nx=(AD.lots&&AD.lots.next)||''; return !nx?'Next free code':String(v||'').toUpperCase()===nx?'✓ '+esc(nx)+' is the next free code':'Use next free code ('+esc(nx)+')'; }
 function adLotNextSync(){ const b=document.getElementById('ad-lotnext'), nx=(AD.lots&&AD.lots.next)||''; if(!b) return; b.textContent=adLotNextLabel(ptVal('ad-lotto')).replace(/&amp;/g,'&'); b.disabled=!!nx&&ptVal('ad-lotto').toUpperCase()===nx; }
 function adLotNewCode(){ const r=AD.lots||{}; AD.lotTo=r.next||''; const i=document.getElementById('ad-lotto'); if(i) i.value=AD.lotTo; adLotNextSync(); }
-async function adLotsLive(){ const r=await api('adminLots',{live:1}); if(r&&r.ok){ AD.lots=r; ptSave('adlots',r); } if(AD_TAB==='shelf'&&AD.ssub==='lots') adRenderLots(); }
 async function adLotOpen(code){
-  if(AD.lotOpen[code]){ delete AD.lotOpen[code]; adRenderLots(); return; }
-  AD.lotOpen[code]=1; adRenderLots();
-  AD.det['lot:'+code]=await api('adminLot',{lot:code});
-  if(AD.lotOpen[code]&&AD_TAB==='shelf'&&AD.ssub==='lots') adRenderLots();
+  if(AD.lotOpen[code]){ delete AD.lotOpen[code]; if(AD.lotMv.indexOf(code+'|')===0) AD.lotMv=''; adLotsRedraw(); return; }
+  AD.lotOpen[code]=1; adLotsRedraw();
+  if(!AD.det['lot:'+code]) AD.det['lot:'+code]=await api('adminLot',{lot:code}).catch(()=>({ok:false,error:'network'}));
+  if(AD.lotOpen[code]){ adLotsRedraw(); adLotsWhereLoad(); }
 }
 async function adLotAssign(btn){
   const lot=ptVal('ad-lotto').toUpperCase().replace(/\s+/g,'');
   if(!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(lot)){ ptAlert('Lot codes are letters, numbers and dashes (up to 12), e.g. L0000 or BIN3.'); return; }
   const tk=adLotTicked();
   if(!tk.length){ ptAlert('Tick the cards to put in '+lot+' first (or tap Tick all matching).'); return; }
-  const n=tk.reduce((s,u)=>s+u.n,0);
-  if(!(await ptConfirm(`Put ${n} card${n===1?'':'s'} in lot ${lot}? File them behind a divider marked ${lot}.`))) return;
+  const n=tk.reduce((s,u)=>s+adLotCopies(u),0), part=tk.filter(u=>adLotCopies(u)<u.n).length;
+  if(!(await ptConfirm(`Put ${n} card${n===1?'':'s'} in lot ${lot}? File them behind a divider marked ${lot}.${part?`\n\n${part} card${part===1?' keeps':'s keep'} some copies back for another lot.`:''}`))) return;
   await guard(btn, async()=>{
-    const r=await api('adminLotAssign',{lot:lot,keys:tk.map(u=>u.key)});
+    const r=await api('adminLotAssign',{lot:lot,items:tk.map(u=>({key:u.key,n:adLotCopies(u)}))});
     ptAlert(r.message||(r.ok?'Done':ptErr(r)));
-    if(r.ok){ AD.lotTick={}; delete AD.det['lot:'+lot]; if(AD.lotOpen[lot]) AD.det['lot:'+lot]=await api('adminLot',{lot:lot,live:1}); await adLotsLive(); }
+    if(r.ok){ AD.lotTick={}; AD.lotN={}; await adLotsAfter([r.lot||lot]); }
   });
 }
 async function adLotAdj(btn,lot,key,delta){
   await guard(btn, async()=>{
     const r=await api('adminLotAdjust',{lot:lot,key:key,delta:delta});
     if(!r.ok) ptAlert(r.message||ptErr(r));
-    if(AD.lotOpen[lot]) AD.det['lot:'+lot]=await api('adminLot',{lot:lot,live:1}); else delete AD.det['lot:'+lot];
-    await adLotsLive();
+    await adLotsAfter([lot]);
   });
 }
 function adLotAdjO(btn,i,j){ const o=(AD.lots.over||[])[i]; const l=o&&o.lots[j]; if(l) adLotAdj(btn,l.lot,o.key,-1); }
-function adLotAdjL(btn,lot,i,delta){ const d=AD.det['lot:'+lot]; const z=d&&d.lines&&d.lines[i]; if(z) adLotAdj(btn,lot,z.key,delta); }
+function adLotAdjEl(btn,delta){ const x=btn.closest('.ad-lotln'); if(x) adLotAdj(btn,x.getAttribute('data-lot'),x.getAttribute('data-key'),delta); }
+function adLotMvOpen(btn){ const x=btn.closest('.ad-lotln'); if(!x) return; const k=x.getAttribute('data-lot')+'|'+x.getAttribute('data-key'); AD.lotMv=AD.lotMv===k?'':k; adLotsRedraw();
+  const to=document.getElementById('ad-mvto'); if(to) try{ to.focus({preventScroll:true}); to.select(); }catch(e){} }
+// v13.16: move copies of a card to another lot (a new code makes a new lot).
+async function adLotMove(btn){
+  const x=btn.closest('.ad-lotln'); if(!x) return;
+  const from=x.getAttribute('data-lot'), key=x.getAttribute('data-key');
+  const to=ptVal('ad-mvto').toUpperCase().replace(/\s+/g,''), n=Math.round(Number(ptVal('ad-mvn')));
+  if(!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(to)){ ptAlert('Lot codes are letters, numbers and dashes (up to 12), e.g. L0023 or L0023-B.'); return; }
+  if(to===from){ ptAlert('They’re already in '+from+'.'); return; }
+  if(!(n>=1)){ ptAlert('Move at least 1.'); return; }
+  await guard(btn, async()=>{
+    const r=await api('adminLotMove',{key:key,from:from,to:to,n:n});
+    ptAlert(r.message||(r.ok?'Done':ptErr(r)));
+    if(r.ok){ AD.lotMv=''; await adLotsAfter([from,to]); }
+  });
+}
 // Dashboard: one walk of the shelf for every box waiting to be packed.
 async function adPickToggle(){
   AD.pickOpen=!AD.pickOpen; if(AD.pickOpen) AD.pick=null; adRenderDash();
@@ -7463,6 +7797,7 @@ function adPickHtml(r){
   if(!r) return '<div class="skelcard" style="height:80px"></div>';
   if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
   if(!r.lines.length) return '<p class="note">Nothing to pull.</p>';
+  r.lines=lotSortLines(r.lines);                         // v13.16: card-number order inside each lot
   const done=adPickDone(), onRoute={};
   r.lines.forEach(l=>{ onRoute[adPickLineKey(l)]=1; });
   let pruned=false; Object.keys(done).forEach(k=>{ if(!onRoute[k]){ delete done[k]; pruned=true; } }); if(pruned) adPickSaveDone(done);
