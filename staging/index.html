@@ -1725,6 +1725,27 @@ body.pc #v-credit{max-width:640px}
 .evl-sum{font-size:12.5px;margin-top:4px}
 .evl-ctl{margin:0 0 6px}
 .evl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* v13.18 queue & schedule */
+.evp-k{padding:6px 0 10px;border-bottom:1px solid var(--line)}
+.evp-k:last-child{border-bottom:0}
+.evp-t{font-weight:800;font-size:13.5px;margin-bottom:4px}
+.evp-slot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12.5px}
+.evp-slot .pt-mini{margin:0}
+.evp-next{font-size:12.5px;margin-top:6px}
+.evp-form{margin:8px 0;padding:8px;border-radius:10px;background:var(--line)}
+.evp-days{display:flex;gap:6px;flex-wrap:wrap}
+.evp-days .chip{min-width:44px;min-height:36px}
+.evp-lab{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700}
+.evp-lab input{font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-family:inherit}
+.evp-q{margin-top:6px}
+.evp-qi{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.evp-qi:last-child{border-bottom:0}
+.evp-n{flex:none;width:22px;height:22px;border-radius:50%;background:var(--line);display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:11.5px}
+.evp-qt{flex:1;min-width:0;overflow-wrap:anywhere}
+.evp-qb{display:flex;flex:none}
+.evl-x:disabled{opacity:.3}
+.evp-draft{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.evp-draft .pt-mini{margin:0}
 .evl-grid .pt-mini{margin:0;width:100%}
 #pt-toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,12px);max-width:min(92vw,420px);padding:10px 14px;border-radius:12px;background:#2A1024;color:#fff;font-size:13px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity 180ms ease,transform 180ms cubic-bezier(.23,1,.32,1);z-index:9999;text-align:center}
 #pt-toast.show{opacity:1;transform:translate(-50%,0)}
@@ -6602,6 +6623,7 @@ async function adLoad(){
     if((r&&r.ok) || !(AD.events&&AD.events.ok)) AD.events=r;
     adRenderEvents();
     if(AD.ev.open) adEvLoadDet(AD.ev.open);          // the draft you had open stays open, fresh
+    if(AD.events&&!AD.events.plan) adEvPlanEnsure();  // an older Worker doesn't carry the plan yet
   }
   else if(tab==='shelf'){   // 📍 Lots
     const saved=!AD.fresh&&(AD.lots&&AD.lots.ok?AD.lots:ptLoad('adlots'));
@@ -7260,7 +7282,8 @@ function adEvDraftItems(d){ return ((d&&d.items)||[]).filter(it=>it.status==='st
 function adEvRowSub(e){
   const ago=h=>h<1?'just now':h<48?Math.floor(h)+'h ago':Math.floor(h/24)+'d ago';
   if(e.state==='done'||e.state==='cancelled') return `${e.state==='cancelled'?'cancelled':'closed'} ${ago(Number(e.ageHrs||0))} · ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}`;
-  return `${e.state||''} · ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}${e.ageHrs?' · '+Number(e.ageHrs)+'h old':''}`;
+  const P=(AD.events&&AD.events.plan)||null, q=P&&P.queue&&P.queue[e.kind]?P.queue[e.kind].indexOf(e.id):-1;
+  return `${e.state||''}${q>=0?' · queued #'+(q+1):''} · ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}${e.ageHrs?' · '+Number(e.ageHrs)+'h old':''}`;
 }
 const adEvDone=e=>e&&(e.state==='done'||e.state==='cancelled');
 function adEvBoxHtml(k){ const cut=k.indexOf(':'); return `<div class="pt-form" style="margin:0 0 8px">${adEvDetHtml(k.slice(0,cut),k.slice(cut+1))}</div>`; }
@@ -7297,7 +7320,7 @@ function adRenderEvents(){
   const c=`<div id="ev-hist"><div class="pt-h">History — last 14 days <span class="pt-tag">${hist.length}</span></div>`+(hist.length
       ?'<div class="panel" style="padding:4px 12px">'+hist.map(rowFor).join('')+'</div>'
       :'<p class="note" style="text-align:left;margin:0 2px">Closed drops and auctions show here.</p>')+'</div>';
-  adIn(top+`<div class="ad-cols"><div>${b}${a}</div><div>${c}</div></div><p class="note">Posting, closing, extending, forfeiting and cancelling here run the same code as the Telegram commands, which still work too.${r.at?' · as of '+new Date(r.at).toLocaleTimeString():''} · <a href="#" onclick="AD.fresh=true;AD.ev.det={};adLoad();return false">Refresh</a></p>`);
+  adIn(top+`<div class="ad-cols"><div>${b}${a}</div><div><div id="ev-plan">${adEvPlanHtml()}</div>${c}</div></div><p class="note">Posting, closing, extending, forfeiting and cancelling here run the same code as the Telegram commands, which still work too.${r.at?' · as of '+new Date(r.at).toLocaleTimeString():''} · <a href="#" onclick="AD.fresh=true;AD.ev.det={};adLoad();return false">Refresh</a></p>`);
   window.scrollTo(0,y);
   if(lab){ const el=[...document.querySelectorAll('#ad-in [aria-label]')].find(x=>x.getAttribute('aria-label')===lab);
     if(el){ el.focus({preventScroll:true}); if(keep){ el.value=keep.v; try{ el.setSelectionRange(keep.s,keep.e); }catch(x){} } } }
@@ -7404,7 +7427,7 @@ function adEvFootHtml(d,items){
   return `<div class="ev-foot"><button class="pt-mini big" onclick="adEvPickOpen('${d.kind}','${esc(d.id)}')">＋ Add cards</button>`+
     `<button class="pt-mini big pri" ${why?'disabled':''} onclick="adEvGo(this)">▶ Post ${esc(d.short)}</button>`+
     `<button class="pt-mini big danger" onclick="adEvBin(this)">🗑 Bin draft</button></div>`+
-    (why?`<div class="s" style="font-size:12px;color:var(--hint);margin-top:6px">${why}</div>`:'');
+    (why?`<div class="s" style="font-size:12px;color:var(--hint);margin-top:6px">${why}</div>`:'')+adEvQueueFootHtml(d);
 }
 function adEvItemHtml(d,it,i){
   const auc=d.kind==='auction', c=it.card||{}, lot=AD.ev.lotOf[c.id], did=esc(it.dropId);
@@ -7484,7 +7507,8 @@ function adEvLiveHead(d){
     `<div class="evl-sum">${adEvLiveSum(d)}</div></div>`;
 }
 function adEvLiveCtl(d){
-  if(d.state!=='live') return `<div class="evl-ctl"><div class="s" style="font-size:12px;color:var(--hint)">${d.state==='cancelled'?'Cancelled.':'Closed.'} Unpaid winners can still be forfeited or sent their invoice again below.</div></div>`;
+  if(d.state!=='live'){ const P=adEvPlan(), n=(P&&P.left&&P.left[d.id])||0;
+    return `<div class="evl-ctl">${n?`<button class="pt-mini big" style="margin:0 0 6px" onclick="adEvRoll(this)">↪️ Put ${n} leftover${n===1?'':'s'} in the next draft</button>`:''}<div class="s" style="font-size:12px;color:var(--hint)">${d.state==='cancelled'?'Cancelled.':'Closed.'} Unpaid winners can still be forfeited or sent their invoice again below.</div></div>`; }
   const auc=d.kind==='auction';
   // v13.17.1: a tidy 2-column grid -- the two you use during a sale on top, the rarer two below.
   return `<div class="evl-ctl"><div class="evl-grid">`+
@@ -7611,6 +7635,121 @@ async function adEvBidVoid(btn){
   const it=(d.items||[]).find(x=>String(x.dropId)===lotId), l=(it&&it.bids&&it.bids.list)||[], i=l.findIndex(x=>x.key===key), nx=l.filter((x,j)=>j!==i)[0];
   if(!(await ptConfirm(`Remove ${who}’s ${adEvMoney(amt)} bid on ${it&&it.card&&it.card.name}?\n\n${i===0?(nx?`${nx.who} (${adEvMoney(nx.amount)}) becomes the top bid.`:'It has no other bids.'):'The top bid doesn’t change.'} ${who} is told it was removed. The bid is kept on record, marked removed.`))) return;
   await adEvLiveDo(btn,'adminEventBidVoid',{lotId,key});
+}
+
+/* ---- v13.18: queue & schedule ----
+   Queue: drafts line up per kind (↑ ↓ ✕). Daily slot: on chosen days at a set
+   time the first queued draft without its own time posts, and closes at the
+   close time. 📌 A draft can have its own date/time instead. Everything comes
+   with the events list (D1 snapshot); an older Worker without it -> one call
+   to Apps Script. The server posts through the same checks as ▶ Post and DMs
+   you 30 min before, with Pause. */
+AD.ev.schedEdit={}; AD.ev.pinEdit='';
+const AD_DOW=[[1,'Mon'],[2,'Tue'],[3,'Wed'],[4,'Thu'],[5,'Fri'],[6,'Sat'],[7,'Sun']];
+function adEvPlan(){ return (AD.events&&AD.events.plan)||null; }
+const adEvWhen=ms=>ms?new Date(ms).toLocaleString([], {weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):'';
+function adEvById(kind,id){ return adEvList().find(e=>e.kind===kind&&e.id===id)||null; }
+async function adEvPlanEnsure(){
+  if(adEvPlan()||AD.ev.planLoading) return;
+  AD.ev.planLoading=true;
+  try{ const r=await adEvCall('adminEventPlan',{live:1}); if(r&&r.ok&&AD.events){ AD.events.plan=r.plan; ptSave('adevents',AD.events); adEvPlanPaint(); } }
+  finally{ AD.ev.planLoading=false; }
+}
+function adEvPlanKind(kind){
+  const P=adEvPlan(); if(!P) return '<div class="skelcard" style="height:60px"></div>';
+  const s=(P.sched&&P.sched[kind])||{}, q=(P.queue&&P.queue[kind])||[], nx=P.next&&P.next[kind], ed=!!AD.ev.schedEdit[kind];
+  const days=(s.days||[]).map(d=>(AD_DOW.find(x=>x[0]===d)||[0,''])[1]).join(', ');
+  let h=`<div class="evp-k"><div class="evp-t">${kind==='auction'?'🔨 Auctions':'🎯 Drops'}</div>`;
+  h+=`<div class="evp-slot">${s.on?`<b>Daily:</b> ${esc(days)} · ${esc(s.goAt)} → ${esc(s.closeAt)}`:'<span style="color:var(--hint)">No daily slot</span>'}`+
+     `<button class="pt-mini" onclick="adEvSchedEdit('${kind}')">${ed?'Close':s.on?'Change':'Set a daily slot'}</button></div>`;
+  if(ed){
+    const on=s.on||!s.goAt;
+    h+=`<div class="evp-form" id="evp-f-${kind}"><div class="evp-days">${AD_DOW.map(([n,l])=>`<button type="button" class="chip${(s.days||[]).indexOf(n)>=0?' on':''}" data-d="${n}" aria-pressed="${(s.days||[]).indexOf(n)>=0}" onclick="this.classList.toggle('on');this.setAttribute('aria-pressed',this.classList.contains('on'))">${l}</button>`).join('')}</div>`+
+      `<div class="pt-inl" style="margin:6px 0"><label class="evp-lab">Post <input type="time" data-f="go" value="${esc(s.goAt||'12:00')}"></label><label class="evp-lab">Close <input type="time" data-f="close" value="${esc(s.closeAt||'22:00')}"></label></div>`+
+      `<label class="ad-prall" style="margin:4px 0"><input type="checkbox" data-f="on" ${on?'checked':''}> Slot on</label>`+
+      `<div class="ev-foot" style="margin:6px 0 0"><button class="pt-mini pri" onclick="adEvSchedSave(this,'${kind}')">Save</button></div></div>`;
+  }
+  if(nx) h+=`<div class="evp-next">${nx.id?`⏭ <b>${esc((adEvById(kind,nx.id)||{}).short||'')}</b> ${esc((adEvById(kind,nx.id)||{}).title||'')} posts <b>${esc(adEvWhen(nx.at))}</b>${nx.pinned?' 📌':''}`:`⏭ Next slot <b>${esc(adEvWhen(nx.at))}</b> — <span class="pt-neg">nothing queued</span>`}</div>`;
+  h+=q.length?'<div class="evp-q" data-sync>'+q.map((id,i)=>{ const e=adEvById(kind,id)||{short:id,title:'',cards:0}, pin=P.pins&&P.pins[id];
+      return `<div class="evp-qi" data-k="q:${esc(id)}"><span class="evp-n">${i+1}</span><span class="evp-qt"><b>${esc(e.short)}</b> ${esc(e.title||'')} <span class="evl-t">· ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}${pin?' · 📌 '+esc(adEvWhen(pin.goAt)):''}</span></span>`+
+        `<span class="evp-qb"><button class="evl-x" aria-label="Move ${esc(e.short)} up" ${i===0?'disabled':''} onclick="adEvQ(this,'${kind}','${esc(id)}','up')">↑</button><button class="evl-x" aria-label="Move ${esc(e.short)} down" ${i===q.length-1?'disabled':''} onclick="adEvQ(this,'${kind}','${esc(id)}','down')">↓</button><button class="evl-x" aria-label="Take ${esc(e.short)} out of the queue" onclick="adEvQ(this,'${kind}','${esc(id)}','remove')">✕</button></span></div>`; }).join('')+'</div>'
+    :'<div class="s" style="font-size:12px;color:var(--hint);margin-top:4px">Queue empty — open a draft and tap <b>＋ Queue</b>.</div>';
+  return h+'</div>';
+}
+function adEvPlanHtml(){ return `<div class="pt-h">Queue &amp; schedule</div><div class="panel evp" style="padding:8px 12px"><div id="evp-drop">${adEvPlanKind('drop')}</div><div id="evp-auction">${adEvPlanKind('auction')}</div></div>`; }
+// Repaint only the plan (and the open draft's buttons) -- never the tab.
+function adEvPlanPaint(){
+  ['drop','auction'].forEach(k=>{ const el=document.getElementById('evp-'+k); if(el&&!el.contains(document.activeElement)) adSyncSec(el,adEvPlanKind(k)); });
+  adEvList().forEach(e=>adEvRowSubSet(e.kind,e.id));
+  if(AD.ev.open) adEvPatch(AD.ev.open);
+}
+function adEvPlanApply(r){
+  if(r&&r.plan&&AD.events){ AD.events.plan=r.plan; ptSave('adevents',AD.events); }
+  if(r&&r.ok&&r.message) ptToast(r.message); else if(r&&!r.ok) ptAlert(r.message||ptErr(r));
+  adEvPlanPaint();
+}
+function adEvSchedEdit(kind){ AD.ev.schedEdit[kind]=!AD.ev.schedEdit[kind]; const el=document.getElementById('evp-'+kind); if(el) el.innerHTML=adEvPlanKind(kind); }
+async function adEvSchedSave(btn,kind){
+  const f=document.getElementById('evp-f-'+kind); if(!f) return;
+  const days=[...f.querySelectorAll('.chip.on')].map(x=>Number(x.getAttribute('data-d')));
+  const go=f.querySelector('[data-f=go]').value, cl=f.querySelector('[data-f=close]').value, on=f.querySelector('[data-f=on]').checked;
+  if(on){
+    if(!days.length){ ptAlert('Pick at least one day.'); return; }
+    const age=adSigninAgeMins(); if(age!=null&&age>60){ ptAlert('Turning a slot on needs the shop opened in the last hour. Close the shop, reopen it from the bot and try again.'); return; }
+    const names=days.map(d=>AD_DOW.find(x=>x[0]===d)[1]).join(', ');
+    if(!(await ptConfirm(`Every ${names} at ${go}, the first queued ${kind} posts automatically, and it closes at ${cl}${cl<=go?' the next day':''}.\n\nYou get a DM 30 minutes before each one, with a Pause button. If nothing is queued, nothing posts.`))) return;
+  }
+  await guard(btn, async()=>{
+    const r=await adEvCall('adminEventSched',{kind,on,days,goAt:go,closeAt:cl});
+    if(r.ok) AD.ev.schedEdit[kind]=false;
+    adEvPlanApply(r);
+  });
+}
+async function adEvQ(btn,kind,id,op){
+  await guard(btn, async()=>{ adEvPlanApply(await adEvCall('adminEventQueue',{kind,id,op})); });
+}
+// In the draft's footer: queue it, and give it its own time.
+function adEvQueueFootHtml(d){
+  const P=adEvPlan(); if(!P) return '';
+  const q=(P.queue&&P.queue[d.kind])||[], i=q.indexOf(d.id), pin=P.pins&&P.pins[d.id], id=esc(d.id);
+  let h=`<div class="evp-draft">`+(i>=0
+    ?`<span class="pt-tag ok">Queued #${i+1}</span>${pin?` <span class="pt-tag">📌 ${esc(adEvWhen(pin.goAt))}</span>`:''}<button class="pt-mini" onclick="adEvQ(this,'${d.kind}','${id}','remove')">Remove from queue</button>`
+    :`<button class="pt-mini" onclick="adEvQ(this,'${d.kind}','${id}','add')">＋ Queue</button>`)+
+    `<button class="pt-mini" onclick="AD.ev.pinEdit=AD.ev.pinEdit==='${id}'?'':'${id}';adEvPatch(AD.ev.open)">📌 ${pin?'Change time':'Set a time'}</button></div>`;
+  if(AD.ev.pinEdit===d.id){
+    const v=ms=>{ if(!ms) return ''; const x=new Date(ms); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return x.toISOString().slice(0,16); };
+    const g=pin?pin.goAt:Date.now()+3600000, c=pin?pin.closeAt:g+(d.kind==='auction'?Number(d.durMins||180)*60000:10*3600000);
+    h+=`<div class="evp-form" id="evp-pin"><label class="evp-lab">Post <input type="datetime-local" data-f="go" value="${v(g)}"></label><label class="evp-lab">Close <input type="datetime-local" data-f="close" value="${v(c)}"></label>`+
+       `<div class="ev-foot" style="margin:6px 0 0"><button class="pt-mini pri" onclick="adEvPinSave(this)">Save time</button>${pin?`<button class="pt-mini" onclick="adEvPinSave(this,true)">Remove time</button>`:''}</div></div>`;
+  }
+  return h;
+}
+async function adEvPinSave(btn,clear){
+  const d=adEvCur(); if(!d) return;
+  let go=0, cl=0;
+  if(!clear){
+    const f=document.getElementById('evp-pin'); if(!f) return;
+    go=new Date(f.querySelector('[data-f=go]').value).getTime(); cl=new Date(f.querySelector('[data-f=close]').value).getTime();
+    if(!(go>0&&cl>go)){ ptAlert('Pick a post time and a later close time.'); return; }
+    const age=adSigninAgeMins(); if(age!=null&&age>60){ ptAlert('Setting a time needs the shop opened in the last hour. Close the shop, reopen it from the bot and try again.'); return; }
+    if(!(await ptConfirm(`${d.short} posts automatically ${adEvWhen(go)} and closes ${adEvWhen(cl)}.\n\nYou get a DM 30 minutes before, with a Pause button.`))) return;
+  }
+  await guard(btn, async()=>{
+    const r=await adEvCall('adminEventPin',{kind:d.kind,id:d.id,goAt:go,closeAt:cl});
+    if(r.ok) AD.ev.pinEdit='';
+    adEvPlanApply(r);
+  });
+}
+// History: put what didn't sell into the next draft.
+async function adEvRoll(btn){
+  const d=adEvCur(); if(!d) return;
+  const P=adEvPlan(), n=(P&&P.left&&P.left[d.id])||0, nx=P&&P.queue&&P.queue[d.kind]&&P.queue[d.kind][0], ne=nx&&adEvById(d.kind,nx);
+  if(!(await ptConfirm(`Put the ${n} leftover ${d.kind==='auction'?'lot':'card'}${n===1?'':'s'} from ${d.short} into ${ne?ne.short+(ne.title?' “'+ne.title+'”':''):'a new draft at the front of the queue'}?\n\nThey come off sale again (held for that draft).`))) return;
+  await guard(btn, async()=>{
+    const r=await adEvCall('adminEventRoll',{kind:d.kind,id:d.id});
+    adEvPlanApply(r);
+    if(r.ok){ const l=await adEvCall('adminEvents',{live:1}); if(l&&l.ok){ AD.events=l; ptSave('adevents',l); if(AD_TAB==='events') adRenderEvents(); } }
+  });
 }
 
 function adEvNewForm(kind){
