@@ -5098,13 +5098,11 @@ const HAUL_THEMES = {
           title:'#F4C0D1', sub:'#C9A9BC', head:'#FFFFFF', hand:'#F4C0D1', rule:'rgba(244,192,209,.22)', chip:'rgba(244,192,209,.22)'},
   clean: {label:'Clean', bg:'#FFFFFF', glow:'rgba(0,0,0,0)', glow2:'rgba(0,0,0,0)', hair:'#000000',
           title:'#2A1024', sub:'#6F6470', head:'#2A1024', hand:'#A84E8E', rule:'rgba(42,16,36,.12)', chip:'rgba(42,16,36,.80)'},
-  match: {label:'Match my card'},  // colours read off the front card when drawn
   world: {label:'Card\u2019s world \u2728'}   // AI-painted setting of the front card (art Worker)
 };
 /* v13.24 "Card's world": the front card's own setting, painted once by the art
-   Worker (Workers AI) with no Pokémon in it, and kept there. Staging only until
-   the live art Worker exists; anything it can't paint falls back to Match my card. */
-const ART_API = IS_STAGING ? 'https://floofmart-art-staging.shrimaniac.workers.dev' : '';
+   Worker (Workers AI) and kept there. Anything it can't paint falls back to Night. */
+const ART_API = IS_STAGING ? 'https://floofmart-art-staging.shrimaniac.workers.dev' : 'https://floofmart-art.shrimaniac.workers.dev';   // live: deploy art-worker.live.toml BEFORE uploading this page
 if(!ART_API) delete HAUL_THEMES.world;
 const HAUL_WORLD_T = {title:'#FFFFFF', sub:'rgba(255,255,255,.88)', head:'#FFFFFF', hand:'#FFE3F3', rule:'rgba(255,255,255,.32)', chip:'rgba(0,0,0,.38)'};
 const HAUL_WORLD_MISS = new Set();
@@ -5125,16 +5123,20 @@ function haulWorld(f){
 }
 const HAUL_SHOW = [['head','Headline'],['names','Card names'],['date','Date'],['sparkle','Sparkles'],['tag','Pokémon TCG · Singapore']];
 const HAUL_OPT_KEY = 'fm_haulopt';
-function haulOptDefaults(){ return {theme:'pink', head:true, names:true, date:true, sparkle:true, tag:true}; }
+function haulOptDefaults(){ return {theme:'night', head:true, names:true, date:true, sparkle:true, tag:true}; }   // v13.24: Night by default
 function haulOptLoad(){
   const o = haulOptDefaults();
   try { const s = JSON.parse(localStorage.getItem(HAUL_OPT_KEY) || '{}');
-    if(HAUL_THEMES[s.theme]) o.theme = s.theme;
+    if(HAUL_THEMES[s.theme] && s.theme !== 'world') o.theme = s.theme;
     HAUL_SHOW.forEach(([k]) => { if(typeof s[k] === 'boolean') o[k] = s[k]; }); } catch(e){}
   return Object.assign(o, {hide:{}, hero:-1, headline:''});
 }
 function haulOptSave(o){
-  try { const s = {theme:o.theme}; HAUL_SHOW.forEach(([k]) => { s[k] = !!o[k]; }); localStorage.setItem(HAUL_OPT_KEY, JSON.stringify(s)); } catch(e){}
+  // Card's world is picked per share, never remembered: the next share should open
+  // instantly, and only wait if they choose it again.
+  try { const prev = JSON.parse(localStorage.getItem(HAUL_OPT_KEY) || '{}');
+    const s = {theme: o.theme === 'world' ? (prev.theme !== 'world' && HAUL_THEMES[prev.theme] ? prev.theme : 'night') : o.theme};
+    HAUL_SHOW.forEach(([k]) => { s[k] = !!o[k]; }); localStorage.setItem(HAUL_OPT_KEY, JSON.stringify(s)); } catch(e){}
 }
 let HAUL_OPT = haulOptLoad();
 
@@ -5147,79 +5149,6 @@ function haulArtCached(u, w){
 }
 // Every card in the haul, in order: a bundle opens into the cards inside it.
 function haulAllCards(items){ return liveItems(items).reduce((a, it) => a.concat(itemCards(it)), []); }
-
-/* "Match my card": the front card's own colour, deepened for the ground and
-   lifted for the text. Falls back to Night if the scan can't be read. */
-function haulMatchTheme(im){
-  let r, g, b, c2;
-  try {
-    // The artwork only (the card's picture window), not its border or text,
-    // and the strongest colour in it rather than the average, which came out grey.
-    const c = document.createElement('canvas'); c.width = c.height = 32;
-    const q = c.getContext('2d');
-    q.drawImage(im, im.width * .08, im.height * .1, im.width * .84, im.height * .45, 0, 0, 32, 32);
-    const d = q.getImageData(0, 0, 32, 32).data;
-    const bins = Array.from({length: 12}, () => ({w: 0, r: 0, g: 0, b: 0}));
-    for(let i = 0; i < d.length; i += 4){
-      const R = d[i], G = d[i+1], B = d[i+2], mx = Math.max(R, G, B), mn = Math.min(R, G, B);
-      const v = mx / 255, s = mx ? (mx - mn) / mx : 0;
-      if(s < .25 || v < .2) continue;                // greys, whites, near-black: not a colour
-      let hh = mx === mn ? 0 : mx === R ? (G - B) / (mx - mn) : mx === G ? 2 + (B - R) / (mx - mn) : 4 + (R - G) / (mx - mn);
-      hh = ((hh * 60) + 360) % 360;
-      const bin = bins[Math.floor(hh / 30) % 12], w = s * v;
-      bin.w += w; bin.r += R * w; bin.g += G * w; bin.b += B * w;
-    }
-    const ranked = bins.filter(x => x.w > 0).sort((p, q2) => q2.w - p.w);
-    const top = ranked[0];
-    if(!top) return HAUL_THEMES.night;
-    r = top.r / top.w; g = top.g / top.w; b = top.b / top.w;
-    // a second colour, if the art has one worth having (else a darker shade of the first)
-    const sec = ranked.find((x, i) => i > 0 && x.w > top.w * .15);
-    c2 = sec ? [sec.r / sec.w, sec.g / sec.w, sec.b / sec.w].map(Math.round) : null;
-  } catch(e){ return HAUL_THEMES.night; }
-  const mix = (k, t) => [r, g, b].map(v => Math.round(v * (1 - k) + t * k));
-  const rgb = a => 'rgb(' + a.join(',') + ')', rgba = (a, al) => 'rgba(' + a.join(',') + ',' + al + ')';
-  const deep = mix(.62, 14), lift = mix(.55, 255);
-  const c1 = [r, g, b].map(Math.round);
-  return {bg: rgb(deep), glow: rgba(c1, .55), glow2: rgba(lift, .16), hair: rgb(lift), c1: c1, c2: c2 || mix(.45, 14),
-          title: '#FFFFFF', sub: rgba(lift, .9), head: '#FFFFFF', hand: rgb(lift), rule: rgba(lift, .28), chip: rgba(lift, .26)};
-}
-
-/* "Match my card", v2: the front card's own artwork, enlarged and softened into
-   the whole background, tinted with its two strongest colours. v1 was one flat
-   colour, which read as plain. The softening is shrink-then-enlarge (twice, so
-   it stays smooth), because canvas blur filters don't exist on iPhone webviews. */
-function haulArtBackdrop(x, im, W, H, T){
-  const sx = im.width * .08, sy = im.height * .1, sw = im.width * .84, sh = im.height * .42;   // the art window
-  const fit = (cw, ch) => { const k = Math.max(cw / sw, ch / sh); return [sx + (sw - cw / k) / 2, sy + (sh - ch / k) / 2, cw / k, ch / k]; };
-  const tiny = document.createElement('canvas'); tiny.width = 24; tiny.height = 30;
-  const t = tiny.getContext('2d'); t.imageSmoothingEnabled = true; t.imageSmoothingQuality = 'high';
-  t.drawImage(im, ...fit(24, 30), 0, 0, 24, 30);
-  const mid = document.createElement('canvas'); mid.width = 216; mid.height = 270;
-  const m = mid.getContext('2d'); m.imageSmoothingEnabled = true; m.imageSmoothingQuality = 'high';
-  m.drawImage(tiny, 0, 0, 216, 270);
-  // a little of the real shapes on top, still soft
-  const det = document.createElement('canvas'); det.width = 72; det.height = 90;
-  const dq = det.getContext('2d'); dq.imageSmoothingEnabled = true; dq.imageSmoothingQuality = 'high';
-  dq.drawImage(im, ...fit(72, 90), 0, 0, 72, 90);
-  m.globalAlpha = .35; m.drawImage(det, 0, 0, 216, 270); m.globalAlpha = 1;
-  x.save(); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
-  x.drawImage(mid, 0, 0, W, H);
-  // its colours, corner to corner
-  let g = x.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0, 'rgba(' + T.c1.join(',') + ',.42)'); g.addColorStop(1, 'rgba(' + T.c2.join(',') + ',.42)');
-  x.globalCompositeOperation = 'soft-light'; x.fillStyle = g; x.fillRect(0, 0, W, H);
-  x.globalCompositeOperation = 'source-over';
-  // darker where the words sit, light behind the cards
-  g = x.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-  x.fillStyle = g; x.fillRect(0, 0, W, 300);
-  g = x.createLinearGradient(0, 960, 0, H); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.6)');
-  x.fillStyle = g; x.fillRect(0, 960, W, H - 960);
-  g = x.createRadialGradient(W/2, 620, 60, W/2, 620, 560);
-  g.addColorStop(0, 'rgba(255,255,255,.18)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-  x.fillStyle = g; x.fillRect(0, 0, W, H);
-  x.restore();
-}
 
 async function buildHaulCanvas(h, opt){
   opt = opt || HAUL_OPT;
@@ -5256,11 +5185,9 @@ async function buildHaulCanvas(h, opt){
   const world = opt.theme === 'world' ? await haulWorld(all[heroI].f) : null;
   if(opt.theme === 'world' && !world && !HAUL_WORLD_MISS.has(all[heroI].f)){
     HAUL_WORLD_MISS.add(all[heroI].f);
-    ptToast('Couldn\u2019t paint a background for that card right now, so it\u2019s using Match my card.');
+    ptToast('Couldn\u2019t paint a background for that card right now, so it\u2019s using Night.');
   }
-  const T = world ? HAUL_WORLD_T
-    : (opt.theme === 'match' || opt.theme === 'world') ? (arts[heroPos] ? haulMatchTheme(arts[heroPos]) : HAUL_THEMES.night)
-    : (HAUL_THEMES[opt.theme] || HAUL_THEMES.pink);
+  const T = world ? HAUL_WORLD_T : (HAUL_THEMES[opt.theme] && opt.theme !== 'world' ? HAUL_THEMES[opt.theme] : HAUL_THEMES.night);
 
   /* ---- ground ---- */
   let g;
@@ -5275,8 +5202,6 @@ async function buildHaulCanvas(h, opt){
     g = x.createRadialGradient(W/2, 610, 40, W/2, 610, 430);   // soft light behind the card
     g.addColorStop(0, 'rgba(255,255,255,.34)'); g.addColorStop(1, 'rgba(255,255,255,0)');
     x.fillStyle = g; x.fillRect(0, 0, W, H);
-  } else if(T.c1 && arts[heroPos]){
-    haulArtBackdrop(x, arts[heroPos], W, H, T);
   } else {
   x.fillStyle = T.bg; x.fillRect(0, 0, W, H);
   g = x.createRadialGradient(W/2, 600, 60, W/2, 600, 680);
