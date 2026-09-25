@@ -1744,6 +1744,20 @@ body.pc #v-credit{max-width:640px}
 .cz-pol ul{margin:6px 0;padding-left:18px}
 .cn-rev{border:1px solid rgba(178,58,72,.45)}
 .cn-rev-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ad-of{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.ad-of:last-child{border-bottom:0}
+.ad-of-img{flex:0 0 46px;width:46px;height:64px;object-fit:contain;background:#fff;border-radius:5px;cursor:zoom-in}
+.ad-of-b{flex:1;min-width:0}
+.ad-of-b .s{font-size:12px;color:var(--hint);margin-top:2px}
+.oclaims{margin:0 0 12px;padding:12px 14px;border-radius:14px;background:var(--ruff);border:1px solid var(--line)}
+.oc-hd{font-weight:800;font-size:14px;color:var(--fawn-deep)}
+.oc-s{font-size:12px;color:var(--hint);margin:3px 0 8px;line-height:1.4}
+.oc-row{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.oc-row img,.oc-ph{width:34px;height:47px;object-fit:contain;background:#fff;border-radius:4px;flex:0 0 34px;display:flex;align-items:center;justify-content:center}
+.oc-b{min-width:0}
+.oc-n{font-weight:700;font-size:13px}
+.oc-p{font-size:12px;color:var(--hint)}
+.ad-cnt{flex-basis:100%;width:100%;margin-top:4px}
 .cz-pend{margin:10px 0 8px;padding:10px 12px;border-radius:12px;background:var(--line);font-size:13px;line-height:1.45}
 .cz-pend span{color:var(--hint);font-size:12px}
 /* v13.19 Follow us */
@@ -2041,7 +2055,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
       </div>
       <button class="ohist" id="ohistBtn" onclick="openHistory()">🕘 Order History</button>
     </div>
-    <div id="oseg-orders"><div id="ordersMain"></div></div>
+    <div id="oseg-orders"><div id="ordClaims"></div><div id="ordersMain"></div></div>
     <div id="oseg-binder" class="hidden"><div id="binderWrap"></div></div>
   </div>
 
@@ -4132,7 +4146,28 @@ function applyOrdersPayload(r){
   STATE.shipInvoice=r.shipInvoice||null; STATE.pickupNote=r.pickupNote||''; STATE.shipFlat=cfgNum(r.shipFlat,3);
   STATE.olderHidden=Number(r.olderHidden||0);
 }
+/* v13.24: claims still waiting for their drop to close. A claim only becomes an
+   order (with an invoice) when the drop closes, so show them here meanwhile. */
+let MY_CLAIMS=null, MY_CLAIMS_AT=0;
+async function loadMyClaims(){
+  if(Date.now()-MY_CLAIMS_AT<30000){ paintMyClaims(); return; }   // at most every 30s: it's an Apps Script call
+  MY_CLAIMS_AT=Date.now();
+  try{ const r=await api('myClaims',{}); if(r&&r.ok){ MY_CLAIMS=r.claims||[]; paintMyClaims(); } }catch(e){}
+}
+function paintMyClaims(){
+  const el=document.getElementById('ordClaims'); if(!el) return;
+  const c=MY_CLAIMS||[]; if(!c.length){ el.innerHTML=''; return; }
+  const won=c.filter(x=>x.status==='winner'), back=c.filter(x=>x.status==='backup');
+  el.innerHTML=`<div class="oclaims">
+    <div class="oc-hd">🎉 Claimed, waiting for the drop to close</div>
+    <div class="oc-s">Your invoice for these arrives the moment the drop closes, into the same box. Nothing's lost, and there's nothing to pay yet.</div>
+    ${won.concat(back).map(x=>`<div class="oc-row">${x.image?`<img src="${esc(imgUrl(x.image,120))}" alt="" loading="lazy">`:'<span class="oc-ph">🃏</span>'}
+      <div class="oc-b"><div class="oc-n">${esc(x.name)}${x.qty>1?' ×'+x.qty:''}</div>
+      <div class="oc-p">$${(Number(x.price)*(x.qty||1)).toFixed(2)} · ${x.status==='backup'?'backup #'+(x.backupNo||1)+' (yours if a winner doesn’t pay)':'claimed'}</div></div></div>`).join('')}
+  </div>`;
+}
 async function loadOrders(force){
+  loadMyClaims();
   const list=document.getElementById('ordersMain');
   if(ORDERS_CACHE && !force && Date.now()-ORDERS_TS<5000){ STATE.orders=ORDERS_CACHE; paintOrders(); return; }
   if(!ORDERS_CACHE){
@@ -7532,8 +7567,69 @@ function adRenderDash(){
   const m=d.money||{}, c=d.consign||{};
   const jobs=adJobSecs(d).map(([key,html])=>`<div id="adsec-${key}">${html}</div>`).join('');
   const money=`<div id="ad-money">${adMoneyHtml(m)}</div>`+`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>`;
-  adIn(`<div class="ad-cols"><div>${jobs}</div><div>${money}</div></div>`+adFoot(d));
+  adIn(`<div class="ad-cols"><div>${jobs}<div id="ad-offers">${adOffersHtml()}</div></div><div>${money}</div></div>`+adFoot(d));
   window.scrollTo(0,y);
+  if(!AD.offers||Date.now()-(AD.offersAt||0)>60000) adOffersLoad();
+}
+/* ---------- v13.24: Offers, handled here as well as with the Telegram buttons ----------
+   Same server logic as Telegram: Accept makes a real order at the offered price
+   (invoiced by DM), Counter DMs your price with a one-tap accept (48h), Decline
+   tells them politely, Dismiss just takes it off the list. Whichever is used
+   first wins; the other is refused as "already handled". */
+AD.offers=null; AD.offersAt=0; AD.offersBusy=false; AD.ofOpen='';
+function adOffersLoad(){
+  if(AD.offersBusy) return; AD.offersBusy=true;
+  api('adminOffers',{}).then(r=>{ if(r&&r.ok){ AD.offers=r; AD.offersAt=Date.now(); adOffersPaint(); } })
+    .catch(()=>{}).finally(()=>{ AD.offersBusy=false; });
+}
+function adOffersPaint(){ const el=document.getElementById('ad-offers'); if(el) el.innerHTML=adOffersHtml(); }
+function adAgo(ms){ if(!ms) return ''; const m=Math.round((Date.now()-ms)/60000); return m<60?m+'m ago':m<1440?Math.round(m/60)+'h ago':Math.round(m/1440)+'d ago'; }
+function adOffersHtml(){
+  const r=AD.offers;
+  if(!r) return '<div class="pt-h">Offers</div><p class="note" style="text-align:left;margin:0 2px">Loading…</p>';
+  const list=r.offers||[], waiting=list.filter(o=>o.status==='open').length;
+  let h=`<div class="pt-h">Offers <span class="pt-tag${waiting?' warn':''}">${waiting}</span></div>`;
+  if(!list.length) return h+'<p class="note" style="text-align:left;margin:0 2px">No offers waiting.</p>';
+  return h+'<div class="panel" style="padding:2px 12px">'+list.map(adOfferRow).join('')+'</div>';
+}
+function adOfferRow(o){
+  const id=esc(o.id), pct=o.listed>0?Math.round(o.offered/o.listed*100):null, open=AD.ofOpen===o.id;
+  const img=o.image?`<img class="ad-of-img" src="${esc(imgUrl(o.image,160))}" alt="" loading="lazy" onclick="openZoom(this.src)">`:'<div class="ad-of-img"></div>';
+  const tags=(!o.onSale?`<span class="pt-tag warn">${o.cardState==='gone'?'no longer in stock':'not on sale ('+esc(o.cardState)+')'}</span>`:'')+
+    (o.status==='countered'&&o.counter?`<span class="pt-tag">${o.counter.expired?'your $'+Number(o.counter.amount).toFixed(2)+' ran out':'you countered $'+Number(o.counter.amount).toFixed(2)+' · waiting on them'}</span>`:'');
+  let acts;
+  if(o.status==='open'&&o.onSale) acts=`<button class="pt-mini pri" onclick="adOfferDo(this,'${id}','accept')">✅ Accept $${Number(o.offered).toFixed(2)}</button><button class="pt-mini" onclick="adOfferCtr('${id}')">${open?'Close':'🤝 Counter…'}</button><button class="pt-mini" onclick="adOfferDo(this,'${id}','decline')">❌ Decline</button>`;
+  else if(o.status==='open') acts=`<button class="pt-mini" onclick="adOfferDo(this,'${id}','decline')">❌ Decline</button><button class="pt-mini" onclick="adOfferDo(this,'${id}','dismiss')">Dismiss</button>`;
+  else acts=`<button class="pt-mini" onclick="adOfferDo(this,'${id}','dismiss')">Dismiss</button>`;
+  return `<div class="ad-of" data-k="${id}">${img}<div class="ad-of-b">
+    <div class="t" style="font-weight:700">${esc(o.cardName)}</div>
+    <div class="s">${o.price!=null?'Listed $'+Number(o.price).toFixed(2)+' · ':''}<b>offered $${Number(o.offered).toFixed(2)}</b>${pct!=null?' ('+pct+'%)':''}</div>
+    <div class="s">${esc(o.buyer.charAt(0)==='@'||/^\d+$/.test(o.buyer)?o.buyer:'@'+o.buyer)} · ${adAgo(o.created)}${o.dropId?' · from '+esc(o.dropId):''}</div>
+    ${tags?'<div>'+tags+'</div>':''}
+    <div class="cn-rev-btns">${acts}</div>
+    ${open?`<div class="pt-inl" style="margin-top:6px"><input id="ad-ofp" inputmode="decimal" enterkeyhint="send" placeholder="Your price $" aria-label="Counter price"><button class="pt-mini pri" onclick="adOfferDo(this,'${id}','counter')">Send</button></div><p class="note" style="text-align:left;margin:4px 0 0">They get your price by DM with one-tap Accept, good for 48 hours. The card stays on sale meanwhile.</p>`:''}
+  </div></div>`;
+}
+function adOfferCtr(id){ AD.ofOpen=AD.ofOpen===id?'':id; adOffersPaint(); const i=document.getElementById('ad-ofp'); if(i) i.focus(); }
+async function adOfferDo(btn,id,act){
+  const o=((AD.offers&&AD.offers.offers)||[]).find(x=>x.id===id); if(!o) return;
+  const who=o.buyer.charAt(0)==='@'||/^\d+$/.test(o.buyer)?o.buyer:'@'+o.buyer;
+  let price=null;
+  if(act==='counter'){ price=ptNum('ad-ofp'); if(!(price>0)){ ptAlert('Type your price first.'); return; } }
+  const q={accept:`Accept ${who}'s $${Number(o.offered).toFixed(2)} for ${o.cardName}? It makes a real order at that price and DMs them the invoice.`,
+    counter:`Counter ${who} at $${Number(price||0).toFixed(2)} for ${o.cardName}? They get it by DM with a one-tap Accept (48 hours).`,
+    decline:`Decline ${who}'s offer on ${o.cardName}? They'll get a polite DM.`,
+    dismiss:`Take this offer off the list? Nobody is messaged.`}[act];
+  if(!(await ptConfirm(q))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminOfferAct',{id:id,act:act,price:price});
+    if(!r||!r.ok){ ptAlert((r&&r.message)||ptErr(r)); if(r&&r.error==='handled') adOffersLoad(); return; }
+    ptToast(r.message||'Done');
+    AD.ofOpen='';
+    if(act==='counter'){ o.status='countered'; o.counter={amount:price,at:Date.now(),expired:false}; }
+    else AD.offers.offers=AD.offers.offers.filter(x=>x.id!==id);
+    adOffersPaint();
+  });
 }
 /* v13.19: lists the quick D1 dashboard doesn't count -- each loads its own count
    from Apps Script (and keeps the list, so opening it is instant). */
@@ -7588,7 +7684,7 @@ function adFindHtml(){
   const m=adFindMatches();
   AD.det['stk:find']={ok:true,kind:'find',cards:m.map(c=>Object.assign({},c,{qty:c.qty}))};
   if(!m.length) return `<p class="note" style="text-align:left;margin:4px 0 0">No card on sale matches “${esc(AD.findQ)}”.</p>`;
-  return adPrAskHtml()+AD.det['stk:find'].cards.map(c=>`<div data-pk="${esc('find|'+c.id)}">`+adCardLine(c,'',`<div class="s" style="font-size:11.5px"><b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>${c.market?' · market $'+Number(c.market).toFixed(2):''} · qty ${c.qty}${c.lot?' · 📍 '+esc(c.lot):''}${c.consignor?' · lowest price checked on save':''}</div>`+adPrOneHtml('find',c))+'</div>').join('')+
+  return adPrAskHtml()+AD.det['stk:find'].cards.map(c=>`<div data-pk="${esc('find|'+c.id)}">`+adCardLine(c,'',`<div class="s" style="font-size:11.5px"><b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>${c.market?' · market $'+Number(c.market).toFixed(2):''} · qty ${c.qty}${c.lot?' · 📍 '+esc(c.lot):''}${c.consignor?' · lowest price checked on save':''}</div>`+adPrOneHtml('find',c)+'<div>'+adCountBtn(c.id)+'</div>')+'</div>').join('')+
     (m.length===25?'<p class="note">Showing the first 25 — type more to narrow it down.</p>':'');
 }
 function adFindSearch(v){ AD.findQ=v; const x=document.getElementById('ad-findx'); if(x) x.hidden=!v; const r=document.getElementById('ad-find-res'); if(r) r.innerHTML=adFindHtml();
@@ -8371,7 +8467,19 @@ const adLotKeyOf=el=>{ const x=el.closest('[data-k]'); return x?x.getAttribute('
 function adLotTick(el){ const k=adLotKeyOf(el); if(!k) return; AD.lotTick[k]=!!el.checked; adLotDrawList(); adLotSync(); }
 function adLotSetN(el){ const k=adLotKeyOf(el); if(!k) return; AD.lotN[k]=el.value; adLotSync(); }
 function adLotTickShown(on){ adLotShown().forEach(u=>{ if(on) AD.lotTick[u.key]=true; else delete AD.lotTick[u.key]; }); adLotDrawList(); adLotSync(); }
-function adLotSearch(v){ AD.lotQ=v; const x=document.getElementById('ad-lotqx'); if(x) x.hidden=!v; adLotDrawList(); }
+function adLotSearch(v){ AD.lotQ=v; const x=document.getElementById('ad-lotqx'); if(x) x.hidden=!v; adLotDrawList(); adLotFindSoon(); }
+/* v13.24: the search box also finds cards that are ALREADY in a lot (it used to
+   look only at "Not in a lot", so a filed card seemed to be missing). */
+AD.lotFound=null; let AD_LOTFIND_T=0, AD_LOTFIND_N=0;
+function adLotFindSoon(){ clearTimeout(AD_LOTFIND_T); const q=(AD.lotQ||'').trim(); if(q.length<2){ AD.lotFound=null; adLotFoundPaint(); return; }
+  AD_LOTFIND_T=setTimeout(async()=>{ const n=++AD_LOTFIND_N; const r=await api('adminLotFind',{q:q}).catch(()=>null); if(n!==AD_LOTFIND_N) return; AD.lotFound=(r&&r.ok)?r.found:[]; adLotFoundPaint(); },350); }
+function adLotFoundPaint(){
+  const el=document.getElementById('adls-found'); if(!el) return;
+  const f=AD.lotFound; if(!f||!(AD.lotQ||'').trim()){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="pt-h">Already in a lot <span class="pt-tag">${f.length}</span></div>`+(f.length
+    ? '<div class="panel" style="padding:2px 12px">'+f.map(x=>`<div class="pt-row" style="align-items:center;gap:10px"><div class="l" style="flex:1"><div class="t" style="font-size:13.5px">${esc(x.name)}</div><div class="s">${esc([x.set,x.number].filter(Boolean).join(' · '))}${x.portfolio?' · '+esc(x.portfolio):''}</div></div><div class="r"><span class="pt-tag ok">${esc(x.lot)} ×${x.qty}</span></div></div>`).join('')+'</div>'
+    : '<p class="note" style="text-align:left;margin:0 2px">None filed that match.</p>');
+}
 function adLotSearchClear(){ const q=document.getElementById('ad-lotq'); if(q){ q.value=''; q.focus(); } adLotSearch(''); }
 // "also 2× in L0002" -- where the other copies of this card are filed.
 function adLotWhereTxt(key,ex){ const w=(AD.lotWhere[key]||[]).filter(x=>x.lot!==ex&&x.qty>0); return w.length?(ex?'also ':'')+w.map(x=>x.qty+'× in '+x.lot).join(', ')+(ex?'':' already'):''; }
@@ -8394,12 +8502,12 @@ function adLotUnlocSec(){
   if(sh.length>AD.lotShow) h+=`<p class="note"><a href="#" onclick="AD.lotShow+=200;adLotDrawList();adLotsWhereLoad();return false">Show more (${sh.length-AD.lotShow} more)</a></p>`;
   return h;
 }
-function adLotDrawList(){ const el=document.getElementById('adls-unloc'); if(el) adSyncSec(el,adLotUnlocSec()); }
+function adLotDrawList(){ const el=document.getElementById('adls-unloc'); if(el) adSyncSec(el,adLotUnlocSec()); if(el&&!document.getElementById('adls-found')){ const f=document.createElement('div'); f.id='adls-found'; el.after(f); adLotFoundPaint(); } }
 function adLotOverSec(){
   const r=AD.lots||{}, t=r.totals||{}, ov=r.over||[];
   if(!ov.length) return '';
-  return `<div class="pt-h">In a lot, but not in stock <span class="pt-tag warn">${t.over||0}</span></div><p class="note" style="text-align:left;margin:0 2px 4px">Gone some other way (a refund after packing, a hand edit). Take it out of that lot, then tap −1.</p><div class="panel" style="padding:2px 12px">`+
-    ov.map((o,i)=>`<div class="pt-row" style="align-items:center;gap:10px">${adThumb(o.card)}<div class="l" style="flex:1"><div class="t" style="font-size:13.5px">${adLotCard(o.card)}</div><div class="s">${o.n} extra · in ${o.lots.map(l=>esc(l.lot)+' ×'+l.qty).join(', ')}</div></div><div class="r" style="flex-wrap:wrap;justify-content:flex-end">${o.lots.map((l,j)=>`<button class="pt-mini" style="margin:2px" onclick="adLotAdjO(this,${i},${j})">−1 ${esc(l.lot)}</button>`).join('')}</div></div>`).join('')+'</div>';
+  return `<div class="pt-h">In a lot, but not in stock <span class="pt-tag warn">${t.over||0}</span></div><p class="note" style="text-align:left;margin:0 2px 4px">Two ways to fix: if you really have these copies, the stock count is wrong, so tap 🔢 Fix count. If a copy went some other way (a refund after packing, a hand edit), take it out of that lot and tap −1.</p><div class="panel" style="padding:2px 12px">`+
+    ov.map((o,i)=>`<div class="pt-row" style="align-items:center;gap:10px">${adThumb(o.card)}<div class="l" style="flex:1"><div class="t" style="font-size:13.5px">${adLotCard(o.card)}</div><div class="s">${o.n} extra · in ${o.lots.map(l=>esc(l.lot)+' ×'+l.qty).join(', ')}</div></div><div class="r" style="flex-wrap:wrap;justify-content:flex-end">${o.lots.map((l,j)=>`<button class="pt-mini" style="margin:2px" onclick="adLotAdjO(this,${i},${j})">−1 ${esc(l.lot)}</button>`).join('')}${o.card&&o.card.id?adCountBtn(o.card.id):''}</div></div>`).join('')+'</div>';
 }
 function adLotBodyHtml(code){
   const d=AD.det['lot:'+code];
@@ -8506,13 +8614,29 @@ function adLotAddHere(code){
    existing one and how full it is -- so it's clear where the cards will go. */
 function adLotInfo(v){
   const c=String(v||'').toUpperCase().replace(/\s+/g,''), r=AD.lots||{};
-  if(!c) return 'Type a lot code, or tap ＋ New lot.';
+  if(!c) return 'Type a lot code (any letters, numbers, dashes), or type a start like B and tap ＋ New lot for the next in that series.';
   if(!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(c)) return 'Lot codes are letters, numbers and dashes (up to 12).';
   const l=(r.lots||[]).find(x=>x.lot===c);
   return l?`📍 ${c} is an existing lot · ${l.copies} card${l.copies===1?'':'s'} in it now — ticked cards are added to it.`:`✨ ${c} is a new lot — label a new divider ${c}.`;
 }
 function adLotNextSync(){ const i=document.getElementById('ad-lotinfo'); if(i) i.textContent=adLotInfo(ptVal('ad-lotto')); }
-function adLotNewCode(){ const r=AD.lots||{}; AD.lotTo=r.next||''; const i=document.getElementById('ad-lotto'); if(i) i.value=AD.lotTo; adLotNextSync(); }
+/* v13.24: "＋ New lot" follows YOUR series, not always L. Type a start (B, BOX-,
+   A1-) and it gives the next unused code in that series (B0001, BOX-0001…);
+   with the box empty it continues the series of your most recent lot. */
+function adLotNextFor(typed){
+  const lots=((AD.lots&&AD.lots.lots)||[]);
+  let pre=String(typed||'').toUpperCase().replace(/\s+/g,'').replace(/\d+$/,'');
+  if(!pre){
+    const last=lots.slice().sort((a,b)=>(b.created||0)-(a.created||0))[0];
+    pre=(last&&String(last.lot).replace(/\d+$/,''))||'L';
+  }
+  let max=0, width=4;
+  lots.forEach(l=>{ const c=String(l.lot); if(c.indexOf(pre)!==0) return; const rest=c.slice(pre.length);
+    if(/^\d+$/.test(rest)){ max=Math.max(max,Number(rest)); width=Math.max(width,rest.length); } });
+  let n=String(max+1); while(n.length<width) n='0'+n;
+  return (pre+n).slice(0,12);
+}
+function adLotNewCode(){ AD.lotTo=adLotNextFor(ptVal('ad-lotto')); const i=document.getElementById('ad-lotto'); if(i) i.value=AD.lotTo; adLotNextSync(); }
 async function adLotOpen(code){
   if(AD.lotOpen[code]){ delete AD.lotOpen[code]; if(AD.lotMv.indexOf(code+'|')===0) AD.lotMv=''; adLotsRedraw(); return; }
   AD.lotOpen[code]=1; adLotsRedraw();
@@ -8537,6 +8661,38 @@ async function adLotAdj(btn,lot,key,delta){
     const r=await api('adminLotAdjust',{lot:lot,key:key,delta:delta});
     if(!r.ok) ptAlert(r.message||ptErr(r));
     await adLotsAfter([lot]);
+  });
+}
+/* v13.24 FIX COUNT: set how many copies are really on the shelf. The shop
+   follows at once; imports keep your number (still adding copies you add in
+   Collectr) until Collectr agrees, then go back to normal by themselves. */
+function adCountBtn(id){ return `<button type="button" class="pt-mini" style="margin:2px" onclick="adCountOpen(this,'${esc(id)}')">🔢 Fix count</button>`; }
+async function adCountOpen(btn,id){
+  const host=btn.parentElement; let p=host.querySelector(':scope > .ad-cnt');
+  if(p){ p.remove(); return; }
+  p=document.createElement('div'); p.className='ad-cnt'; p.innerHTML='<p class="note" style="text-align:left;margin:4px 0">Loading…</p>'; host.appendChild(p);
+  const r=await api('adminCardCount',{cardId:id}).catch(()=>null);
+  adCountPaint(p,r);
+}
+function adCountPaint(p,r){
+  if(!p) return;
+  if(!r||!r.ok){ p.innerHTML=`<p class="pt-err">${esc((r&&r.message)||ptErr(r))}</p>`; return; }
+  if(!r.canFix){ p.innerHTML=`<p class="note" style="text-align:left">${esc(r.name)} is ${esc(r.status)} right now. Change it where it’s held (the drop, auction or bundle) first.</p>`; return; }
+  p.innerHTML=`<div class="note" style="text-align:left;margin:6px 0 4px">On sale now: <b>${r.qty}</b> · Collectr says: <b>${r.collectr}</b>${r.locked?' · <span class="pt-tag">🔒 set by hand</span>':''}</div>
+    <div class="pt-inl"><input type="number" inputmode="numeric" min="0" max="999" step="1" value="${r.qty}" aria-label="Copies you really have, unsold">
+      <button type="button" class="pt-mini pri" onclick="adCountSave(this,'${esc(r.id)}')">Save</button>${r.locked?`<button type="button" class="pt-mini" onclick="adCountSave(this,'${esc(r.id)}',true)">Unlock</button>`:''}</div>
+    <p class="note" style="text-align:left;margin:4px 0 0">How many you really have, unsold. Imports keep this number until Collectr agrees (copies you add in Collectr are still added).</p>`;
+}
+async function adCountSave(btn,id,unlock){
+  const p=btn.closest('.ad-cnt'); const n=unlock?null:Number((p.querySelector('input')||{}).value);
+  if(!unlock&&!(n>=0&&Number.isInteger(n))){ ptAlert('A whole number of copies, 0 or more.'); return; }
+  if(!(await ptConfirm(unlock?'Unlock this count? The next import sets it back to Collectr’s number.':`Set this card to ${n} on sale? Imports keep your number until Collectr agrees.`))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminFixCount',unlock?{cardId:id,unlock:true}:{cardId:id,qty:n});
+    if(!r||!r.ok){ ptAlert((r&&r.message)||ptErr(r)); return; }
+    ptToast(r.message||'Saved');
+    adCountPaint(p,r.count);
+    if(AD.ssub==='lots'&&typeof adLotsAfter==='function') adLotsAfter([]).catch(()=>{});
   });
 }
 function adLotAdjO(btn,i,j){ const o=(AD.lots.over||[])[i]; const l=o&&o.lots[j]; if(l) adLotAdj(btn,l.lot,o.key,-1); }
