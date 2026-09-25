@@ -1718,6 +1718,12 @@ body.pc #v-credit{max-width:640px}
 .ad-lotcp input,.ad-lotmv input{width:64px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-family:inherit}
 .ad-lotmv #ad-mvto{width:104px;text-transform:uppercase}
 .ad-wh{color:var(--hint)}
+.cz-hold{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:rgba(178,58,72,.10);font-size:13px;line-height:1.4}
+.cz-hold span{color:var(--hint);font-size:12px}
+.cz-pol{margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font-size:12.5px;line-height:1.45;text-align:left}
+.cz-pol ul{margin:6px 0;padding-left:18px}
+.cn-rev{border:1px solid rgba(178,58,72,.45)}
+.cn-rev-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .cz-pend{margin:10px 0 8px;padding:10px 12px;border-radius:12px;background:var(--line);font-size:13px;line-height:1.45}
 .cz-pend span{color:var(--hint);font-size:12px}
 /* v13.19 Follow us */
@@ -6426,7 +6432,13 @@ const ptErr=r=>{
 };
 const ptVal=id=>{ const el=document.getElementById(id); return el?String(el.value||'').trim():''; };
 const ptNum=id=>{ const v=ptVal(id).replace(/[$,\s]/g,''); return v===''?null:Number(v); };
-const PT_STATE_TAG={'On sale':'ok','Returned to you':'warn'};
+const PT_STATE_TAG={'On sale':'ok','Returned to you':'warn','Being checked':'warn'};
+// v13.21: the fake-card policy, shown to consignors (Rates + Consign more) and in Admin
+const CN_FAKE_POLICY=`<div class="cz-pol"><b>Fake cards</b><br>We check every card when it arrives and again before it ships, and we can turn any card down.
+If we think a card isn't genuine, it comes off sale and your account is paused while we check: no new consignments and payouts on hold. Your other cards stay on sale.
+<ul><li><b>Genuine</b>: back on sale, pause lifted.</li><li><b>Honest mistake</b>: we return the card and lift the pause (we may charge a $5 handling fee). If it had sold, the buyer's refund comes out of your balance.</li>
+<li><b>Not a mistake</b> (repeat or knowingly sent): we stop consigning with you, return your unsold cards, and take buyer refunds and costs from what you're owed before paying out the rest.</li></ul>
+Either side can ask for outside authentication at their own cost. If it comes back genuine, we cover it.</div>`;
 const PT_RATE_NAMES={en:'English',jp:'Japanese',slab:'Graded (slab)'};
 function ptSkel(el){ el.innerHTML='<div class="skelcard" style="height:90px"></div><div class="skelcard" style="height:160px;margin-top:10px"></div>'; }
 function ptTabs(list,cur,fn){ return '<div class="pt-tabs">'+list.map(t=>`<span class="chip${t[0]===cur?' on':''}" onclick="${fn}('${t[0]}')">${esc(t[1])}</span>`).join('')+'</div>'; }
@@ -6535,10 +6547,13 @@ function renderConsign(){
   if(!r||!r.ok){ b.innerHTML=`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="openConsign()">Try again</button></div>`; return; }
   if(!r.isConsignor){ b.innerHTML='<div class="empty"><div class="e-ic">🐑</div><p>You\'re not set up as a consignor yet.</p><button class="pt-mini" onclick="go(\'buyback\');sellMode(\'cn\')">Consign with us</button></div>'; return; }
   let payBtn;
-  if(r.payoutPending) payBtn='<button class="cta" disabled>Payout requested ✓</button>';
+  const czSt=String(r.accountStatus||'active');
+  if(czSt==='review') payBtn='<button class="cta" disabled>Payouts paused while we check a card</button>';
+  else if(r.payoutPending) payBtn='<button class="cta" disabled>Payout requested ✓</button>';
   else if(r.canRequestPayout) payBtn=`<button class="cta" onclick="czPayout(this)">Request payout · $${Number(r.balance).toFixed(2)}</button>`;
   else payBtn=`<button class="cta" disabled>${Number(r.balance||0)>0?'Payouts start at $'+Number(r.minPayout||0).toFixed(0):'Nothing to pay out yet'}</button>`;
-  let h=`<div class="pt-stats">
+  let h=(czSt==='review'?`<div class="cz-hold">🔎 <b>We're checking one of your cards.</b><br><span>While we do, it's off sale, new consignments and payouts are paused. Your other cards stay on sale. We'll message you when we're done. Purchase history or photos help: send them through Help &amp; Support.</span></div>`
+     :czSt==='blacklisted'?`<div class="cz-hold">We're not taking new consignments from this account. Anything you're owed is still paid out.</div>`:'')+`<div class="pt-stats">
       <div class="pstat"><div class="pn">$${Number(r.balance||0).toFixed(2)}</div><div class="pl">Balance</div></div>
       <div class="pstat"><div class="pn">${Number(r.sold||0)}</div><div class="pl">Sold</div></div>
       <div class="pstat"><div class="pn">$${Number(r.paid||0).toFixed(0)}</div><div class="pl">Paid out</div></div></div>
@@ -6552,7 +6567,7 @@ function renderConsign(){
   if(CZ_TAB==='shelf'){
     h+= (r.shelf&&r.shelf.length)? r.shelf.map((c,i)=>{
       const meta=[c.set,c.number?'#'+c.number:'',c.grade||c.condition].filter(Boolean).map(esc).join(' · ');
-      const canAsk=c.state!=='Returned to you';
+      const canAsk=c.state!=='Returned to you'&&c.state!=='Being checked';
       return `<div class="pt-card">${c.image?`<img src="${esc(c.image)}" loading="lazy" alt="">`:'<div class="noimg"></div>'}<div class="b">
         <div class="t" style="font-weight:700">${esc(c.name)}${c.qty>1?' ×'+c.qty:''}</div><div class="s" style="color:var(--hint);font-size:11.5px">${meta}</div>
         <div style="margin-top:3px"><b>$${Number(c.price||0).toFixed(2)}</b>${c.floor?` <span style="color:var(--hint);font-size:12px">· won't sell below $${Number(c.floor).toFixed(2)}</span>`:''}</div>
@@ -6566,14 +6581,17 @@ function renderConsign(){
       : '<div class="empty" style="padding:24px"><p>Nothing on the shelf right now.</p></div>';
   } else if(CZ_TAB==='sales') h+=(CZ_PEND&&CZ_PEND.lines&&CZ_PEND.lines.length?'<div class="pt-h" style="margin-top:0">Sold — on the way</div>'+CZ_PEND.lines.map(l=>`<div class="pt-row"><div class="l"><div class="t">${esc(l.name)}</div><div class="s">${esc(l.status)} · sold $${Number(l.price).toFixed(2)} · added when it's handed over</div></div><div class="r" style="color:var(--hint)">+$${Number(l.net).toFixed(2)}</div></div>`).join('')+'<div class="pt-h">Paid into your balance</div>':'')+ptSalesHtml(r.sales);
   else if(CZ_TAB==='payouts') h+=ptPayoutsHtml(r.payouts);
-  else if(CZ_TAB==='rates') h+=`<p class="note" style="text-align:left;margin:0 0 6px">These are the rates you signed up on${r.rates&&r.rates.ver?' ('+esc(r.rates.ver)+')':''}. The % is set by what each card sells for.</p>`+ptRatesHtml(r.rates&&r.rates.tables);
+  else if(CZ_TAB==='rates') h+=`<p class="note" style="text-align:left;margin:0 0 6px">These are the rates you signed up on${r.rates&&r.rates.ver?' ('+esc(r.rates.ver)+')':''}. The % is set by what each card sells for.</p>`+ptRatesHtml(r.rates&&r.rates.tables)+CN_FAKE_POLICY;
   else if(CZ_TAB==='requests') h+=ptReqsHtml(r.requests);
+  else if(CZ_TAB==='more'&&czSt!=='active'&&czSt!==''){
+    h+=`<p class="note" style="text-align:left;margin:0 0 10px">${czSt==='review'?'New consignments are paused while we check one of your cards.':'We\'re not taking new consignments from this account.'}</p>`+CN_FAKE_POLICY;
+  }
   else if(CZ_TAB==='more'){
     h+=`<p class="note" style="text-align:left;margin:0 0 10px">Tell us which cards you'd like us to sell — names, sets, condition, and any price you have in mind. Photos help (up to 3).</p>
       <textarea id="cz-more" class="pt-in" rows="5" placeholder="e.g. 3 cards: Umbreon VMAX 215/203 NM, …"></textarea>
       <div style="margin-top:8px"><label class="pt-mini" style="display:inline-block">📷 Add photos<input type="file" accept="image/*" multiple style="display:none" onchange="czPhotos(event)"></label></div>
       <div class="pt-thumbs" id="cz-thumbs">${CZ_PHOTOS.map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div>
-      <button class="cta" style="margin-top:10px" onclick="czSendMore(this)">Send to FloofMart</button>`;
+      <button class="cta" style="margin-top:10px" onclick="czSendMore(this)">Send to FloofMart</button>`+CN_FAKE_POLICY;
   }
   h+='</div>';
   b.innerHTML=h;
@@ -8399,7 +8417,7 @@ function adRenderConsign(){
     : '<p class="note" style="text-align:left;margin:0 2px">No open requests.</p>';
   h+=`<div class="pt-h">Consignors</div>`+ptTabs([['all','All'],['owed','Owed']],AD.show,'adShow');
   h+= shown.length ? '<div class="panel" style="padding:4px 12px">'+shown.map(x=>{ const i=l.consignors.indexOf(x);
-    return `<div class="pt-row" onclick="adOpen(${i})" style="cursor:pointer"><div class="l"><div class="t">${esc(x.handle)}${x.name?' · '+esc(x.name):''}${x.status!=='active'?` <span class="pt-tag warn">${esc(x.status)}</span>`:''}</div>
+    return `<div class="pt-row" onclick="adOpen(${i})" style="cursor:pointer"><div class="l"><div class="t">${esc(x.handle)}${x.name?' · '+esc(x.name):''}${x.status!=='active'?` <span class="pt-tag warn">${esc(CN_ST_NAMES[x.status]||x.status)}</span>`:''}</div>
       <div class="s">${x.onShelf} on shelf${x.inBundles?' · '+x.inBundles+' in bundles':''} · $${Number(x.shelfValue||0).toFixed(0)} listed · ${esc(String(x.lang||'en').toUpperCase())}${x.linked?'':' · not linked'}${x.paynow?'':' · no PayNow'}</div></div>
       <div class="r ${x.balance>0?'pt-pos':''}">$${Number(x.balance||0).toFixed(2)} ›</div></div>`; }).join('')+'</div>'
     : '<p class="note" style="text-align:left;margin:0 2px">None.</p>';
@@ -8438,6 +8456,46 @@ async function adOpen(i){
 }
 async function adReloadOne(){ if(!AD.cur||!AD.cur.id) return; const r=await api('adminConsignor',{id:AD.cur.id,live:1}); if(r&&r.ok) AD.cur=r; adRenderOne(); }
 function adOneTab(t){ AD.curTab=t; AD.cardOpen=-1; adRenderOne(); }
+const CN_ST_NAMES={review:'Under review',blacklisted:'Blacklisted'};
+// v13.21: under review / blacklisted banner with the decisions
+function adCnReviewHtml(c){
+  const st=String(c.status||'active').toLowerCase();
+  const notes=(c.notes&&c.notes.length)?'<div class="note" style="text-align:left;margin-top:6px">'+c.notes.map(esc).join('<br>')+'</div>':'';
+  if(st==='review'){
+    const flagged=(c.shelf||[]).filter(x=>x.state==='Being checked');
+    return `<div class="panel cn-rev"><div style="font-weight:800">🚩 Under review (pending blacklist)</div>
+      <div class="note" style="text-align:left;margin-top:4px">${flagged.length?'Being checked: '+flagged.map(x=>esc(x.name)+' ('+esc(x.id)+')').join(', ')+'. ':''}No new consignments, payouts held, other cards still on sale.</div>${notes}
+      <div class="pt-inl" style="margin-top:8px"><input id="ad-rvn" placeholder="Note (optional, kept on their record)"></div>
+      <div class="cn-rev-btns"><button class="pt-mini" onclick="adReview(this,'genuine')">✅ Genuine</button><button class="pt-mini" onclick="adReview(this,'mistake')">Honest mistake</button><button class="pt-mini danger" onclick="adReview(this,'blacklist')">⛔ Blacklist</button></div></div>`;
+  }
+  if(st==='blacklisted') return `<div class="panel cn-rev"><div style="font-weight:800">⛔ Blacklisted</div><div class="note" style="text-align:left;margin-top:4px">No new consignments. What they're owed can still be paid out below.</div>${notes}
+      <div class="pt-inl" style="margin-top:8px"><input id="ad-rvn" placeholder="Note (optional)"></div>
+      <div class="cn-rev-btns"><button class="pt-mini" onclick="adReview(this,'lift')">Lift blacklist…</button></div></div>`;
+  return notes?'<details class="panel"><summary class="note" style="text-align:left">Review history</summary>'+notes+'</details>':'';
+}
+async function adReview(btn,d){
+  const c=AD.cur; if(!c) return;
+  const q={genuine:'Clear '+c.handle+'? Flagged cards go back on sale and payouts open again. They get a DM.',
+    mistake:'Treat it as an honest mistake? Flagged cards are marked returned (hand them back), payouts open again. They get a DM.',
+    blacklist:'Blacklist '+c.handle+'? Every unsold card on sale is marked returned, and they can\'t consign again. Cards held in a drop, auction or bundle stay put for you to pull out. They get a DM.',
+    lift:'Lift the blacklist on '+c.handle+'? They can consign again. They get a DM.'}[d];
+  if(!(await ptConfirm(q))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminConsignReview',{id:c.id,decision:d,note:ptVal('ad-rvn')});
+    ptAlert(r.ok?(r.message||'Done'):ptErr(r));
+    if(r.ok){ await adReloadOne(); adReloadConsign(true); }
+  });
+}
+async function adFlagFake(btn,i){
+  const x=AD.cur&&AD.cur.shelf&&AD.cur.shelf[i]; if(!x) return;
+  const note=ptVal('ad-fk');
+  if(!(await ptConfirm('Flag '+x.name+' as a suspected fake? It comes off sale and '+AD.cur.handle+' goes under review: no new consignments, payouts held. They get a DM.'))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminConsignFake',{cardId:x.id,note:note});
+    ptAlert(r.ok?(r.message||'Done'):ptErr(r));
+    if(r.ok){ AD.cardOpen=-1; await adReloadOne(); adReloadConsign(true); }
+  });
+}
 function adRenderOne(){
   const c=AD.cur;
   if(!c||!c.ok){ adIn(`<button class="back-btn" onclick="adRenderConsign()">‹ All consignors</button><div class="empty"><p>${esc(ptErr(c))}</p></div>`); return; }
@@ -8445,14 +8503,15 @@ function adRenderOne(){
     <div class="panel"><div class="t" style="font-weight:800;font-size:16px">${esc(c.handle)}${c.name?' · '+esc(c.name):''}</div>
     <div class="note" style="text-align:left;margin-top:4px">${esc(String(c.lang||'en').toUpperCase())} · ${c.linked?'linked to Telegram':'<b>not linked</b> — ask them to open the shop or send /myconsign'} · PayNow ${c.paynow?esc(c.paynow):'<b>not set</b>'}<br>
     Portfolio "${esc(c.portfolio)}" · ${c.consignId?esc(c.consignId):'no open consignment'} · rates ${esc(c.rateVer||'—')}${c.onLiveRates?' (current)':` <span class="pt-tag warn">not current (${esc(c.liveRateVer)})</span>`}${c.joined?' · since '+ptDate(c.joined):''}</div></div>
+    ${adCnReviewHtml(c)}
     <div class="pt-stats" style="margin-top:10px">
       <div class="pstat"><div class="pn">$${Number(c.balance||0).toFixed(2)}</div><div class="pl">Owed</div></div>
       <div class="pstat"><div class="pn">${Number(c.sold||0)}</div><div class="pl">Sold</div></div>
       <div class="pstat"><div class="pn">$${Number(c.commission||0).toFixed(0)}</div><div class="pl">Our cut</div></div></div>
-    <div class="panel"><div class="pt-h" style="margin-top:0">Record a payout</div>
+    ${String(c.status||'').toLowerCase()==='review'?'<div class="panel"><div class="note" style="text-align:left;margin:0">Payouts are held while they\'re under review. Decide above first.</div></div>':`<div class="panel"><div class="pt-h" style="margin-top:0">Record a payout</div>
       <div class="pt-inl"><input id="ad-pa" inputmode="decimal" placeholder="Amount $" value="${c.balance>0?Number(c.balance).toFixed(2):''}"><input id="ad-pr" placeholder="PayNow ref"></div>
       <button class="pt-mini pri" onclick="adPay(this)">Record payout</button>
-      <p class="note" style="text-align:left">Send the PayNow first, then record it here — it books the payout and DMs them. Earned $${Number(c.earned||0).toFixed(2)} · paid $${Number(c.paid||0).toFixed(2)}${c.reversed?' · reversed $'+Math.abs(Number(c.reversed)).toFixed(2):''}.</p></div>`;
+      <p class="note" style="text-align:left">Send the PayNow first, then record it here — it books the payout and DMs them. Earned $${Number(c.earned||0).toFixed(2)} · paid $${Number(c.paid||0).toFixed(2)}${c.reversed?' · reversed $'+Math.abs(Number(c.reversed)).toFixed(2):''}.</p></div>`}`;
   h+=ptTabs([['shelf','Shelf'],['sales','Sales'],['payouts','Payouts'],['rates','Rates'],['requests','Requests']],AD.curTab||'shelf','adOneTab');
   h+='<div class="panel">';
   const t=AD.curTab||'shelf';
@@ -8469,7 +8528,8 @@ function adRenderOne(){
           <div class="pt-inl"><input id="ad-cf" inputmode="decimal" placeholder="Lowest price $ (0 = no limit)" value="${x.floor||''}" aria-label="Lowest price the owner will take"><button class="pt-mini" onclick="adSet(this,${i},'floor')">Set lowest price</button></div>
           <div class="pt-inl"><input id="ad-cp" inputmode="decimal" placeholder="Price $" value="${Number(x.price||0).toFixed(2)}"><button class="pt-mini" onclick="adSet(this,${i},'price')">Set price</button></div>
           <div class="pt-inl"><select id="ad-ck">${['en','jp','slab'].map(k=>`<option value="${k}"${x.rateKey===k?' selected':''}>${PT_RATE_NAMES[k]}</option>`).join('')}</select><button class="pt-mini" onclick="adSet(this,${i},'rateKey')">Set rate table</button></div>
-          <button class="pt-mini danger" onclick="adSet(this,${i},'return')">Return to owner</button></div>`:''}
+          <button class="pt-mini danger" onclick="adSet(this,${i},'return')">Return to owner</button>
+          ${x.state!=='Being checked'?`<div class="pt-inl" style="margin-top:8px"><input id="ad-fk" placeholder="Why (optional): font, holo, weight…"><button class="pt-mini danger" onclick="adFlagFake(this,${i})">🚩 Flag as fake</button></div>`:''}</div>`:''}
       </div></div>`; }).join('')
       : '<div class="empty" style="padding:24px"><p>Nothing on the shelf.</p></div>';
   } else if(t==='sales') h+=ptSalesHtml(c.sales);
