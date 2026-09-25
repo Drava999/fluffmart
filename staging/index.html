@@ -791,6 +791,23 @@ html{scroll-behavior:smooth}
   box-shadow:0 8px 26px rgba(90,58,78,.22);
   -webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto}
 .haul-panel{max-width:360px}
+.haul-prev.busy .haul-img{opacity:.6;transition:opacity .15s}
+.haul-cz{margin:0 0 12px;border:1px solid var(--line);border-radius:14px;padding:4px 12px 12px;text-align:left}
+.haul-cz summary{cursor:pointer;font-weight:800;font-size:14px;color:var(--fawn-deep);padding:10px 0 4px;min-height:36px}
+.hc-l{font-size:12px;font-weight:800;color:var(--fawn-deep);margin:10px 0 6px}
+.hc-l span{font-weight:600;color:var(--hint)}
+.hc-cards{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.hc-c{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:4px}
+.hc-t{width:58px;height:81px;padding:0;border-radius:6px;border:2px solid var(--fawn);background:var(--card);overflow:hidden;cursor:pointer}
+.hc-t img{width:100%;height:100%;object-fit:cover;display:block}
+.hc-t span{font-size:9px;line-height:1.2;padding:3px;display:block;color:var(--hint)}
+.hc-c.off .hc-t{border-color:var(--line);opacity:.35;filter:grayscale(1)}
+.hc-s{min-width:36px;min-height:30px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--hint);font-size:14px;cursor:pointer}
+.hc-s.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
+.hc-row{display:flex;flex-wrap:wrap;gap:6px}
+.hc-row .chip{min-height:34px;cursor:pointer}
+.hc-in{width:100%;margin-top:12px;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:inherit;box-sizing:border-box}
+.hc-reset{margin-top:8px;background:none;border:0;color:var(--link);font-weight:700;font-size:12.5px;padding:6px 0;cursor:pointer}
 .haul-wrap{padding:20px 18px calc(18px + env(safe-area-inset-bottom))}
 .haul-hd{font-family:'Plus Jakarta Sans';font-weight:800;font-size:17px;
   color:var(--fawn-deep);text-align:center;margin-bottom:14px}
@@ -5069,7 +5086,79 @@ const FAN = {
   6: {h:508, step:136, tilt:16,  dip:  9}
 };
 
-async function buildHaulCanvas(h){
+/* v13.23: the buyer shapes their own haul picture. Brand stays fixed (logo,
+   FloofMart TCG, the shop handle); everything else is theirs: which cards,
+   which one sits in front, the colours, the headline, and which extras show.
+   Style + extras are remembered on this phone; cards, front card and headline
+   are per haul. */
+const HAUL_THEMES = {
+  pink:  {label:'Pink',  bg:'#FBEFE6', glow:'rgba(217,142,192,.34)', glow2:'rgba(251,212,78,.20)', hair:'#A84E8E',
+          title:'#A84E8E', sub:'#8a6b80', head:'#5A3A4E', hand:'#A84E8E', rule:'rgba(168,78,142,.20)', chip:'rgba(90,58,78,.86)'},
+  night: {label:'Night', bg:'#1E1320', glow:'rgba(217,142,192,.30)', glow2:'rgba(251,212,78,.12)', hair:'#F0B9CF',
+          title:'#F4C0D1', sub:'#C9A9BC', head:'#FFFFFF', hand:'#F4C0D1', rule:'rgba(244,192,209,.22)', chip:'rgba(244,192,209,.22)'},
+  clean: {label:'Clean', bg:'#FFFFFF', glow:'rgba(0,0,0,0)', glow2:'rgba(0,0,0,0)', hair:'#000000',
+          title:'#2A1024', sub:'#6F6470', head:'#2A1024', hand:'#A84E8E', rule:'rgba(42,16,36,.12)', chip:'rgba(42,16,36,.80)'},
+  match: {label:'Match my card'}   // colours read off the front card when drawn
+};
+const HAUL_SHOW = [['head','Headline'],['names','Card names'],['date','Date'],['sparkle','Sparkles'],['tag','Pokémon TCG · Singapore']];
+const HAUL_OPT_KEY = 'fm_haulopt';
+function haulOptDefaults(){ return {theme:'pink', head:true, names:true, date:true, sparkle:true, tag:true}; }
+function haulOptLoad(){
+  const o = haulOptDefaults();
+  try { const s = JSON.parse(localStorage.getItem(HAUL_OPT_KEY) || '{}');
+    if(HAUL_THEMES[s.theme]) o.theme = s.theme;
+    HAUL_SHOW.forEach(([k]) => { if(typeof s[k] === 'boolean') o[k] = s[k]; }); } catch(e){}
+  return Object.assign(o, {hide:{}, hero:-1, headline:''});
+}
+function haulOptSave(o){
+  try { const s = {theme:o.theme}; HAUL_SHOW.forEach(([k]) => { s[k] = !!o[k]; }); localStorage.setItem(HAUL_OPT_KEY, JSON.stringify(s)); } catch(e){}
+}
+let HAUL_OPT = haulOptLoad();
+
+// Scans are fetched once per sheet, not on every tweak.
+const HAUL_ART = new Map();
+function haulArtCached(u, w){
+  const k = u + '@' + w;
+  if(!HAUL_ART.has(k)) HAUL_ART.set(k, loadHaulArt(u, w));
+  return HAUL_ART.get(k);
+}
+// Every card in the haul, in order: a bundle opens into the cards inside it.
+function haulAllCards(items){ return liveItems(items).reduce((a, it) => a.concat(itemCards(it)), []); }
+
+/* "Match my card": the front card's own colour, deepened for the ground and
+   lifted for the text. Falls back to Night if the scan can't be read. */
+function haulMatchTheme(im){
+  let r, g, b;
+  try {
+    // The artwork only (the card's picture window), not its border or text,
+    // and the strongest colour in it rather than the average, which came out grey.
+    const c = document.createElement('canvas'); c.width = c.height = 32;
+    const q = c.getContext('2d');
+    q.drawImage(im, im.width * .08, im.height * .1, im.width * .84, im.height * .45, 0, 0, 32, 32);
+    const d = q.getImageData(0, 0, 32, 32).data;
+    const bins = Array.from({length: 12}, () => ({w: 0, r: 0, g: 0, b: 0}));
+    for(let i = 0; i < d.length; i += 4){
+      const R = d[i], G = d[i+1], B = d[i+2], mx = Math.max(R, G, B), mn = Math.min(R, G, B);
+      const v = mx / 255, s = mx ? (mx - mn) / mx : 0;
+      if(s < .25 || v < .2) continue;                // greys, whites, near-black: not a colour
+      let hh = mx === mn ? 0 : mx === R ? (G - B) / (mx - mn) : mx === G ? 2 + (B - R) / (mx - mn) : 4 + (R - G) / (mx - mn);
+      hh = ((hh * 60) + 360) % 360;
+      const bin = bins[Math.floor(hh / 30) % 12], w = s * v;
+      bin.w += w; bin.r += R * w; bin.g += G * w; bin.b += B * w;
+    }
+    const top = bins.reduce((a, x) => x.w > a.w ? x : a, {w: 0});
+    if(!top.w) return HAUL_THEMES.night;
+    r = top.r / top.w; g = top.g / top.w; b = top.b / top.w;
+  } catch(e){ return HAUL_THEMES.night; }
+  const mix = (k, t) => [r, g, b].map(v => Math.round(v * (1 - k) + t * k));
+  const rgb = a => 'rgb(' + a.join(',') + ')', rgba = (a, al) => 'rgba(' + a.join(',') + ',' + al + ')';
+  const deep = mix(.62, 14), lift = mix(.55, 255);
+  return {bg: rgb(deep), glow: rgba([r, g, b].map(Math.round), .55), glow2: rgba(lift, .16), hair: rgb(lift),
+          title: '#FFFFFF', sub: rgba(lift, .9), head: '#FFFFFF', hand: rgb(lift), rule: rgba(lift, .28), chip: rgba(lift, .26)};
+}
+
+async function buildHaulCanvas(h, opt){
+  opt = opt || HAUL_OPT;
   const W = 1080, H = 1350;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
@@ -5080,35 +5169,46 @@ async function buildHaulCanvas(h){
 
   // Draw CARDS, not order lines: a bundle opens up into every card inside it,
   // each with its own scan, so a box with one bundle and one single is a
-  // four-card haul with four faces.
-  const lines = (h.items || []).filter(i => !i.refunded);
-  const items = lines.reduce((a, it) => a.concat(itemCards(it)), []);
-  const isFan = items.length <= 6;
-  const shown = items.slice(0, isFan ? 6 : 8);
-  const extra = items.length - shown.length;
+  // four-card haul with four faces. The buyer may hide some, and picks the front one.
+  const all = haulAllCards(h.items);
+  let keep = all.map((c, i) => i).filter(i => !(opt.hide || {})[i]);
+  if(!keep.length) keep = all.map((c, i) => i);
+  const heroI = keep.indexOf(opt.hero) >= 0 ? opt.hero : keep[0];
+  const others = keep.filter(i => i !== heroI);
+  const isFan = keep.length <= 6;
+  const cap = isFan ? 6 : 8;
+  const extra = keep.length - Math.min(keep.length, cap);
+  // In a fan the front card sits in the middle; in a grid it comes first.
+  const pick = [heroI].concat(others).slice(0, cap);
+  const order = isFan
+    ? (() => { const o = pick.slice(1); o.splice(Math.floor((pick.length - 1) / 2), 0, heroI); return o; })()
+    : pick;
+  const shown = order.map(i => all[i]);
+  const heroPos = order.indexOf(heroI);
 
   const [logo, ...arts] = await Promise.all(
-    [loadCors('logo.png')].concat(shown.map(c => loadHaulArt(c.f, 700)))
+    [loadCors('logo.png')].concat(shown.map(c => haulArtCached(c.f, 700)))
   );
+  const T = opt.theme === 'match' ? (arts[heroPos] ? haulMatchTheme(arts[heroPos]) : HAUL_THEMES.night)
+                                  : (HAUL_THEMES[opt.theme] || HAUL_THEMES.pink);
 
   /* ---- ground ---- */
-  x.fillStyle = '#FBEFE6'; x.fillRect(0, 0, W, H);
+  x.fillStyle = T.bg; x.fillRect(0, 0, W, H);
   let g = x.createRadialGradient(W/2, 600, 60, W/2, 600, 680);
-  g.addColorStop(0, 'rgba(217,142,192,.34)');
-  g.addColorStop(.55, 'rgba(240,185,207,.16)');
-  g.addColorStop(1, 'rgba(251,239,230,0)');
+  g.addColorStop(0, T.glow);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
   g = x.createRadialGradient(950, 1180, 20, 950, 1180, 460);
-  g.addColorStop(0, 'rgba(251,212,78,.20)');
-  g.addColorStop(1, 'rgba(251,212,78,0)');
+  g.addColorStop(0, T.glow2);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
   // faint hairlines, so a flat background still has some texture
   x.save();
-  x.globalAlpha = .05; x.strokeStyle = '#A84E8E'; x.lineWidth = 2;
+  x.globalAlpha = .05; x.strokeStyle = T.hair; x.lineWidth = 2;
   for(let i = -H; i < W; i += 46){ x.beginPath(); x.moveTo(i, H); x.lineTo(i + H, 0); x.stroke(); }
   x.restore();
 
-  /* ---- header ---- */
+  /* ---- header (always: it's the shop's) ---- */
   x.save();
   x.beginPath(); x.arc(100, 100, 46, 0, Math.PI*2);
   x.shadowColor = 'rgba(96,44,74,.22)'; x.shadowBlur = 16; x.shadowOffsetY = 5;
@@ -5122,15 +5222,17 @@ async function buildHaulCanvas(h){
     x.fillText('🐑', 100, 104); x.textAlign = 'left'; x.textBaseline = 'alphabetic';
   }
   x.textBaseline = 'alphabetic'; x.textAlign = 'left';
-  x.fillStyle = '#A84E8E';
+  x.fillStyle = T.title;
   x.font = "600 48px Fraunces, Georgia, serif";
-  x.fillText('FloofMart TCG', 164, 94);
-  x.fillStyle = '#8a6b80';
-  x.font = "700 23px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText((h.boxId ? 'box haul · ' : 'today’s haul · ') + new Date().toLocaleDateString('en-SG', {day:'numeric', month:'short', year:'numeric'}), 166, 128);
+  x.fillText('FloofMart TCG', 164, opt.date ? 94 : 112);
+  if(opt.date){
+    x.fillStyle = T.sub;
+    x.font = "700 23px 'Plus Jakarta Sans', system-ui, sans-serif";
+    x.fillText((h.boxId ? 'box haul · ' : 'today’s haul · ') + new Date().toLocaleDateString('en-SG', {day:'numeric', month:'short', year:'numeric'}), 166, 128);
+  }
 
   /* ---- sparkles, behind the cards ---- */
-  [[150,320,17],[930,300,22],[870,760,15],[120,830,20],[300,215,12],
+  if(opt.sparkle) [[150,320,17],[930,300,22],[870,760,15],[120,830,20],[300,215,12],
    [800,190,13],[60,600,14],[1010,560,16],[540,148,11]].forEach(s =>
     sparkle(x, s[0], s[1], s[2], .55));
 
@@ -5151,9 +5253,10 @@ async function buildHaulCanvas(h){
       f.h = Math.round(f.h * k); f.step = Math.round(f.step * k);
       cw = Math.round(f.h * .715);
     }
-    // Farthest from the middle first, so the centre card ends up on top.
+    // Farthest from the middle first, so the middle ends up on top -- and on
+    // a tie (an even count) the front card goes last, so it's never covered.
     shown.map((it, i) => i)
-      .sort((a, b) => Math.abs(b - mid) - Math.abs(a - mid))
+      .sort((a, b) => (Math.abs(b - mid) - Math.abs(a - mid)) || ((a === heroPos) - (b === heroPos)))
       .forEach(i => {
         const off = i - mid;
         drawHaulCard(x, arts[i],
@@ -5190,47 +5293,128 @@ async function buildHaulCanvas(h){
       const t = '+' + extra + ' more';
       x.font = "800 30px 'Plus Jakarta Sans', system-ui, sans-serif";
       const tw = x.measureText(t).width;
-      x.fillStyle = 'rgba(90,58,78,.86)';
+      x.fillStyle = T.chip;
       rrect(x, (W - tw - 44)/2, gy + gridH + 14, tw + 44, 52, 26); x.fill();
       x.fillStyle = '#fff'; x.textAlign = 'center';
       x.fillText(t, W/2, gy + gridH + 48); x.textAlign = 'left';
     }
   }
   // a couple of sparkles on top, so the cards sit inside the glitter
-  [[215,470,14],[880,520,12],[650,930,15]].forEach(s => sparkle(x, s[0], s[1], s[2], .7));
+  if(opt.sparkle) [[215,470,14],[880,520,12],[650,930,15]].forEach(s => sparkle(x, s[0], s[1], s[2], .7));
 
   /* ---- footer ---- */
-  const n = lines.length;                  // lines in the name list below
-  const nCards = items.length;             // real cards — a bundle is all of its
-  x.strokeStyle = 'rgba(168,78,142,.20)'; x.lineWidth = 2;
+  const nCards = keep.length;               // the cards in the picture
+  x.strokeStyle = T.rule; x.lineWidth = 2;
   x.beginPath(); x.moveTo(56, 1136); x.lineTo(W - 56, 1136); x.stroke();
 
-  x.fillStyle = '#5A3A4E';
-  x.font = "800 40px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText(nCards + ' card' + (nCards === 1 ? '' : 's') + ' haul!', 56, 1196);
-
-  const names = lines.slice(0, 2).map(i => {
-    const s = String(i.name || '');
-    return s.length > 24 ? s.slice(0, 23) + '…' : s;
-  });
-  x.fillStyle = '#8a6b80';
-  x.font = "600 23px 'Plus Jakarta Sans', system-ui, sans-serif";
-  /* Fit the NAMES to what's left after the chip, then add the chip whole.
-     Fitting the joined string instead ate the end of it, so "+2 more" came out
-     as "+2…" — which reads as a rendering bug rather than a count. */
-  const more = n > 2 ? '  ·  +' + (n - 2) + ' more' : '';
-  x.fillText(fitText(x, names.join('  ·  '), 560 - (more ? x.measureText(more).width : 0)) + more, 56, 1234);
+  const headline = String(opt.headline || '').trim() || (nCards + ' card' + (nCards === 1 ? '' : 's') + ' haul!');
+  const nameY = opt.head ? 1234 : 1204;
+  if(opt.head){
+    x.fillStyle = T.head;
+    x.font = "800 40px 'Plus Jakarta Sans', system-ui, sans-serif";
+    x.fillText(fitText(x, headline, 600), 56, 1196);
+  }
+  if(opt.names){
+    // Names of the cards in the picture, front card first, repeats once.
+    const seen = {}, uniq = [];
+    [heroI].concat(others).forEach(i => { const s = String(all[i].bundle || all[i].name || ''); if(s && !seen[s]){ seen[s] = 1; uniq.push(s); } });
+    const names = uniq.slice(0, 2).map(s => s.length > 24 ? s.slice(0, 23) + '…' : s);
+    x.fillStyle = T.sub;
+    x.font = "600 23px 'Plus Jakarta Sans', system-ui, sans-serif";
+    /* Fit the NAMES to what's left after the chip, then add the chip whole.
+       Fitting the joined string instead ate the end of it, so "+2 more" came out
+       as "+2…" — which reads as a rendering bug rather than a count. */
+    const more = uniq.length > 2 ? '  ·  +' + (uniq.length - 2) + ' more' : '';
+    x.fillText(fitText(x, names.join('  ·  '), 560 - (more ? x.measureText(more).width : 0)) + more, 56, nameY);
+  }
 
   x.textAlign = 'right';
-  x.fillStyle = '#A84E8E';
+  x.fillStyle = T.hand;
   x.font = "800 30px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText(shopHandle(), W - 56, 1196);
-  x.fillStyle = '#8a6b80';
-  x.font = "700 22px 'Plus Jakarta Sans', system-ui, sans-serif";
-  x.fillText('Pokémon TCG · Singapore', W - 56, 1232);
+  x.fillText(shopHandle(), W - 56, opt.tag ? 1196 : 1210);
+  if(opt.tag){
+    x.fillStyle = T.sub;
+    x.font = "700 22px 'Plus Jakarta Sans', system-ui, sans-serif";
+    x.fillText('Pokémon TCG · Singapore', W - 56, 1232);
+  }
   x.textAlign = 'left';
 
   return cv;
+}
+
+/* ---- the Customise panel under the preview ----
+   Changes redraw the picture only; the panel itself is never re-rendered, so
+   what they're typing and where they've scrolled stay put. */
+function haulCustomHtml(){
+  if(!HAUL) return '';
+  const cards = haulAllCards(HAUL.items), o = HAUL_OPT;
+  const heroI = cards.length ? (o.hero >= 0 && !o.hide[o.hero] ? o.hero : cards.findIndex((c, i) => !o.hide[i])) : -1;
+  const chip = (on, label, fn, extra) => `<button type="button" class="chip${on ? ' on' : ''}" aria-pressed="${on}" onclick="${fn}"${extra || ''}>${esc(label)}</button>`;
+  return `<details class="haul-cz"${HAUL.czOpen ? ' open' : ''} ontoggle="if(HAUL)HAUL.czOpen=this.open">
+    <summary>✏️ Customise your picture</summary>
+    ${cards.length > 1 ? `<div class="hc-l">Cards <span>tap to hide · ★ puts it in front</span></div>
+    <div class="hc-cards">${cards.map((c, i) => `<div class="hc-c${o.hide[i] ? ' off' : ''}" data-i="${i}">
+        <button type="button" class="hc-t" onclick="haulTog(${i})" aria-pressed="${!o.hide[i]}" aria-label="${o.hide[i] ? 'Show' : 'Hide'} ${esc(c.name)}">${c.f ? `<img src="${esc(imgUrl(c.f, 160))}" alt="" loading="lazy">` : `<span>${esc(c.name)}</span>`}</button>
+        <button type="button" class="hc-s${i === heroI ? ' on' : ''}" onclick="haulHero(${i})" aria-label="Put ${esc(c.name)} in front" aria-pressed="${i === heroI}">★</button></div>`).join('')}</div>` : ''}
+    <div class="hc-l">Style</div>
+    <div class="hc-row" data-g="theme">${Object.keys(HAUL_THEMES).map(k => chip(o.theme === k, HAUL_THEMES[k].label, `haulTheme('${k}')`, ` data-k="${k}"`)).join('')}</div>
+    <div class="hc-l">Show</div>
+    <div class="hc-row" data-g="show">${HAUL_SHOW.map(([k, l]) => chip(!!o[k], l, `haulShow('${k}')`, ` data-k="${k}"`)).join('')}</div>
+    <input class="hc-in" maxlength="32" value="${esc(o.headline)}" placeholder="Your headline, e.g. Finally pulled it!" aria-label="Headline" oninput="haulHeadline(this.value)">
+    <button type="button" class="hc-reset" onclick="haulReset()">Reset to the original</button>
+  </details>`;
+}
+// Paint the panel's state onto its existing buttons.
+function haulCzPaint(){
+  const root = document.querySelector('.haul-cz'); if(!root || !HAUL) return;
+  const o = HAUL_OPT, cards = haulAllCards(HAUL.items);
+  const heroI = o.hero >= 0 && !o.hide[o.hero] ? o.hero : cards.findIndex((c, i) => !o.hide[i]);
+  root.querySelectorAll('.hc-c').forEach(el => {
+    const i = Number(el.dataset.i);
+    el.classList.toggle('off', !!o.hide[i]);
+    el.querySelector('.hc-t').setAttribute('aria-pressed', String(!o.hide[i]));
+    const s = el.querySelector('.hc-s'); s.classList.toggle('on', i === heroI); s.setAttribute('aria-pressed', String(i === heroI));
+  });
+  root.querySelectorAll('[data-g="theme"] .chip').forEach(b => { const on = b.dataset.k === o.theme; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  root.querySelectorAll('[data-g="show"] .chip').forEach(b => { const on = !!o[b.dataset.k]; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  const inp = root.querySelector('.hc-in'); if(inp && document.activeElement !== inp) inp.value = o.headline;
+}
+function haulTog(i){
+  if(!HAUL) return;
+  const n = haulAllCards(HAUL.items).length, hide = HAUL_OPT.hide;
+  if(!hide[i] && Object.keys(hide).filter(k => hide[k]).length >= n - 1){ ptToast('Keep at least one card in the picture 🐾'); return; }
+  if(hide[i]) delete hide[i]; else hide[i] = true;
+  haulCzPaint(); haulRedrawSoon();
+}
+function haulHero(i){ if(!HAUL) return; delete HAUL_OPT.hide[i]; HAUL_OPT.hero = i; haulCzPaint(); haulRedrawSoon(); }
+function haulTheme(k){ if(!HAUL_THEMES[k]) return; HAUL_OPT.theme = k; haulOptSave(HAUL_OPT); haulCzPaint(); haulRedrawSoon(); }
+function haulShow(k){ HAUL_OPT[k] = !HAUL_OPT[k]; haulOptSave(HAUL_OPT); haulCzPaint(); haulRedrawSoon(); }
+let HAUL_HEAD_T = 0;
+function haulHeadline(v){ HAUL_OPT.headline = String(v || '').slice(0, 32); clearTimeout(HAUL_HEAD_T); HAUL_HEAD_T = setTimeout(haulRedraw, 350); }
+function haulReset(){
+  HAUL_OPT = Object.assign(haulOptDefaults(), {hide:{}, hero:-1, headline:''});
+  haulOptSave(HAUL_OPT);
+  haulCzPaint(); haulRedrawSoon();
+}
+/* Redraw with the current options. Only the newest redraw lands, and the share
+   buttons keep working with the last finished picture meanwhile. */
+let HAUL_DRAW_N = 0, HAUL_SOON_T = 0;
+// Taps in quick succession become one redraw.
+function haulRedrawSoon(){ clearTimeout(HAUL_SOON_T); const p = document.getElementById('haulPrev'); if(p) p.classList.add('busy'); HAUL_SOON_T = setTimeout(haulRedraw, 180); }
+async function haulRedraw(){
+  if(!HAUL) return;
+  const n = ++HAUL_DRAW_N, h = HAUL;
+  const prev = document.getElementById('haulPrev');
+  if(prev) prev.classList.add('busy');
+  try {
+    const cv = await buildHaulCanvas({orderId: h.orderId, boxId: h.boxId, items: h.items}, HAUL_OPT);
+    if(n !== HAUL_DRAW_N || HAUL !== h) return;
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    if(n !== HAUL_DRAW_N || HAUL !== h) return;
+    h.dataUrl = cv.toDataURL('image/png'); h.blob = blob; h.jpeg = haulUploadJpeg(cv);
+    const img = prev && prev.querySelector('.haul-img'); if(img) img.src = h.dataUrl;
+  } catch(e){}
+  finally { if(n === HAUL_DRAW_N && prev) prev.classList.remove('busy'); }
 }
 
 /* The copy that travels through the Worker to Apps Script and on to Telegram.
@@ -5277,7 +5461,8 @@ async function prepareHaul(orderId){
   const items = haulItemsFor(orderId);
   if(!items || !items.length) return null;
   const boxId = String(orderId).indexOf('box:') === 0 ? String(orderId).slice(4) : '';
-  const cv = await buildHaulCanvas({orderId, boxId, items});
+  if(!HAUL || String(HAUL.orderId) !== String(orderId)) Object.assign(HAUL_OPT, {hide:{}, hero:-1, headline:''});
+  const cv = await buildHaulCanvas({orderId, boxId, items}, HAUL_OPT);
   const dataUrl = cv.toDataURL('image/png');
   const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
   const jpeg = haulUploadJpeg(cv);
@@ -5459,7 +5644,7 @@ async function openHaulSheet(orderId){
     return;
   }
   prev.innerHTML = `<img class="haul-img" src="${h.dataUrl}" alt="Your FloofMart haul">`;
-  acts.innerHTML = haulActionsHtml();
+  acts.innerHTML = haulCustomHtml() + haulActionsHtml();
 }
 
 /* Replaces the bare alert after a payment upload. The sheet stays open, so the
@@ -5501,7 +5686,7 @@ function showPaidHaul(inv){
       const acts = document.getElementById('haulActions');
       if(!prev || !acts || !h) return;
       prev.innerHTML = `<img class="haul-img" src="${h.dataUrl}" alt="Your FloofMart haul">`;
-      acts.innerHTML = haulActionsHtml();
+      acts.innerHTML = haulCustomHtml() + haulActionsHtml();
     }).catch(() => {});
 }
 
