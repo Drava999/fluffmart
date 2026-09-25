@@ -4935,12 +4935,12 @@ async function loadHaulArt(u, w){
   }
   return await loadCors(imgUrl(u, w));
 }
-function loadCors(src){
+function loadCors(src, ms){
   return new Promise(res => {
     if(!src) return res(null);
     const im = new Image();
     im.crossOrigin = 'anonymous';
-    const t = setTimeout(() => res(null), 6000);   // a stalled scan can't hold up the share
+    const t = setTimeout(() => res(null), ms || 6000);   // a stalled scan can't hold up the share
     im.onload  = () => { clearTimeout(t); res(im); };
     im.onerror = () => { clearTimeout(t); res(null); };
     im.src = src;
@@ -5098,8 +5098,29 @@ const HAUL_THEMES = {
           title:'#F4C0D1', sub:'#C9A9BC', head:'#FFFFFF', hand:'#F4C0D1', rule:'rgba(244,192,209,.22)', chip:'rgba(244,192,209,.22)'},
   clean: {label:'Clean', bg:'#FFFFFF', glow:'rgba(0,0,0,0)', glow2:'rgba(0,0,0,0)', hair:'#000000',
           title:'#2A1024', sub:'#6F6470', head:'#2A1024', hand:'#A84E8E', rule:'rgba(42,16,36,.12)', chip:'rgba(42,16,36,.80)'},
-  match: {label:'Match my card'}   // colours read off the front card when drawn
+  match: {label:'Match my card'},  // colours read off the front card when drawn
+  world: {label:'Card\u2019s world \u2728'}   // AI-painted setting of the front card (art Worker)
 };
+/* v13.24 "Card's world": the front card's own setting, painted once by the art
+   Worker (Workers AI) with no Pokémon in it, and kept there. Staging only until
+   the live art Worker exists; anything it can't paint falls back to Match my card. */
+const ART_API = IS_STAGING ? 'https://floofmart-art-staging.shrimaniac.workers.dev' : '';
+if(!ART_API) delete HAUL_THEMES.world;
+const HAUL_WORLD_T = {title:'#FFFFFF', sub:'rgba(255,255,255,.88)', head:'#FFFFFF', hand:'#FFE3F3', rule:'rgba(255,255,255,.32)', chip:'rgba(0,0,0,.38)'};
+const HAUL_WORLD_MISS = new Set();
+function haulWorld(f){
+  const id = driveId(f);
+  if(!ART_API || !id) return Promise.resolve(null);
+  const k = 'world:' + id;
+  if(!HAUL_ART.has(k)) HAUL_ART.set(k, (async () => {
+    const u = ART_API + '/world/' + encodeURIComponent(id) + '.jpg';
+    const have = await loadCors(u, 8000);
+    if(have) return have;
+    ptToast('Painting your card\u2019s world \u2014 about 10 seconds the first time \uD83C\uDFA8');
+    return await loadCors(u + '?make=1', 40000);
+  })());
+  return HAUL_ART.get(k);
+}
 const HAUL_SHOW = [['head','Headline'],['names','Card names'],['date','Date'],['sparkle','Sparkles'],['tag','Pokémon TCG · Singapore']];
 const HAUL_OPT_KEY = 'fm_haulopt';
 function haulOptDefaults(){ return {theme:'pink', head:true, names:true, date:true, sparkle:true, tag:true}; }
@@ -5189,12 +5210,29 @@ async function buildHaulCanvas(h, opt){
   const [logo, ...arts] = await Promise.all(
     [loadCors('logo.png')].concat(shown.map(c => haulArtCached(c.f, 700)))
   );
-  const T = opt.theme === 'match' ? (arts[heroPos] ? haulMatchTheme(arts[heroPos]) : HAUL_THEMES.night)
-                                  : (HAUL_THEMES[opt.theme] || HAUL_THEMES.pink);
+  const world = opt.theme === 'world' ? await haulWorld(all[heroI].f) : null;
+  if(opt.theme === 'world' && !world && !HAUL_WORLD_MISS.has(all[heroI].f)){
+    HAUL_WORLD_MISS.add(all[heroI].f);
+    ptToast('Couldn\u2019t paint a background for that card right now, so it\u2019s using Match my card.');
+  }
+  const T = world ? HAUL_WORLD_T
+    : (opt.theme === 'match' || opt.theme === 'world') ? (arts[heroPos] ? haulMatchTheme(arts[heroPos]) : HAUL_THEMES.night)
+    : (HAUL_THEMES[opt.theme] || HAUL_THEMES.pink);
 
   /* ---- ground ---- */
+  let g;
+  if(world){
+    coverDraw(x, world, 0, 0, W, H);
+    g = x.createLinearGradient(0, 0, 0, 320); g.addColorStop(0, 'rgba(0,0,0,.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0, 0, W, 320);
+    g = x.createLinearGradient(0, 980, 0, H); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.66)');
+    x.fillStyle = g; x.fillRect(0, 980, W, H - 980);
+    g = x.createRadialGradient(W/2, 610, 40, W/2, 610, 430);   // soft light behind the card
+    g.addColorStop(0, 'rgba(255,255,255,.34)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+  } else {
   x.fillStyle = T.bg; x.fillRect(0, 0, W, H);
-  let g = x.createRadialGradient(W/2, 600, 60, W/2, 600, 680);
+  g = x.createRadialGradient(W/2, 600, 60, W/2, 600, 680);
   g.addColorStop(0, T.glow);
   g.addColorStop(1, 'rgba(0,0,0,0)');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
@@ -5207,6 +5245,7 @@ async function buildHaulCanvas(h, opt){
   x.globalAlpha = .05; x.strokeStyle = T.hair; x.lineWidth = 2;
   for(let i = -H; i < W; i += 46){ x.beginPath(); x.moveTo(i, H); x.lineTo(i + H, 0); x.stroke(); }
   x.restore();
+  }
 
   /* ---- header (always: it's the shop's) ---- */
   x.save();
@@ -5238,7 +5277,14 @@ async function buildHaulCanvas(h, opt){
 
   /* ---- the cards ---- */
   const midY = 630;
-  if(isFan){
+  if(world){
+    const hh = 700, hw = Math.round(hh * .715);
+    const back = others.slice(0, 2);
+    const peek = [[-150, 30, -9], [150, 30, 9]];
+    const arB = await Promise.all(back.map(i => haulArtCached(all[i].f, 700)));
+    back.forEach((i, k) => drawHaulCard(x, arB[k], W/2 + peek[k][0], midY + peek[k][1], Math.round(hw * .84), Math.round(hh * .84), peek[k][2], all[i].name));
+    drawHaulCard(x, arts[heroPos], W/2, midY, hw, hh, 0, all[heroI].name);
+  } else if(isFan){
     const f0 = FAN[shown.length] || FAN[6];
     const f = {h:f0.h, step:f0.step, tilt:f0.tilt, dip:f0.dip};
     const mid = (shown.length - 1) / 2;
