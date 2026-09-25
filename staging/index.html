@@ -1660,6 +1660,11 @@ body.pc .sheet{left:auto;right:0;top:0;bottom:0;width:min(440px,92vw);max-width:
 body.pc .sheet.show{transform:translateX(0)}
 body.pc .sheet .sh-hd{padding:calc(20px + var(--pc-safetop)) 20px 10px}
 body.pc .sheet .body{padding:0 20px 20px}
+/* v13.24.1: closed panels wait just off-screen, and their shadows (and the PC
+   drawer's left border) showed at the edge as a grey halo with lines, about ten
+   of them stacked. Hide a panel once it has slid away; it shows again at once
+   when opened. */
+.sheet:not(.show),body.pc .sheet:not(.show){visibility:hidden;transition:transform .26s cubic-bezier(.3,.8,.4,1),visibility 0s linear .26s}
 
 /* ── cart bar ── */
 body.pc .cartbar{left:auto;right:16px;bottom:18px;width:auto;min-width:0;
@@ -3100,7 +3105,11 @@ async function bootApp(){
   }catch(e){}
   // 2) one round trip refreshes both  // 'boot' is served by Apps Script; 'inventory' comes from D1 at the edge.
   // Two parallel calls beat one round trip to the Sheet.
-  const [ov,invr]=await Promise.all([api('overview'),api('inventory')]);
+  let ov,invr;
+  try{ [ov,invr]=await Promise.all([api('overview'),api('inventory')]); }
+  catch(e){   // v13.24: a dropped connection at start-up: try once more shortly (it used to stay on grey cards)
+    setTimeout(()=>{ loadOverview().catch(()=>{}); loadStore().catch(()=>{}); },2500); return;
+  }
   const r={ok:true,overview:ov,inventory:invr};
   if(r&&r.ok){
     if(r.overview&&r.overview.ok){ applyOverview(r.overview); setTimeout(ptPrefetch,1500); ptOpenBoxLink(); }
@@ -8307,7 +8316,7 @@ function adEvFromStock(stockKind,evKind){
 function adEvCardsPrefetch(){
   if(AD.ev.cardsLoading||(AD.ev.cards&&AD.ev.cards.ok&&Date.now()-AD.ev.cardsAt<30000)) return AD.ev.cardsLoading;
   AD.ev.cardsLoading=adEvCall('adminEventCards',{}).then(r=>{
-    if(r.ok){ AD.ev.cards=r; AD.ev.cardsAt=Date.now(); r.cards.forEach(c=>{ if(c.lot) AD.ev.lotOf[c.id]=c.lot; }); }
+    if(r.ok){ AD.ev.cards=r; AD.ev.cardsAt=Date.now(); (r.cards||[]).forEach(c=>{ if(c.lot) AD.ev.lotOf[c.id]=c.lot; }); }
     else if(!(AD.ev.cards&&AD.ev.cards.ok)) AD.ev.cards=r;
     AD.ev.cardsLoading=null;
     if(AD.ev.pick) adEvPickDraw();
@@ -8583,7 +8592,7 @@ async function adLotsWhereLoad(){
   const seq=AD.lotWhSeq=(AD.lotWhSeq||0)+1;
   let r; try{ r=await api('adminLotWhere',{keys:[...new Set(keys)].slice(0,1000)}); }catch(e){ return; }
   if(seq!==AD.lotWhSeq||!r||!r.ok) return;
-  keys.forEach(k=>{ AD.lotWhere[k]=r.where[k]||[]; });
+  keys.forEach(k=>{ AD.lotWhere[k]=(r.where||{})[k]||[]; });
   document.querySelectorAll('.ad-wh').forEach(el=>{
     const t=adLotWhereShow(el.getAttribute('data-wk'),el.getAttribute('data-ex')||'');
     if(el.textContent!==t) el.textContent=t;
@@ -8678,7 +8687,7 @@ function adCountPaint(p,r){
   if(!p) return;
   if(!r||!r.ok){ p.innerHTML=`<p class="pt-err">${esc((r&&r.message)||ptErr(r))}</p>`; return; }
   if(!r.canFix){ p.innerHTML=`<p class="note" style="text-align:left">${esc(r.name)} is ${esc(r.status)} right now. Change it where it’s held (the drop, auction or bundle) first.</p>`; return; }
-  p.innerHTML=`<div class="note" style="text-align:left;margin:6px 0 4px">On sale now: <b>${r.qty}</b> · Collectr says: <b>${r.collectr}</b>${r.locked?' · <span class="pt-tag">🔒 set by hand</span>':''}</div>
+  p.innerHTML=`<div class="note" style="text-align:left;margin:6px 0 4px">On sale now: <b>${r.qty}</b> · Collectr says: <b>${r.collectr==null?'not imported yet':r.collectr}</b>${r.locked?' · <span class="pt-tag">🔒 set by hand</span>':''}</div>
     <div class="pt-inl"><input type="number" inputmode="numeric" min="0" max="999" step="1" value="${r.qty}" aria-label="Copies you really have, unsold">
       <button type="button" class="pt-mini pri" onclick="adCountSave(this,'${esc(r.id)}')">Save</button>${r.locked?`<button type="button" class="pt-mini" onclick="adCountSave(this,'${esc(r.id)}',true)">Unlock</button>`:''}</div>
     <p class="note" style="text-align:left;margin:4px 0 0">How many you really have, unsold. Imports keep this number until Collectr agrees (copies you add in Collectr are still added).</p>`;
