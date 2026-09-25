@@ -5156,7 +5156,7 @@ const ART_API = IS_STAGING ? 'https://floofmart-art-staging.shrimaniac.workers.d
 if(!ART_API) delete HAUL_THEMES.world;
 const HAUL_WORLD_T = {title:'#FFFFFF', sub:'rgba(255,255,255,.88)', head:'#FFFFFF', hand:'#FFE3F3', rule:'rgba(255,255,255,.32)', chip:'rgba(0,0,0,.38)'};
 const HAUL_WORLD_MISS = new Set();
-const HAUL_WORLD_V = 2;   // art Worker a2: continues each card's own background
+const HAUL_WORLD_V = 4;   // art Worker a4: describe-then-paint, calm, no frames
 function haulWorld(f){
   const id = driveId(f);
   if(!ART_API || !id) return Promise.resolve(null);
