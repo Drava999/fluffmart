@@ -5144,7 +5144,13 @@ let HAUL_OPT = haulOptLoad();
 const HAUL_ART = new Map();
 function haulArtCached(u, w){
   const k = u + '@' + w;
-  if(!HAUL_ART.has(k)) HAUL_ART.set(k, loadHaulArt(u, w));
+  if(!HAUL_ART.has(k)){
+    const p = loadHaulArt(u, w);
+    HAUL_ART.set(k, p);
+    // A photo that didn't arrive (slow Drive on a phone) is NOT kept as missing:
+    // keeping it is how a card stayed blank for good. The next draw tries again.
+    p.then(im => { if(!im && HAUL_ART.get(k) === p) HAUL_ART.delete(k); });
+  }
   return HAUL_ART.get(k);
 }
 // Every card in the haul, in order: a bundle opens into the cards inside it.
@@ -5249,14 +5255,7 @@ async function buildHaulCanvas(h, opt){
 
   /* ---- the cards ---- */
   const midY = 630;
-  if(world){
-    const hh = 700, hw = Math.round(hh * .715);
-    const back = others.slice(0, 2);
-    const peek = [[-150, 30, -9], [150, 30, 9]];
-    const arB = await Promise.all(back.map(i => haulArtCached(all[i].f, 700)));
-    back.forEach((i, k) => drawHaulCard(x, arB[k], W/2 + peek[k][0], midY + peek[k][1], Math.round(hw * .84), Math.round(hh * .84), peek[k][2], all[i].name));
-    drawHaulCard(x, arts[heroPos], W/2, midY, hw, hh, 0, all[heroI].name);
-  } else if(isFan){
+  if(isFan){
     const f0 = FAN[shown.length] || FAN[6];
     const f = {h:f0.h, step:f0.step, tilt:f0.tilt, dip:f0.dip};
     const mid = (shown.length - 1) / 2;
@@ -5357,6 +5356,7 @@ async function buildHaulCanvas(h, opt){
   }
   x.textAlign = 'left';
 
+  cv.haulMissing = shown.filter((c, i) => c.f && !arts[i]).length;   // photos that didn't load this time
   return cv;
 }
 
@@ -5418,7 +5418,7 @@ function haulReset(){
    buttons keep working with the last finished picture meanwhile. */
 let HAUL_DRAW_N = 0, HAUL_SOON_T = 0;
 // Taps in quick succession become one redraw.
-function haulRedrawSoon(){ clearTimeout(HAUL_SOON_T); const p = document.getElementById('haulPrev'); if(p) p.classList.add('busy'); HAUL_SOON_T = setTimeout(haulRedraw, 180); }
+function haulRedrawSoon(){ if(HAUL) HAUL.retries = 0; clearTimeout(HAUL_SOON_T); const p = document.getElementById('haulPrev'); if(p) p.classList.add('busy'); HAUL_SOON_T = setTimeout(haulRedraw, 180); }
 async function haulRedraw(){
   if(!HAUL) return;
   const n = ++HAUL_DRAW_N, h = HAUL;
@@ -5431,6 +5431,7 @@ async function haulRedraw(){
     if(n !== HAUL_DRAW_N || HAUL !== h) return;
     h.dataUrl = cv.toDataURL('image/png'); h.blob = blob; h.jpeg = haulUploadJpeg(cv);
     const img = prev && prev.querySelector('.haul-img'); if(img) img.src = h.dataUrl;
+    haulRetryMissing(h, cv);
   } catch(e){}
   finally { if(n === HAUL_DRAW_N && prev) prev.classList.remove('busy'); }
 }
@@ -5484,8 +5485,16 @@ async function prepareHaul(orderId){
   const dataUrl = cv.toDataURL('image/png');
   const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
   const jpeg = haulUploadJpeg(cv);
-  HAUL = {orderId: String(orderId), boxId, items, dataUrl, blob, jpeg};
+  HAUL = {orderId: String(orderId), boxId, items, dataUrl, blob, jpeg, retries: 0};
+  haulRetryMissing(HAUL, cv);
   return HAUL;
+}
+/* A card photo that didn't load (slow connection) is fetched again in the
+   background and the picture redrawn, up to twice, so it fills in by itself. */
+function haulRetryMissing(h, cv){
+  if(!cv || !cv.haulMissing || (h.retries || 0) >= 2) return;
+  h.retries = (h.retries || 0) + 1;
+  setTimeout(() => { if(HAUL === h) haulRedraw(); }, 2500);
 }
 
 function haulFile(){
