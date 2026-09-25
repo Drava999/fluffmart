@@ -1718,6 +1718,15 @@ body.pc #v-credit{max-width:640px}
 .ad-lotcp input,.ad-lotmv input{width:64px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-family:inherit}
 .ad-lotmv #ad-mvto{width:104px;text-transform:uppercase}
 .ad-wh{color:var(--hint)}
+.cz-pend{margin:10px 0 8px;padding:10px 12px;border-radius:12px;background:var(--line);font-size:13px;line-height:1.45}
+.cz-pend span{color:var(--hint);font-size:12px}
+/* v13.19 Follow us */
+.soc-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.soc{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:var(--text);min-height:44px;touch-action:manipulation;transition:transform 120ms cubic-bezier(.23,1,.32,1)}
+.soc:active{transform:scale(.97)}
+.soc-ic{font-size:20px;line-height:1}
+.soc-l{font-weight:800;font-size:13.5px;margin-top:4px}
+.soc-h{font-size:12px;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* v13.17 live drop / auction view */
 .evl-head{font-size:13px;margin:0 0 6px}
 .evl-clock{margin-left:4px}
@@ -1725,6 +1734,10 @@ body.pc #v-credit{max-width:640px}
 .evl-sum{font-size:12.5px;margin-top:4px}
 .evl-ctl{margin:0 0 6px}
 .evl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ev-tl{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:14px;font-weight:800}
+.ev-tl-t{min-width:0;overflow-wrap:anywhere}
+.ev-tl-ed input{flex:1;min-width:0;font-size:16px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font-family:inherit}
+.ev-tl-ed .pt-mini{margin:0}
 /* v13.18 queue & schedule */
 .evp-k{padding:6px 0 10px;border-bottom:1px solid var(--line)}
 .evp-k:last-child{border-bottom:0}
@@ -1966,6 +1979,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
       </div>
     </div>
     <div id="ov-loyalty" style="margin-top:14px"></div>
+    <div id="ov-social"></div>
     <div id="ov-policies" style="margin-top:14px"></div>
     <p class="note" id="ov-tip" style="margin-top:12px"></p>
   </div>
@@ -2157,7 +2171,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
     <button class="feat" style="margin:16px 0 8px" onclick="openGuide('credit')"><div class="ic">💡</div><div><h3>How store credit works</h3><p>Four quick cards</p></div><span class="chev">›</span></button>
     <div class="section-t hidden" style="margin:16px 4px 8px">How store credit works</div>
     <div class="hb-body" style="padding:0 4px">
-      <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> $3 back for every $100 you pay. Refer a friend and you BOTH get $3 once they spend $20+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
+      <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> <span data-cfg="RC">$3</span> back for every <span data-cfg="RT">$100</span> you pay. Refer a friend and you BOTH get <span data-cfg="REFC">$3</span> once they spend <span data-cfg="REFMIN">$15</span>+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
       <div class="hb-step"><span>🛒</span><div><b>How you spend it.</b> Toggle "Use store credit" at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6. If it covers everything, there's nothing to pay at all.</div></div>
       <div class="hb-step"><span>↩️</span><div><b>Refunds.</b> Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
       <div class="hb-step"><span>ℹ️</span><div><b>Good to know.</b> Credit never expires, but it can't be cashed out. If an order is cancelled or times out, any credit you used comes straight back.</div></div>
@@ -3105,11 +3119,14 @@ function applyOverview(r){
       <button class="sinfo-go" onclick="go('support')"><span>Refunds &amp; full policies</span><span>›</span></button>
     </div>` : '';
   }
+  paintSocials(r);
   if(r.welcome){ const h=document.querySelector('.hero p'); if(h) h.textContent=r.welcome; }
   { const t=document.getElementById('ov-tip'); if(t) t.textContent='✨ Did you know? '+pokeFact(); }
   if(STATE.user) document.getElementById('greeting').textContent = 'Hi '+(STATE.user.username?'@'+STATE.user.username:STATE.user.name)+' 👋';
   STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.unpaidTotal=Number(r.unpaidTotal||0); STATE.openParcel=r.openParcel||null; STATE.holdDays=Number(r.holdExpiryDays||21); STATE.holdGraceHours=Number(r.holdGraceHours==null?24:r.holdGraceHours);
   STATE.refLink = r.referralLink || STATE.refLink || '';
+  { const n=(v,d)=>{ const x=Number(v); return v!==''&&v!=null&&isFinite(x)&&x>=0?x:d; };
+    CFGV.RC=n(r.rewardCredit,CFGV.RC); CFGV.RT=n(r.rewardThreshold,CFGV.RT); CFGV.REFC=n(r.referralCredit,CFGV.REFC); CFGV.REFMIN=n(r.referralMinSpend,CFGV.REFMIN); cfgPaint(); }
   renderUnpaidBanner();
   renderLoyalty(r);
 }
@@ -4349,7 +4366,7 @@ function boxCardHtml(b){
   const t=boxTitle(b), line=boxStatusLine(b);
   const tracking=(b.orders.find(o=>o.tracking)||{}).tracking||'';
   const bundles=b.items.filter(isBundleItem).length;
-  const canShare=b.orders.some(o=>OWNED_STATUSES.includes(o.status));
+  const canShare=b.orders.some(o=>SHARE_STATUSES.includes(o.status));
   return '<div class="ocard bxcard" onclick="openBoxSheet(\''+b.id+'\')">'+
     '<div class="oc-hd"><div style="min-width:0"><div class="bx-t">'+esc(t.t)+'</div><div class="bx-sub">'+esc(t.sub)+'</div></div>'+
       '<span class="oc-badge">'+b.stage.ic+' '+esc(b.stage.l)+'</span></div>'+
@@ -4498,7 +4515,7 @@ function paint_openBoxSheet(id){
       (sent||free?'One fee for the whole box':'Charged once, when you send your box')+'</div></div><div class="bs-rc-r"><b>'+(sent||free?'FREE':'—')+'</b></div></div>';
   }
   const payIds=b.orders.filter(o=>OWNED_STATUSES.includes(o.status)).map(o=>o.id).concat(b.sh.filter(o=>OWNED_STATUSES.includes(o.status)).map(o=>o.id));
-  const canShare=b.orders.some(o=>OWNED_STATUSES.includes(o.status));
+  const canShare=b.orders.some(o=>SHARE_STATUSES.includes(o.status));
   document.getElementById('cardViewBody').innerHTML=
     '<div class="doc bsheet">'+
       cvNavBtn()+
@@ -4966,6 +4983,26 @@ function fitText(x, s, maxW){
 }
 /* One line, used by the share sheet, the Telegram fallback and the panel's own
    link row — so what they tap and what gets posted always say the same thing. */
+/* v13.19: "Follow us" on the home page -- one tile per account set in Admin →
+   Config → Socials. Config holds HANDLES only; the link for each site is built
+   here, so it can only ever go to that site. Hidden when nothing is set. */
+const SOCIALS=[['instagram','Instagram',h=>'https://instagram.com/'+h,'📸'],['tiktok','TikTok',h=>'https://www.tiktok.com/@'+h,'🎵'],
+  ['youtube','YouTube',h=>'https://www.youtube.com/@'+h,'▶️'],['facebook','Facebook',h=>'https://www.facebook.com/'+h,'📘'],
+  ['threads','Threads',h=>'https://www.threads.net/@'+h,'🧵'],['x','X',h=>'https://x.com/'+h,'𝕏'],
+  ['telegram','Telegram',h=>'https://t.me/'+h,'✈️'],['carousell','Carousell',h=>'https://www.carousell.sg/u/'+h,'🛍️']];
+function paintSocials(r){
+  const el=document.getElementById('ov-social'); if(!el) return;
+  const s=(r&&r.socials)||{}, ok=h=>/^[A-Za-z0-9._-]{1,40}$/.test(String(h||''));
+  const list=SOCIALS.filter(([k])=>ok(s[k]));
+  el.innerHTML=list.length?`<div class="section-t" style="margin:16px 4px 8px">Follow us</div><div class="soc-row">${list.map(([k,l,u,ic])=>
+    `<a class="soc" href="${esc(u(s[k]))}" target="_blank" rel="noopener noreferrer" onclick="return openExt(this.href)" aria-label="${esc(l)} @${esc(s[k])}"><span class="soc-ic" aria-hidden="true">${ic}</span><span class="soc-l">${esc(l)}</span><span class="soc-h">@${esc(s[k])}</span></a>`).join('')}</div>`:'';
+}
+/* v13.19: reward & referral amounts come from Config (via overview), so
+   changing them in Admin → Config changes every line that mentions them. */
+const CFGV={RC:3,RT:100,REFC:3,REFMIN:15};
+const cfgMoney=v=>'$'+(Number(v)%1?Number(v).toFixed(2):Number(v).toFixed(0));
+function cfgText(s){ return String(s).replace(/\{\{(RC|RT|REFC|REFMIN)\}\}/g,(m,k)=>cfgMoney(CFGV[k])); }
+function cfgPaint(){ document.querySelectorAll('[data-cfg]').forEach(el=>{ const k=el.getAttribute('data-cfg'); if(CFGV[k]!=null) el.textContent=cfgMoney(CFGV[k]); }); }
 function haulInviteText(){
   return 'Come join me on FloofMart TCG 🐑 — Pokémon singles, drops and claims in Singapore';
 }
@@ -5216,7 +5253,7 @@ function haulItemsFor(orderId){
   if(key.indexOf('box:') === 0){
     const pid = key.slice(4);
     const mine = (STATE.orders || []).filter(o => String(o.parcelId) === pid &&
-      String(o.id).indexOf('SH') !== 0 && !o.cancelled && OWNED_STATUSES.includes(o.status));
+      String(o.id).indexOf('SH') !== 0 && !o.cancelled && SHARE_STATUSES.includes(o.status));
     const items = mine.reduce((a, o) => a.concat(liveItems(o.items)), []);
     return items.length ? items : null;
   }
@@ -5371,7 +5408,7 @@ async function sendHaulToTelegram(btn){
     const m = (r && r.ok)
       ? (r.message || 'Sent it to you on Telegram 📸 Forward it anywhere from there!')
       : haulSendError(r);
-    (tg && tg.showAlert ? tg.showAlert : alert)(m);
+    ptAlert(m);   // v13.19: safe on older Telegram apps (tg.showAlert throws below 6.2)
     if(r && r.ok) sfx('ok');
   });
 }
@@ -5465,6 +5502,9 @@ function showPaidHaul(inv){
 /* ============ BINDER (past purchases) ============ */
 let BINDER={page:0,cards:[],sig:''};
 const OWNED_STATUSES=['Payment Verified','Packed','Shipped','In Transit','Delivered'];
+/* v13.19: a haul can be shared as soon as payment is SENT (it's being checked) --
+   the share already showed at checkout, then vanished from Orders until verified. */
+const SHARE_STATUSES=['Awaiting Verification'].concat(OWNED_STATUSES);
 function buildBinder(){
   const wrap=document.getElementById('binderWrap');
   const cards=[];
@@ -6037,8 +6077,8 @@ const GUIDES={
     {ic:'🐑',t:'Hello!',b:'FloofMart is a Pokémon card shop that lives inside Telegram. Browsing, paying and tracking all happen right here — there is no other website to visit.'},
     {ic:'🧺',t:'We keep a box for you',b:'Every card you buy goes into your box and waits there. You pay postage <b>once</b>, whenever you decide to send it — not once per order.'},
     {ic:'🎯',t:'Drops',b:'We post cards in the channel and the first person to comment <b>claim</b> wins it. Press Start on the bot first, or we can’t send you the invoice.'},
-    {ic:'💳',t:'You earn credit',b:'$3 back for every $100 you pay. It comes off your total automatically at checkout — nothing to remember.'},
-    {ic:'🎁',t:'Bring a friend, both win',b:'When they spend $15+, <b>you each get $3 credit</b>. Your own link is<br><b>{{REF}}</b><br><button class="wsug" style="margin-top:10px" onclick="shareInvite()">🔗 Share my link</button> <button class="wsug" style="margin-top:10px" onclick="copyInvite(this)">Copy</button>'},
+    {ic:'💳',t:'You earn credit',b:'{{RC}} back for every {{RT}} you pay. It comes off your total automatically at checkout — nothing to remember.'},
+    {ic:'🎁',t:'Bring a friend, both win',b:'When they spend {{REFMIN}}+, <b>you each get {{REFC}} credit</b>. Your own link is<br><b>{{REF}}</b><br><button class="wsug" style="margin-top:10px" onclick="shareInvite()">🔗 Share my link</button> <button class="wsug" style="margin-top:10px" onclick="copyInvite(this)">Copy</button>'},
     {ic:'🆘',t:'Stuck at any point?',b:'Help &amp; Support is in the menu. A real person reads it.'}
   ]},
   buy:{title:'How buying works',steps:[
@@ -6057,7 +6097,7 @@ const GUIDES={
     {ic:'⏰',t:'Pay within the window',b:'Claim wins have a deadline on them. Miss it and the card passes to the next person in the queue — so pay when you see it.'}
   ]},
   credit:{title:'Store credit',steps:[
-    {ic:'🎁',t:'How you earn it',b:'$3 back for every $100 you pay. Refer a friend and you BOTH get $3 once they spend $15+. Sell us cards and take credit instead of cash — we pay a better rate for credit.'},
+    {ic:'🎁',t:'How you earn it',b:'{{RC}} back for every {{RT}} you pay. Refer a friend and you BOTH get {{REFC}} once they spend {{REFMIN}}+. Sell us cards and take credit instead of cash — we pay a better rate for credit.'},
     {ic:'🛒',t:'How you spend it',b:'Toggle <b>Use store credit</b> at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6.'},
     {ic:'↩️',t:'Refunds',b:'Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.'},
     {ic:'ℹ️',t:'Good to know',b:'Credit never expires, but it can’t be cashed out. If an order is cancelled or times out, any credit you used comes straight back.'}
@@ -6074,7 +6114,7 @@ function openGuide(key){
        <div class="gd-step">${k+1} of ${g.steps.length}</div>
        <span class="gd-ic">${s.ic}</span>
        <div class="gd-t">${s.t}</div>
-       <div class="gd-b">${String(s.b).replace('{{REF}}', esc(inviteLinkLabel()))}</div>
+       <div class="gd-b">${cfgText(String(s.b)).replace('{{REF}}', esc(inviteLinkLabel()))}</div>
      </div>`).join('');
   document.getElementById('gdDots').innerHTML=g.steps.map((_,k)=>
     `<span class="gd-dot${k===0?' on':''}"></span>`).join('');
@@ -6417,7 +6457,7 @@ function ptReqLine(q){
   const bits=[];
   if(q.cardName) bits.push(esc(q.cardName));
   if(q.price!=null) bits.push('price → $'+Number(q.price).toFixed(2));
-  if(q.floor!=null) bits.push('floor → $'+Number(q.floor).toFixed(2));
+  if(q.floor!=null) bits.push('lowest → $'+Number(q.floor).toFixed(2));
   if(q.photos) bits.push(q.photos+' photo'+(q.photos>1?'s':''));
   if(q.type==='apply'){ if(q.lang) bits.push(q.lang==='jp'?'Japanese':'English'); if(q.paynow) bits.push('PayNow '+esc(q.paynow)); }
   return bits.join(' · ');
@@ -6429,7 +6469,9 @@ function ptReqsHtml(reqs){
 }
 
 /* ---------- My consignment ---------- */
-let CZ=null, CZ_TAB='shelf', CZ_OPEN=-1, CZ_PHOTOS=[];
+let CZ=null, CZ_TAB='shelf', CZ_OPEN=-1, CZ_PHOTOS=[], CZ_PEND=null;
+/* v13.19: cards sold but not yet handed over -- money on its way (Apps Script read). */
+async function czLoadPending(){ try{ const r=await api('consignPending',{}); if(r&&r.ok){ CZ_PEND=r; renderConsign(); } }catch(e){} }
 /* ---- speed: show the last copy at once, refresh behind it ----------------
    Every portal screen used to wait on a full Apps Script round trip (several
    seconds) before drawing anything. Now: the last answer (kept on this device)
@@ -6484,6 +6526,7 @@ async function openConsign(){
   ptUpd('cz-upd',false);
   if((r&&r.ok) || !(CZ&&CZ.ok)){ CZ=r; renderConsign(); }
   else { const el=document.getElementById('cz-upd'); if(el) el.textContent='Couldn\'t refresh — showing your last saved copy.'; }
+  if(CZ&&CZ.isConsignor) czLoadPending();
 }
 function czTab(t){ CZ_TAB=t; CZ_OPEN=-1; renderConsign(); }
 function renderConsign(){
@@ -6494,11 +6537,12 @@ function renderConsign(){
   let payBtn;
   if(r.payoutPending) payBtn='<button class="cta" disabled>Payout requested ✓</button>';
   else if(r.canRequestPayout) payBtn=`<button class="cta" onclick="czPayout(this)">Request payout · $${Number(r.balance).toFixed(2)}</button>`;
-  else payBtn=`<button class="cta" disabled>Payouts start at $${Number(r.minPayout||0).toFixed(0)}</button>`;
+  else payBtn=`<button class="cta" disabled>${Number(r.balance||0)>0?'Payouts start at $'+Number(r.minPayout||0).toFixed(0):'Nothing to pay out yet'}</button>`;
   let h=`<div class="pt-stats">
       <div class="pstat"><div class="pn">$${Number(r.balance||0).toFixed(2)}</div><div class="pl">Balance</div></div>
       <div class="pstat"><div class="pn">${Number(r.sold||0)}</div><div class="pl">Sold</div></div>
       <div class="pstat"><div class="pn">$${Number(r.paid||0).toFixed(0)}</div><div class="pl">Paid out</div></div></div>
+    ${CZ_PEND&&CZ_PEND.cards?`<div class="cz-pend">🕒 <b>${CZ_PEND.cards} sold, on the way</b> · <b>$${Number(CZ_PEND.toYou).toFixed(2)}</b> to you<br><span>It's added to your balance as soon as each box is shipped or collected.</span></div>`:''}
     ${payBtn}
     <div class="pt-row" style="margin-top:6px"><div class="l"><div class="t">PayNow</div><div class="s">${r.paynow?esc(r.paynow):'Not set — we need this to pay you'}</div></div>
       <button class="pt-mini" onclick="czPaynowForm()">${r.paynow?'Change':'Add'}</button></div>
@@ -6511,16 +6555,16 @@ function renderConsign(){
       const canAsk=c.state!=='Returned to you';
       return `<div class="pt-card">${c.image?`<img src="${esc(c.image)}" loading="lazy" alt="">`:'<div class="noimg"></div>'}<div class="b">
         <div class="t" style="font-weight:700">${esc(c.name)}${c.qty>1?' ×'+c.qty:''}</div><div class="s" style="color:var(--hint);font-size:11.5px">${meta}</div>
-        <div style="margin-top:3px"><b>$${Number(c.price||0).toFixed(2)}</b>${c.floor?` <span style="color:var(--hint);font-size:12px">· floor $${Number(c.floor).toFixed(2)}</span>`:''}</div>
+        <div style="margin-top:3px"><b>$${Number(c.price||0).toFixed(2)}</b>${c.floor?` <span style="color:var(--hint);font-size:12px">· won't sell below $${Number(c.floor).toFixed(2)}</span>`:''}</div>
         <span class="pt-tag ${PT_STATE_TAG[c.state]||''}">${esc(c.state)}</span>${c.bundle?`<span class="pt-tag">${esc(c.bundle)}</span>`:''}
         ${canAsk?`<div><button class="pt-mini" onclick="czAsk(${i})">${CZ_OPEN===i?'Close':'Ask to change price'}</button></div>`:''}
-        ${CZ_OPEN===i?`<div class="pt-form"><div class="pt-inl"><input id="cz-np" inputmode="decimal" placeholder="New price $"><input id="cz-nf" inputmode="decimal" placeholder="New floor $"></div>
+        ${CZ_OPEN===i?`<div class="pt-form"><div class="pt-inl"><input id="cz-np" inputmode="decimal" placeholder="New shop price $" aria-label="New shop price"><input id="cz-nf" inputmode="decimal" placeholder="Lowest you'll take $" aria-label="Lowest price you'll accept"></div>
           <textarea id="cz-nn" rows="2" placeholder="Note (optional)" style="margin-top:6px"></textarea>
           <button class="pt-mini pri" onclick="czSendPrice(this,${i})">Send request</button>
-          <div class="note" style="text-align:left">The floor is the lowest you'll accept (drops, auctions, offers). Nothing changes until we approve it.</div></div>`:''}
+          <div class="note" style="text-align:left"><b>Shop price</b> is what it's listed at. <b>Lowest you'll take</b> is your safety net: drops, auctions and offers never sell it for less. Fill in either or both — nothing changes until we approve it.</div></div>`:''}
       </div></div>`; }).join('')
       : '<div class="empty" style="padding:24px"><p>Nothing on the shelf right now.</p></div>';
-  } else if(CZ_TAB==='sales') h+=ptSalesHtml(r.sales);
+  } else if(CZ_TAB==='sales') h+=(CZ_PEND&&CZ_PEND.lines&&CZ_PEND.lines.length?'<div class="pt-h" style="margin-top:0">Sold — on the way</div>'+CZ_PEND.lines.map(l=>`<div class="pt-row"><div class="l"><div class="t">${esc(l.name)}</div><div class="s">${esc(l.status)} · sold $${Number(l.price).toFixed(2)} · added when it's handed over</div></div><div class="r" style="color:var(--hint)">+$${Number(l.net).toFixed(2)}</div></div>`).join('')+'<div class="pt-h">Paid into your balance</div>':'')+ptSalesHtml(r.sales);
   else if(CZ_TAB==='payouts') h+=ptPayoutsHtml(r.payouts);
   else if(CZ_TAB==='rates') h+=`<p class="note" style="text-align:left;margin:0 0 6px">These are the rates you signed up on${r.rates&&r.rates.ver?' ('+esc(r.rates.ver)+')':''}. The % is set by what each card sells for.</p>`+ptRatesHtml(r.rates&&r.rates.tables);
   else if(CZ_TAB==='requests') h+=ptReqsHtml(r.requests);
@@ -6538,7 +6582,7 @@ function czAsk(i){ CZ_OPEN=(CZ_OPEN===i?-1:i); renderConsign(); }
 async function czSendPrice(btn,i){
   const c=CZ&&CZ.shelf&&CZ.shelf[i]; if(!c) return;
   const price=ptNum('cz-np'), floor=ptNum('cz-nf');
-  if(price==null&&floor==null){ ptAlert('Give a new price, a new floor, or both.'); return; }
+  if(price==null&&floor==null){ ptAlert('Give a new shop price, a new lowest price, or both.'); return; }
   if((price!=null&&!(price>0))||(floor!=null&&!(floor>=0))){ ptAlert('Those numbers don\'t look right.'); return; }
   await guard(btn, async()=>{
     const r=await api('consignPriceRequest',{cardId:c.id,price:price,floor:floor,note:ptVal('cz-nn')});
@@ -6711,7 +6755,7 @@ async function adFetchDet(k,src){
   const cut=k.indexOf(':'), kind=k.slice(0,cut), id=k.slice(cut+1), act=AD_DET_ACT[kind];
   if(!act||AD.detLoading[k]) return;
   let pl;
-  if(kind==='stk') pl=id==='atmarket'?{kind:id,live:1}:{kind:id};   // the at-market list is Apps Script only
+  if(kind==='stk') pl=AD_STK_LIVE.indexOf(id)>=0?{kind:id,live:1}:{kind:id};   // these lists are Apps Script only
   else if(kind==='mny'){ const b=id.indexOf('|'); pl={period:id.slice(0,b),source:id.slice(b+1)}; }
   else if(kind==='ev'){ if(!src) return; pl={kind:src.kind,id:src.evId}; }
   else pl={id};
@@ -6933,8 +6977,8 @@ function adStockHtml(r){
   const cta=(r.kind==='stale'||r.kind==='above')?`<div class="ev-foot" style="margin:0 0 6px">
       <button class="pt-mini" onclick="adEvFromStock('${r.kind}','drop')">🎯 New drop with these</button>
       <button class="pt-mini" onclick="adEvFromStock('${r.kind}','auction')">🔨 New auction with these</button></div>`:'';
-  const pr=r.kind!=='stuck';                              // held cards are priced in their drop/auction
-  return cta+(pr?adPrBulkHtml(r.kind):'')+r.cards.map(c=>`<div data-pk="${esc(r.kind+'|'+c.id)}">`+adCardLine(c,pr?adPrTickKey(r.kind,c.id):'',`<div class="s" style="font-size:11.5px"><b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>${c.market?' · market $'+Number(c.market).toFixed(2):''} · qty ${c.qty}${c.days!=null?' · listed '+c.days+'d':''}${c.consignor?' · floor checked on save':''}${r.kind==='stuck'?' · '+esc(c.status)+(c.heldBy?' by '+esc(c.heldBy):''):''} · <span style="color:var(--hint)">${esc(c.id)}</span></div>`+(pr?adPrOneHtml(r.kind,c):''))+'</div>').join('')+
+  const pr=r.kind!=='stuck'&&r.kind!=='held';                              // held cards are priced in their drop/auction
+  return cta+(pr?adPrAskHtml()+adPrBulkHtml(r.kind):'')+r.cards.map(c=>`<div data-pk="${esc(r.kind+'|'+c.id)}">`+adCardLine(c,pr?adPrTickKey(r.kind,c.id):'',`<div class="s" style="font-size:11.5px"><b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>${c.market?' · market $'+Number(c.market).toFixed(2):''} · qty ${c.qty}${c.days!=null?' · listed '+c.days+'d':''}${c.consignor?' · floor checked on save':''}${(r.kind==='stuck'||r.kind==='held')?' · '+esc(c.status)+(c.heldBy?' by '+esc(c.heldBy):''):''} · <span style="color:var(--hint)">${esc(c.id)}</span></div>`+(pr?adPrOneHtml(r.kind,c):''))+'</div>').join('')+
     (r.total>r.cards.length?`<p class="note">Showing ${r.cards.length} of ${r.total}.</p>`:'');
 }
 /* ---- v13.16: pricing on Stock health ----
@@ -6944,14 +6988,22 @@ function adStockHtml(r){
    (floors, held cards) and says which it skipped and why. Lines update in
    place; a card that no longer belongs on a list leaves it. */
 AD.pr={rule:'market',pct:5,round:'none',pv:{},last:{}};
+/* v13.19: "Ask before saving a price" -- on by default; switch it off to price
+   fast. Remembered on this phone. Bulk changes always ask. */
+AD.prAsk=(()=>{ try{ return localStorage.getItem('fm_prask')!=='0'; }catch(e){ return true; } })();
+function adPrAskSet(on){ AD.prAsk=!!on; try{ localStorage.setItem('fm_prask',on?'1':'0'); }catch(e){} document.querySelectorAll('.adpr-ask input').forEach(x=>{ x.checked=AD.prAsk; }); }
+const adPrAskHtml=()=>`<label class="ad-prall adpr-ask"><input type="checkbox" ${AD.prAsk?'checked':''} onchange="adPrAskSet(this.checked)"> Ask before saving each price</label>`;
 const adPrTickKey=(kind,id)=>'pr_'+kind+'_'+adDom(id);
 const adPrMoney=v=>'$'+Number(v||0).toFixed(2);
 function adPrOneHtml(kind,c){
   const mk=Number(c.market||0), m5=Math.round(Number(c.price||0)*95)/100;
   return `<div class="ad-prrow"><input class="ev-num" inputmode="decimal" value="${Number(c.price).toFixed(2)}" aria-label="Price for ${esc(c.name)}" onkeydown="if(event.key==='Enter')this.blur()" onchange="adPrSave(this,this.value)">`+
     (mk&&Math.round(mk*100)!==Math.round(Number(c.price)*100)?`<button class="pt-mini" onclick="adPrSave(this,${mk})">Use market ${adPrMoney(mk)}</button>`:'')+
-    (m5>0?`<button class="pt-mini" onclick="adPrSave(this,${m5})" aria-label="Lower by 5% to ${adPrMoney(m5)}">−5%</button>`:'')+`</div>`;
+    (m5>0?`<button class="pt-mini" onclick="adPrSave(this,${m5})" aria-label="Lower by 5% to ${adPrMoney(m5)}">−5%</button>`:'')+
+    `<button class="pt-mini" data-q="${esc([c.name,c.set,c.number].filter(Boolean).join(' '))}" onclick="adPriceCharting(this)" aria-label="Look up ${esc(c.name)} on PriceCharting">PriceCharting ↗</button></div>`;
 }
+// v13.19: PriceCharting's price page for this card (opens in Telegram's browser).
+function adPriceCharting(btn){ const q=btn.getAttribute('data-q')||''; openExt('https://www.pricecharting.com/search-products?type=prices&q='+encodeURIComponent(q)); }
 function adPrBulkHtml(kind){
   const P=AD.pr, sel=(id,v,opts)=>`<select id="${id}" onchange="adPrOpt(this)">${opts.map(([k,l])=>`<option value="${k}"${k===v?' selected':''}>${l}</option>`).join('')}</select>`;
   return `<details class="ad-prbulk" ${P.pv[kind]?'open':''}><summary>Change many prices at once</summary>
@@ -7023,6 +7075,7 @@ async function adPrSave(el,v){
   const inp=box.querySelector('input.ev-num'), n=Math.round(Number(String(v).replace(/[$,\s]/g,''))*100)/100;
   if(!(n>0)){ ptAlert('Type a price above $0.'); if(inp) inp.value=Number(c.price).toFixed(2); return; }
   if(n===Math.round(Number(c.price)*100)/100){ if(inp) inp.value=n.toFixed(2); return; }
+  if(AD.prAsk&&!(await ptConfirm(`Change ${c.name} from ${adPrMoney(c.price)} to ${adPrMoney(n)}?${c.market?`\n\nMarket is ${adPrMoney(c.market)}.`:''}\n\n(Turn off “Ask before saving each price” to skip this.)`))){ if(inp) inp.value=Number(c.price).toFixed(2); return; }
   if(inp){ inp.value=n.toFixed(2); inp.classList.add('saving'); inp.classList.remove('bad'); }
   let r; try{ r=await api('adminPriceSet',{cardId:id,price:n}); }catch(e){ r={ok:false,error:'network'}; }
   if(inp) inp.classList.remove('saving');
@@ -7032,8 +7085,10 @@ async function adPrSave(el,v){
 // A card's new price, everywhere it's shown on Stock health: updated, or gone from a list it no longer fits.
 function adPrApplyCard(card,lists){
   if(!card) return; lists=lists||[];
-  ['nophoto','below','above','stale','atmarket'].forEach(kind=>{
+  ['nophoto','below','above','stale','atmarket','bundles','find'].forEach(kind=>{
     const d=AD.det['stk:'+kind]; if(!d||!d.ok) return;
+    if(kind==='find'&&lists.indexOf('find')<0) lists=lists.concat('find');   // search results stay put
+    if(kind==='find'){ const ec=((AD.ev.cards&&AD.ev.cards.cards)||[]).find(x=>String(x.id)===String(card.id)); if(ec) ec.price=card.price; }
     const c=(d.cards||[]).find(x=>String(x.id)===String(card.id));
     if(!c){ if(lists.indexOf(kind)>=0) delete AD.det['stk:'+kind]; return; }   // joins a list we hold: load it fresh next time
     const el=document.querySelector(`[data-pk="${CSS.escape(kind+'|'+card.id)}"]`);
@@ -7055,13 +7110,12 @@ function adStockCountsSync(){
   AD.stkT=setTimeout(async()=>{
     let r; try{ r=await api('adminDash',{fresh:1,live:1}); }catch(e){ return; }
     if(r&&r.ok){ AD.dash=r; ptSave('addash',r); }
-    const a=await api('adminStock',{kind:'atmarket',live:1}).catch(()=>null);
-    if(a&&a.ok){ AD.atmN=a.total; if(!AD.open['stk:atmarket']) AD.det['stk:atmarket']=a; }
+    AD.stkN={}; adStkLiveCounts(true);
     adStockCountsPaint();
   },1200);
 }
 function adStockCountsPaint(){
-  const s=(AD.dash&&AD.dash.stock)||{}, n={nophoto:s.noPhoto,below:s.below,above:s.above,stale:s.stale,atmarket:AD.atmN};
+  const s=(AD.dash&&AD.dash.stock)||{}, N=AD.stkN||{}, n={nophoto:s.noPhoto,below:s.below,above:s.above,stale:s.stale,atmarket:N.atmarket,bundles:N.bundles,held:N.held};
   Object.keys(n).forEach(k=>{ const el=document.getElementById('ad-stkn-'+k); if(el&&n[k]!=null){ el.textContent=Number(n[k]||0); el.className=Number(n[k])?'pt-neg':''; } });
 }
 function adEventHtml(r){
@@ -7144,6 +7198,7 @@ function adRenderConfig(){
     const id='ad-cf-'+i, v=f.value!==''?f.value:f.def;
     if(f.type==='enum') return `<select id="${id}">${(f.opts||[]).map(o=>`<option value="${esc(o)}"${o===v?' selected':''}>${esc(o)}</option>`).join('')}</select>`;
     if(f.type==='text') return `<input id="${id}" maxlength="${f.max||200}" value="${esc(v)}">`;
+    if(f.type==='handle') return `<input id="${id}" maxlength="60" value="${esc(v)}" placeholder="handle, e.g. floofmarttcg (blank = hide)" autocapitalize="none" autocorrect="off">`;
     return `<input id="${id}" inputmode="decimal" value="${esc(v)}" placeholder="${f.min} – ${f.max}">`;
   };
   const col=g=>`<div class="pt-h">${esc(g)}</div><div class="panel" style="padding:2px 12px">`+r.fields.map((f,i)=>f.group!==g?'':
@@ -7191,7 +7246,7 @@ function adBits(){
 }
 function adFoot(d){
   return `<p class="note">Refunds, cancels, strikes and restores stay in Telegram. ${esc(d.version||'')} · as of ${new Date(d.at||Date.now()).toLocaleTimeString()}${d.cached?' (cached)':''}
-      · <a href="#" onclick="AD.fresh=true;AD.det={};AD.atmN=null;adLoad();return false">Refresh</a></p>`;
+      · <a href="#" onclick="AD.fresh=true;AD.det={};AD.stkN={};adLoad();return false">Refresh</a></p>`;
 }
 // The Dashboard's job lists as [section, html] -- shared by the full draw and the in-place update.
 function adJobSecs(d){
@@ -7230,35 +7285,65 @@ function adRenderDash(){
   adIn(`<div class="ad-cols"><div>${jobs}</div><div>${money}</div></div>`+adFoot(d));
   window.scrollTo(0,y);
 }
+/* v13.19: lists the quick D1 dashboard doesn't count -- each loads its own count
+   from Apps Script (and keeps the list, so opening it is instant). */
+const AD_STK_LIVE=['atmarket','bundles','held'];
+AD.stkN={}; AD.stkLoading={};
+function adStkLiveCounts(force){
+  AD_STK_LIVE.forEach(k=>{
+    if((!force&&AD.stkN[k]!=null)||AD.stkLoading[k]) return;
+    AD.stkLoading[k]=1;
+    api('adminStock',{kind:k,live:1}).then(a=>{ if(a&&a.ok){ AD.stkN[k]=a.total; if(!AD.open['stk:'+k]) AD.det['stk:'+k]=a; adStockCountsPaint(); } })
+      .catch(()=>{}).finally(()=>{ delete AD.stkLoading[k]; });
+  });
+}
 function adRenderShelf(){
   const d=AD.dash;
   if(!d||!d.ok){ adIn(`<div class="empty"><p>${esc(ptErr(d))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
-  const y=window.scrollY, {det,row,sec}=adBits();
-  const s=d.stock||{};
-  // Drops/auctions come separately (D1 snapshot, else Apps Script).
+  const y=window.scrollY, {row}=adBits();
+  const s=d.stock||{}, N=AD.stkN||{};
   const evd=(s.events==null)?AD.events:{events:s.events,stuckHolds:s.stuckHolds};
   if(s.events==null&&!AD.events&&!AD.evLoading) adLoadEvents();
-  const evList=evd?evd.events:null, stuckN=evd?evd.stuckHolds:null;
+  const stuckN=evd?evd.stuckHolds:null, cnt=v=>v==null?'…':v;
   const sk=[['nophoto','On sale with no photo',s.noPhoto,'Buyers skip cards without a photo'],
             ['below',`Priced under ${s.belowPct||80}% of market`,s.below,'Check before someone else does'],
             ['above',`Priced over ${s.abovePct||125}% of market`,s.above==null?'…':s.above,'Likely to sit — worth a look'],
             ['stale',`Listed over ${s.staleDays||60} days`,s.stale,'Candidates for the next drop or auction'],
-            ['atmarket','Priced exactly at market',AD.atmN==null?'…':AD.atmN,'Often never priced by hand — worth a look'],
+            ['atmarket','Priced exactly at market',cnt(N.atmarket),'Often never priced by hand — worth a look'],
+            ['bundles','Bundles on sale',cnt(N.bundles),'Every bundle in the shop, with its price'],
+            ['held','On a drop or auction hold',cnt(N.held),'Held for a draft or live one — priced there'],
             ['stuck','Stuck on a drop/auction hold',stuckN==null?'…':stuckN,'Held, but no live drop or auction has them']];
-  // v13.16: the at-market list isn't in the quick dashboard, so its count loads on its own.
-  if(AD.atmN==null&&!AD.atmLoading){ AD.atmLoading=true; api('adminStock',{kind:'atmarket',live:1}).then(a=>{ if(a&&a.ok){ AD.atmN=a.total; if(!AD.det['stk:atmarket']) AD.det['stk:atmarket']=a; adStockCountsPaint(); } }).catch(()=>{}).finally(()=>{ AD.atmLoading=false; }); }
+  adStkLiveCounts(false);
   const stock=`<div class="pt-h">Stock · ${Number(s.onSale||0)} on sale · $${Number(s.stockValue||0).toFixed(0)}</div><div class="panel" style="padding:4px 12px">`+
     sk.map(x=>row('stk','stock',x[0],x[1],x[3],`<span id="ad-stkn-${x[0]}" class="${x[2]&&x[2]!=='…'?'pt-neg':''}">${x[2]==='…'?'…':Number(x[2]||0)}</span>`)).join('')+'</div>';
-  // v13.15: drops & auctions have their own tab (🎯 Events) -- build, post, follow.
-  let ev=`<div class="pt-h">Drops &amp; auctions</div>`;
-  if(evList==null) ev+=`<p class="note" style="text-align:left;margin:0 2px">Loading…</p>`;
-  else {
-    const dr=evList.filter(e=>e.state==='draft').length, lv=evList.filter(e=>e.state==='live').length;
-    ev+=`<button class="feat" onclick="adTab('events')"><div class="ic">🎯</div><div><h3>${lv} live · ${dr} draft${dr===1?'':'s'}</h3><p>Build, post and follow them in Events</p></div><span class="chev">›</span></button>`;
-  }
-  adIn(`<div class="ad-cols"><div>${stock}</div><div>${ev}</div></div>`+adFoot(d));
+  // v13.19: "Drops & auctions" moved to its own tab -- this column is now a
+  // search over every card on sale, to price any one of them directly.
+  const find=`<div class="pt-h">🔎 Find a card</div><div class="panel" style="padding:10px 12px">
+    <span class="ad-lotqw"><input id="ad-findq" value="${esc(AD.findQ||'')}" oninput="adFindSearch(this.value)" placeholder="Name, set, number, #key or lot" aria-label="Find a card to price" autocomplete="off"><button id="ad-findx" type="button" class="ad-lotqx" onclick="adFindClear()" aria-label="Clear search" ${AD.findQ?'':'hidden'}>✕</button></span>
+    <div id="ad-find-res" style="margin-top:6px">${adFindHtml()}</div></div>`;
+  adIn(`<div class="ad-cols"><div>${stock}</div><div>${find}</div></div>`+adFoot(d));
   window.scrollTo(0,y);
+  if(!(AD.ev.cards&&AD.ev.cards.ok)){ const p=adEvCardsPrefetch(); if(p&&p.then&&AD.findQ) p.then(()=>{ const r=document.getElementById('ad-find-res'); if(r) r.innerHTML=adFindHtml(); }); }
 }
+/* Search every card on sale (the same list the drop/auction picker uses, which
+   the app already keeps) and price any of them in place. */
+function adFindMatches(){
+  const q=String(AD.findQ||'').trim().toLowerCase(); if(!q) return [];
+  const words=q.split(/\s+/).filter(Boolean);
+  return ((AD.ev.cards&&AD.ev.cards.cards)||[]).filter(c=>{ const t=[c.name,c.set,c.number,c.photoKey?'#'+c.photoKey:'',c.lot,c.id].join(' ').toLowerCase(); return words.every(w=>t.indexOf(w)>=0); }).slice(0,25);
+}
+function adFindHtml(){
+  if(!AD.findQ) return '<p class="note" style="text-align:left;margin:4px 0 0">Type to find any card on sale and change its price here.</p>';
+  if(!(AD.ev.cards&&AD.ev.cards.ok)) return AD.ev.cards&&!AD.ev.cards.ok?`<p class="pt-err">${esc(ptErr(AD.ev.cards))}</p>`:'<div class="skelcard" style="height:60px"></div>';
+  const m=adFindMatches();
+  AD.det['stk:find']={ok:true,kind:'find',cards:m.map(c=>Object.assign({},c,{qty:c.qty}))};
+  if(!m.length) return `<p class="note" style="text-align:left;margin:4px 0 0">No card on sale matches “${esc(AD.findQ)}”.</p>`;
+  return adPrAskHtml()+AD.det['stk:find'].cards.map(c=>`<div data-pk="${esc('find|'+c.id)}">`+adCardLine(c,'',`<div class="s" style="font-size:11.5px"><b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>${c.market?' · market $'+Number(c.market).toFixed(2):''} · qty ${c.qty}${c.lot?' · 📍 '+esc(c.lot):''}${c.consignor?' · lowest price checked on save':''}</div>`+adPrOneHtml('find',c))+'</div>').join('')+
+    (m.length===25?'<p class="note">Showing the first 25 — type more to narrow it down.</p>':'');
+}
+function adFindSearch(v){ AD.findQ=v; const x=document.getElementById('ad-findx'); if(x) x.hidden=!v; const r=document.getElementById('ad-find-res'); if(r) r.innerHTML=adFindHtml();
+  if(v&&!(AD.ev.cards&&AD.ev.cards.ok)){ const p=adEvCardsPrefetch(); if(p&&p.then) p.then(()=>{ const r2=document.getElementById('ad-find-res'); if(r2&&AD.findQ) r2.innerHTML=adFindHtml(); }); } }
+function adFindClear(){ const q=document.getElementById('ad-findq'); if(q){ q.value=''; q.focus(); } adFindSearch(''); }
 /* ---- 🎯 Events: build and post drops & auctions (v13.15) ----
    A draft is built here with a picker like the Lots one, and posted with the
    same server code as /drop go -- which re-checks holds, consignor floors and
@@ -7394,6 +7479,27 @@ function adEvMoveToHistory(k){
   if(!from.children.length) from.outerHTML='<p class="note" style="text-align:left;margin:0 2px">Nothing live.</p>';
   return true;
 }
+/* v13.19: rename a drop or auction (tap ✏️ next to its name). */
+function adEvTitleHtml(d){
+  const k=adEvK(d.kind,d.id);
+  if(AD.ev.renaming===k) return `<div class="ev-tl ev-tl-ed"><input id="ev-ren" maxlength="60" value="${esc(d.title||'')}" placeholder="Name, e.g. Friday night drop" aria-label="Name for ${esc(d.short)}" onkeydown="if(event.key==='Enter')adEvRename(this.nextElementSibling);if(event.key==='Escape'){AD.ev.renaming='';adEvPatch(AD.ev.open);}"><button class="pt-mini pri" onclick="adEvRename(this)">Save</button><button class="pt-mini" onclick="AD.ev.renaming='';adEvPatch(AD.ev.open)">Cancel</button></div>`;
+  return `<div class="ev-tl"><span class="ev-tl-t">${d.title?'“'+esc(d.title)+'”':'<span style="color:var(--hint)">No name</span>'}</span><button class="evl-x" aria-label="Rename ${esc(d.short)}" onclick="AD.ev.renaming='${esc(k)}';adEvPatch(AD.ev.open);setTimeout(()=>{const i=document.getElementById('ev-ren');if(i){i.focus();i.select();}},30)">✏️</button></div>`;
+}
+async function adEvRename(btn){
+  const d=adEvCur(); if(!d) return;
+  const t=ptVal('ev-ren');
+  await guard(btn, async()=>{
+    const r=await adEvCall('adminEventRename',{kind:d.kind,id:d.id,title:t});
+    if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+    AD.ev.renaming='';
+    const e=adEvById(d.kind,d.id); if(e) e.title=r.event?r.event.title:t;
+    adEvApply(r,d.kind,d.id);
+    // the line in the list shows the name too
+    const box=document.getElementById('xd-ev_'+adDom(adEvK(d.kind,d.id))), row=box&&box.previousElementSibling, tt=row&&row.querySelector('.t');
+    if(tt&&e) tt.textContent=(e.kind==='auction'?'🔨':'🎯')+' '+(e.short||'')+' '+(e.title||'');
+    ptToast('Renamed.');
+  });
+}
 function adEvDetHtml(kind,id){
   const d=AD.ev.det[adEvK(kind,id)];
   if(!d) return '<div class="skelcard" style="height:80px"></div>';
@@ -7404,7 +7510,7 @@ function adEvDetHtml(kind,id){
 // The builder is five parts with ids, so each can be updated on its own.
 function adEvBuilderHtml(d){
   const items=adEvDraftItems(d); AD.ev.items=items;
-  return `<div class="evb">`+(d.kind==='auction'?`<div id="evb-clock">${adEvClockHtml(d)}</div>`:'')+
+  return `<div class="evb"><div id="evb-title">${adEvTitleHtml(d)}</div>`+(d.kind==='auction'?`<div id="evb-clock">${adEvClockHtml(d)}</div>`:'')+
     `<div id="evb-items">${items.length?items.map((it,i)=>adEvItemHtml(d,it,i)).join(''):adEvEmptyHtml()}${adEvAddingHtml()}</div>`+
     `<div id="evb-sum">${adEvSumHtml(d,items)}</div><div id="evb-foot">${adEvFootHtml(d,items)}</div></div>`;
 }
@@ -7463,7 +7569,8 @@ function adEvPatch(k){
   });
   if(!items.length) wrap.insertAdjacentHTML('beforeend',adEvEmptyHtml());
   if(AD.ev.adding) wrap.insertAdjacentHTML('beforeend',adEvAddingHtml());
-  const sum=box.querySelector('#evb-sum'), foot=box.querySelector('#evb-foot'), clk=box.querySelector('#evb-clock');
+  const sum=box.querySelector('#evb-sum'), foot=box.querySelector('#evb-foot'), clk=box.querySelector('#evb-clock'), ttl=box.querySelector('#evb-title');
+  if(ttl&&!ttl.contains(document.activeElement)) ttl.innerHTML=adEvTitleHtml(d);
   if(sum) sum.innerHTML=adEvSumHtml(d,items);
   if(foot) foot.innerHTML=adEvFootHtml(d,items);
   if(clk&&!clk.contains(document.activeElement)) clk.innerHTML=adEvClockHtml(d);
@@ -7502,7 +7609,7 @@ function adEvLiveSum(d){
 }
 function adEvLiveHead(d){
   const live=d.state==='live';
-  return `<div class="evl-head"><span class="pt-tag ${live?'ok':''}">${live?'● LIVE':esc(d.state||'')}</span>`+
+  return adEvTitleHtml(d)+`<div class="evl-head"><span class="pt-tag ${live?'ok':''}">${live?'● LIVE':esc(d.state||'')}</span>`+
     (d.kind==='auction'&&d.closes?` <span class="evl-clock">⏰ <b data-closes="${Number(d.closes)}">${live?adEvLeft(d.closes):'closed'}</b> · closes ${new Date(d.closes).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span>`:'')+
     `<div class="evl-sum">${adEvLiveSum(d)}</div></div>`;
 }
@@ -7561,7 +7668,7 @@ function adEvPollStart(){
   AD.ev.poll=setInterval(async()=>{
     const k=AD.ev.open, d=k&&AD.ev.det[k];
     // Only while it's live, on screen, and not mid-action. Each read is the D1 snapshot: 2 rows, no writes.
-    if(!k||!d||d.state!=='live'||AD_TAB!=='events'||document.hidden||AD.ev.busy){ if(!k||AD_TAB!=='events'||(d&&d.ok&&d.state!=='live')) adEvPollStop(); return; }
+    if(!k||!d||d.state!=='live'||AD_TAB!=='events'||document.hidden||AD.ev.busy||AD.ev.renaming){ if(!k||AD_TAB!=='events'||(d&&d.ok&&d.state!=='live')) adEvPollStop(); return; }
     const r=await adEvCall('adminEvent',{kind:d.kind,id:d.id});
     if(r&&r.ok&&AD.ev.open===k&&!AD.ev.busy){ AD.ev.det[k]=r; adEvLivePatch(k); adEvRowSubSet(r.kind,r.id); }
   },AD_EV_POLL_MS);
@@ -8095,7 +8202,7 @@ function adRenderLots(){
   </div>`;
   const a=`<div id="adls-unloc">${adLotUnlocSec()}</div><div id="adls-over">${adLotOverSec()}</div>`;
   const b=`<div id="adls-lots">${adLotListSec()}</div>`;
-  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">Cards shown in the order they sit in a lot (number after the slash, smallest first). When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. Tap any picture to enlarge it. · <a href="#" onclick="AD.fresh=true;AD.det={};AD.atmN=null;adLoad();return false">Refresh</a></p>`);
+  adIn(top+`<div class="ad-cols"><div>${a}</div><div>${b}</div></div><p class="note">Cards shown in the order they sit in a lot (number after the slash, smallest first). When a card is in several lots, the oldest lot is used first. Packing, /sell and consignor returns take cards off their lot. Tap any picture to enlarge it. · <a href="#" onclick="AD.fresh=true;AD.det={};AD.stkN={};adLoad();return false">Refresh</a></p>`);
   adLotSync(); adLotNextSync();
   window.scrollTo(0,y);
   adLotsWhereLoad();
@@ -8260,13 +8367,28 @@ function adPickTick(i,el){
   adPickSaveDone(d); adPickRedraw();
 }
 
+/* v13.19: consigned cards SOLD but not handed over yet. Their money is booked
+   at hand-over, so until then they're only here: what the consignors will get
+   and what we keep. Apps Script read, loaded after the tab draws. */
+function adCnPendHtml(){
+  const p=AD.cnPend; if(!p||!p.sum||!p.sum.cards) return '';
+  return `<div class="cz-pend" style="text-align:left;margin:10px 0 0">🕒 <b>${p.sum.cards} consigned card${p.sum.cards===1?'':'s'} sold, not handed over yet</b><br>`+
+    `$${Number(p.sum.toYou).toFixed(2)} to consignors · <b>$${Number(p.sum.toShop).toFixed(2)} our cut</b> · sold for $${Number(p.sum.total).toFixed(2)}<br><span>Added to "owed" as each box is shipped or collected.</span></div>`;
+}
+async function adCnPendLoad(){
+  if(AD.cnPendAt&&Date.now()-AD.cnPendAt<60000) return;
+  AD.cnPendAt=Date.now();
+  let r; try{ r=await api('adminConsignPending',{}); }catch(e){ return; }
+  if(r&&r.ok){ AD.cnPend=r; const el=document.getElementById('ad-cnpend'); if(el) el.innerHTML=adCnPendHtml(); }
+}
 function adRenderConsign(){
   const l=AD.list, q=AD.reqs;
   if(!l||!l.ok){ adIn(`<div class="empty"><p>${esc(ptErr(l))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
   const reqs=((q&&q.requests)||[]), open=reqs.filter(x=>x.status==='open');
   const owed=l.consignors.reduce((a,x)=>a+Math.max(0,Number(x.balance||0)),0);
   const shown=l.consignors.filter(x=>AD.show==='all'||Number(x.balance||0)>0);
-  let h=`<div class="panel" style="text-align:center"><div class="pt-big">$${owed.toFixed(2)}</div><div class="note" style="margin-top:0">owed to ${l.consignors.filter(x=>x.balance>0).length} consignor(s) · payouts from $${Number(l.minPayout||0).toFixed(0)}</div></div>`;
+  let h=`<div class="panel" style="text-align:center"><div class="pt-big">$${owed.toFixed(2)}</div><div class="note" style="margin-top:0">owed to ${l.consignors.filter(x=>x.balance>0).length} consignor(s) · ${Number(l.minPayout||0)>0?'payouts from $'+Number(l.minPayout).toFixed(0):'any balance can be paid out'}</div><div id="ad-cnpend">${adCnPendHtml()}</div></div>`;
+  adCnPendLoad();
   h+=`<div class="pt-h">Requests <span class="pt-tag">${open.length} open</span></div>`;
   h+= open.length ? '<div class="panel" style="padding:4px 12px">'+open.map(x=>{ const i=reqs.indexOf(x);
     return `<div class="pt-row" style="display:block"><div class="t">${esc(PT_REQ_TYPE[x.type]||x.type)} · @${esc(x.consignor)} <span style="color:var(--hint);font-weight:400">${esc(x.id)}</span></div>
@@ -8340,11 +8462,11 @@ function adRenderOne(){
       return `<div class="pt-card">${x.image?`<img src="${esc(x.image)}" loading="lazy" alt="">`:'<div class="noimg"></div>'}<div class="b">
         <div style="font-weight:700">${esc(x.name)}${x.qty>1?' ×'+x.qty:''} <span style="color:var(--hint);font-weight:400;font-size:11px">${esc(x.id)}</span></div>
         <div style="color:var(--hint);font-size:11.5px">${[x.set,x.number?'#'+x.number:'',x.grade||x.condition].filter(Boolean).map(esc).join(' · ')}</div>
-        <div style="margin-top:3px"><b>$${Number(x.price||0).toFixed(2)}</b> · floor ${x.floor?'$'+Number(x.floor).toFixed(2):'none'} · ${esc(String(x.rateKey||'en').toUpperCase())}</div>
+        <div style="margin-top:3px"><b>$${Number(x.price||0).toFixed(2)}</b> · lowest ${x.floor?'$'+Number(x.floor).toFixed(2):'— none'} · ${esc(String(x.rateKey||'en').toUpperCase())}</div>
         <span class="pt-tag ${PT_STATE_TAG[x.state]||''}">${esc(x.state)}</span>${x.bundle?`<span class="pt-tag">${esc(x.bundle)}</span>`:''}
         ${live?`<div><button class="pt-mini" onclick="adCard(${i})">${AD.cardOpen===i?'Close':'Edit'}</button></div>`:''}
         ${AD.cardOpen===i?`<div class="pt-form">
-          <div class="pt-inl"><input id="ad-cf" inputmode="decimal" placeholder="Floor $ (0 = none)" value="${x.floor||''}"><button class="pt-mini" onclick="adSet(this,${i},'floor')">Set floor</button></div>
+          <div class="pt-inl"><input id="ad-cf" inputmode="decimal" placeholder="Lowest price $ (0 = no limit)" value="${x.floor||''}" aria-label="Lowest price the owner will take"><button class="pt-mini" onclick="adSet(this,${i},'floor')">Set lowest price</button></div>
           <div class="pt-inl"><input id="ad-cp" inputmode="decimal" placeholder="Price $" value="${Number(x.price||0).toFixed(2)}"><button class="pt-mini" onclick="adSet(this,${i},'price')">Set price</button></div>
           <div class="pt-inl"><select id="ad-ck">${['en','jp','slab'].map(k=>`<option value="${k}"${x.rateKey===k?' selected':''}>${PT_RATE_NAMES[k]}</option>`).join('')}</select><button class="pt-mini" onclick="adSet(this,${i},'rateKey')">Set rate table</button></div>
           <button class="pt-mini danger" onclick="adSet(this,${i},'return')">Return to owner</button></div>`:''}
@@ -8506,7 +8628,7 @@ function renderConsignApply(){
   h+=`<div class="panel"><div class="pt-h" style="margin-top:0">Our consignment rates</div>
       <p class="note" style="text-align:left;margin:0 0 4px">What we keep depends on what the card sells for — the pricier the card, the smaller our cut. Your rates are locked in when you join.</p>
       ${ptRatesHtml(r.rates&&r.rates.tables)}
-      <p class="note" style="text-align:left">You can set a floor on each card — the lowest you'll accept. Payouts go to your PayNow once your balance reaches $${Number(r.minPayout||0).toFixed(0)}.</p></div>`;
+      <p class="note" style="text-align:left">For each card you can set the lowest price you'll take — drops, auctions and offers never go below it. Payouts go to your PayNow ${Number(r.minPayout||0)>0?'once your balance reaches $'+Number(r.minPayout).toFixed(0):'whenever you have a balance'}.</p></div>`;
   if(r.pending) h+=`<div class="panel" style="margin-top:12px"><b>📬 We've got your request ${esc(r.pending.id)}</b><div class="note" style="text-align:left;margin-top:4px">Sent ${ptDate(r.pending.created)} — we'll message you in Telegram. Anything to add? Send it below.</div></div>`;
   h+=`<div class="panel" style="margin-top:12px">
     <div class="field"><label>What would you like us to sell?</label>
