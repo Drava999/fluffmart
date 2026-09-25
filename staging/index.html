@@ -1148,6 +1148,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
    while a two-line name sat high. Stop the stretch, and give the name the same
    two-line floor the store tiles already have so the prices line up too. */
 .jrail{align-items:flex-start}
+/* v13.24: on a wide screen the row is exactly full, ending under "See all" */
+.jrail.fill{overflow:hidden}
+.jrail.fill .jcard{flex:1 1 0;min-width:0}
 .jnm{min-height:29px}
 /* --- store tile --- */
 .pcard .img{aspect-ratio:63/88}
@@ -3073,6 +3076,8 @@ function attachSwipe(){
 }
 
 /* ============ OVERVIEW ============ */
+// A number from Config, where 0 is a real value (free shipping, no threshold). Only a missing one takes the default.
+function cfgNum(v,d){ return (v===undefined||v===null||v===''||!isFinite(Number(v)))?d:Number(v); }
 async function bootApp(){
   // 1) paint instantly from the last snapshot (stale-while-revalidate)
   try{ const c=JSON.parse(localStorage.getItem(FM_CK+'boot')||'null');
@@ -3096,7 +3101,7 @@ async function loadOverview(){
 }
 function applyOverview(r){
   if(!r||!r.ok) return;
-  STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,freeShipMin:r.freeShipMin||r.freeShipThreshold||25,shipFlat:r.shipFlat!=null?r.shipFlat:3};
+  STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,freeShipMin:cfgNum(r.freeShipMin,cfgNum(r.freeShipThreshold,25)),shipFlat:r.shipFlat!=null?r.shipFlat:3};
   STATE.credit = r.credit||0;
   STATE.isAdmin = !!r.isAdmin;
   STATE.isConsignor = !!r.isConsignor;
@@ -3206,21 +3211,28 @@ function renderLoyalty(r){
 /* The shop's front window: the newest singles, tappable straight into the card
    view. Falls back to rarest-then-dearest when nothing carries a date, so a
    sheet that predates the date_added column still shows something. */
+let JI_ORDER=null, JI_W=0;
+window.addEventListener('resize',()=>{ clearTimeout(JI_W); JI_W=setTimeout(()=>{ if(document.getElementById('ov-justin')) renderJustIn(); },200); });
 function renderJustIn(){
   const el=document.getElementById('ov-justin'); if(!el) return;
   const pool=(STATE.inventory||[]).filter(c=>(c.category||'single').toLowerCase()!=='merch' && Number(c.qty)>0 && faceList(c).length);
   if(pool.length<3){ el.innerHTML=''; return; }
-  const dated=pool.filter(c=>Number(c.dateAdded)>0);
-  const list=(dated.length>=3
-      ? dated.slice().sort((a,b)=>Number(b.dateAdded)-Number(a.dateAdded))
-      : pool.slice().sort((a,b)=>rarityRank(a)-rarityRank(b)||b.price-a.price)
-    ).slice(0,8);
-  const newest=Number(list[0]&&list[0].dateAdded)||0;
+  // v13.24: a random mix, shuffled once per app open (so it doesn't jump about
+  // while you look at it); cards added since join at the end.
+  if(!JI_ORDER){ JI_ORDER=pool.map(c=>c.id); for(let i=JI_ORDER.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [JI_ORDER[i],JI_ORDER[j]]=[JI_ORDER[j],JI_ORDER[i]]; } }
+  const byId={}; pool.forEach(c=>{ byId[c.id]=c; });
+  const known=new Set(JI_ORDER), ids=JI_ORDER.filter(id=>byId[id]).concat(pool.filter(c=>!known.has(c.id)).map(c=>c.id));
+  // On a wide screen, exactly as many cards as fit, stretched to end under "See all";
+  // on a phone, a swipeable row.
+  const railW=el.clientWidth||0, wide=railW>=600;
+  const n=wide?Math.max(3,Math.floor((railW-8+10)/102)):12;
+  const list=ids.slice(0,n).map(id=>byId[id]);
+  const newest=pool.reduce((m,c)=>Math.max(m,Number(c.dateAdded)||0),0);
   const DAY=86400000;
   el.innerHTML=`
-    <div class="jrail-hd"><span class="jt">${dated.length>=3?'Just in':'Top picks'}</span>
+    <div class="jrail-hd"><span class="jt">Fresh picks</span>
       <button class="ja" onclick="go('store')">See all ›</button></div>
-    <div class="jrail">${list.map(c=>{
+    <div class="jrail${wide?' fill':''}">${list.map(c=>{
       const faces=faceList(c);
       const im=faces.length?`<img src="${imgUrl(faces[0].f,300)}" loading="lazy" alt="">`:(EMOJI[c.tier]||'🃏');
       const fresh=newest && Number(c.dateAdded) && (newest-Number(c.dateAdded))<3*DAY;
@@ -3725,7 +3737,7 @@ function renderCart(){
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
     <button class="cta" ${STATE.placing?'disabled':''} onclick="guard(this,checkout)">${STATE.placing?'Placing your order…':'Place order · $'+total.toFixed(2)}</button>
-<p class="hold-hint">No postage now. Your cards wait in your box 🧺 until you say send — then $${(STATE.shipFlat||3).toFixed(2)} to deliver${fsMin?', or free once your box passes $'+fsMin.toFixed(2):''}. Collecting it yourself is always free.</p>`;
+<p class="hold-hint">No postage now. Your cards wait in your box 🧺 until you say send — then $${cfgNum(STATE.shipFlat,3).toFixed(2)} to deliver${fsMin?', or free once your box passes $'+fsMin.toFixed(2):''}. Collecting it yourself is always free.</p>`;
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
@@ -4117,7 +4129,7 @@ function applyOrdersPayload(r){
      says something else. */
   if(r.holdExpiryDays!=null) STATE.holdDays=Number(r.holdExpiryDays)||21;
   if(r.holdGraceHours!=null) STATE.holdGraceHours=Number(r.holdGraceHours);
-  STATE.shipInvoice=r.shipInvoice||null; STATE.pickupNote=r.pickupNote||''; STATE.shipFlat=r.shipFlat||3;
+  STATE.shipInvoice=r.shipInvoice||null; STATE.pickupNote=r.pickupNote||''; STATE.shipFlat=cfgNum(r.shipFlat,3);
   STATE.olderHidden=Number(r.olderHidden||0);
 }
 async function loadOrders(force){
@@ -4441,7 +4453,7 @@ function actionsHtml(m){
       return;
     }
     if(blocked||p.shipInvoice||p.feeVerifying||!(p.status==='open'||p.status==='ship_awaiting_fee')) return;
-    const fee=(p.shipFee!=null?p.shipFee:(STATE.shipFlat||3));
+    const fee=(p.shipFee!=null?p.shipFee:cfgNum(STATE.shipFlat,3));
     const need=(p.freeShipMin||0)-(p.merchValue||0);
     acts.push('<div class="oact oact-go"><div class="oact-hd"><span class="oact-ic">📦</span><div><div class="oact-t">Your box is ready to send</div>'+
       '<div class="oact-s">'+b.cards+' card'+(b.cards===1?'':'s')+' · '+(fee<=0?'postage is free on this one':(need>0&&need<=15?'add $'+need.toFixed(2)+' more for free postage':'one postage fee for the lot'))+'</div></div></div>'+
@@ -5102,7 +5114,10 @@ const HAUL_THEMES = {
 };
 /* v13.24 "Card's world": the front card's own setting, painted once by the art
    Worker (Workers AI) and kept there. Anything it can't paint falls back to Night. */
-const ART_API = IS_STAGING ? 'https://floofmart-art-staging.shrimaniac.workers.dev' : 'https://floofmart-art.shrimaniac.workers.dev';   // live: deploy art-worker.live.toml BEFORE uploading this page
+// Card's world is staging-only until its backgrounds are right (no rays/lines). To turn it on
+// for live: deploy art-worker.live.toml, then set the live URL here:
+// 'https://floofmart-art.shrimaniac.workers.dev'
+const ART_API = IS_STAGING ? 'https://floofmart-art-staging.shrimaniac.workers.dev' : '';
 if(!ART_API) delete HAUL_THEMES.world;
 const HAUL_WORLD_T = {title:'#FFFFFF', sub:'rgba(255,255,255,.88)', head:'#FFFFFF', hand:'#FFE3F3', rule:'rgba(255,255,255,.32)', chip:'rgba(0,0,0,.38)'};
 const HAUL_WORLD_MISS = new Set();
@@ -5175,7 +5190,7 @@ async function buildHaulCanvas(h, opt){
   const heroI = keep.indexOf(opt.hero) >= 0 ? opt.hero : keep[0];
   const others = keep.filter(i => i !== heroI);
   const isFan = keep.length <= 6;
-  const cap = isFan ? 6 : 8;
+  const cap = isFan ? 6 : 9;   // big hauls: the front card + 8 behind it
   const extra = keep.length - Math.min(keep.length, cap);
   // In a fan the front card sits in the middle; in a grid it comes first.
   const pick = [heroI].concat(others).slice(0, cap);
@@ -5284,36 +5299,30 @@ async function buildHaulCanvas(h, opt){
           shown[i].name);
       });
   } else {
-    // Size from the HEIGHT first. Deriving the card size from the width alone
-    // is what once stood three rows 1312px tall on a 1350px canvas — over the
-    // header and straight through the footer.
-    const cols = 4, gap = 22, padX = 56;
-    const rows = Math.ceil(shown.length / cols);
-    const chip = extra > 0 ? 76 : 0;
-    const TOP = 190, BOT = 1100;
-    const availH = (BOT - TOP) - chip;
-    let chh = Math.floor((availH - gap*(rows-1)) / rows);
-    let cw  = Math.round(chh * .715);
-    const maxCw = Math.floor((W - padX*2 - gap*(cols-1)) / cols);
-    if(cw > maxCw){ cw = maxCw; chh = Math.round(cw / .715); }
-    const gridH = chh*rows + gap*(rows-1);
-    const gy = TOP + Math.floor((availH - gridH) / 2);
-    shown.forEach((it, k) => {
-      const row = Math.floor(k / cols);
-      const inRow = Math.min(cols, shown.length - row*cols);
-      const rowW = inRow*cw + (inRow-1)*gap;
-      const cx = (W - rowW)/2 + (k % cols)*(cw+gap) + cw/2;
-      drawHaulCard(x, arts[k], cx, gy + row*(chh+gap) + chh/2, cw, chh,
-                   ((k*37) % 7 - 3) * 1.15, it.name);
+    /* v13.24: a SPOTLIGHT for big hauls (7+ cards). The grid put every card the
+       same size, so nothing stood out. Now the front card stands large in the
+       middle and the rest fan out behind it, left and right (up to 8). */
+    const hh = 660, hw = Math.round(hh * .715);
+    const bh = 400, bw = Math.round(bh * .715);
+    const rest = shown.map((c, k) => k).filter(k => k !== heroPos);
+    const side = [[], []];                      // alternate left/right so both sides balance
+    rest.forEach((k, j) => side[j % 2].push(k));
+    [0, 1].forEach(si => {
+      const s = si ? 1 : -1, list = side[si];
+      for(let d = list.length - 1; d >= 0; d--){   // farthest first, nearest the front card on top
+        const k = list[d];
+        drawHaulCard(x, arts[k], W/2 + s * (230 + d * 45), 640 + d * 12, bw, bh, s * (6 + d * 4), shown[k].name);
+      }
     });
+    drawHaulCard(x, arts[heroPos], W/2, 640, hw, hh, 0, shown[heroPos].name);
     if(extra > 0){
       const t = '+' + extra + ' more';
       x.font = "800 30px 'Plus Jakarta Sans', system-ui, sans-serif";
       const tw = x.measureText(t).width;
       x.fillStyle = T.chip;
-      rrect(x, (W - tw - 44)/2, gy + gridH + 14, tw + 44, 52, 26); x.fill();
+      rrect(x, (W - tw - 44)/2, 1000, tw + 44, 52, 26); x.fill();
       x.fillStyle = '#fff'; x.textAlign = 'center';
-      x.fillText(t, W/2, gy + gridH + 48); x.textAlign = 'left';
+      x.fillText(t, W/2, 1034); x.textAlign = 'left';
     }
   }
   // a couple of sparkles on top, so the cards sit inside the glitter
@@ -6573,6 +6582,7 @@ let ZM={scale:1,x:0,y:0,d0:0,s0:1,px:0,py:0,drag:false,lastTap:0,pinch:false};
 function zoomApply(){
   const img=document.getElementById('zoomImg'); if(!img) return;
   img.style.transform=`translate(${ZM.x}px,${ZM.y}px) scale(${ZM.scale})`;
+  img.style.cursor=ZM.scale>1.02?'grab':'zoom-in'; img.draggable=false;
   document.getElementById('zoomReset').style.display = ZM.scale>1.02?'block':'none';
 }
 function zoomReset(){ ZM.scale=1; ZM.x=0; ZM.y=0; zoomApply(); }
@@ -6609,7 +6619,15 @@ function closeZoom(){ document.getElementById('zoomWrap').classList.remove('show
   // desktop: wheel to zoom, click backdrop to close
   w.addEventListener('wheel',e=>{ ZM.scale=Math.min(6,Math.max(1,ZM.scale-e.deltaY*0.0015));
     if(ZM.scale<=1.02){ZM.x=0;ZM.y=0;} zoomApply(); e.preventDefault(); },{passive:false});
-  w.addEventListener('click',e=>{ if(e.target===w) closeZoom(); });
+  // desktop: drag with the mouse to move a zoomed card, double-click to zoom in/out.
+  // (Only touch could move it before, so on PC a zoomed card was stuck.)
+  let md=null;
+  w.addEventListener('mousedown',e=>{ if(e.button!==0||ZM.scale<=1.02) return; md={x:e.clientX-ZM.x,y:e.clientY-ZM.y,moved:false}; e.preventDefault(); });
+  window.addEventListener('mousemove',e=>{ if(!md) return; ZM.x=e.clientX-md.x; ZM.y=e.clientY-md.y; md.moved=true; zoomApply(); });
+  window.addEventListener('mouseup',()=>{ if(md&&md.moved) ZM.dragEnd=Date.now(); md=null; });
+  w.addEventListener('dblclick',e=>{ e.preventDefault(); ZM.scale=ZM.scale>1.02?1:2.6; if(ZM.scale===1){ZM.x=0;ZM.y=0;} zoomApply(); });
+  // a drag that ends over the backdrop must not close the viewer
+  w.addEventListener('click',e=>{ if(e.target===w && !(ZM.dragEnd&&Date.now()-ZM.dragEnd<350)) closeZoom(); });
 })();
 /* ============ PORTAL: My consignment (consignors) + Admin tab (admins) ============
    Everything here is served by Apps Script (portal.gs), never the D1 cache.
@@ -7451,7 +7469,9 @@ async function adCfgSave(btn,i,reset){
   await guard(btn, async()=>{
     const r=await api('adminConfigSet',reset?{key:f.key,reset:true}:{key:f.key,value:v});
     ptAlert(r.message||(r.ok?'Saved':ptErr(r)));
-    if(r.ok){ const n=await api('adminConfig',{live:1}); if(n&&n.ok){ AD.cfg=n; ptSave('adcfg',n); } adRenderConfig(); }
+    if(r.ok){ const n=await api('adminConfig',{live:1}); if(n&&n.ok){ AD.cfg=n; ptSave('adcfg',n); } adRenderConfig();
+      loadOverview().catch(()=>{});   // the shop's own text/amounts on this phone follow the change at once
+      ORDERS_CACHE=null; }
   });
 }
 async function adLoadEvents(){
