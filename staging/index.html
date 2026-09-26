@@ -7582,7 +7582,7 @@ function adRenderDash(){
   const m=d.money||{}, c=d.consign||{};
   const jobs=adJobSecs(d).map(([key,html])=>`<div id="adsec-${key}">${html}</div>`).join('');
   const money=`<div id="ad-money">${adMoneyHtml(m)}</div>`+`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>`;
-  adIn(`<div class="ad-cols"><div>${jobs}<div id="ad-offers">${adOffersHtml()}</div><div id="ad-reserved">${adResHtml()}</div></div><div>${money}</div></div>`+adFoot(d));
+  adIn(`<div class="ad-cols"><div>${jobs}<div id="ad-offers" class="ad-offers-box">${adOffersHtml()}</div><div id="ad-reserved">${adResHtml()}</div></div><div>${money}</div></div>`+adFoot(d));
   window.scrollTo(0,y);
   if(!AD.offers||Date.now()-(AD.offersAt||0)>60000) adOffersLoad();
   if(!AD.res.list||Date.now()-(AD.res.at||0)>60000) adResLoad();
@@ -7598,7 +7598,8 @@ function adOffersLoad(){
   api('adminOffers',{}).then(r=>{ if(r&&r.ok){ AD.offers=r; AD.offersAt=Date.now(); adOffersPaint(); } })
     .catch(()=>{}).finally(()=>{ AD.offersBusy=false; });
 }
-function adOffersPaint(){ const el=document.getElementById('ad-offers'); if(el) el.innerHTML=adOffersHtml(); }
+// v13.25.2: the same Offers panel sits on the Dashboard AND in Events; paint whichever is on screen.
+function adOffersPaint(){ document.querySelectorAll('.ad-offers-box').forEach(el=>{ el.innerHTML=adOffersHtml(); }); }
 function adAgo(ms){ if(!ms) return ''; const m=Math.round((Date.now()-ms)/60000); return m<60?m+'m ago':m<1440?Math.round(m/60)+'h ago':Math.round(m/1440)+'d ago'; }
 function adOffersHtml(){
   const r=AD.offers;
@@ -7611,10 +7612,13 @@ function adOffersHtml(){
 function adOfferRow(o){
   const id=esc(o.id), pct=o.listed>0?Math.round(o.offered/o.listed*100):null, open=AD.ofOpen===o.id;
   const img=o.image?`<img class="ad-of-img" src="${esc(imgUrl(o.image,160))}" alt="" loading="lazy" onclick="openZoom(this.src)">`:'<div class="ad-of-img"></div>';
-  const tags=(!o.onSale?`<span class="pt-tag warn">${o.cardState==='gone'?'no longer in stock':'not on sale ('+esc(o.cardState)+')'}</span>`:'')+
+  const hd=o.held, lotBids=!!(hd&&hd.lot&&hd.bids>0), canDeal=o.onSale||o.heldForThem||(!!hd&&!lotBids);
+  const tags=(o.heldForThem?'<span class="pt-tag">📌 held for them</span>':
+      hd?`<span class="pt-tag warn">in ${esc(hd.where||'a drop')}${hd.live?' (live)':''}${hd.claims?' · '+hd.claims+' claim'+(hd.claims===1?'':'s'):''}${hd.bids?' · '+hd.bids+' bid'+(hd.bids===1?'':'s'):''}</span>`:
+      (!o.onSale?`<span class="pt-tag warn">${o.cardState==='gone'?'no longer in stock':'not on sale ('+esc(o.cardState)+')'}</span>`:''))+
     (o.status==='countered'&&o.counter?`<span class="pt-tag">${o.counter.expired?'your $'+Number(o.counter.amount).toFixed(2)+' ran out':'you countered $'+Number(o.counter.amount).toFixed(2)+' · waiting on them'}</span>`:'');
   let acts;
-  if(o.status==='open'&&o.onSale) acts=`<button class="pt-mini pri" onclick="adOfferDo(this,'${id}','accept')">✅ Accept $${Number(o.offered).toFixed(2)}</button><button class="pt-mini" onclick="adOfferCtr('${id}')">${open?'Close':'🤝 Counter…'}</button><button class="pt-mini" onclick="adOfferDo(this,'${id}','decline')">❌ Decline</button>`;
+  if(o.status==='open'&&canDeal) acts=`<button class="pt-mini pri" onclick="adOfferDo(this,'${id}','accept')">✅ Accept $${Number(o.offered).toFixed(2)}</button><button class="pt-mini" onclick="adOfferCtr('${id}')">${open?'Close':'🤝 Counter…'}</button><button class="pt-mini" onclick="adOfferDo(this,'${id}','decline')">❌ Decline</button>`;
   else if(o.status==='open') acts=`<button class="pt-mini" onclick="adOfferDo(this,'${id}','decline')">❌ Decline</button><button class="pt-mini" onclick="adOfferDo(this,'${id}','dismiss')">Dismiss</button>`;
   else acts=`<button class="pt-mini" onclick="adOfferDo(this,'${id}','dismiss')">Dismiss</button>`;
   return `<div class="ad-of" data-k="${id}">${img}<div class="ad-of-b">
@@ -7623,23 +7627,33 @@ function adOfferRow(o){
     <div class="s">${esc(o.buyer.charAt(0)==='@'||/^\d+$/.test(o.buyer)?o.buyer:'@'+o.buyer)} · ${adAgo(o.created)}${o.dropId?' · from '+esc(o.dropId):''}</div>
     ${tags?'<div>'+tags+'</div>':''}
     <div class="cn-rev-btns">${acts}</div>
-    ${open?`<div class="pt-inl" style="margin-top:6px"><input id="ad-ofp" inputmode="decimal" enterkeyhint="send" placeholder="Your price $" aria-label="Counter price"><button class="pt-mini pri" onclick="adOfferDo(this,'${id}','counter')">Send</button></div><p class="note" style="text-align:left;margin:4px 0 0">They get your price by DM with one-tap Accept, good for 48 hours. The card stays on sale meanwhile.</p>`:''}
+    ${open?`<div class="pt-inl" style="margin-top:6px"><input id="ad-ofp" inputmode="decimal" enterkeyhint="send" placeholder="Your price $" aria-label="Counter price"><button class="pt-mini pri" onclick="adOfferDo(this,'${id}','counter')">Send</button></div><p class="note" style="text-align:left;margin:4px 0 0">They get your price by DM with one-tap Accept, good for 48 hours. ${hd?'The card comes out of '+esc(hd.where||'its drop')+' and is held for them meanwhile; if they say no it goes back on sale.':o.heldForThem?'The card stays held for them.':'The card stays on sale meanwhile.'}</p>`:''}
+    ${o.status==='open'&&lotBids?'<p class="note" style="text-align:left;margin:4px 0 0">It has bids in a live auction, so it stays there: let the auction close, then decline or dismiss.</p>':''}
+    ${o.status==='open'&&hd&&!lotBids?'<p class="note" style="text-align:left;margin:4px 0 0">Accept or Counter takes it out of '+esc(hd.where||'its drop')+' first'+(hd.claims?' (you’ll be asked, and the claimers are told)':'')+'.</p>':''}
   </div></div>`;
 }
 function adOfferCtr(id){ AD.ofOpen=AD.ofOpen===id?'':id; adOffersPaint(); const i=document.getElementById('ad-ofp'); if(i) i.focus(); }
+function adOfferClaimsTxt(cl){ return (cl||[]).slice(0,8).map(c=>'• '+c.who+' ('+c.status+')').join('\n'); }
 async function adOfferDo(btn,id,act){
   const o=((AD.offers&&AD.offers.offers)||[]).find(x=>x.id===id); if(!o) return;
   const who=o.buyer.charAt(0)==='@'||/^\d+$/.test(o.buyer)?o.buyer:'@'+o.buyer;
   let price=null;
   if(act==='counter'){ price=ptNum('ad-ofp'); if(!(price>0)){ ptAlert('Type your price first.'); return; } }
-  const q={accept:`Accept ${who}'s $${Number(o.offered).toFixed(2)} for ${o.cardName}? It makes a real order at that price and DMs them the invoice.`,
-    counter:`Counter ${who} at $${Number(price||0).toFixed(2)} for ${o.cardName}? They get it by DM with a one-tap Accept (48 hours).`,
+  const out=o.held&&!o.heldForThem?` It comes out of ${o.held.where||'its drop'} first.`:'';
+  const q={accept:`Accept ${who}'s $${Number(o.offered).toFixed(2)} for ${o.cardName}?${out} It makes a real order at that price and DMs them the invoice.`,
+    counter:`Counter ${who} at $${Number(price||0).toFixed(2)} for ${o.cardName}?${out} They get it by DM with a one-tap Accept (48 hours).`,
     decline:`Decline ${who}'s offer on ${o.cardName}? They'll get a polite DM.`,
     dismiss:`Take this offer off the list? Nobody is messaged.`}[act];
   if(!(await ptConfirm(q))) return;
   await guard(btn, async()=>{
-    const r=await api('adminOfferAct',{id:id,act:act,price:price});
-    if(!r||!r.ok){ ptAlert((r&&r.message)||ptErr(r)); if(r&&r.error==='handled') adOffersLoad(); return; }
+    let r=await api('adminOfferAct',{id:id,act:act,price:price});
+    // v13.25.2: the card has claims in a live drop: say who, then go ahead only on yes
+    if(r&&!r.ok&&r.error==='confirm'){
+      if(!(await ptConfirm(r.message+'\n\n'+adOfferClaimsTxt(r.claims)+'\n\nTake it out and go ahead?'))) return;
+      r=await api('adminOfferAct',{id:id,act:act,price:price,confirm:true});
+    }
+    if(!r||!r.ok){ ptAlert((r&&r.message)||ptErr(r)); if(r&&(r.error==='handled'||r.pulled)) adOffersLoad(); return; }
+    if(r.pulled){ if(typeof adResLoad==='function') adResLoad(); o.held=null; o.heldForThem=act==='counter'; o.onSale=false; }
     ptToast(r.message||'Done');
     AD.ofOpen='';
     if(act==='counter'){ o.status='countered'; o.counter={amount:price,at:Date.now(),expired:false}; }
@@ -7829,6 +7843,7 @@ function ptToast(msg){
 function adSigninAgeMins(){ try{ const a=Number(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.auth_date); return a?(Date.now()/1000-a)/60:null; }catch(e){ return null; } }
 
 function adRenderEvents(){
+  if(!AD.offers||Date.now()-(AD.offersAt||0)>60000) setTimeout(adOffersLoad,0);   // v13.25.2: Offers panel in Events too
   const r=AD.events;
   if(!r||(!r.ok&&!r.events)){ adIn(`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
   // Keep the place: scroll, and whichever field you were typing in.
@@ -7851,7 +7866,7 @@ function adRenderEvents(){
   const c=`<div id="ev-hist"><div class="pt-h">History — last 14 days <span class="pt-tag">${hist.length}</span></div>`+(hist.length
       ?'<div class="panel" style="padding:4px 12px">'+hist.map(rowFor).join('')+'</div>'
       :'<p class="note" style="text-align:left;margin:0 2px">Closed drops and auctions show here.</p>')+'</div>';
-  adIn(top+`<div class="ad-cols"><div>${b}${a}</div><div><div id="ev-plan">${adEvPlanHtml()}</div>${c}</div></div><p class="note">Posting, closing, extending, forfeiting and cancelling here run the same code as the Telegram commands, which still work too.${r.at?' · as of '+new Date(r.at).toLocaleTimeString():''} · <a href="#" onclick="AD.fresh=true;AD.ev.det={};adLoad();return false">Refresh</a></p>`);
+  adIn(top+`<div class="ad-cols"><div>${b}${a}</div><div><div id="ad-offers-ev" class="ad-offers-box">${adOffersHtml()}</div><div id="ev-plan">${adEvPlanHtml()}</div>${c}</div></div><p class="note">Posting, closing, extending, forfeiting and cancelling here run the same code as the Telegram commands, which still work too.${r.at?' · as of '+new Date(r.at).toLocaleTimeString():''} · <a href="#" onclick="AD.fresh=true;AD.ev.det={};adLoad();return false">Refresh</a></p>`);
   window.scrollTo(0,y);
   if(lab){ const el=[...document.querySelectorAll('#ad-in [aria-label]')].find(x=>x.getAttribute('aria-label')===lab);
     if(el){ el.focus({preventScroll:true}); if(keep){ el.value=keep.v; try{ el.setSelectionRange(keep.s,keep.e); }catch(x){} } } }
