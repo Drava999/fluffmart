@@ -1967,6 +1967,12 @@ span[style*="#c2405e"]{color:#A8324F!important}
   #ad-body input[type=checkbox]{width:24px!important;height:24px!important}   /* the pack list sizes its ticks inline */
   #ad-body .note a{display:inline-block;padding:12px 6px;margin:-12px -6px}   /* bigger hit area, same look */
 }
+
+/* v13.25: reserve-for-a-buyer pop-up */
+.ad-res-bg{position:fixed;inset:0;z-index:70;background:rgba(20,10,16,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.ad-res{width:100%;max-width:420px;background:var(--card);color:var(--text);border-radius:18px;padding:16px 16px 14px;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+.ad-res-l{display:block;font-size:12.5px;font-weight:700;color:var(--hint);margin:8px 0 4px}
+.ad-res-in{width:100%;font:inherit;font-size:16px;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
 </style>
 </head>
 <body>
@@ -7576,9 +7582,10 @@ function adRenderDash(){
   const m=d.money||{}, c=d.consign||{};
   const jobs=adJobSecs(d).map(([key,html])=>`<div id="adsec-${key}">${html}</div>`).join('');
   const money=`<div id="ad-money">${adMoneyHtml(m)}</div>`+`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>`;
-  adIn(`<div class="ad-cols"><div>${jobs}<div id="ad-offers">${adOffersHtml()}</div></div><div>${money}</div></div>`+adFoot(d));
+  adIn(`<div class="ad-cols"><div>${jobs}<div id="ad-offers">${adOffersHtml()}</div><div id="ad-reserved">${adResHtml()}</div></div><div>${money}</div></div>`+adFoot(d));
   window.scrollTo(0,y);
   if(!AD.offers||Date.now()-(AD.offersAt||0)>60000) adOffersLoad();
+  if(!AD.res.list||Date.now()-(AD.res.at||0)>60000) adResLoad();
 }
 /* ---------- v13.24: Offers, handled here as well as with the Telegram buttons ----------
    Same server logic as Telegram: Accept makes a real order at the offered price
@@ -7639,6 +7646,90 @@ async function adOfferDo(btn,id,act){
     else AD.offers.offers=AD.offers.offers.filter(x=>x.id!==id);
     adOffersPaint();
   });
+}
+/* ---------- v13.25: Reserve a card for a buyer ----------
+   📌 on a card in a drop or auction (and on the Dashboard list) pulls it out and
+   holds it for one buyer, e.g. to offer them a bundle deal on top of a win. It's
+   off sale until you Sell it to them (a real order at your price, into their box,
+   invoice by DM) or Release it back to the shop. Auction lots with bids can't be
+   pulled; a live drop card with claims asks first, and every claimer is told. */
+AD.res={list:null,at:0,busy:false,sell:''};
+function adResOpen(btn){
+  const id=btn.getAttribute('data-card'), name=btn.getAttribute('data-name')||id;
+  adResClose();
+  const w=document.createElement('div'); w.id='ad-res-sheet'; w.className='ad-res-bg';
+  w.innerHTML=`<div class="ad-res" role="dialog" aria-modal="true" aria-labelledby="ad-res-t">
+    <div class="pt-h" id="ad-res-t">📌 Reserve ${esc(name)}</div>
+    <p class="note" style="text-align:left;margin:0 0 10px">It comes out of its drop or auction now and stays off sale until you sell it to them or release it.</p>
+    <label class="ad-res-l" for="ad-res-who">Buyer</label>
+    <input id="ad-res-who" class="ad-res-in" placeholder="@username or telegram id" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next">
+    <label class="ad-res-l" for="ad-res-note">Note (optional)</label>
+    <input id="ad-res-note" class="ad-res-in" placeholder="e.g. bundle with their A2 win" maxlength="200" enterkeyhint="done">
+    <div class="cn-rev-btns" style="margin-top:12px"><button class="pt-mini pri" id="ad-res-go">📌 Reserve</button><button class="pt-mini" onclick="adResClose()">Cancel</button></div></div>`;
+  w.addEventListener('click',e=>{ if(e.target===w) adResClose(); });
+  w.addEventListener('keydown',e=>{ if(e.key==='Escape') adResClose(); });
+  document.body.appendChild(w);
+  document.getElementById('ad-res-go').onclick=ev=>adResDo(ev.currentTarget,id);
+  setTimeout(()=>{ const i=document.getElementById('ad-res-who'); if(i) i.focus(); },60);
+}
+function adResClose(){ const w=document.getElementById('ad-res-sheet'); if(w) w.remove(); }
+async function adResDo(btn,id){
+  const who=(document.getElementById('ad-res-who').value||'').trim(), note=(document.getElementById('ad-res-note').value||'').trim();
+  if(!who){ ptAlert('Who is it for? Type their @username or telegram id.'); return; }
+  let r=null;
+  await guard(btn,async()=>{ r=await api('adminReserve',{cardId:id,buyer:who,note}); });
+  if(r&&!r.ok&&r.error==='confirm'){
+    const list=(r.claims||[]).slice(0,8).map(c=>'• '+c.who+' ('+c.status+')').join('\n');
+    if(!(await ptConfirm(r.message+'\n\n'+list+'\n\nReserve it anyway?'))) return;
+    await guard(btn,async()=>{ r=await api('adminReserve',{cardId:id,buyer:who,note,confirm:true}); });
+  }
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  adResClose(); ptToast(r.message||'Reserved');
+  AD.res.at=0; adResLoad();
+  if(r.from){
+    AD.ev.cardsAt=0;
+    try{ const d=adEvCur(); if(d){ const e=await adEvCall('adminEvent',{kind:d.kind,id:d.id,live:1}); if(e&&e.ok) adEvApply({ok:true,event:e},d.kind,d.id); } }catch(e){}
+  }
+}
+function adResLoad(){
+  if(AD.res.busy) return; AD.res.busy=true;
+  api('adminReserved',{}).then(r=>{ if(r&&r.ok){ AD.res.list=r.cards||[]; AD.res.at=Date.now(); adResPaint(); } })
+    .catch(()=>{}).finally(()=>{ AD.res.busy=false; });
+}
+function adResPaint(){ const el=document.getElementById('ad-reserved'); if(el) el.innerHTML=adResHtml(); }
+function adResHtml(){
+  const L=AD.res.list;
+  if(!L||!L.length) return '';   // nothing reserved: no section at all
+  return `<div class="pt-h">Reserved for buyers <span class="pt-tag">${L.length}</span></div><div class="panel" style="padding:2px 12px">`+L.map(c=>{
+    const id=esc(c.id), open=AD.res.sell===c.id;
+    return `<div class="ad-of" data-k="rs:${id}">${adThumb(c)}<div class="ad-of-b">
+      <div class="t" style="font-weight:700">${esc(c.name)}</div>
+      <div class="s">for <b>${esc(c.buyer)}</b>${c.at?' · '+adAgo(c.at):''}${c.price?' · listed $'+Number(c.price).toFixed(2):''}</div>
+      ${c.note?`<div class="s">📝 ${esc(c.note)}</div>`:''}
+      <div class="cn-rev-btns"><button class="pt-mini pri" onclick="adResSellOpen('${id}')">${open?'Close':'🧾 Sell to them'}</button><button class="pt-mini" onclick="adResRelease(this,'${id}')">↩️ Release</button></div>
+      ${open?`<div class="pt-inl" style="margin-top:6px"><input id="ad-res-price" inputmode="decimal" enterkeyhint="send" placeholder="Deal price $" aria-label="Deal price for ${esc(c.name)}"><button class="pt-mini pri" onclick="adResSell(this,'${id}')">Invoice</button></div>`:''}
+    </div></div>`; }).join('')+'</div>';
+}
+function adResSellOpen(id){ AD.res.sell=AD.res.sell===id?'':id; adResPaint(); const i=document.getElementById('ad-res-price'); if(i) i.focus(); }
+async function adResSell(btn,id){
+  const c=(AD.res.list||[]).find(x=>x.id===id); if(!c) return;
+  const price=ptNum('ad-res-price');
+  if(!(price>=0)||document.getElementById('ad-res-price').value.trim()===''){ ptAlert('Type the deal price first.'); return; }
+  if(!(await ptConfirm(`Invoice ${c.buyer} $${price.toFixed(2)} for ${c.name}? It makes a real order in their box and DMs them the invoice.`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminReserveSell',{cardId:id,price}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Invoiced'); AD.res.sell='';
+  AD.res.list=(AD.res.list||[]).filter(x=>x.id!==id); adResPaint();
+}
+async function adResRelease(btn,id){
+  const c=(AD.res.list||[]).find(x=>x.id===id); if(!c) return;
+  if(!(await ptConfirm(`Put ${c.name} back on sale? It stops being held for ${c.buyer}. Nobody is messaged.`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminReserveRelease',{cardId:id}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Released'); AD.res.list=(AD.res.list||[]).filter(x=>x.id!==id); adResPaint();
 }
 /* v13.19: lists the quick D1 dashboard doesn't count -- each loads its own count
    from Apps Script (and keeps the list, so opening it is instant). */
@@ -7897,7 +7988,7 @@ function adEvItemHtml(d,it,i){
     : `<input class="ev-num qty" data-f="qty" inputmode="numeric" enterkeyhint="done" value="${Number(it.qty||1)}" aria-label="Copies of ${esc(c.name)}" onchange="adEvSet(this,'${did}','qty')"> of ${Number(it.stock||0)} × $<input class="ev-num" data-f="price" inputmode="decimal" enterkeyhint="done" value="${Number(it.price||0).toFixed(2)}" aria-label="Price for ${esc(c.name)}" onchange="adEvSet(this,'${did}','price')"><span class="ev-free">${Number(it.price)<=0?' <span class="pt-tag warn">FREE</span>':''}</span>`;
   return `<div class="ev-it" data-drop="${did}">${adThumb(c)}<div style="flex:1;min-width:0"><div class="nm"><span class="ev-n">${i+1}</span>. ${adLotCard(c)}</div>`+
     `<div class="sub">${lot?'📍 '+esc(lot)+' · ':''}${esc(c.id)}${c.consignor?' · '+esc(c.consignor)+'’s':''}${it.floor?' · <span class="pt-neg">floor '+adEvMoney(it.floor)+'</span>':''}</div>`+
-    `<div class="ev-in">${inputs}</div></div><button class="ev-rm" aria-label="Take ${esc(c.name)} out" onclick="adEvRm(this,'${did}')">✕</button></div>`;
+    `<div class="ev-in">${inputs}</div></div><button class="ev-rm" data-card="${esc(c.id)}" data-name="${esc(c.name)}" aria-label="Reserve ${esc(c.name)} for a buyer" title="Reserve for a buyer" onclick="adResOpen(this)">📌</button><button class="ev-rm" aria-label="Take ${esc(c.name)} out" onclick="adEvRm(this,'${did}')">✕</button></div>`;
 }
 /* Bring the open builder in line with its data WITHOUT redrawing it: rows that went
    are removed, new ones slotted in, numbers, values (unless you're typing in that
@@ -7999,6 +8090,8 @@ function adEvLiveItem(d,it){
     if(cl.back.length) body+=`<div class="evl-line back"><span>⏳ Backups: ${cl.back.map((x,j)=>(j+1)+'. '+adEvWho(x)).join(' · ')}</span></div>`;
     if(cl.gone.length) body+=`<div class="evl-line gone"><span>Forfeited: ${cl.gone.map(adEvWho).join(', ')}</span></div>`;
   }
+  // v13.25: pull this card out for a buyer. Auction lots only before any bids (the bids were public).
+  if(live&&(!auc||!(it.bids&&it.bids.n))) body+=`<div class="evl-act"><button class="pt-mini" data-card="${esc(c.id)}" data-name="${esc(c.name)}" onclick="adResOpen(this)">📌 Reserve for a buyer</button></div>`;
   return `<div class="evl-it${auc?(it.bids&&it.bids.n?'':' none'):(adEvClaimsOf(it).taken?'':' none')}" data-k="lv:${did}">${adThumb(c)}<div style="flex:1;min-width:0">`+
     `<div class="nm">${adLotCard(c)}</div><div class="sub">${lot?'📍 '+esc(lot)+' · ':''}${esc(it.dropId)}${c.consignor?' · '+esc(c.consignor)+'’s':''}</div>${body}</div></div>`;
 }
