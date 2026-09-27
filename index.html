@@ -1702,6 +1702,32 @@ body.pc #v-credit{max-width:640px}
 .pt-tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:12px;background:var(--line);color:var(--fawn-deep);margin:3px 4px 0 0}
 .pt-tag.warn{background:#fde2e4;color:#b23a48}
 .pt-tag.ok{background:#dff5ea;color:#1f7a52}
+/* v13.27: admin detail screens -- a header line, label/value rows, tidy lists, one action row */
+.ad-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 8px}
+.ad-head .pt-tag{font-size:12px;padding:3px 10px;margin:0 6px 0 0}
+.ad-amt{font-size:21px;font-weight:800;letter-spacing:-.01em}
+.ad-facts{display:grid;grid-template-columns:max-content 1fr;gap:7px 14px;margin:6px 0 10px;font-size:14px;line-height:1.35}
+.ad-facts dt{color:var(--hint);font-size:12.5px;font-weight:700;padding-top:2px}
+.ad-facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.ad-facts dd .pt-mini{margin:0 0 0 8px;vertical-align:middle}
+.ad-owes{margin:0;padding:0;list-style:none;font-family:inherit}
+.ad-owes li,.ad-comps li{font-family:inherit}
+.ad-owes li{display:flex;justify-content:space-between;gap:10px;padding:1px 0}
+.ad-owes li.ad-tot{border-top:1px solid var(--line);margin-top:3px;padding-top:4px;font-weight:800}
+.ad-comps{margin:6px 0 0;padding:0;list-style:none;font-size:13px}
+.ad-comps li{display:flex;gap:6px;align-items:baseline;padding:3px 0;border-top:1px dashed var(--line)}
+.ad-comps li:first-child{border-top:0}
+.ad-comps .pk{margin-left:auto;font-weight:800;color:var(--fawn-deep);white-space:nowrap}
+.ad-cardline{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ad-cardline .pr{font-weight:800;white-space:nowrap}
+.ad-sub{color:var(--hint);font-size:12px;margin-top:1px}
+.ad-meta{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:12px;color:var(--hint);margin-top:3px}
+.ad-meta b{color:var(--text);font-size:13px}
+.ad-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 2px}
+.ad-actions .pt-mini{margin:0}
+.ad-warnbox{background:#fff4e0;color:#7a4a00;border-radius:10px;padding:7px 10px;font-size:12.5px;margin:6px 0}
+:root[data-theme="dark"] .ad-warnbox{background:#3a2c14;color:#ffd79a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ad-warnbox{background:#3a2c14;color:#ffd79a}}
 .pt-mini{font-size:12px;font-weight:800;padding:6px 11px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fawn-deep);margin:6px 6px 0 0;cursor:pointer}
 .pt-mini.pri{background:var(--berry);border-color:var(--berry);color:#fff}
 .pt-mini:disabled{opacity:.5}
@@ -1713,6 +1739,21 @@ body.pc #v-credit{max-width:640px}
 .pt-mini.danger{color:#b23a48}
 /* 🎯 Events builder */
 .ev-new{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 10px}
+.lt-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+.lt-lab{font-size:12px;font-weight:800;color:var(--hint);min-width:44px}
+.lt-seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;max-width:100%}
+.lt-seg button{font:inherit;font-size:12.5px;font-weight:800;padding:7px 10px;border:0;background:var(--card);color:var(--fawn-deep);cursor:pointer;min-height:36px;touch-action:manipulation}
+.lt-seg button+button{border-left:1px solid var(--line)}
+.lt-seg button[aria-pressed="true"]{background:var(--berry);color:#fff}
+.lt-seg button:disabled{opacity:.4;cursor:default}
+.lt-in{width:66px;font-size:16px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-family:inherit}
+.lt-pl{font-size:12px;font-weight:700;white-space:nowrap}
+.lt-q{flex:1;min-width:0;margin:0}
+.lt-row select{font-size:15px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-family:inherit;max-width:100%}
+.lt-filt{border:1px dashed var(--line);border-radius:12px;padding:8px 10px 0;margin:0 0 8px}
+.lt-tag{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--line);color:var(--text);white-space:nowrap}
+.lt-dest{font-size:12px;color:var(--hint)}
+.lt-plan{border:2px solid var(--berry)}
 .ev-new .pt-mini{margin:0}
 .ev-it{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
 .ev-it:last-child{border-bottom:0}
@@ -7136,24 +7177,30 @@ function adBuyerHtml(b){
   return `<div class="pt-inl" style="margin:6px 0"><span style="font-size:13px"><b>${esc(b.label)}</b> ${st}</span>
     <button class="pt-mini" style="margin:0" onclick="adDM('${esc(b.username)}','${esc(b.id)}')">💬 ${b.username?'DM':'Copy id'}</button></div>`;
 }
-function adCardLine(c,tickKey,extra){
+function adFacts(rows){ const r=rows.filter(x=>x&&x[1]!==''&&x[1]!=null); return r.length?`<dl class="ad-facts">${r.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`:''; }
+function adMoney(n){ return '$'+Number(n||0).toFixed(2); }
+function adMeta(parts){ const p=parts.filter(Boolean); return p.length?`<div class="ad-meta">${p.map(x=>`<span>${x}</span>`).join('')}</div>`:''; }
+function adCardLine(c,tickKey,extra,price){
   const idp=[c.set,c.number?('#'+c.number):'',c.variance].filter(Boolean).map(esc).join(' · ');
   const cond=[c.grade?('Graded '+c.grade):'',c.condition||''].filter(Boolean).map(esc).join(', ');
-  const comps=(c.components||[]).map(x=>`<div class="s" style="margin-left:18px">⤷ ${x.n>1?x.n+'× ':''}${esc(x.name)}${[x.set,x.number?('#'+x.number):'',x.variance].filter(Boolean).length?' ('+[x.set,x.number?('#'+x.number):'',x.variance].filter(Boolean).map(esc).join(' · ')+')':''}${x.photoKey?` <b>[#${esc(x.photoKey)}]</b>`:''}</div>`).join('');
-  return `<div class="pt-card" style="padding:7px 0">${tickKey?`<input type="checkbox" style="width:20px;height:20px;flex:none;margin-top:4px" ${AD.ticks[tickKey]?'checked':''} onchange="adTick('${tickKey}',this)">`:''}
+  // v13.27: bundle contents as a checklist; the set is said once when every card shares it
+  const cs=c.components||[], oneSet=cs.length>1&&cs.every(x=>x.set&&x.set===cs[0].set)?cs[0].set:'';
+  const comps=cs.map(x=>`<li><span>☐</span><span><b>${x.n>1?x.n+'× ':''}${esc(x.name)}</b>${x.number?' <span class="ad-sub" style="display:inline">#'+esc(x.number)+'</span>':''}${!oneSet&&x.set?'<div class="ad-sub">'+esc([x.set,x.variance].filter(Boolean).join(' · '))+'</div>':''}</span>${x.photoKey?`<span class="pk">[#${esc(x.photoKey)}]</span>`:''}</li>`).join('');
+  return `<div class="pt-card" style="padding:8px 0">${tickKey?`<input type="checkbox" style="width:20px;height:20px;flex:none;margin-top:4px" ${AD.ticks[tickKey]?'checked':''} onchange="adTick('${tickKey}',this)">`:''}
     ${c.image?`<img src="${esc(c.image)}" loading="lazy" alt="" style="width:40px;height:56px">`:'<div class="noimg" style="width:40px;height:56px"></div>'}
-    <div class="b"><div style="font-weight:700">${esc(c.name)}${c.photoKey?` <span style="color:var(--fawn-deep)">[#${esc(c.photoKey)}]</span>`:''}</div>
-      <div class="s" style="color:var(--hint);font-size:11.5px">${idp}${cond?' · '+cond:''}${c.consignor?` · <span class="pt-tag">consigned @${esc(c.consignor)}</span>`:''}</div>
-      ${comps?`<div style="font-size:12px;margin-top:2px"><b>Bundle — pack these:</b>${comps}</div>`:''}${extra||''}</div></div>`;
+    <div class="b"><div class="ad-cardline"><span style="font-weight:700;font-size:14px">${esc(c.name)}${c.photoKey?` <span style="color:var(--fawn-deep)">[#${esc(c.photoKey)}]</span>`:''}</span>${price!=null?`<span class="pr">${adMoney(price)}</span>`:''}</div>
+      <div class="ad-sub">${[idp,cond].filter(Boolean).join(' · ')}${c.consignor?`${idp||cond?' · ':''}<span class="pt-tag">consigned @${esc(c.consignor)}</span>`:''}</div>
+      ${comps?`<div style="font-size:12px;margin-top:6px;font-weight:800">Pack these ${cs.length}${oneSet?' · <span class="ad-sub" style="display:inline;font-weight:400">'+esc(oneSet)+'</span>':''}</div><ul class="ad-comps">${comps}</ul>`:''}${extra||''}</div></div>`;
 }
 function adBoxHtml(b){
   if(!b.ok) return `<p class="pt-err">${esc(ptErr(b))}</p>`;
   const dl=b.delivery==='ship'?'📮 Ship':b.delivery==='pickup'?'🤝 Pickup':'❓ Delivery not chosen';
-  let h=`<div style="font-size:13px"><span class="pt-tag ok">${dl}</span> <span class="pt-tag">${esc(b.status)}</span> <span class="pt-tag">${b.days}d old</span>
-    ${b.postage?` <span class="pt-tag ${/Verified|Packed|Shipped/.test(b.postage.status)?'ok':'warn'}">postage ${esc(b.postage.id)}: ${esc(b.postage.status)}</span>`:''}</div>`;
-  if(b.delivery==='ship') h+=`<div style="margin-top:6px;font-size:13px"><b>To:</b> ${esc(b.name||'—')}<br>${esc(b.address||'(no address)')}${b.phone?'<br>📞 '+esc(b.phone):''}</div>`;
-  else if(b.delivery==='pickup') h+=`<div class="s" style="margin-top:6px;font-size:12px">${esc(b.pickupNote||'Self-pickup')}</div>`;
-  h+=adBuyerHtml(b.buyer);
+  // v13.27: header chips, then label/value rows
+  let h=`<div class="ad-head"><div><span class="pt-tag ${b.delivery?'ok':'warn'}">${dl}</span><span class="pt-tag">${esc(b.status)}</span></div><div class="ad-amt">${b.cards} card${b.cards===1?'':'s'}</div></div>`;
+  const bb=b.buyer, buyer=bb?`<b>${esc(bb.label)}</b>${bb.strikes?` <span class="pt-tag ${bb.strikes>=bb.banAt-1?'warn':''}">${bb.strikes}/${bb.banAt} strikes</span>`:''}<button class="pt-mini" onclick="adDM('${esc(bb.username)}','${esc(bb.id)}')">💬 ${bb.username?'DM':'Copy id'}</button>`:'';
+  const post=b.postage?`${esc(b.postage.id)} · <span class="pt-tag ${/Verified|Packed|Shipped/.test(b.postage.status)?'ok':'warn'}">${esc(b.postage.status)}</span>`:'';
+  const to=b.delivery==='ship'?`<b>${esc(b.name||'—')}</b><div>${esc(b.address||'(no address)')}</div>${b.phone?'<div>📞 '+esc(b.phone)+'</div>':''}`:b.delivery==='pickup'?esc(b.pickupNote||'Self-pickup'):'';
+  h+=adFacts([['Buyer',buyer],['Ship to',b.delivery==='ship'?to:''],['Pickup',b.delivery==='pickup'?to:''],['Postage',post],['Age',b.days+' day'+(b.days===1?'':'s')],['Value',adMoney(b.value)]]);
   h+=adBoxActions(b);
   if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">📍 Pull from</div>`+lotSortLines(b.picks).map(x=>`<div style="font-size:13px;padding:2px 0;display:flex;gap:8px;align-items:center">${adThumb(x.card,30)}<span><b>${x.lot?esc(x.lot):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</span></div>`).join('');
   h+=`<div class="pt-h">Pack list · ${b.cards} card${b.cards===1?'':'s'} · $${Number(b.value||0).toFixed(2)}</div>`;
@@ -7163,7 +7210,7 @@ function adBoxHtml(b){
     const ref=o.status==='Refunded';
     h+=`<div style="font-size:12px;font-weight:800;margin-top:6px">#${esc(o.id)} · $${Number(o.total).toFixed(2)} · ${esc(o.status)}${ref?' — <span class="pt-neg">DON\'T PACK</span>':''}</div>`+
        (o.note?`<div style="font-size:12px;background:var(--line);padding:4px 8px;border-radius:8px;margin:3px 0">📝 ${esc(o.note)}</div>`:'')+
-       (ref?'':o.items.map((c,i)=>adCardLine(c,'t_'+b.id+'_'+o.id+'_'+i,`<div class="s" style="font-size:11.5px">$${Number(c.price||0).toFixed(2)}</div>`+(b.picks?adPackWhere(where[c.id]):''))).join(''));
+       (ref?'':o.items.map((c,i)=>adCardLine(c,'t_'+b.id+'_'+o.id+'_'+i,(b.picks?adPackWhere(where[c.id]):''),c.price)).join(''));
   });
   return h;
 }
@@ -7260,20 +7307,40 @@ async function adOrdResend(btn,tid){
 function adLeft(ms){ if(!ms) return ''; const d=ms-Date.now(); if(d<=0) return 'overdue'; const h=Math.floor(d/3600000), m=Math.floor(d%3600000/60000); return h>=48?Math.floor(h/24)+'d left':h?h+'h '+m+'m left':m+'m left'; }
 function adOrderHtml(r){
   if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
-  const o=r.order;
+  const o=r.order, unpaid=o.status==='Awaiting Payment';
+  const stCls=/Verified|Packed|Shipped|Delivered|Collected/.test(o.status)?'ok':(unpaid||/Verification/.test(o.status))?'warn':'';
   let h='';
   if(r.dupOf&&r.dupOf.length) h+=`<div class="pt-err" style="font-weight:800">⚠️ Same screenshot used for ${r.dupOf.map(esc).join(', ')} — check the bank carefully.</div>`;
-  h+=`<div style="font-size:13px">${r.source?'🎯 '+esc(r.source)+'<br>':''}${esc(o.status)} · $${Number(o.total).toFixed(2)}${r.credit?' (credit used $'+Number(r.credit).toFixed(2)+')':''}${r.deadline&&o.status==='Awaiting Payment'?' · <b>'+adLeft(r.deadline)+'</b> to pay':''}${r.parcel?' · box '+esc(r.parcel):''}</div>`;
-  h+=adBuyerHtml(r.buyer);
-  if(r.otherUnpaid&&r.otherUnpaid.length) h+=`<div class="s" style="font-size:12px">Also unpaid: ${r.otherUnpaid.map(x=>esc(x.id)+' ($'+Number(x.total).toFixed(2)+', '+esc(x.status)+')').join(' · ')}</div>`;
-  if(o.note) h+=`<div style="font-size:12px;background:var(--line);padding:4px 8px;border-radius:8px;margin:4px 0">📝 ${esc(o.note)}</div>`;
-  h+=`<div class="pt-h">Cards · ${o.items.length}</div>`+o.items.map(c=>adCardLine(c,'',`<div class="s" style="font-size:11.5px">$${Number(c.price||0).toFixed(2)}</div>`)).join('');
-  // v13.26: any unpaid order: remind the buyer now (one DM listing everything they owe).
-  if(o.status==='Awaiting Payment'&&r.buyer&&r.buyer.id) h+=`<div class="ev-foot" style="margin:6px 0 0"><button class="pt-mini pri" onclick="adOrdRemind(this,'${String(o.id).replace(/[^\w-]/g,'')}')">⏰ Remind to pay</button></div>`;
+  // header: status · time left · amount
+  h+=`<div class="ad-head"><div><span class="pt-tag ${stCls}">${esc(o.status)}</span>${r.deadline&&unpaid?`<span class="pt-tag warn">⏰ ${esc(adLeft(r.deadline))}</span>`:''}</div><div class="ad-amt">${adMoney(o.total)}</div></div>`;
+  // facts
+  const src=[r.source?'🎯 '+esc(r.source):'', o.note?esc(o.note).replace(/^📝\s*/,''):''].filter(Boolean).join('<div class="ad-sub">')+(r.source&&o.note?'</div>':'');
+  const b=r.buyer;
+  const buyer=b?`<b>${esc(b.label)}</b>${b.strikes?` <span class="pt-tag ${b.strikes>=b.banAt-1?'warn':''}">${b.strikes}/${b.banAt} strikes</span>`:''}<button class="pt-mini" onclick="adDM('${esc(b.username)}','${esc(b.id)}')">💬 ${b.username?'DM':'Copy id'}</button>`:'';
+  let owes='';
+  if(r.otherUnpaid&&r.otherUnpaid.length){
+    const all=[{id:o.id,total:o.total,status:o.status}].concat(r.otherUnpaid).filter(x=>x.status==='Awaiting Payment');
+    const tot=all.reduce((s2,x)=>s2+Number(x.total||0),0);
+    owes=`<ul class="ad-owes">${r.otherUnpaid.map(x=>`<li><span>${esc(x.id)}${x.status!=='Awaiting Payment'?' <span class="ad-sub" style="display:inline">('+esc(x.status)+')</span>':''}</span><span>${adMoney(x.total)}</span></li>`).join('')}${all.length>1?`<li class="ad-tot"><span>Owes in total (${all.length})</span><span>${adMoney(tot)}</span></li>`:''}</ul>`;
+  }
+  h+=adFacts([['Buyer',buyer],['From',src],['Box',r.parcel?esc(r.parcel):''],['Credit used',r.credit?adMoney(r.credit):''],['Also unpaid',owes]]);
+  // cards
+  const itemsSum=o.items.filter(c=>!c.refunded).reduce((s2,c)=>s2+Number(c.price||0),0), paidBy=Number(o.total||0)+Number(r.credit||0);
+  h+=`<div class="pt-h">Cards · ${o.items.length}</div>`+o.items.map(c=>adCardLine(c,'','',c.price)).join('');
+  if(o.items.length&&Math.abs(itemsSum-paidBy)>0.009&&!/^SH/.test(String(o.id)))
+    h+=`<div class="ad-warnbox">⚠️ The cards add up to <b>${adMoney(itemsSum)}</b> but the order is <b>${adMoney(paidBy)}</b>${r.credit?' (incl. credit)':''}. If you changed the price by hand, change the card’s price in OrderItems too so the sales books match.</div>`;
+  // actions, all together
+  let act='';
+  if(unpaid&&b&&b.id) act+=`<button class="pt-mini pri" onclick="adOrdRemind(this,'${String(o.id).replace(/[^\w-]/g,'')}')">⏰ Remind to pay</button>`;
   // v13.17: an unpaid claim or auction win can be passed on from here.
-  if(/^(CL|AU)/.test(String(o.id))&&o.status==='Awaiting Payment') h+=`<div class="ev-foot" style="margin:6px 0"><button class="pt-mini" onclick="adOrdForfeit(this,'${esc(o.id)}')">↩️ Forfeit → next in line</button>${r.buyer&&r.buyer.id?`<button class="pt-mini" onclick="adOrdResend(this,'${esc(r.buyer.id)}')">📨 Resend invoice</button>`:''}</div>`;
+  if(/^(CL|AU)/.test(String(o.id))&&unpaid){
+    if(b&&b.id) act+=`<button class="pt-mini" onclick="adOrdResend(this,'${esc(b.id)}')">📨 Resend invoice</button>`;
+    act+=`<button class="pt-mini" onclick="adOrdForfeit(this,'${esc(o.id)}')">↩️ Forfeit → next in line</button>`;
+  }
   const proof=/^https:\/\//.test(r.proof)?r.proof:'', vl=r.verifyLink||'';
-  if(proof||vl) h+=`<div>${vl?`<button class="pt-mini pri" onclick="adOpenUrl('${esc(vl)}')">Open verify message</button>`:''}${proof&&proof!==vl?`<button class="pt-mini" onclick="adOpenUrl('${esc(proof)}')">Screenshot</button>`:''}</div>`;
+  if(vl) act+=`<button class="pt-mini pri" onclick="adOpenUrl('${esc(vl)}')">Open verify message</button>`;
+  if(proof&&proof!==vl) act+=`<button class="pt-mini" onclick="adOpenUrl('${esc(proof)}')">Screenshot</button>`;
+  if(act) h+=`<div class="ad-actions">${act}</div>`;
   return h;
 }
 function adStockHtml(r){
@@ -7285,7 +7352,7 @@ function adStockHtml(r){
       <button class="pt-mini" onclick="adEvFromStock('${r.kind}','drop')">🎯 New drop with these</button>
       <button class="pt-mini" onclick="adEvFromStock('${r.kind}','auction')">🔨 New auction with these</button></div>`:'';
   const pr=r.kind!=='stuck'&&r.kind!=='held';                              // held cards are priced in their drop/auction
-  return cta+(pr?adPrAskHtml()+adPrBulkHtml(r.kind):'')+r.cards.map(c=>`<div data-pk="${esc(r.kind+'|'+c.id)}">`+adCardLine(c,pr?adPrTickKey(r.kind,c.id):'',`<div class="s" style="font-size:11.5px"><b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>${c.market?' · market $'+Number(c.market).toFixed(2):''} · qty ${c.qty}${c.days!=null?' · listed '+c.days+'d':''}${c.consignor?' · floor checked on save':''}${(r.kind==='stuck'||r.kind==='held')?' · '+esc(c.status)+(c.heldBy?' by '+esc(c.heldBy):''):''} · <span style="color:var(--hint)">${esc(c.id)}</span></div>`+(pr?adPrOneHtml(r.kind,c):''))+'</div>').join('')+
+  return cta+(pr?adPrAskHtml()+adPrBulkHtml(r.kind):'')+r.cards.map(c=>`<div data-pk="${esc(r.kind+'|'+c.id)}">`+adCardLine(c,pr?adPrTickKey(r.kind,c.id):'',adMeta([`<b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>`,c.market?'market $'+Number(c.market).toFixed(2):'','qty '+c.qty,c.days!=null?'listed '+c.days+'d':'',c.consignor?'floor checked on save':'',(r.kind==='stuck'||r.kind==='held')?esc(c.status)+(c.heldBy?' by '+esc(c.heldBy):''):'',esc(c.id)])+(pr?adPrOneHtml(r.kind,c):''))+'</div>').join('')+
     (r.total>r.cards.length?`<p class="note">Showing ${r.cards.length} of ${r.total}.</p>`:'');
 }
 /* ---- v13.16: pricing on Stock health ----
@@ -7807,7 +7874,7 @@ function adFindHtml(){
   const m=adFindMatches();
   AD.det['stk:find']={ok:true,kind:'find',cards:m.map(c=>Object.assign({},c,{qty:c.qty}))};
   if(!m.length) return `<p class="note" style="text-align:left;margin:4px 0 0">No card on sale matches “${esc(AD.findQ)}”.</p>`;
-  return adPrAskHtml()+AD.det['stk:find'].cards.map(c=>`<div data-pk="${esc('find|'+c.id)}">`+adCardLine(c,'',`<div class="s" style="font-size:11.5px"><b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>${c.market?' · market $'+Number(c.market).toFixed(2):''} · qty ${c.qty}${c.lot?' · 📍 '+esc(c.lot):''}${c.consignor?' · lowest price checked on save':''}</div>`+adPrOneHtml('find',c)+'<div>'+adCountBtn(c.id)+'</div>')+'</div>').join('')+
+  return adPrAskHtml()+AD.det['stk:find'].cards.map(c=>`<div data-pk="${esc('find|'+c.id)}">`+adCardLine(c,'',adMeta([`<b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>`,c.market?'market $'+Number(c.market).toFixed(2):'','qty '+c.qty,c.lot?'📍 '+esc(c.lot):'',c.consignor?'lowest price checked on save':''])+adPrOneHtml('find',c)+'<div>'+adCountBtn(c.id)+'</div>')+'</div>').join('')+
     (m.length===25?'<p class="note">Showing the first 25 — type more to narrow it down.</p>':'');
 }
 function adFindSearch(v){ AD.findQ=v; const x=document.getElementById('ad-findx'); if(x) x.hidden=!v; const r=document.getElementById('ad-find-res'); if(r) r.innerHTML=adFindHtml();
@@ -8357,13 +8424,31 @@ async function adEvCreate(btn){
 }
 
 /* ---------- v13.26: 💡 Lot ideas (lotideas.gs) ----------
-   Suggestions of cards to sell together. Suggesting writes nothing; 🔨 makes a
-   bundle and puts it in an auction DRAFT, 📦 makes a shop bundle. The panel
-   repaints itself in place (#ev-lots); the rest of the tab only redraws when a
-   new auction draft appears in the list. */
+   Suggestions of cards to sell together. Suggesting writes nothing.
+   v13.27: more ways to use them, still one screen:
+   • "For" (panel): 🔨 auction / 🎯 drop / 📦 shop bundle. Each idea has ONE button.
+   • "Sell as" (per idea): One lot (a bundle) · Each card (every card its own
+     item, own price) · Hit + lot (the hits alone, the rest as one lot).
+   • Search a theme, cards per idea, and filters (price, hits, mine/consigned,
+     listed N+ days) shape every recipe. For/size/filters are remembered.
+   • 🪄 Plan a whole drop/auction: a balanced mix, check it, add it all in one tap.
+   The panel repaints itself in place (#ev-lots); typed values are kept across
+   repaints (data-v -> s.vals). */
 const LOT_RECIPE_LIST=[['mix','✨ Surprise me'],['hitmix','🔥 Hit + hard-to-sell'],['species','🐾 Same Pokémon'],['line','🧬 Evolution line'],['artist','🎨 Same artist'],['type','🌈 Type theme'],['set','📦 Same set'],['rarity','💎 Rarity set'],['band','🎲 Price band'],['slow','🐢 Slow sellers']];
-function adLotsState(){ return AD.ev.lots||(AD.ev.lots={open:false,recipe:'mix',r:null,busy:false}); }
-function adLotsPaint(){ const el=document.getElementById('ev-lots'); if(el) el.innerHTML=adLotsState().open?adLotsHtml():''; }
+const LOT_FOR=[['auction','🔨 Auction'],['drop','🎯 Drop'],['shop','📦 Shop bundle']];
+const LOT_SIZES=[[0,'Auto'],[3,'3'],[5,'5'],[8,'8'],[12,'12'],[99,'All']];
+const LOT_F0={min:'',max:'',hits:'any',src:'all',days:0};
+function adLotsState(){
+  if(!AD.ev.lots){ let sv={}; try{ sv=JSON.parse(localStorage.getItem('fm_lots')||'{}')||{}; }catch(e){}
+    AD.ev.lots={open:false,recipe:'mix',r:null,busy:false,forK:['auction','drop','shop'].includes(sv.forK)?sv.forK:'auction',size:Number(sv.size)||0,
+      q:'',f:Object.assign({},LOT_F0,sv.f||{}),fOpen:false,sell:{},vals:{},plan:null,planN:Number(sv.planN)||8,planBusy:false}; }
+  return AD.ev.lots;
+}
+function adLotsSave(){ const s=adLotsState(); try{ localStorage.setItem('fm_lots',JSON.stringify({forK:s.forK,size:s.size,f:s.f,planN:s.planN})); }catch(e){} }
+function adLotsKeep(){ const s=adLotsState(); document.querySelectorAll('#ev-lots [data-v]').forEach(el=>{ s.vals[el.getAttribute('data-v')]=el.value; }); }
+function adLotsV(k,d){ const v=adLotsState().vals[k]; return v==null?d:v; }
+const adLotsNum=v=>Number(String(v==null?'':v).replace(/[$,\s]/g,''));
+function adLotsPaint(fresh){ const el=document.getElementById('ev-lots'); if(!el) return; if(!fresh) adLotsKeep(); el.innerHTML=adLotsState().open?adLotsHtml():''; }
 function adLotsToggle(){
   const s=adLotsState(); s.open=!s.open;
   const b=document.querySelector('.ev-new button[aria-expanded]'); if(b) b.setAttribute('aria-expanded',s.open?'true':'false');
@@ -8373,80 +8458,223 @@ function adLotsToggle(){
 async function adLotsLoad(recipe,shuffle){
   const s=adLotsState(); s.recipe=recipe||s.recipe||'mix'; s.busy=true; adLotsPaint();
   const seed=shuffle||!s.r||s.r.recipe!==s.recipe?Math.floor(Math.random()*1e6)+1:(s.r&&s.r.seed);
-  const r=await adEvCall('adminLotIdeas',{recipe:s.recipe,seed});
-  s.busy=false; s.r=r&&r.ok?r:{ok:false,message:(r&&r.message)||ptErr(r),ideas:[]}; adLotsPaint();
+  const r=await adEvCall('adminLotIdeas',{recipe:s.recipe,seed,size:s.size,f:s.f,q:s.q});
+  s.busy=false; s.r=r&&r.ok?r:{ok:false,message:(r&&r.message)||ptErr(r),ideas:[]};
+  const keep={}; Object.keys(s.vals).forEach(k=>{ if(k==='q'||k.indexOf('f|')===0||k.indexOf('plan|')===0) keep[k]=s.vals[k]; }); s.vals=keep; adLotsPaint(true);   // new ideas start from their own suggested prices
 }
 function adLotDraft(kind){ return adEvList().find(e=>e.kind===kind&&e.state==='draft')||null; }
+function adLotsFor(k){ const s=adLotsState(); if(s.forK===k) return; s.forK=k; if(s.plan&&s.plan.kind!==k) s.plan=null; adLotsSave(); adLotsPaint(); }
+function adLotsSize(v){ const s=adLotsState(); s.size=Number(v)||0; adLotsSave(); adLotsLoad(null,false); }
+function adLotsSearch(){ const s=adLotsState(); adLotsKeep(); s.q=String(s.vals['q']||'').trim().slice(0,60); s.plan=null; adLotsLoad(null,true); }
+function adLotsSearchClear(){ const s=adLotsState(); s.q=''; s.vals['q']=''; s.plan=null; adLotsLoad(null,true); }
+function adLotsFiltToggle(){ const s=adLotsState(); s.fOpen=!s.fOpen; adLotsPaint(); }
+function adLotsFilt(){
+  const s=adLotsState(); adLotsKeep(); const v=k=>s.vals['f|'+k];
+  const n=x=>{ const y=adLotsNum(x); return y>0?String(y):''; };
+  s.f={min:n(v('min')),max:n(v('max')),hits:v('hits')||'any',src:v('src')||'all',days:Number(v('days'))||0};
+  s.plan=null; adLotsSave(); adLotsLoad(null,true);
+}
+function adLotsFiltClear(){ const s=adLotsState(); s.f=Object.assign({},LOT_F0); Object.keys(s.vals).forEach(k=>{ if(k.indexOf('f|')===0) delete s.vals[k]; }); s.plan=null; adLotsSave(); adLotsLoad(null,true); }
+function adLotsFiltCount(f){ return (f.min?1:0)+(f.max?1:0)+(f.hits!=='any'?1:0)+(f.src!=='all'?1:0)+(Number(f.days)?1:0); }
+function adLotsSell(key,v){ const s=adLotsState(); s.sell[key]=v; adLotsPaint(); }
+const adLotsSeg=(opts,cur,fn,dis)=>`<span class="lt-seg" role="group">${opts.map(([k,l])=>`<button type="button" aria-pressed="${cur===k?'true':'false'}" onclick="${fn}('${k}')"${dis&&dis(k)?' disabled':''}>${esc(l)}</button>`).join('')}</span>`;
+function adLotsDest(kind){ const d=adLotDraft(kind); return d?`adds to <b>${esc(d.short||'the draft')}</b> (draft)`:'makes a new draft'; }
 function adLotsHtml(){
-  const s=adLotsState(), r=s.r;
-  const chips=LOT_RECIPE_LIST.map(([k,l])=>`<button class="pt-mini${s.recipe===k?' pri':''}" onclick="adLotsLoad('${k}')"${s.busy?' disabled':''}>${esc(l)}</button>`).join('');
+  const s=adLotsState(), r=s.r, f=s.f, fc=adLotsFiltCount(f), busy=s.busy?' disabled':'';
+  const chips=LOT_RECIPE_LIST.map(([k,l])=>`<button class="pt-mini${s.recipe===k?' pri':''}" onclick="adLotsLoad('${k}')"${busy}>${esc(l)}</button>`).join('');
+  const sel=(k,opts,cur)=>`<select data-v="f|${k}" onchange="adLotsFilt()" aria-label="${k}">${opts.map(([v,l])=>`<option value="${v}"${String(cur)===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select>`;
+  let h=`<div class="panel lt-panel" style="padding:12px;margin:0 0 10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><b style="font-size:14px">💡 Lot ideas</b>
+      <span style="display:flex;gap:6px"><button class="pt-mini" style="margin:0" onclick="adLotsLoad(null,true)"${busy}>↻ Shuffle</button><button class="pt-mini" style="margin:0" onclick="adLotsToggle()">Close</button></span></div>
+    <div class="lt-row"><span class="lt-lab">For</span>${adLotsSeg(LOT_FOR,s.forK,'adLotsFor')}<span class="lt-dest">${s.forK==='shop'?'a bundle in the shop':adLotsDest(s.forK)}</span></div>
+    <div class="lt-row"><input class="ev-search lt-q" data-v="q" value="${esc(adLotsV('q',s.q))}" placeholder="🔎 Theme: Pokémon, artist, set, rarity…" maxlength="60" aria-label="Search a theme" enterkeyhint="search" onkeydown="if(event.key==='Enter'){event.preventDefault();adLotsSearch()}"><button class="pt-mini" style="margin:0" onclick="adLotsSearch()"${busy}>Search</button>${s.q?`<button class="pt-mini" style="margin:0" onclick="adLotsSearchClear()" aria-label="Clear search">✕</button>`:''}</div>
+    <div class="lt-row"><label class="lt-lab" style="min-width:0">Cards per idea <select onchange="adLotsSize(this.value)" aria-label="Cards per idea">${LOT_SIZES.map(([v,l])=>`<option value="${v}"${s.size===v?' selected':''}>${l}</option>`).join('')}</select></label>
+      <button class="pt-mini${fc?' pri':''}" style="margin:0" onclick="adLotsFiltToggle()" aria-expanded="${s.fOpen?'true':'false'}">⚙️ Filters${fc?' ('+fc+' on)':''}</button></div>`;
+  if(s.fOpen) h+=`<div class="lt-filt">
+      <div class="lt-row"><span class="lt-lab">Price</span>$<input class="lt-in" data-v="f|min" inputmode="decimal" value="${esc(adLotsV('f|min',f.min))}" placeholder="any" aria-label="Lowest price" onchange="adLotsFilt()"> to $<input class="lt-in" data-v="f|max" inputmode="decimal" value="${esc(adLotsV('f|max',f.max))}" placeholder="any" aria-label="Highest price" onchange="adLotsFilt()"></div>
+      <div class="lt-row"><span class="lt-lab">Show</span>${sel('hits',[['any','Hits and the rest'],['only','Only hits 🔥'],['none','No hits']],f.hits)}${sel('src',[['all','All cards'],['mine','Only mine'],['consigned','Only consigned 🤝']],f.src)}</div>
+      <div class="lt-row"><span class="lt-lab">Listed</span>${sel('days',[[0,'Any time'],[14,'14+ days'],[30,'30+ days'],[60,'60+ days'],[90,'90+ days']],f.days)}${fc?`<button class="pt-mini" style="margin:0" onclick="adLotsFiltClear()">Clear filters</button>`:''}</div></div>`;
+  h+=`<div class="ev-new" style="margin:0 0 6px">${chips}</div>`;
+  // 🪄 plan a whole event
+  if(s.forK==='shop') h+=`<p class="note" style="text-align:left;margin:4px 2px 8px">🪄 Pick <b>Auction</b> or <b>Drop</b> above to plan a whole event.</p>`;
+  else h+=`<div class="lt-row" style="margin:4px 0 8px"><button class="pt-mini big" style="margin:0" onclick="adLotsPlan()"${s.planBusy?' disabled':''}>🪄 Plan a whole ${s.forK==='auction'?'auction':'drop'}</button>
+      <label class="lt-lab" style="min-width:0">with <select onchange="adLotsState().planN=Number(this.value);adLotsSave()" aria-label="Items in the plan">${[4,6,8,10,12,16,20].map(n=>`<option value="${n}"${s.planN===n?' selected':''}>${n}</option>`).join('')}</select> items</label></div>`;
+  if(s.planBusy) h+='<p class="note" style="text-align:left">Planning…</p>';
+  else if(s.plan) h+=adLotPlanHtml();
   let body='';
   if(s.busy&&!r) body='<p class="note" style="text-align:left">Finding ideas…</p>';
   else if(r&&!r.ok) body=`<p class="note" style="text-align:left">${esc(r.message||'Couldn’t load ideas.')}</p>`;
   else if(r){
-    const f=r.facts||{have:0,of:0}, needs=['line','type','artist'].indexOf(s.recipe)>=0;
-    body=`<p class="note" style="text-align:left;margin:4px 2px 8px">${Number(r.onSale||0)} cards on sale · ${Number(r.hits||0)} hits · ${Number(r.hard||0)} hard to sell · card facts for ${Number(f.have||0)} of ${Number(f.of||0)}`+
+    const fa=r.facts||{have:0,of:0}, needs=['line','type','artist'].indexOf(s.recipe)>=0, narrowed=s.q||fc;
+    body=`<p class="note" style="text-align:left;margin:4px 2px 8px">${Number(r.onSale||0)} cards on sale${narrowed?` · <b>${Number(r.matching||0)} match</b>`:''} · ${Number(r.hits||0)} hits · ${Number(r.hard||0)} hard to sell · card facts for ${Number(fa.have||0)} of ${Number(fa.of||0)}`+
       ` · <a href="#" onclick="adLotFacts(this);return false">Look up more cards</a></p>`;
-    if(!r.ideas.length) body+=`<p class="note" style="text-align:left">${needs&&!f.have?'This recipe needs card facts (artist, type, evolution line). Tap “Look up more cards”, or wait for tonight’s automatic lookup.':'No ideas for this recipe with what’s on sale right now. Try another.'}</p>`;
+    if(!r.ideas.length) body+=`<p class="note" style="text-align:left">${narrowed&&Number(r.matching||0)<2?'Too few cards match the search/filters. Loosen them.':needs&&!fa.have?'This recipe needs card facts (artist, type, evolution line). Tap “Look up more cards”, or wait for tonight’s automatic lookup.':'No ideas for this recipe with these cards. Try another.'}</p>`;
     body+=r.ideas.map((it,i)=>adLotIdeaHtml(it,i)).join('');
   }
-  return `<div class="panel" style="padding:12px;margin:0 0 10px">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><b style="font-size:14px">💡 Lot ideas</b>
-      <span style="display:flex;gap:6px"><button class="pt-mini" onclick="adLotsLoad(null,true)"${s.busy?' disabled':''}>↻ Shuffle</button><button class="pt-mini" onclick="adLotsToggle()">Close</button></span></div>
-    <div class="ev-new" style="margin:0 0 6px">${chips}</div>${body}
-    <p class="note" style="text-align:left;margin:8px 2px 0">Nothing is posted: 🔨 puts the lot in an auction draft, 🎯 in a drop draft (first to claim pays the price), 📦 makes a shop bundle. Consignor floors are always respected.</p></div>`;
+  return h+body+`<p class="note" style="text-align:left;margin:8px 2px 0">Nothing is posted: ideas go into a <b>draft</b> you check in Events. <b>One lot</b> = the cards as one bundle · <b>Each card</b> = every card its own item · <b>Hit + lot</b> = the hits alone, the rest as one lot. Consignor floors are always respected.</p></div>`;
+}
+const adLotsSid=x=>String(x==null?'':x).replace(/[^\w-]/g,'');   // ids go inside onclick='...': letters, digits, - and _ only
+function adLotMixable(it){ const h=it.cards.filter(c=>c.hit).length; return h>=1&&it.cards.length-h>=2; }
+function adLotMixPrice(it,kind){
+  const s=adLotsState(), pct=(s.r&&s.r.pct)||{start:.6,bundle:.9}, rest=it.cards.filter(c=>!c.hit);
+  const v=rest.reduce((a,c)=>a+Number(c.price||0),0), fl=rest.reduce((a,c)=>a+Number(c.floor||0),0);
+  return Math.max(1,Math.round(v*(kind==='auction'?pct.start:pct.bundle)),fl>0?Math.ceil(fl):0);
+}
+function adLotCardMeta(c){
+  return adMeta([esc([c.set,c.number].filter(Boolean).join(' · ')),'$'+Number(c.price).toFixed(2),c.days?Number(c.days)+'d listed':'',Number(c.qty)>1?'×'+Number(c.qty):'',
+    c.hit?'🔥 hit':'',c.popular&&!c.hit?'⭐ popular':'',c.hard?'🐢 slow':'',c.consigned?'🤝 floor $'+Number(c.floor).toFixed(2):'',c.artist?'🎨 '+esc(c.artist):'']);
 }
 function adLotIdeaHtml(it,i){
-  const sid=x=>String(x==null?'':x).replace(/[^\w-]/g,'');   // ids go inside onclick='...': letters, digits, - and _ only
-  const cards=it.cards.map(c=>`<div class="pt-row" style="padding:6px 0;gap:8px">${adThumb(c,30)}<div class="l" style="min-width:0"><div class="t" style="font-size:13px">${esc(c.name)}</div>`+
-    `<div class="s">${esc([c.set,c.number].filter(Boolean).join(' · '))} · $${Number(c.price).toFixed(2)}${c.days?` · ${Number(c.days)}d listed`:''}${c.hit?' · 🔥 hit':''}${c.popular&&!c.hit?' · ⭐ popular':''}${c.hard?' · 🐢 slow':''}${c.consigned?` · 🤝 floor $${Number(c.floor).toFixed(2)}`:''}${c.artist?' · 🎨 '+esc(c.artist):''}</div></div>`+
-    `<div class="r"><button class="pt-mini" title="Swap this card for another that fits" aria-label="Swap ${esc(c.name)}" onclick="adLotSwap(this,${i},'${sid(c.id)}')">⇄</button></div></div>`).join('');
-  const da=adLotDraft('auction'), dd=adLotDraft('drop');
-  const aucLabel=da?`🔨 Add to ${esc(da.short||'draft')}`:'🔨 New auction';
-  const dropLabel=dd?`🎯 Add to ${esc(dd.short||'draft')}`:'🎯 New drop';
-  return `<div class="panel" style="padding:10px 12px;margin:0 0 8px" data-k="${esc(it.key)}">
+  const s=adLotsState(), kind=s.forK, k=it.key;
+  let sell=kind==='shop'?'one':(s.sell[k]||'one'); if(sell==='mix'&&!adLotMixable(it)) sell='one';
+  const perCard=c=>sell==='each'||(sell==='mix'&&c.hit);
+  const cards=it.cards.map(c=>`<div class="pt-row" style="padding:6px 0;gap:8px">${adThumb(c,30)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}</div><div class="s">${adLotCardMeta(c)}</div></div>`+
+    `<div class="r" style="gap:6px;align-items:center">${perCard(c)?`<label class="lt-pl">${kind==='auction'?'start ':''}$<input class="lt-in" data-v="${esc(k)}|c|${kind}|${esc(c.id)}" inputmode="decimal" aria-label="${kind==='auction'?'Start bid':'Price'} for ${esc(c.name)}" value="${esc(adLotsV(k+'|c|'+kind+'|'+c.id,kind==='auction'?c.start1:c.drop1))}"></label>`:(sell==='mix'?'<span class="lt-tag">in the lot</span>':'')}`+
+    `<button class="pt-mini" style="margin:0" title="Swap this card for another that fits" aria-label="Swap ${esc(c.name)}" onclick="adLotSwap(this,${i},'${adLotsSid(c.id)}')">⇄</button></div></div>`).join('');
+  const d=kind==='shop'?null:adLotDraft(kind);
+  const go=kind==='auction'?(d?`🔨 Add to ${esc(d.short||'draft')}`:'🔨 New auction draft'):kind==='drop'?(d?`🎯 Add to ${esc(d.short||'draft')}`:'🎯 New drop draft'):'📦 Make shop bundle';
+  let price='';
+  if(sell==='one') price=kind==='auction'
+    ?`<label class="lt-pl">Start bid $<input id="ls-${i}" class="lt-in" data-v="${esc(k)}|s" inputmode="decimal" aria-label="Start bid ${i+1}" value="${esc(adLotsV(k+'|s',it.start))}"></label>`
+    :`<label class="lt-pl">${kind==='drop'?'Price':'Bundle price'} $<input id="lb-${i}" class="lt-in" data-v="${esc(k)}|b" inputmode="decimal" aria-label="${kind==='drop'?'Drop':'Bundle'} price ${i+1}" value="${esc(adLotsV(k+'|b',it.bundle))}"></label>`;
+  else if(sell==='mix'){ const n=it.cards.filter(c=>!c.hit).length;
+    price=`<label class="lt-pl">Lot of ${n}: ${kind==='auction'?'start ':''}$<input class="lt-in" data-v="${esc(k)}|m|${kind}" inputmode="decimal" aria-label="Price for the lot of ${n}" value="${esc(adLotsV(k+'|m|'+kind,adLotMixPrice(it,kind)))}"></label>`; }
+  else price=`<span class="lt-dest">${it.cards.length} separate items, prices on each card</span>`;
+  const inLot=sell==='one'?it.cards.length:sell==='mix'?it.cards.filter(c=>!c.hit).length:0;
+  if(inLot>12) price=`<span class="lt-dest pt-neg">Too many cards for one lot (max 12): pick Each card or fewer cards per idea.</span>`;
+  return `<div class="panel lt-idea" style="padding:10px 12px;margin:0 0 8px" data-k="${esc(k)}">
     <div style="font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.04em">${esc(it.recipeName||'')}</div>
-    <input id="lt-${i}" class="ev-search" style="margin:4px 0" maxlength="60" aria-label="Lot title ${i+1}" value="${esc(it.title)}">
-    <div class="s" style="font-size:12px;margin:0 0 4px">${esc(it.why||'')}</div>${cards}
+    <input id="lt-${i}" class="ev-search" style="margin:4px 0" maxlength="60" data-v="${esc(k)}|t" aria-label="Lot title ${i+1}" value="${esc(adLotsV(k+'|t',it.title))}">
+    <div class="s" style="font-size:12px;margin:0 0 4px">${esc(it.why||'')}</div>
+    ${kind==='shop'?'':`<div class="lt-row" style="margin:4px 0 2px"><span class="lt-lab">Sell as</span><span class="lt-seg" role="group">${[['one','One lot'],['each','Each card'],['mix','Hit + lot']].map(([v,l])=>`<button type="button" aria-pressed="${sell===v?'true':'false'}" onclick="adLotsSellI(${i},'${v}')"${v==='mix'&&!adLotMixable(it)?' disabled title="Needs a hit and 2 other cards"':''}>${l}</button>`).join('')}</span></div>`}
+    ${cards}
     <div style="font-size:12px;margin:6px 0">Shop value <b>$${Number(it.value).toFixed(2)}</b> · market $${Number(it.market).toFixed(2)}${it.floor?` · floors $${Number(it.floor).toFixed(2)}`:''}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <label style="font-size:12px">Start bid $<input id="ls-${i}" class="ev-search" style="width:70px;margin:0 0 0 4px" inputmode="decimal" aria-label="Start bid ${i+1}" value="${Number(it.start)}"></label>
-      <button class="pt-mini pri" onclick="adLotMake(this,${i},'auction')">${aucLabel}</button>
-      <label style="font-size:12px">Price $<input id="lb-${i}" class="ev-search" style="width:70px;margin:0 0 0 4px" inputmode="decimal" aria-label="Drop or bundle price ${i+1}" value="${Number(it.bundle)}"></label>
-      <button class="pt-mini pri" onclick="adLotMake(this,${i},'drop')">${dropLabel}</button>
-      <button class="pt-mini" onclick="adLotMake(this,${i},'bundle')">📦 Shop bundle</button></div></div>`;
+    <div class="lt-row" style="margin:0">${price}<button class="pt-mini pri" style="margin:0 0 0 auto" onclick="adLotMake(this,${i})">${go}</button></div></div>`;
 }
+function adLotsSellI(i,v){ const s=adLotsState(), it=s.r&&s.r.ideas[i]; if(it) adLotsSell(it.key,v); }
 async function adLotSwap(btn,i,cardId){
   const s=adLotsState(), it=s.r&&s.r.ideas[i]; if(!it) return;
+  adLotsKeep();
   await guard(btn,async()=>{
-    const r=await adEvCall('adminLotSwap',{recipe:it.recipe,cardIds:it.cards.map(c=>c.id),out:cardId,title:ptVal('lt-'+i)||it.title,why:it.why,seed:Math.floor(Math.random()*1e6)+1});
+    const r=await adEvCall('adminLotSwap',{recipe:it.recipe,cardIds:it.cards.map(c=>c.id),out:cardId,title:adLotsV(it.key+'|t',it.title),why:it.why,f:s.f,q:s.q,seed:Math.floor(Math.random()*1e6)+1});
     if(!r.ok){ ptToast(r.message||ptErr(r)); return; }
-    r.idea.recipeName=it.recipeName; s.r.ideas[i]=r.idea; adLotsPaint();
+    r.idea.recipeName=it.recipeName; if(s.sell[it.key]) s.sell[r.idea.key]=s.sell[it.key]; s.r.ideas[i]=r.idea; adLotsPaint();
   });
+}
+// Cards just used can't be in other ideas (or the plan) any more.
+function adLotsUsed(ids){
+  const s=adLotsState(), used={}; ids.forEach(x=>used[x]=1);
+  if(s.r&&s.r.ideas) s.r.ideas=s.r.ideas.filter(x=>!x.cards.some(c=>used[c.id]));
+  if(s.plan&&s.plan.items) s.plan.items=s.plan.items.filter(x=>x.type==='lot'?!x.cards.some(c=>used[c.id]):!used[x.card.id]);
+}
+function adLotsDone(r,ids){
+  adLotsUsed(ids);
+  if(r.failed&&r.failed.length) ptAlert(r.message); else ptToast(r.message||'Done.');
+  if(r.event&&r.eventId) adEvApply(r,r.kind,r.eventId);
+  adLotsPaint();
 }
 async function adLotMake(btn,i,mode){
   const s=adLotsState(), it=s.r&&s.r.ideas[i]; if(!it) return;
-  const price=Number(String(ptVal(mode==='auction'?'ls-'+i:'lb-'+i)).replace(/[$,\s]/g,''));
-  if(!(price>0)){ ptAlert('Give a price above $0.'); return; }
-  if(it.floor&&price<it.floor){ ptAlert('That’s under the consignor floors ($'+Number(it.floor).toFixed(2)+'). Raise it first.'); return; }
-  const d=mode==='bundle'?null:adLotDraft(mode), t=ptVal('lt-'+i)||it.title;
-  const ok=await ptConfirm(mode==='auction'
-    ?`Make “${t}” a lot${d?' in '+(d.short||'the draft'):' in a new auction draft'}, starting at $${price.toFixed(2)}?\n\nIts ${it.cards.length} cards leave the shop now. Nothing is posted.`
-    :mode==='drop'
-    ?`Put “${t}” in ${d?(d.short||'the drop draft'):'a new drop draft'} at $${price.toFixed(2)} for the first to claim?\n\nIts ${it.cards.length} cards leave the shop now. Nothing is posted.`
-    :`Make “${t}” a shop bundle at $${price.toFixed(2)}?\n\nIts ${it.cards.length} cards leave the shop; only the bundle is buyable.`);
+  adLotsKeep();
+  const kind=mode||(s.forK==='shop'?'bundle':s.forK), k=it.key, t=String(adLotsV(k+'|t',it.title)).trim()||it.title;
+  let sell=kind==='bundle'?'one':(s.sell[k]||'one'); if(sell==='mix'&&!adLotMixable(it)) sell='one';
+  const d=kind==='bundle'?null:adLotDraft(kind), where=d?(d.short||'the draft'):(kind==='auction'?'a new auction draft':'a new drop draft');
+  if(sell==='one'&&it.cards.length>12){ ptAlert('One lot can hold up to 12 cards (this idea has '+it.cards.length+'). Pick “Each card”, or a smaller “Cards per idea”.'); return; }
+  if(sell==='mix'&&it.cards.filter(c=>!c.hit).length>12){ ptAlert('The lot part can hold up to 12 cards. Pick “Each card”, or a smaller “Cards per idea”.'); return; }
+  if(sell==='one'){
+    const price=adLotsNum(kind==='auction'?adLotsV(k+'|s',it.start):adLotsV(k+'|b',it.bundle));
+    if(!(price>0)){ ptAlert('Give a price above $0.'); return; }
+    if(it.floor&&price<it.floor){ ptAlert('That’s under the consignor floors ($'+Number(it.floor).toFixed(2)+'). Raise it first.'); return; }
+    const ok=await ptConfirm(kind==='auction'
+      ?`Make “${t}” a lot in ${where}, starting at $${price.toFixed(2)}?\n\nIts ${it.cards.length} cards leave the shop now. Nothing is posted.`
+      :kind==='drop'
+      ?`Put “${t}” in ${where} at $${price.toFixed(2)} for the first to claim?\n\nIts ${it.cards.length} cards leave the shop now. Nothing is posted.`
+      :`Make “${t}” a shop bundle at $${price.toFixed(2)}?\n\nIts ${it.cards.length} cards leave the shop; only the bundle is buyable.`);
+    if(!ok) return;
+    await guard(btn,async()=>{
+      const shopPrice=adLotsNum(adLotsV(k+'|b',it.bundle))||it.bundle;   // an unsold auction lot goes back to the shop at this, not the start bid
+      const r=await adEvCall('adminLotMake',{mode:kind,cardIds:it.cards.map(c=>c.id),title:t,price,shopPrice,eventId:d?d.id:''});
+      if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+      adLotsDone(r,it.cards.map(c=>c.id));
+    });
+    return;
+  }
+  // Each card / Hit + lot: several items into one draft.
+  const pc=c=>adLotsNum(adLotsV(k+'|c|'+kind+'|'+c.id,kind==='auction'?c.start1:c.drop1));
+  const items=[], bad=[];
+  const one=c=>{ const p=pc(c); if(!(p>0)) bad.push(c.name+': give a price above $0'); else if(c.floor&&p<c.floor) bad.push(c.name+': under the consignor floor ($'+Number(c.floor).toFixed(2)+')'); items.push({cardId:c.id,price:p}); };
+  if(sell==='each') it.cards.forEach(one);
+  else {
+    const rest=it.cards.filter(c=>!c.hit), lp=adLotsNum(adLotsV(k+'|m|'+kind,adLotMixPrice(it,kind)));
+    const fl=rest.reduce((a,c)=>a+Number(c.floor||0),0);
+    if(!(lp>0)) bad.push('The lot: give a price above $0'); else if(fl&&lp<fl) bad.push('The lot: under the consignor floors ($'+fl.toFixed(2)+')');
+    const pct=(s.r&&s.r.pct)||{start:.6,bundle:.9}, rv=rest.reduce((a,c)=>a+Number(c.price||0),0);
+    items.push({cardIds:rest.map(c=>c.id),title:('Lot of '+rest.length+' · '+t).slice(0,60),price:lp,shopPrice:Math.max(lp,Math.round(rv*pct.bundle))});
+    it.cards.filter(c=>c.hit).forEach(one);                     // the hits after the lot: people stay for them
+  }
+  if(bad.length){ ptAlert('Fix these first:\n• '+bad.join('\n• ')); return; }
+  const ok=await ptConfirm(sell==='each'
+    ?`Put ${items.length} cards into ${where}, each as its own ${kind==='auction'?'lot':'item'}?\n\nThey leave the shop now. Nothing is posted.`
+    :`Put ${items.length-1} hit${items.length===2?'':'s'} on ${items.length===2?'its':'their'} own plus a lot of ${items[0].cardIds.length} into ${where}?\n\nThe cards leave the shop now. Nothing is posted.`);
   if(!ok) return;
   await guard(btn,async()=>{
-    const shopPrice=Number(String(ptVal('lb-'+i)).replace(/[$,\s]/g,''))||it.bundle;   // an unsold auction lot goes back to the shop at this, not the start bid
-    const r=await adEvCall('adminLotMake',{mode,cardIds:it.cards.map(c=>c.id),title:t,price,shopPrice,eventId:d?d.id:''});
+    const r=await adEvCall('adminLotItems',{kind,eventId:d?d.id:'',title:t,items});
     if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
-    s.r.ideas.splice(i,1);
-    // Cards just used can't be in the other ideas any more: drop those ideas too.
-    const used={}; it.cards.forEach(c=>used[c.id]=1);
-    s.r.ideas=s.r.ideas.filter(x=>!x.cards.some(c=>used[c.id]));
-    ptToast(r.message||'Done.');
-    if(r.event&&r.eventId) adEvApply(r,r.kind,r.eventId);
-    adLotsPaint();
+    adLotsDone(r,it.cards.map(c=>c.id));
+  });
+}
+/* 🪄 Plan a whole drop / auction */
+async function adLotsPlan(shuffle){
+  const s=adLotsState(); if(s.forK==='shop') return;
+  s.planBusy=true; adLotsPaint();
+  const r=await adEvCall('adminLotPlan',{kind:s.forK,items:s.planN,f:s.f,q:s.q,seed:Math.floor(Math.random()*1e6)+1});
+  s.planBusy=false;
+  Object.keys(s.vals).forEach(k=>{ if(k.indexOf('plan|')===0) delete s.vals[k]; });
+  s.plan=r&&r.ok?Object.assign({},r.plan,{pct:r.pct,n0:r.plan.items.length}):{err:(r&&r.message)||ptErr(r)};
+  adLotsPaint();
+}
+const adLotPlanKey=x=>x.type==='lot'?'lot':'c|'+x.card.id;
+function adLotPlanHtml(){
+  const s=adLotsState(), p=s.plan;
+  if(p.err) return `<div class="panel lt-plan" style="padding:10px 12px;margin:0 0 10px"><p class="note" style="text-align:left;margin:0">${esc(p.err)}</p><div class="lt-row" style="margin:6px 0 0"><button class="pt-mini" style="margin:0" onclick="adLotsState().plan=null;adLotsPaint()">Close</button></div></div>`;
+  const kind=p.kind, lab=kind==='auction'?'start $':'$', n=p.items.length;
+  const rows=p.items.map((x,j)=>{
+    const pk='plan|'+adLotPlanKey(x);
+    const inp=`<label class="lt-pl">${lab}<input class="lt-in" data-v="${esc(pk)}" inputmode="decimal" aria-label="${kind==='auction'?'Start bid':'Price'} for item ${j+1}" value="${esc(adLotsV(pk,x.price))}"></label>`;
+    const rm=`<button class="pt-mini" style="margin:0" onclick="adLotPlanRm(${j})" aria-label="Take item ${j+1} out of the plan">✕</button>`;
+    if(x.type==='lot') return `<div class="pt-row" style="padding:6px 0;gap:8px"><span class="ev-n" style="min-width:22px">${j+1}</span><div style="font-size:22px;width:30px;text-align:center">📦</div><div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(x.title)}</div><div class="s">${esc(x.cards.map(c=>c.name).join(' + '))}${x.floor?' · 🤝 floors $'+Number(x.floor).toFixed(2):''}</div></div><div class="r" style="gap:6px;align-items:center">${inp}${rm}</div></div>`;
+    const c=x.card;
+    return `<div class="pt-row" style="padding:6px 0;gap:8px"><span class="ev-n" style="min-width:22px">${j+1}</span>${adThumb(c,30)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}</div><div class="s">${adLotCardMeta(c)}</div></div><div class="r" style="gap:6px;align-items:center">${inp}${rm}</div></div>`;
+  }).join('');
+  const d=adLotDraft(kind);
+  return `<div class="panel lt-plan" style="padding:10px 12px;margin:0 0 10px">
+    <div style="font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.04em">🪄 ${kind==='auction'?'Auction':'Drop'} plan</div>
+    <input class="ev-search" style="margin:4px 0" maxlength="60" data-v="plan|t" aria-label="Plan title" value="${esc(adLotsV('plan|t',p.title))}">
+    <div class="s" style="font-size:12px;margin:0 0 4px">${esc(n===p.n0?(p.why||''):n+' item'+(n===1?'':'s')+' left')}. Take out anything you don’t want with ✕.</div>${rows||'<p class="note" style="text-align:left">Nothing left in this plan.</p>'}
+    <div style="font-size:12px;margin:6px 0">Shop value <b>$${Number(p.items.reduce((a,x)=>a+(x.type==='lot'?Number(x.value||0):Number(x.card.price||0)),0)).toFixed(2)}</b> · ${adLotsDest(kind)}</div>
+    <div class="lt-row" style="margin:0"><button class="pt-mini" style="margin:0" onclick="adLotsPlan(true)">↻ Another plan</button><button class="pt-mini" style="margin:0" onclick="adLotsState().plan=null;adLotsPaint()">Close</button>
+      <button class="pt-mini pri" style="margin:0 0 0 auto" onclick="adLotPlanMake(this)"${n?'':' disabled'}>✅ Add all ${n} to ${d?esc(d.short||'the draft'):'a new draft'}</button></div></div>`;
+}
+function adLotPlanRm(j){ const s=adLotsState(); adLotsKeep(); if(s.plan&&s.plan.items) s.plan.items.splice(j,1); adLotsPaint(); }
+async function adLotPlanMake(btn){
+  const s=adLotsState(), p=s.plan; if(!p||!p.items||!p.items.length) return;
+  adLotsKeep();
+  const kind=p.kind, t=String(adLotsV('plan|t',p.title)).trim()||p.title, items=[], bad=[], ids=[];
+  p.items.forEach((x,j)=>{
+    const pr=adLotsNum(adLotsV('plan|'+adLotPlanKey(x),x.price));
+    const name=x.type==='lot'?x.title:x.card.name, fl=x.type==='lot'?Number(x.floor||0):Number(x.card.floor||0);
+    if(!(pr>0)) bad.push((j+1)+'. '+name+': give a price above $0'); else if(fl&&pr<fl) bad.push((j+1)+'. '+name+': under the consignor floor ($'+fl.toFixed(2)+')');
+    if(x.type==='lot'){ items.push({cardIds:x.cards.map(c=>c.id),title:x.title,price:pr,shopPrice:Math.max(pr,Number(x.shopPrice)||pr)}); x.cards.forEach(c=>ids.push(c.id)); }
+    else { items.push({cardId:x.card.id,price:pr}); ids.push(x.card.id); }
+  });
+  if(bad.length){ ptAlert('Fix these first:\n• '+bad.join('\n• ')); return; }
+  const d=adLotDraft(kind);
+  const ok=await ptConfirm(`Add all ${items.length} items to ${d?(d.short||'the draft'):'a new '+kind+' draft “'+t+'”'}?\n\nThe cards leave the shop now. Nothing is posted: check the draft in Events, then post.`);
+  if(!ok) return;
+  await guard(btn,async()=>{
+    const r=await adEvCall('adminLotItems',{kind,eventId:d?d.id:'',title:t,items});
+    if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+    s.plan=null; adLotsDone(r,ids);
   });
 }
 async function adLotFacts(a){
