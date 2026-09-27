@@ -7244,6 +7244,13 @@ async function adOrdForfeit(btn,id){
     if(r.ok){ const k=adKey('ord',id); delete AD.det[k]; adDashSync(k); }
   });
 }
+async function adOrdRemind(btn,id){
+  if(!(await ptConfirm(`Send a payment reminder for ${id}?\n\nThey get one DM listing every order they still owe, with the pay-by times and a Pay button.`))) return;
+  await guard(btn, async()=>{
+    let r; try{ r=await api('adminPayRemind',{ref:id}); }catch(e){ r={ok:false,error:'network'}; }
+    if(r.ok) ptToast(r.message||'Reminder sent.'); else ptAlert(r.message||ptErr(r));
+  });
+}
 async function adOrdResend(btn,tid){
   await guard(btn, async()=>{
     let r; try{ r=await api('adminEventResend',{tid:tid}); }catch(e){ r={ok:false,error:'network'}; }
@@ -7261,6 +7268,8 @@ function adOrderHtml(r){
   if(r.otherUnpaid&&r.otherUnpaid.length) h+=`<div class="s" style="font-size:12px">Also unpaid: ${r.otherUnpaid.map(x=>esc(x.id)+' ($'+Number(x.total).toFixed(2)+', '+esc(x.status)+')').join(' · ')}</div>`;
   if(o.note) h+=`<div style="font-size:12px;background:var(--line);padding:4px 8px;border-radius:8px;margin:4px 0">📝 ${esc(o.note)}</div>`;
   h+=`<div class="pt-h">Cards · ${o.items.length}</div>`+o.items.map(c=>adCardLine(c,'',`<div class="s" style="font-size:11.5px">$${Number(c.price||0).toFixed(2)}</div>`)).join('');
+  // v13.26: any unpaid order: remind the buyer now (one DM listing everything they owe).
+  if(o.status==='Awaiting Payment'&&r.buyer&&r.buyer.id) h+=`<div class="ev-foot" style="margin:6px 0 0"><button class="pt-mini pri" onclick="adOrdRemind(this,'${esc(o.id)}')">⏰ Remind to pay</button></div>`;
   // v13.17: an unpaid claim or auction win can be passed on from here.
   if(/^(CL|AU)/.test(String(o.id))&&o.status==='Awaiting Payment') h+=`<div class="ev-foot" style="margin:6px 0"><button class="pt-mini" onclick="adOrdForfeit(this,'${esc(o.id)}')">↩️ Forfeit → next in line</button>${r.buyer&&r.buyer.id?`<button class="pt-mini" onclick="adOrdResend(this,'${esc(r.buyer.id)}')">📨 Resend invoice</button>`:''}</div>`;
   const proof=/^https:\/\//.test(r.proof)?r.proof:'', vl=r.verifyLink||'';
