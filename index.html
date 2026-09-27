@@ -7244,6 +7244,13 @@ async function adOrdForfeit(btn,id){
     if(r.ok){ const k=adKey('ord',id); delete AD.det[k]; adDashSync(k); }
   });
 }
+async function adOrdRemind(btn,id){
+  if(!(await ptConfirm(`Send a payment reminder for ${id}?\n\nThey get one DM listing every order they still owe, with the pay-by times and a Pay button.`))) return;
+  await guard(btn, async()=>{
+    let r; try{ r=await api('adminPayRemind',{ref:id}); }catch(e){ r={ok:false,error:'network'}; }
+    if(r.ok) ptToast(r.message||'Reminder sent.'); else ptAlert(r.message||ptErr(r));
+  });
+}
 async function adOrdResend(btn,tid){
   await guard(btn, async()=>{
     let r; try{ r=await api('adminEventResend',{tid:tid}); }catch(e){ r={ok:false,error:'network'}; }
@@ -7261,6 +7268,8 @@ function adOrderHtml(r){
   if(r.otherUnpaid&&r.otherUnpaid.length) h+=`<div class="s" style="font-size:12px">Also unpaid: ${r.otherUnpaid.map(x=>esc(x.id)+' ($'+Number(x.total).toFixed(2)+', '+esc(x.status)+')').join(' · ')}</div>`;
   if(o.note) h+=`<div style="font-size:12px;background:var(--line);padding:4px 8px;border-radius:8px;margin:4px 0">📝 ${esc(o.note)}</div>`;
   h+=`<div class="pt-h">Cards · ${o.items.length}</div>`+o.items.map(c=>adCardLine(c,'',`<div class="s" style="font-size:11.5px">$${Number(c.price||0).toFixed(2)}</div>`)).join('');
+  // v13.26: any unpaid order: remind the buyer now (one DM listing everything they owe).
+  if(o.status==='Awaiting Payment'&&r.buyer&&r.buyer.id) h+=`<div class="ev-foot" style="margin:6px 0 0"><button class="pt-mini pri" onclick="adOrdRemind(this,'${String(o.id).replace(/[^\w-]/g,'')}')">⏰ Remind to pay</button></div>`;
   // v13.17: an unpaid claim or auction win can be passed on from here.
   if(/^(CL|AU)/.test(String(o.id))&&o.status==='Awaiting Payment') h+=`<div class="ev-foot" style="margin:6px 0"><button class="pt-mini" onclick="adOrdForfeit(this,'${esc(o.id)}')">↩️ Forfeit → next in line</button>${r.buyer&&r.buyer.id?`<button class="pt-mini" onclick="adOrdResend(this,'${esc(r.buyer.id)}')">📨 Resend invoice</button>`:''}</div>`;
   const proof=/^https:\/\//.test(r.proof)?r.proof:'', vl=r.verifyLink||'';
@@ -7854,8 +7863,9 @@ function adRenderEvents(){
       `<div class="s" id="evs-${adDom(k)}">${esc(adEvRowSub(e))}</div></div><div class="r">${adXArrow(dom,open)}</div></div>`+adXBox(dom,open?adEvBoxHtml(k):''); };
   const drafts=all.filter(x=>x.e.state==='draft'), live=all.filter(x=>x.e.state==='live'), hist=all.filter(x=>adEvDone(x.e));
   // The two ways to start are peers, so they look the same (pink is kept for Post / Add / Mark packed).
-  let top=`<div class="ev-new"><button class="pt-mini big" onclick="adEvNewForm('drop')">🎯 New drop</button><button class="pt-mini big" onclick="adEvNewForm('auction')">🔨 New auction</button></div>`;
+  let top=`<div class="ev-new"><button class="pt-mini big" onclick="adEvNewForm('drop')">🎯 New drop</button><button class="pt-mini big" onclick="adEvNewForm('auction')">🔨 New auction</button><button class="pt-mini big" onclick="adLotsToggle()" aria-expanded="${AD.ev.lots&&AD.ev.lots.open?'true':'false'}">💡 Lot ideas</button></div>`;
   if(AD.ev.newKind) top+=adEvNewFormHtml(AD.ev.newKind);
+  top+=`<div id="ev-lots">${AD.ev.lots&&AD.ev.lots.open?adLotsHtml():''}</div>`;
   const a=`<div class="pt-h">Drafts — being built <span class="pt-tag">${drafts.length}</span></div>`+(drafts.length
       ?'<div class="panel" style="padding:4px 12px">'+drafts.map(rowFor).join('')+'</div>'
       :'<p class="note" style="text-align:left;margin:0 2px">No drafts. Start one above — each card is held out of the shop the moment you add it.</p>');
@@ -8344,6 +8354,107 @@ async function adEvCreate(btn){
     const pre=AD.ev.pre; AD.ev.pre=null;
     adEvPickOpen(kind,r.id,pre);                 // straight on to choosing cards
   });
+}
+
+/* ---------- v13.26: 💡 Lot ideas (lotideas.gs) ----------
+   Suggestions of cards to sell together. Suggesting writes nothing; 🔨 makes a
+   bundle and puts it in an auction DRAFT, 📦 makes a shop bundle. The panel
+   repaints itself in place (#ev-lots); the rest of the tab only redraws when a
+   new auction draft appears in the list. */
+const LOT_RECIPE_LIST=[['mix','✨ Surprise me'],['hitmix','🔥 Hit + hard-to-sell'],['species','🐾 Same Pokémon'],['line','🧬 Evolution line'],['artist','🎨 Same artist'],['type','🌈 Type theme'],['set','📦 Same set'],['rarity','💎 Rarity set'],['band','🎲 Price band'],['slow','🐢 Slow sellers']];
+function adLotsState(){ return AD.ev.lots||(AD.ev.lots={open:false,recipe:'mix',r:null,busy:false}); }
+function adLotsPaint(){ const el=document.getElementById('ev-lots'); if(el) el.innerHTML=adLotsState().open?adLotsHtml():''; }
+function adLotsToggle(){
+  const s=adLotsState(); s.open=!s.open;
+  const b=document.querySelector('.ev-new button[aria-expanded]'); if(b) b.setAttribute('aria-expanded',s.open?'true':'false');
+  adLotsPaint();
+  if(s.open&&!s.r) adLotsLoad(s.recipe);
+}
+async function adLotsLoad(recipe,shuffle){
+  const s=adLotsState(); s.recipe=recipe||s.recipe||'mix'; s.busy=true; adLotsPaint();
+  const seed=shuffle||!s.r||s.r.recipe!==s.recipe?Math.floor(Math.random()*1e6)+1:(s.r&&s.r.seed);
+  const r=await adEvCall('adminLotIdeas',{recipe:s.recipe,seed});
+  s.busy=false; s.r=r&&r.ok?r:{ok:false,message:(r&&r.message)||ptErr(r),ideas:[]}; adLotsPaint();
+}
+function adLotDraft(kind){ return adEvList().find(e=>e.kind===kind&&e.state==='draft')||null; }
+function adLotsHtml(){
+  const s=adLotsState(), r=s.r;
+  const chips=LOT_RECIPE_LIST.map(([k,l])=>`<button class="pt-mini${s.recipe===k?' pri':''}" onclick="adLotsLoad('${k}')"${s.busy?' disabled':''}>${esc(l)}</button>`).join('');
+  let body='';
+  if(s.busy&&!r) body='<p class="note" style="text-align:left">Finding ideas…</p>';
+  else if(r&&!r.ok) body=`<p class="note" style="text-align:left">${esc(r.message||'Couldn’t load ideas.')}</p>`;
+  else if(r){
+    const f=r.facts||{have:0,of:0}, needs=['line','type','artist'].indexOf(s.recipe)>=0;
+    body=`<p class="note" style="text-align:left;margin:4px 2px 8px">${Number(r.onSale||0)} cards on sale · ${Number(r.hits||0)} hits · ${Number(r.hard||0)} hard to sell · card facts for ${Number(f.have||0)} of ${Number(f.of||0)}`+
+      ` · <a href="#" onclick="adLotFacts(this);return false">Look up more cards</a></p>`;
+    if(!r.ideas.length) body+=`<p class="note" style="text-align:left">${needs&&!f.have?'This recipe needs card facts (artist, type, evolution line). Tap “Look up more cards”, or wait for tonight’s automatic lookup.':'No ideas for this recipe with what’s on sale right now. Try another.'}</p>`;
+    body+=r.ideas.map((it,i)=>adLotIdeaHtml(it,i)).join('');
+  }
+  return `<div class="panel" style="padding:12px;margin:0 0 10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><b style="font-size:14px">💡 Lot ideas</b>
+      <span style="display:flex;gap:6px"><button class="pt-mini" onclick="adLotsLoad(null,true)"${s.busy?' disabled':''}>↻ Shuffle</button><button class="pt-mini" onclick="adLotsToggle()">Close</button></span></div>
+    <div class="ev-new" style="margin:0 0 6px">${chips}</div>${body}
+    <p class="note" style="text-align:left;margin:8px 2px 0">Nothing is posted: 🔨 puts the lot in an auction draft, 🎯 in a drop draft (first to claim pays the price), 📦 makes a shop bundle. Consignor floors are always respected.</p></div>`;
+}
+function adLotIdeaHtml(it,i){
+  const sid=x=>String(x==null?'':x).replace(/[^\w-]/g,'');   // ids go inside onclick='...': letters, digits, - and _ only
+  const cards=it.cards.map(c=>`<div class="pt-row" style="padding:6px 0;gap:8px">${adThumb(c,30)}<div class="l" style="min-width:0"><div class="t" style="font-size:13px">${esc(c.name)}</div>`+
+    `<div class="s">${esc([c.set,c.number].filter(Boolean).join(' · '))} · $${Number(c.price).toFixed(2)}${c.days?` · ${Number(c.days)}d listed`:''}${c.hit?' · 🔥 hit':''}${c.popular&&!c.hit?' · ⭐ popular':''}${c.hard?' · 🐢 slow':''}${c.consigned?` · 🤝 floor $${Number(c.floor).toFixed(2)}`:''}${c.artist?' · 🎨 '+esc(c.artist):''}</div></div>`+
+    `<div class="r"><button class="pt-mini" title="Swap this card for another that fits" aria-label="Swap ${esc(c.name)}" onclick="adLotSwap(this,${i},'${sid(c.id)}')">⇄</button></div></div>`).join('');
+  const da=adLotDraft('auction'), dd=adLotDraft('drop');
+  const aucLabel=da?`🔨 Add to ${esc(da.short||'draft')}`:'🔨 New auction';
+  const dropLabel=dd?`🎯 Add to ${esc(dd.short||'draft')}`:'🎯 New drop';
+  return `<div class="panel" style="padding:10px 12px;margin:0 0 8px" data-k="${esc(it.key)}">
+    <div style="font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.04em">${esc(it.recipeName||'')}</div>
+    <input id="lt-${i}" class="ev-search" style="margin:4px 0" maxlength="60" aria-label="Lot title ${i+1}" value="${esc(it.title)}">
+    <div class="s" style="font-size:12px;margin:0 0 4px">${esc(it.why||'')}</div>${cards}
+    <div style="font-size:12px;margin:6px 0">Shop value <b>$${Number(it.value).toFixed(2)}</b> · market $${Number(it.market).toFixed(2)}${it.floor?` · floors $${Number(it.floor).toFixed(2)}`:''}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <label style="font-size:12px">Start bid $<input id="ls-${i}" class="ev-search" style="width:70px;margin:0 0 0 4px" inputmode="decimal" aria-label="Start bid ${i+1}" value="${Number(it.start)}"></label>
+      <button class="pt-mini pri" onclick="adLotMake(this,${i},'auction')">${aucLabel}</button>
+      <label style="font-size:12px">Price $<input id="lb-${i}" class="ev-search" style="width:70px;margin:0 0 0 4px" inputmode="decimal" aria-label="Drop or bundle price ${i+1}" value="${Number(it.bundle)}"></label>
+      <button class="pt-mini pri" onclick="adLotMake(this,${i},'drop')">${dropLabel}</button>
+      <button class="pt-mini" onclick="adLotMake(this,${i},'bundle')">📦 Shop bundle</button></div></div>`;
+}
+async function adLotSwap(btn,i,cardId){
+  const s=adLotsState(), it=s.r&&s.r.ideas[i]; if(!it) return;
+  await guard(btn,async()=>{
+    const r=await adEvCall('adminLotSwap',{recipe:it.recipe,cardIds:it.cards.map(c=>c.id),out:cardId,title:ptVal('lt-'+i)||it.title,why:it.why,seed:Math.floor(Math.random()*1e6)+1});
+    if(!r.ok){ ptToast(r.message||ptErr(r)); return; }
+    r.idea.recipeName=it.recipeName; s.r.ideas[i]=r.idea; adLotsPaint();
+  });
+}
+async function adLotMake(btn,i,mode){
+  const s=adLotsState(), it=s.r&&s.r.ideas[i]; if(!it) return;
+  const price=Number(String(ptVal(mode==='auction'?'ls-'+i:'lb-'+i)).replace(/[$,\s]/g,''));
+  if(!(price>0)){ ptAlert('Give a price above $0.'); return; }
+  if(it.floor&&price<it.floor){ ptAlert('That’s under the consignor floors ($'+Number(it.floor).toFixed(2)+'). Raise it first.'); return; }
+  const d=mode==='bundle'?null:adLotDraft(mode), t=ptVal('lt-'+i)||it.title;
+  const ok=await ptConfirm(mode==='auction'
+    ?`Make “${t}” a lot${d?' in '+(d.short||'the draft'):' in a new auction draft'}, starting at $${price.toFixed(2)}?\n\nIts ${it.cards.length} cards leave the shop now. Nothing is posted.`
+    :mode==='drop'
+    ?`Put “${t}” in ${d?(d.short||'the drop draft'):'a new drop draft'} at $${price.toFixed(2)} for the first to claim?\n\nIts ${it.cards.length} cards leave the shop now. Nothing is posted.`
+    :`Make “${t}” a shop bundle at $${price.toFixed(2)}?\n\nIts ${it.cards.length} cards leave the shop; only the bundle is buyable.`);
+  if(!ok) return;
+  await guard(btn,async()=>{
+    const shopPrice=Number(String(ptVal('lb-'+i)).replace(/[$,\s]/g,''))||it.bundle;   // an unsold auction lot goes back to the shop at this, not the start bid
+    const r=await adEvCall('adminLotMake',{mode,cardIds:it.cards.map(c=>c.id),title:t,price,shopPrice,eventId:d?d.id:''});
+    if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+    s.r.ideas.splice(i,1);
+    // Cards just used can't be in the other ideas any more: drop those ideas too.
+    const used={}; it.cards.forEach(c=>used[c.id]=1);
+    s.r.ideas=s.r.ideas.filter(x=>!x.cards.some(c=>used[c.id]));
+    ptToast(r.message||'Done.');
+    if(r.event&&r.eventId) adEvApply(r,r.kind,r.eventId);
+    adLotsPaint();
+  });
+}
+async function adLotFacts(a){
+  if(a&&a.dataset.busy) return; if(a){ a.dataset.busy='1'; a.textContent='Looking up… (up to a minute)'; }
+  const r=await adEvCall('adminLotFacts',{n:25});
+  if(a){ delete a.dataset.busy; }
+  ptToast(r&&r.ok?`Looked up ${r.looked}: ${r.matched} matched, ${r.nomatch} not found${r.left?` · ${r.left} to go`:''}.`:((r&&r.message)||ptErr(r)));
+  adLotsLoad(null,false);
 }
 
 async function adEvSet(el,dropId,field){
