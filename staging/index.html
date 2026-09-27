@@ -8540,6 +8540,8 @@ function adLotIdeaHtml(it,i){
   else if(sell==='mix'){ const n=it.cards.filter(c=>!c.hit).length;
     price=`<label class="lt-pl">Lot of ${n}: ${kind==='auction'?'start ':''}$<input class="lt-in" data-v="${esc(k)}|m|${kind}" inputmode="decimal" aria-label="Price for the lot of ${n}" value="${esc(adLotsV(k+'|m|'+kind,adLotMixPrice(it,kind)))}"></label>`; }
   else price=`<span class="lt-dest">${it.cards.length} separate items, prices on each card</span>`;
+  const inLot=sell==='one'?it.cards.length:sell==='mix'?it.cards.filter(c=>!c.hit).length:0;
+  if(inLot>12) price=`<span class="lt-dest pt-neg">Too many cards for one lot (max 12): pick Each card or fewer cards per idea.</span>`;
   return `<div class="panel lt-idea" style="padding:10px 12px;margin:0 0 8px" data-k="${esc(k)}">
     <div style="font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.04em">${esc(it.recipeName||'')}</div>
     <input id="lt-${i}" class="ev-search" style="margin:4px 0" maxlength="60" data-v="${esc(k)}|t" aria-label="Lot title ${i+1}" value="${esc(adLotsV(k+'|t',it.title))}">
@@ -8577,6 +8579,8 @@ async function adLotMake(btn,i,mode){
   const kind=mode||(s.forK==='shop'?'bundle':s.forK), k=it.key, t=String(adLotsV(k+'|t',it.title)).trim()||it.title;
   let sell=kind==='bundle'?'one':(s.sell[k]||'one'); if(sell==='mix'&&!adLotMixable(it)) sell='one';
   const d=kind==='bundle'?null:adLotDraft(kind), where=d?(d.short||'the draft'):(kind==='auction'?'a new auction draft':'a new drop draft');
+  if(sell==='one'&&it.cards.length>12){ ptAlert('One lot can hold up to 12 cards (this idea has '+it.cards.length+'). Pick “Each card”, or a smaller “Cards per idea”.'); return; }
+  if(sell==='mix'&&it.cards.filter(c=>!c.hit).length>12){ ptAlert('The lot part can hold up to 12 cards. Pick “Each card”, or a smaller “Cards per idea”.'); return; }
   if(sell==='one'){
     const price=adLotsNum(kind==='auction'?adLotsV(k+'|s',it.start):adLotsV(k+'|b',it.bundle));
     if(!(price>0)){ ptAlert('Give a price above $0.'); return; }
@@ -8626,14 +8630,14 @@ async function adLotsPlan(shuffle){
   const r=await adEvCall('adminLotPlan',{kind:s.forK,items:s.planN,f:s.f,q:s.q,seed:Math.floor(Math.random()*1e6)+1});
   s.planBusy=false;
   Object.keys(s.vals).forEach(k=>{ if(k.indexOf('plan|')===0) delete s.vals[k]; });
-  s.plan=r&&r.ok?Object.assign({},r.plan,{pct:r.pct}):{err:(r&&r.message)||ptErr(r)};
+  s.plan=r&&r.ok?Object.assign({},r.plan,{pct:r.pct,n0:r.plan.items.length}):{err:(r&&r.message)||ptErr(r)};
   adLotsPaint();
 }
 const adLotPlanKey=x=>x.type==='lot'?'lot':'c|'+x.card.id;
 function adLotPlanHtml(){
   const s=adLotsState(), p=s.plan;
   if(p.err) return `<div class="panel lt-plan" style="padding:10px 12px;margin:0 0 10px"><p class="note" style="text-align:left;margin:0">${esc(p.err)}</p><div class="lt-row" style="margin:6px 0 0"><button class="pt-mini" style="margin:0" onclick="adLotsState().plan=null;adLotsPaint()">Close</button></div></div>`;
-  const kind=p.kind, lab=kind==='auction'?'start $':'$';
+  const kind=p.kind, lab=kind==='auction'?'start $':'$', n=p.items.length;
   const rows=p.items.map((x,j)=>{
     const pk='plan|'+adLotPlanKey(x);
     const inp=`<label class="lt-pl">${lab}<input class="lt-in" data-v="${esc(pk)}" inputmode="decimal" aria-label="${kind==='auction'?'Start bid':'Price'} for item ${j+1}" value="${esc(adLotsV(pk,x.price))}"></label>`;
@@ -8642,11 +8646,11 @@ function adLotPlanHtml(){
     const c=x.card;
     return `<div class="pt-row" style="padding:6px 0;gap:8px"><span class="ev-n" style="min-width:22px">${j+1}</span>${adThumb(c,30)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}</div><div class="s">${adLotCardMeta(c)}</div></div><div class="r" style="gap:6px;align-items:center">${inp}${rm}</div></div>`;
   }).join('');
-  const d=adLotDraft(kind), n=p.items.length;
+  const d=adLotDraft(kind);
   return `<div class="panel lt-plan" style="padding:10px 12px;margin:0 0 10px">
     <div style="font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.04em">🪄 ${kind==='auction'?'Auction':'Drop'} plan</div>
     <input class="ev-search" style="margin:4px 0" maxlength="60" data-v="plan|t" aria-label="Plan title" value="${esc(adLotsV('plan|t',p.title))}">
-    <div class="s" style="font-size:12px;margin:0 0 4px">${esc(p.why||'')}. Take out anything you don’t want with ✕.</div>${rows||'<p class="note" style="text-align:left">Nothing left in this plan.</p>'}
+    <div class="s" style="font-size:12px;margin:0 0 4px">${esc(n===p.n0?(p.why||''):n+' item'+(n===1?'':'s')+' left')}. Take out anything you don’t want with ✕.</div>${rows||'<p class="note" style="text-align:left">Nothing left in this plan.</p>'}
     <div style="font-size:12px;margin:6px 0">Shop value <b>$${Number(p.items.reduce((a,x)=>a+(x.type==='lot'?Number(x.value||0):Number(x.card.price||0)),0)).toFixed(2)}</b> · ${adLotsDest(kind)}</div>
     <div class="lt-row" style="margin:0"><button class="pt-mini" style="margin:0" onclick="adLotsPlan(true)">↻ Another plan</button><button class="pt-mini" style="margin:0" onclick="adLotsState().plan=null;adLotsPaint()">Close</button>
       <button class="pt-mini pri" style="margin:0 0 0 auto" onclick="adLotPlanMake(this)"${n?'':' disabled'}>✅ Add all ${n} to ${d?esc(d.short||'the draft'):'a new draft'}</button></div></div>`;
