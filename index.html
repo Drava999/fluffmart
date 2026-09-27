@@ -3745,6 +3745,7 @@ async function sendOffer(){
 /* ============ CART ============ */
 function addToCart(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
+  if(!faceList(c).length&&!STATE.isAdmin) return;   // v13.28: no photo, not for sale (hidden from buyers anyway)
   const inCart = STATE.cart.filter(x=>x.id===id).length;
   if(inCart>=c.qty) return;
   STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price,number:c.number||'',image:c.image||''});
@@ -8819,8 +8820,8 @@ function adEvPickList(){
   const P=AD.ev.pick, el=document.getElementById('ev-plist'); if(!P||!el) return;
   const L=adEvPickCards(); P.keys=L.map(c=>c.id);
   if(!L.length) el.innerHTML=`<p class="note" style="text-align:left;margin:8px 2px">${P.q?'No card on sale matches “'+esc(P.q)+'”.':'Nothing on sale that isn’t already in a drop or auction.'}</p>`;
-  else el.innerHTML=L.slice(0,P.show).map((c,i)=>`<label class="ev-pick"><input type="checkbox" ${P.tick[c.id]?'checked':''} onchange="adEvPickTick(${i},this)" aria-label="${esc(c.name)}${c.number?' #'+esc(c.number):''}, ${adEvMoney(c.price)}">${adThumb(c)}`+
-      `<div style="flex:1;min-width:0"><div class="nm">${adLotCard(c)}</div><div class="sub">${adEvMoney(c.price)}${c.market?' · mkt '+adEvMoney(c.market):''} · ×${c.qty}${c.days!=null?' · '+c.days+'d':''}${c.lot?' · 📍 '+esc(c.lot):''}${c.consignor?' · '+esc(c.consignor)+'’s':''}${c.floor?' · <span class="pt-neg">floor '+adEvMoney(c.floor)+'</span>':''}</div></div></label>`).join('')+
+  else el.innerHTML=L.slice(0,P.show).map((c,i)=>`<label class="ev-pick"${c.nophoto?' style="opacity:.55"':''}><input type="checkbox" ${P.tick[c.id]&&!c.nophoto?'checked':''}${c.nophoto?' disabled':''} onchange="adEvPickTick(${i},this)" aria-label="${esc(c.name)}${c.number?' #'+esc(c.number):''}, ${adEvMoney(c.price)}${c.nophoto?', no photo yet':''}">${adThumb(c)}`+
+      `<div style="flex:1;min-width:0"><div class="nm">${adLotCard(c)}</div><div class="sub">${adEvMoney(c.price)}${c.market?' · mkt '+adEvMoney(c.market):''} · ×${c.qty}${c.days!=null?' · '+c.days+'d':''}${c.lot?' · 📍 '+esc(c.lot):''}${c.consignor?' · '+esc(c.consignor)+'’s':''}${c.floor?' · <span class="pt-neg">floor '+adEvMoney(c.floor)+'</span>':''}${c.nophoto?' · <span class="pt-neg">📷 no photo yet: /photo '+esc(c.id)+'</span>':''}</div></div></label>`).join('')+
     (L.length>P.show?`<p class="note"><a href="#" onclick="AD.ev.pick.show+=200;adEvPickList();return false">Show more (${L.length-P.show})</a></p>`:'');
   adEvPickFoot();
 }
@@ -8829,7 +8830,7 @@ function adEvPickTick(i,el){
   if(el.checked) P.tick[id]=1; else delete P.tick[id];
   adEvPickFoot();
 }
-function adEvPickTickShown(){ const P=AD.ev.pick; if(!P) return; adEvPickCards().slice(0,P.show).forEach(c=>{ P.tick[c.id]=1; }); adEvPickList(); }
+function adEvPickTickShown(){ const P=AD.ev.pick; if(!P) return; adEvPickCards().slice(0,P.show).forEach(c=>{ if(!c.nophoto) P.tick[c.id]=1; }); adEvPickList(); }
 function adEvPickFoot(){
   const P=AD.ev.pick, foot=document.getElementById('evSheetFoot'); if(!P||!foot) return;
   const n=Object.keys(P.tick).length, auc=P.kind==='auction';
