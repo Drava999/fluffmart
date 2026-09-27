@@ -8398,7 +8398,7 @@ function adLotsHtml(){
 }
 function adLotIdeaHtml(it,i,draft){
   const cards=it.cards.map(c=>`<div class="pt-row" style="padding:6px 0;gap:8px">${adThumb(c,30)}<div class="l" style="min-width:0"><div class="t" style="font-size:13px">${esc(c.name)}</div>`+
-    `<div class="s">${esc([c.set,c.number].filter(Boolean).join(' · '))} · $${Number(c.price).toFixed(2)}${c.days?` · ${Number(c.days)}d listed`:''}${c.hit?' · 🔥 hit':''}${c.hard?' · 🐢 slow':''}${c.consigned?` · 🤝 floor $${Number(c.floor).toFixed(2)}`:''}${c.artist?' · 🎨 '+esc(c.artist):''}</div></div>`+
+    `<div class="s">${esc([c.set,c.number].filter(Boolean).join(' · '))} · $${Number(c.price).toFixed(2)}${c.days?` · ${Number(c.days)}d listed`:''}${c.hit?' · 🔥 hit':''}${c.popular&&!c.hit?' · ⭐ popular':''}${c.hard?' · 🐢 slow':''}${c.consigned?` · 🤝 floor $${Number(c.floor).toFixed(2)}`:''}${c.artist?' · 🎨 '+esc(c.artist):''}</div></div>`+
     `<div class="r"><button class="pt-mini" title="Swap this card for another that fits" aria-label="Swap ${esc(c.name)}" onclick="adLotSwap(this,${i},'${esc(c.id)}')">⇄</button></div></div>`).join('');
   const aucLabel=draft?`🔨 Add to ${esc(draft.short||'draft')}`:'🔨 New auction draft';
   return `<div class="panel" style="padding:10px 12px;margin:0 0 8px" data-k="${esc(it.key)}">
