@@ -1850,6 +1850,12 @@ body.pc #v-credit{max-width:640px}
 .evp-qb{display:flex;flex:none}
 .evl-x:disabled{opacity:.3}
 .evp-draft{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.evw{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.evw-h{font-weight:800;font-size:14px;margin-bottom:6px}
+.evw-st{font-size:13px;line-height:1.4;padding:8px 10px;border-radius:10px;background:var(--line)}
+.evw-st.ok{background:rgba(46,160,90,.14)}
+.evw-st.warn{background:rgba(214,140,20,.16)}
+.evw-b{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.evw-b .pt-mini{margin:0;min-height:38px}
 .evp-draft .pt-mini{margin:0}
 .evl-grid .pt-mini{margin:0;width:100%}
 #pt-toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,12px);max-width:min(92vw,420px);padding:10px 14px;border-radius:12px;background:#2A1024;color:#fff;font-size:13px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity 180ms ease,transform 180ms cubic-bezier(.23,1,.32,1);z-index:9999;text-align:center}
@@ -8293,13 +8299,61 @@ function adEvSumHtml(d,items){
   const auc=d.kind==='auction', slots=items.reduce((s,it)=>s+Number(it.qty||1),0), tot=items.reduce((s,it)=>s+Number(it.price||0)*(auc?1:Number(it.qty||1)),0);
   return `<div class="ev-sum">${items.length} ${auc?'lot':'card'}${items.length===1?'':'s'}${auc?'':' · '+slots+' slot'+(slots===1?'':'s')} · ${adEvMoney(tot)} ${auc?'in starting bids':'if it all goes'}</div>`;
 }
+/* v13.32: the draft's footer is one clear step, "When does it go out?":
+   a status line (scheduled / queued for the daily slot / not scheduled) and
+   three choices -- at a set time, the next daily slot, or now. The draft saves
+   itself as you build it; there is no save button. */
 function adEvFootHtml(d,items){
   const auc=d.kind==='auction', timed=!!(Number(d.durMins||0)||d.closes);
-  const why=!items.length?'Add a card first.':(auc&&!timed)?'Pick how long it runs first.':'';
-  return `<div class="ev-foot"><button class="pt-mini big" onclick="adEvPickOpen('${d.kind}','${esc(d.id)}')">＋ Add cards</button>`+
-    `<button class="pt-mini big pri" ${why?'disabled':''} onclick="adEvGo(this)">▶ Post ${esc(d.short)}</button>`+
-    `<button class="pt-mini big danger" onclick="adEvBin(this)">🗑 Bin draft</button></div>`+
-    (why?`<div class="s" style="font-size:12px;color:var(--hint);margin-top:6px">${why}</div>`:'')+adEvQueueFootHtml(d);
+  const whyNow=!items.length?'Add a card first.':(auc&&!timed)?'Pick how long it runs (above) to post now.':'';
+  return `<div class="ev-foot"><button class="pt-mini big" onclick="adEvPickOpen('${d.kind}','${esc(d.id)}')">＋ Add cards</button></div>`+
+    `<p class="note" style="text-align:left;margin:4px 2px 0">✔ Saved automatically as you build it.</p>`+
+    adEvWhenHtml(d,items,whyNow)+
+    `<div class="ev-foot" style="margin-top:12px"><button class="pt-mini danger" onclick="adEvBin(this)">🗑 Bin draft</button></div>`;
+}
+// Where this draft stands in the schedule: {kind:'pin'|'slot'|'queued'|'none', ...}
+function adEvSchedOf(d){
+  const P=adEvPlan()||{}, q=(P.queue&&P.queue[d.kind])||[], i=q.indexOf(d.id), pin=P.pins&&P.pins[d.id], s=(P.sched&&P.sched[d.kind])||{}, nx=P.next&&P.next[d.kind];
+  if(pin) return {kind:'pin',at:pin.goAt,close:pin.closeAt,i};
+  if(i>=0&&s.on) return {kind:'slot',i,s,at:nx&&nx.id===d.id?nx.at:0};
+  if(i>=0) return {kind:'queued',i};
+  return {kind:'none'};
+}
+function adEvWhenHtml(d,items,whyNow){
+  const S=adEvSchedOf(d), id=esc(d.id), noCards=!items.length, dis=noCards?' disabled':'';
+  const days=S.s?(S.s.days||[]).map(n=>(AD_DOW.find(x=>x[0]===n)||[0,''])[1]).join(', '):'';
+  let status, cls='';
+  if(S.kind==='pin'){ status=`📌 <b>Scheduled:</b> posts <b>${esc(adEvWhen(S.at))}</b>, closes ${esc(adEvWhen(S.close))}. Nothing else to do: it posts by itself (you get a DM 30 min before, with Pause).`; cls=' ok'; }
+  else if(S.kind==='slot'){ status=S.at?`⏭ <b>Next daily slot:</b> posts by itself <b>${esc(adEvWhen(S.at))}</b>.`:`⏭ <b>Queued #${S.i+1}</b> for the daily slot (${esc(days)} at ${esc(S.s.goAt)}). It posts by itself after the ones ahead of it.`; cls=' ok'; }
+  else if(S.kind==='queued'){ status=`⚠️ <b>Queued #${S.i+1}</b>, but there’s no daily slot, so it won’t post by itself. Set a time, or set a daily slot under “Schedule” below.`; cls=' warn'; }
+  else status='Not scheduled yet. Pick one:';
+  const sched=S.kind!=='none';
+  let btns;
+  if(S.kind==='pin') btns=`<button class="pt-mini" onclick="adEvPinOpen('${id}')">📌 Change time</button><button class="pt-mini" onclick="adEvUnsched(this)">✕ Unschedule</button>`;
+  else if(sched) btns=`<button class="pt-mini" onclick="adEvPinOpen('${id}')"${dis}>📌 Set a time instead</button><button class="pt-mini" onclick="adEvQ(this,'${d.kind}','${id}','remove')">✕ Take out of the queue</button>`;
+  else btns=`<button class="pt-mini" onclick="adEvPinOpen('${id}')"${dis}>📌 At a set time</button><button class="pt-mini" onclick="adEvQ(this,'${d.kind}','${id}','add')"${dis}>⏭ Next daily slot</button>`;
+  btns+=`<button class="pt-mini ${sched?'':'pri'}" ${whyNow?'disabled':''} onclick="adEvGo(this)">▶ Post now${sched?' instead':''}</button>`;
+  let h=`<div class="evw"><div class="evw-h">When does it go out?</div><div class="evw-st${cls}">${status}</div><div class="evw-b">${btns}</div>`+
+    (whyNow?`<div class="s" style="font-size:12px;color:var(--hint);margin-top:6px">${whyNow}</div>`:'');
+  if(AD.ev.pinEdit===d.id){
+    const P=adEvPlan()||{}, pin=P.pins&&P.pins[d.id];
+    const v=ms=>{ if(!ms) return ''; const x=new Date(ms); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return x.toISOString().slice(0,16); };
+    const g=pin?pin.goAt:Date.now()+3600000, c=pin?pin.closeAt:g+(d.kind==='auction'?Number(d.durMins||180)*60000:10*3600000);
+    h+=`<div class="evp-form" id="evp-pin"><label class="evp-lab">Post <input type="datetime-local" data-f="go" value="${v(g)}"></label><label class="evp-lab">Close <input type="datetime-local" data-f="close" value="${v(c)}"></label>`+
+       `<div class="ev-foot" style="margin:6px 0 0"><button class="pt-mini pri" onclick="adEvPinSave(this)">Save time</button><button class="pt-mini" onclick="AD.ev.pinEdit='';adEvPatch(AD.ev.open)">Cancel</button></div></div>`;
+  }
+  return h+'</div>';
+}
+function adEvPinOpen(id){ AD.ev.pinEdit=AD.ev.pinEdit===id?'':id; adEvPatch(AD.ev.open); }
+// Unschedule = no time and out of the queue: it's a plain draft again.
+async function adEvUnsched(btn){
+  const d=adEvCur(); if(!d) return;
+  if(!(await ptConfirm(`Unschedule ${d.short}? It stays a draft and won’t post until you post it or schedule it again.`))) return;
+  await guard(btn, async()=>{
+    const r=await adEvCall('adminEventPin',{kind:d.kind,id:d.id,goAt:0,closeAt:0});
+    if(r&&r.ok) adEvPlanApply(await adEvCall('adminEventQueue',{kind:d.kind,id:d.id,op:'remove'}));
+    else adEvPlanApply(r);
+  });
 }
 function adEvItemHtml(d,it,i){
   const auc=d.kind==='auction', c=it.card||{}, lot=AD.ev.lotOf[c.id], did=esc(it.dropId);
@@ -8548,10 +8602,10 @@ function adEvPlanKind(kind){
   h+=q.length?'<div class="evp-q" data-sync>'+q.map((id,i)=>{ const e=adEvById(kind,id)||{short:id,title:'',cards:0}, pin=P.pins&&P.pins[id];
       return `<div class="evp-qi" data-k="q:${esc(id)}"><span class="evp-n">${i+1}</span><span class="evp-qt"><b>${esc(e.short)}</b> ${esc(e.title||'')} <span class="evl-t">· ${Number(e.cards||0)} card${Number(e.cards)===1?'':'s'}${pin?' · 📌 '+esc(adEvWhen(pin.goAt)):''}</span></span>`+
         `<span class="evp-qb"><button class="evl-x" aria-label="Move ${esc(e.short)} up" ${i===0?'disabled':''} onclick="adEvQ(this,'${kind}','${esc(id)}','up')">↑</button><button class="evl-x" aria-label="Move ${esc(e.short)} down" ${i===q.length-1?'disabled':''} onclick="adEvQ(this,'${kind}','${esc(id)}','down')">↓</button><button class="evl-x" aria-label="Take ${esc(e.short)} out of the queue" onclick="adEvQ(this,'${kind}','${esc(id)}','remove')">✕</button></span></div>`; }).join('')+'</div>'
-    :'<div class="s" style="font-size:12px;color:var(--hint);margin-top:4px">Queue empty — open a draft and tap <b>＋ Queue</b>.</div>';
+    :'<div class="s" style="font-size:12px;color:var(--hint);margin-top:4px">Queue empty — open a draft and tap <b>⏭ Next daily slot</b>.</div>';
   return h+'</div>';
 }
-function adEvPlanHtml(){ return `<div class="pt-h">Queue &amp; schedule</div><div class="panel evp" style="padding:8px 12px"><div id="evp-drop">${adEvPlanKind('drop')}</div><div id="evp-auction">${adEvPlanKind('auction')}</div></div>`; }
+function adEvPlanHtml(){ return `<div class="pt-h">Schedule</div><p class="note" style="text-align:left;margin:-2px 2px 6px"><b>Daily slot</b> = a repeating time (e.g. Mon/Wed/Fri 7pm → 10pm). At each slot the bot posts the first draft in the queue by itself. A draft with its own 📌 time posts then instead.</p><div class="panel evp" style="padding:8px 12px"><div id="evp-drop">${adEvPlanKind('drop')}</div><div id="evp-auction">${adEvPlanKind('auction')}</div></div>`; }
 // Repaint only the plan (and the open draft's buttons) -- never the tab.
 function adEvPlanPaint(){
   ['drop','auction'].forEach(k=>{ const el=document.getElementById('evp-'+k); if(el&&!el.contains(document.activeElement)) adSyncSec(el,adEvPlanKind(k)); });
@@ -8582,22 +8636,6 @@ async function adEvSchedSave(btn,kind){
 }
 async function adEvQ(btn,kind,id,op){
   await guard(btn, async()=>{ adEvPlanApply(await adEvCall('adminEventQueue',{kind,id,op})); });
-}
-// In the draft's footer: queue it, and give it its own time.
-function adEvQueueFootHtml(d){
-  const P=adEvPlan(); if(!P) return '';
-  const q=(P.queue&&P.queue[d.kind])||[], i=q.indexOf(d.id), pin=P.pins&&P.pins[d.id], id=esc(d.id);
-  let h=`<div class="evp-draft">`+(i>=0
-    ?`<span class="pt-tag ok">Queued #${i+1}</span>${pin?` <span class="pt-tag">📌 ${esc(adEvWhen(pin.goAt))}</span>`:''}<button class="pt-mini" onclick="adEvQ(this,'${d.kind}','${id}','remove')">Remove from queue</button>`
-    :`<button class="pt-mini" onclick="adEvQ(this,'${d.kind}','${id}','add')">＋ Queue</button>`)+
-    `<button class="pt-mini" onclick="AD.ev.pinEdit=AD.ev.pinEdit==='${id}'?'':'${id}';adEvPatch(AD.ev.open)">📌 ${pin?'Change time':'Set a time'}</button></div>`;
-  if(AD.ev.pinEdit===d.id){
-    const v=ms=>{ if(!ms) return ''; const x=new Date(ms); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return x.toISOString().slice(0,16); };
-    const g=pin?pin.goAt:Date.now()+3600000, c=pin?pin.closeAt:g+(d.kind==='auction'?Number(d.durMins||180)*60000:10*3600000);
-    h+=`<div class="evp-form" id="evp-pin"><label class="evp-lab">Post <input type="datetime-local" data-f="go" value="${v(g)}"></label><label class="evp-lab">Close <input type="datetime-local" data-f="close" value="${v(c)}"></label>`+
-       `<div class="ev-foot" style="margin:6px 0 0"><button class="pt-mini pri" onclick="adEvPinSave(this)">Save time</button>${pin?`<button class="pt-mini" onclick="adEvPinSave(this,true)">Remove time</button>`:''}</div></div>`;
-  }
-  return h;
 }
 async function adEvPinSave(btn,clear){
   const d=adEvCur(); if(!d) return;
@@ -8957,6 +8995,9 @@ async function adEvGo(btn){
   if(age!=null&&age>60){ ptAlert('Posting needs the shop opened in the last hour. Close the shop, reopen it from the bot and tap Post again — your draft is saved.'); return; }
   const n=AD.ev.items.length, auc=d.kind==='auction', m=Number(d.durMins||0);
   const run=auc?(m?' Bidding opens and runs '+adEvDur(m)+'.':' Bidding opens.'):' People can claim straight away.';
+  const S=adEvSchedOf(d);   // v13.32: a scheduled draft asks first
+  if(S.kind==='pin'&&!(await ptConfirm(`${d.short} is already scheduled for ${adEvWhen(S.at)}.\n\nPost it NOW instead? The scheduled post won’t happen.`))) return;
+  if(S.kind==='slot'&&!(await ptConfirm(`${d.short} is queued for the daily slot.\n\nPost it NOW instead? It leaves the queue.`))) return;
   // Telegram limits how fast a bot can post, so each card takes a moment.
   const secs=Math.max(5,Math.round(auc?n*0.5+4:n*1.4+3));
   if(!(await ptConfirm(`Post ${d.short}${d.title?' “'+d.title+'”':''} to the ${auc?'auction':'claims'} channel now?\n\n${n} ${auc?'lot':'card'}${n===1?' goes':'s go'} live.${run}\n\nPosting takes about ${secs}s — keep the shop open.`))) return;
