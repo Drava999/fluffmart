@@ -1754,6 +1754,18 @@ body.pc #v-credit{max-width:640px}
 .lt-tag{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--line);color:var(--text);white-space:nowrap}
 .lt-dest{font-size:12px;color:var(--hint)}
 .lt-plan{border:2px solid var(--berry)}
+.prf-top{border:1px dashed var(--line);border-radius:12px;padding:8px 10px;margin:0 0 8px;font-size:13px}
+.prf{margin:4px 0 10px;padding:8px;border-radius:12px;background:var(--line)}
+.prf-row{display:flex;gap:10px;align-items:flex-start}
+.prf-img{width:64px;height:90px;object-fit:cover;border-radius:6px;flex:none;cursor:zoom-in;border:2px dashed var(--hint)}
+.prf-b{flex:1;min-width:0}.prf-b .pt-mini{margin:6px 6px 0 0}
+.prf-cap{font-size:11px;color:var(--hint);font-weight:700}
+.prf-m{font-size:12.5px;margin-top:3px;overflow-wrap:anywhere}
+.prf-st{font-size:12.5px;color:var(--hint);margin:2px 0 8px}
+.prf-lad{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.prf-lad span{font-size:11.5px;padding:3px 7px;border-radius:999px;background:var(--card);white-space:nowrap}
+.prf-lad span.on{background:var(--berry);color:#fff}.prf-lad small{opacity:.7}
+.prf-fix{margin-top:6px}.prf-fix .pt-mini{margin:4px 4px 0 0}
 .dl-res{display:flex;flex-direction:column;gap:2px;max-height:340px;overflow:auto;margin:0 0 6px;border:1px solid var(--line);border-radius:12px;padding:4px}
 .dl-row{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:6px;font:inherit;color:var(--text);cursor:pointer;min-height:44px}
 .dl-row:active{background:var(--line)}
@@ -7367,7 +7379,9 @@ function adStockHtml(r){
       <button class="pt-mini" onclick="adEvFromStock('${r.kind}','drop')">🎯 New drop with these</button>
       <button class="pt-mini" onclick="adEvFromStock('${r.kind}','auction')">🔨 New auction with these</button></div>`:'';
   const pr=r.kind!=='stuck'&&r.kind!=='held';                              // held cards are priced in their drop/auction
-  return cta+(pr?adPrAskHtml()+adPrBulkHtml(r.kind):'')+r.cards.map(c=>`<div data-pk="${esc(r.kind+'|'+c.id)}">`+adCardLine(c,pr?adPrTickKey(r.kind,c.id):'',adMeta([`<b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>`,c.market?'market $'+Number(c.market).toFixed(2):'','qty '+c.qty,c.days!=null?'listed '+c.days+'d':'',c.consignor?'floor checked on save':'',(r.kind==='stuck'||r.kind==='held')?esc(c.status)+(c.heldBy?' by '+esc(c.heldBy):''):'',esc(c.id)])+(pr?adPrOneHtml(r.kind,c):''))+'</div>').join('')+
+  const help=r.kind==='nophoto';                                          // v13.34: price help (reference photo + PriceCharting)
+  if(help) adPrfEnsure();
+  return cta+(help?`<div id="prf-top">${adPrfTopHtml()}</div>`:'')+(pr?adPrAskHtml()+adPrBulkHtml(r.kind):'')+r.cards.map(c=>`<div data-pk="${esc(r.kind+'|'+c.id)}">`+adCardLine(c,pr?adPrTickKey(r.kind,c.id):'',adMeta([`<b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>`,c.market?'market $'+Number(c.market).toFixed(2):'','qty '+c.qty,c.days!=null?'listed '+c.days+'d':'',c.consignor?'floor checked on save':'',(r.kind==='stuck'||r.kind==='held')?esc(c.status)+(c.heldBy?' by '+esc(c.heldBy):''):'',esc(c.id)])+(pr?adPrOneHtml(r.kind,c):'')+(help?`<div class="prf" data-prf="${esc(c.id)}">${adPrfCardHtml(c)}</div>`:''))+'</div>').join('')+
     (r.total>r.cards.length?`<p class="note">Showing ${r.cards.length} of ${r.total}.</p>`:'');
 }
 /* ---- v13.16: pricing on Stock health ----
@@ -7390,6 +7404,87 @@ function adPrOneHtml(kind,c){
     (mk&&Math.round(mk*100)!==Math.round(Number(c.price)*100)?`<button class="pt-mini" onclick="adPrSave(this,${mk})">Use market ${adPrMoney(mk)}</button>`:'')+
     (m5>0?`<button class="pt-mini" onclick="adPrSave(this,${m5})" aria-label="Lower by 5% to ${adPrMoney(m5)}">−5%</button>`:'')+
     `<button class="pt-mini" data-q="${esc([c.name,c.set,c.number].filter(Boolean).join(' '))}" onclick="adPriceCharting(this)" aria-label="Look up ${esc(c.name)} on PriceCharting">PriceCharting ↗</button></div>`;
+}
+/* ---------- v13.34: price help for cards with no photo ----------
+   Stock health → "On sale with no photo". One tap looks up the cards there
+   NOW (no automatic lookups later): a reference photo (TCGdex, else
+   PriceCharting) and PriceCharting's prices by condition, in S$ at Config
+   usd_sgd. The photo is only shown here, never on the card. Pricing is the
+   usual price box; "Use …" fills it with the price for the card's condition. */
+AD.prf={d:null,busy:false,poll:0,open:''};
+function adPrfEnsure(){ if(!AD.prf.d&&!AD.prf.busy) adPrfLoad(); }
+async function adPrfLoad(){
+  AD.prf.busy=true;
+  const r=await api('adminPriceRefs',{}).catch(()=>null);
+  AD.prf.busy=false; if(r&&r.ok) AD.prf.d=r;
+  adPrfPaint();
+  clearTimeout(AD.prf.poll);
+  if(r&&r.ok&&r.running) AD.prf.poll=setTimeout(()=>{ if(document.getElementById('prf-top')) adPrfLoad(); },30000);   // fill in as they come
+}
+function adPrfPaint(){
+  const t=document.getElementById('prf-top'); if(t) t.innerHTML=adPrfTopHtml();
+  document.querySelectorAll('[data-prf]').forEach(el=>{ const c=adPrCards('nophoto').find(x=>String(x.id)===el.getAttribute('data-prf')); if(c&&!el.contains(document.activeElement)) el.innerHTML=adPrfCardHtml(c); });
+}
+const prfS=(usd,rate)=>'S$'+(Number(usd)*rate).toFixed(2);
+function adPrfTopHtml(){
+  const d=AD.prf.d;
+  if(!d) return `<div class="prf-top"><span class="note">Loading price help…</span></div>`;
+  const left=d.total-d.done;
+  return `<div class="prf-top"><div><b>🔎 Price help</b> · ${d.done} of ${d.total} looked up · US$1 = S$${Number(d.rate).toFixed(2)}</div>`+
+    (d.running?`<div class="note" style="text-align:left;margin:4px 0 0">⏳ Looking them up in the background (${Number(d.jobDone||0)} done). Prices fill in below; you get a DM when it’s finished.</div>`
+      :left>0?`<button class="pt-mini pri" style="margin:6px 0 0" onclick="adPrfStart(this)">🔎 Look up ${left} card${left===1?'':'s'}: reference photo + PriceCharting prices</button>`:'')+
+    (!d.token?`<div class="pt-err" style="font-size:12.5px;margin-top:4px">No Apify token set, so PriceCharting can’t be searched (the same token /prices uses).</div>`:'')+
+    `<div class="note" style="text-align:left;margin:4px 0 0">Reference photos are only shown here, never to buyers: the card stays hidden until you add its real photo.</div></div>`;
+}
+// Which PriceCharting price fits this card: its grade (PSA 10, 9.5, 9…) or Ungraded.
+function adPrfPick(ref){
+  const g=String(ref.grade||'').toLowerCase(), m=/(10|9\.5|9|8|7)\b/.exec(g);
+  if(m&&/psa|bgs|cgc|sgc|grade|\d/.test(g)){ const k={ '10':'psa10','9.5':'g95','9':'g9','8':'g8','7':'g7' }[m[1]]; if(ref[k]!=null) return {k,label:m[1]==='10'?'PSA 10':'Grade '+m[1]}; }
+  return {k:'raw',label:'Ungraded'};
+}
+function adPrfCardHtml(c){
+  const d=AD.prf.d; if(!d) return '';
+  const ref=d.refs[String(c.id)], id=esc(c.id), sid=String(c.id).replace(/[^\w-]/g,'');
+  if(!ref) return `<div class="prf-st">Not looked up yet.</div>`;
+  if(ref.status==='pending') return `<div class="prf-st">⏳ Looking it up…</div>`;
+  const rate=Number(d.rate)||1.29, pick=adPrfPick(ref), open=AD.prf.open===String(c.id);
+  const img=ref.image?`<img class="prf-img" src="${esc(imgUrl(ref.image,200))}" data-big="${esc(imgUrl(ref.image,1600))}" alt="Reference photo" loading="lazy" onclick="openZoom(this.dataset.big)">`:`<div class="prf-img noimg"></div>`;
+  let h=`<div class="prf-row">${img}<div class="prf-b">`;
+  h+=`<div class="prf-cap">${ref.image?'Reference photo ('+(ref.src==='pricecharting'?'PriceCharting':'TCGdex')+'): not yours, buyers never see it':'No reference photo found'}</div>`;
+  if(ref.name){
+    h+=`<div class="prf-m">PriceCharting: <b>${esc(ref.name)}</b> · ${esc(ref.set)}${ref.number?' #'+esc(ref.number):''}${ref.url?` <a href="#" data-u="${esc(ref.url)}" onclick="openExt(this.dataset.u);return false" aria-label="Open on PriceCharting">↗</a>`:''}${/unsure/.test(ref.note)?' <span class="pt-neg">⚠️ unsure match: check it</span>':''}</div>`;
+    h+=`<div class="prf-m">Your card: ${esc(ref.grade||ref.condition||'raw')} → <b>${pick.label}</b></div>`;
+    const lad=[['raw','Ungraded'],['g7','Grade 7'],['g8','Grade 8'],['g9','Grade 9'],['g95','Grade 9.5'],['psa10','PSA 10']].filter(([k])=>ref[k]!=null);
+    h+=`<div class="prf-lad">${lad.map(([k,l])=>`<span class="${k===pick.k?'on':''}">${l} <b>${prfS(ref[k],rate)}</b> <small>US$${Number(ref[k]).toFixed(2)}</small></span>`).join('')}</div>`;
+    if(ref[pick.k]!=null){ const v=Math.round(Number(ref[pick.k])*rate*100)/100; h+=`<button class="pt-mini pri" onclick="adPrSave(this,${v})">Use ${pick.label} S$${v.toFixed(2)}</button>`; }
+  } else h+=`<div class="prf-m">${ref.status==='no_token'?'No Apify token: PriceCharting wasn’t searched.':ref.status==='error'?'Search failed: '+esc(ref.note||''):'No PriceCharting match'+(ref.query?' for “'+esc(ref.query)+'”':'')+'.'}</div>`;
+  h+=`<button class="pt-mini" onclick="AD.prf.open=AD.prf.open==='${sid}'?'':'${sid}';adPrfPaint()">${open?'Close':ref.name?'Wrong card?':'Search again'}</button></div></div>`;
+  if(open){
+    h+=`<div class="prf-fix">`+(ref.alts&&ref.alts.length?`<div class="prf-cap">Other matches:</div>`+ref.alts.map((a,i)=>`<button class="pt-mini" onclick="adPrfPick1(this,'${id}',${i})">${esc(a.name)} · ${esc(a.set)}${a.number?' #'+esc(a.number):''}${a.raw!=null?' · '+prfS(a.raw,rate):''}</button>`).join(''):'')+
+      `<div class="pt-inl" style="margin-top:6px"><input id="prf-q-${sid}" class="lt-in" style="width:auto;flex:1;min-width:140px" placeholder="e.g. Charizard ex 125 Obsidian" value="${esc(ref.query||'')}" aria-label="Search PriceCharting for ${esc(c.name)}"><button class="pt-mini" style="margin:0" onclick="adPrfAgain(this,'${id}','${sid}')">Search again</button></div></div>`;
+  }
+  return h;
+}
+async function adPrfStart(btn){
+  const d=AD.prf.d, n=d?d.total-d.done:0;
+  if(!(await ptConfirm(`Look up ${n} card${n===1?'':'s'} with no photo?\n\nEach one gets a reference photo and PriceCharting prices (searched through your Apify account, a few cents each). It runs in the background; the prices fill in here.`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminPriceRefStart',{}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Started'); setTimeout(adPrfLoad,1500);
+}
+async function adPrfAgain(btn,id,sid){
+  const q=(document.getElementById('prf-q-'+sid)||{}).value||'';
+  let r=null; await guard(btn,async()=>{ r=await api('adminPriceRefAgain',{cardId:id,q:q.trim()}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Looking again'); AD.prf.open=''; setTimeout(adPrfLoad,1500);
+}
+async function adPrfPick1(btn,id,i){
+  let r=null; await guard(btn,async()=>{ r=await api('adminPriceRefPick',{cardId:id,i}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Switched'); AD.prf.open=''; adPrfLoad();
 }
 // v13.19: PriceCharting's price page for this card (opens in Telegram's browser).
 function adPriceCharting(btn){ const q=btn.getAttribute('data-q')||''; openExt('https://www.pricecharting.com/search-products?type=prices&q='+encodeURIComponent(q)); }
