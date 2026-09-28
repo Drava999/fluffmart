@@ -1766,6 +1766,29 @@ body.pc #v-credit{max-width:640px}
 .prf-lad span{font-size:11.5px;padding:3px 7px;border-radius:999px;background:var(--card);white-space:nowrap}
 .prf-lad span.on{background:var(--berry);color:#fff}.prf-lad small{opacity:.7}
 .prf-fix{margin-top:6px}.prf-fix .pt-mini{margin:4px 4px 0 0}
+/* v13.38: 📷 Scans */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.sc-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.sc-card.ok{border:2px solid #2e9d5b}.sc-card.wait{opacity:.75}
+.sc-top{display:flex;gap:10px;align-items:flex-start}
+.sc-img{width:96px;aspect-ratio:.727;object-fit:contain;background:#fff;border-radius:6px;flex:none;cursor:zoom-in;border:1px solid var(--line)}
+.sc-img.noimg{background:var(--line)}
+.sc-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.sc-zoom{display:flex;flex-direction:column;gap:4px;cursor:zoom-in}
+.sc-zoom div{width:100%;aspect-ratio:2.7;border-radius:6px;border:1px solid var(--line);background-color:#fff;background-repeat:no-repeat;background-size:222% auto}
+.sc-cap{font-size:11px;color:var(--hint);font-weight:700}
+.sc-tags{display:flex;flex-wrap:wrap;gap:4px}
+.sc-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--line);overflow-wrap:anywhere}
+.sc-tag.good{background:#d6f2e0;color:#17693a}.sc-tag.bad{background:#fde2e2;color:#a3262b}.sc-tag.warn{background:#fff1cc;color:#7a5600}
+.sc-who{font-size:12.5px;overflow-wrap:anywhere}
+.sc-note{font-size:11.5px;color:var(--hint);overflow-wrap:anywhere}
+.sc-name{display:flex;gap:6px}.sc-name input{flex:1;min-width:0;font-size:15px}
+.sc-btns{display:flex;flex-wrap:wrap;gap:6px}.sc-btns .pt-mini{margin:0}
+.sc-more{display:flex;flex-wrap:wrap;gap:6px;border-top:1px dashed var(--line);padding-top:6px}.sc-more .pt-mini{margin:0}
+.sc-mini{display:flex;flex-wrap:wrap;gap:8px}.sc-mini figure{margin:0;width:64px;text-align:center;font-size:10.5px;overflow-wrap:anywhere}
+.sc-mini img{width:64px;aspect-ratio:.727;object-fit:contain;background:#fff;border-radius:5px;border:1px solid var(--line);cursor:zoom-in}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .sc-tag.good{background:#1d4a30;color:#b9f0cd} :root:not([data-theme="light"]) .sc-tag.bad{background:#5a1f22;color:#ffc9cb} :root:not([data-theme="light"]) .sc-tag.warn{background:#4d3b0b;color:#ffe29a} }
+:root[data-theme="dark"] .sc-tag.good{background:#1d4a30;color:#b9f0cd} :root[data-theme="dark"] .sc-tag.bad{background:#5a1f22;color:#ffc9cb} :root[data-theme="dark"] .sc-tag.warn{background:#4d3b0b;color:#ffe29a}
 .dl-res{display:flex;flex-direction:column;gap:2px;max-height:340px;overflow:auto;margin:0 0 6px;border:1px solid var(--line);border-radius:12px;padding:4px}
 .dl-row{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:6px;font:inherit;color:var(--text);cursor:pointer;min-height:44px}
 .dl-row:active{background:var(--line)}
@@ -7002,7 +7025,7 @@ let AD_TAB='dash', AD={dash:null,list:null,reqs:null,cur:null,rates:null,edit:nu
 function openAdmin(){ go('admin'); adTab(AD_TAB); }
 function adTab(t){ if(t==='today') t='dash'; if(t==='rates'){ t='consign'; AD.csub='rates'; } if(t!=='events'&&typeof adEvPollStop==='function') adEvPollStop(); AD_TAB=t; AD.cur=null; AD.cardOpen=-1; adLoad(); }
 // v13.17: drops & auctions are their own tab (they were under Shelf).
-function adHead(){ return ptTabs([['dash','📋 Dashboard'],['events','🎯 Events'],['deals','🤝 Deals'],['shelf','🗂️ Shelf'],['consign','🐑 Consignment'],['config','⚙️ Config']].concat(IS_STAGING?[['stgtest','🧪 Test']]:[]),AD_TAB,'adTab'); }
+function adHead(){ return ptTabs([['dash','📋 Dashboard'],['events','🎯 Events'],['deals','🤝 Deals'],['shelf','🗂️ Shelf'],['scans','📷 Scans'],['consign','🐑 Consignment'],['config','⚙️ Config']].concat(IS_STAGING?[['stgtest','🧪 Test']]:[]),AD_TAB,'adTab'); }
 async function adLoad(){
   const b=document.getElementById('ad-body'); if(!b) return;
   const tab=AD_TAB;
@@ -7034,6 +7057,7 @@ async function adLoad(){
     if(AD.events&&!AD.events.plan) adEvPlanEnsure();  // an older Worker doesn't carry the plan yet
   }
   else if(tab==='deals'){ adDealsTab(); }   // v13.29: 🤝 Deals
+  else if(tab==='scans'){ adScTab(); }      // v13.38: 📷 Scans in the cloud
   else if(tab==='stgtest'&&IS_STAGING){ adStgTab(); }   // v13.30: 🧪 Test (staging only)
   else if(tab==='shelf'){   // 📍 Lots
     const saved=!AD.fresh&&(AD.lots&&AD.lots.ok?AD.lots:ptLoad('adlots'));
@@ -8160,6 +8184,132 @@ async function adStgSweep(btn){
   ptAlert(r.message||ptErr(r));
 }
 function adStgDeal(id){ AD.deal.off=false; AD.deal.who=id; adTab('deals'); }
+
+/* ---------- v13.38: 📷 Scans in the cloud ----------
+   Your PC routine without the PC: scan into the Drive inbox from any device,
+   Process runs fixcards.sh + namecards.sh on a GitHub cloud computer, the cut-out
+   cards come back here for YOUR check (step 4 of /help_scans), then “Put in the
+   shop” names them and runs /import_photos. Nothing is named or imported without
+   your OK. Server: scans.gs (adminScan*). */
+AD.sc={r:null,poll:0,menu:''};
+const SC_READ={ok:['✓ read','good'],already:['✓ read','good'],check:['⚠ check the number','warn'],skip:['✗ number not read','bad'],clash:['!! two files want this name','bad'],nocard:['✗ no card found','bad']};
+const SC_FLAG={wide:['read in another spot: check it','warn'],rotated:['↻ was sideways: check it’s upright','warn'],shape:['⚠ odd shape: check nothing’s cut off','warn'],size:['⚠ odd size: border may be lost','warn'],darkedge:['◼ dark edge kept: black-bordered card, or black backing showing?','warn'],back:['back of the card before','']};
+function adScTab(){
+  const el=document.getElementById('ad-in'); if(!el) return;
+  el.innerHTML='<div id="sc-box"><p class="note" style="text-align:left">Loading…</p></div>';
+  adScLoad();
+}
+async function adScLoad(){
+  const r=await api('adminScans',{}).catch(()=>null);
+  if(AD_TAB!=='scans') return;
+  if(r&&r.ok||!AD.sc.r) AD.sc.r=r;
+  adScPaint();
+  clearTimeout(AD.sc.poll);
+  const busy=r&&r.ok&&(r.running||(r.cards||[]).some(c=>c.status==='turning'||c.status==='redoing'));
+  if(busy) AD.sc.poll=setTimeout(()=>{ if(AD_TAB==='scans') adScLoad(); },20000);   // keep it fresh while the cloud works
+}
+function adScName(c){ return c.name||c.suggest||c.proposed||''; }
+function adScWho(c){
+  const w=c.who||{cards:[]};
+  if(c.read==='nocard') return '<div class="sc-who">Nothing to name: scan it again, or try cutting it again.</div>';
+  if(!adScName(c)) return '<div class="sc-who">Type the number printed on the card.</div>';
+  if(!w.cards.length) return `<div class="sc-who pt-neg">⚠️ No card in your Sheet has this name yet${/b$/.test(adScName(c))?'':' (a new card? import its Collectr CSV first)'}.</div>`;
+  let h=w.cards.map(x=>`<div class="sc-who">→ ${w.back?'<b>back</b> of ':''}<b>${esc(x.name)}</b> · ${esc(x.set)} ${esc(x.number)}${x.copies>1?' · '+x.copies+' copies':''}${x.sold?' · sold (kept for a restock)':''}${x.photo&&!w.back?' · <i>replaces its photo</i>':''}</div>`).join('');
+  if(w.clash) h+='<div class="sc-who pt-neg">⚠️ Different cards share this number: put the set in front, e.g. '+esc(w.cards.map(x=>String(x.set||'').toLowerCase().replace(/[^a-z0-9]+/g,'')+'-'+adScName(c)).slice(0,2).join(' or '))+'</div>';
+  return h;
+}
+function adScCardHtml(c){
+  const id=esc(c.id), sid=String(c.id).replace(/[^\w-]/g,''), rd=SC_READ[c.read]||['',''];
+  const tags=[rd[0]?`<span class="sc-tag ${rd[1]}">${rd[0]}</span>`:''].concat((c.flags||[]).filter(f=>SC_FLAG[f]).map(f=>`<span class="sc-tag ${SC_FLAG[f][1]}">${SC_FLAG[f][0]}</span>`));
+  if(c.result) tags.push(`<span class="sc-tag">${esc(c.result)}</span>`);
+  const big=esc(imgUrl(c.img,1600));
+  const img=`<img class="sc-img" src="${esc(imgUrl(c.img,400))}" data-big="${big}" alt="Scanned card" loading="lazy" onclick="openZoom(this.dataset.big)">`;
+  // v13.41: both bottom corners (Japanese cards print the number bottom-left, older English ones bottom-right), as backgrounds so they always load
+  const zbg=esc(imgUrl(c.img,1000));
+  const zoom=c.read==='nocard'?'':`<div class="sc-cap">Number on the card (zoomed)</div><div class="sc-zoom" onclick="openZoom('${big}')" role="img" aria-label="Bottom corners of the card, zoomed"><div style="background-image:url('${zbg}');background-position:0% 100%"></div><div style="background-image:url('${zbg}');background-position:100% 100%"></div></div>`;
+  let body='';
+  if(c.status==='ok'){
+    body=`<div class="sc-who"><b>✅ OK as ${esc(c.name)}</b></div>${adScWho(c)}<div class="sc-btns"><button class="pt-mini" onclick="adScAct(this,'${id}','undo')">↩️ Undo</button></div>`;
+  } else if(c.status==='turning'||c.status==='redoing'){
+    body=`<div class="sc-who">⏳ ${c.status==='turning'?'Turning it':'Cutting it again'} in the cloud…</div>`;
+  } else {
+    const menu=AD.sc.menu===c.id;
+    body=(c.read==='nocard'?'':`<div class="sc-name"><input id="sc-n-${sid}" value="${esc(adScName(c))}" placeholder="e.g. 034-100" aria-label="File name for this card" autocapitalize="off" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')adScOk(this.nextElementSibling,'${id}','${sid}')"><button class="pt-mini pri" onclick="adScOk(this,'${id}','${sid}')">✅ OK</button></div>`)+
+      adScWho(c)+
+      `<div class="sc-btns"><button class="pt-mini" onclick="AD.sc.menu=AD.sc.menu==='${id}'?'':'${id}';adScPaint()">${menu?'Close':'Something’s wrong…'}</button><button class="pt-mini" onclick="adScAct(this,'${id}','rescan')">🔁 Scan again</button><button class="pt-mini" onclick="adScBin(this,'${id}')" aria-label="Bin this card">🗑</button></div>`+
+      (menu?`<div class="sc-more"><span class="sc-cap" style="width:100%">Turn it:</span>${[[90,'↻ right'],[180,'↕ upside down'],[270,'↺ left']].map(([d,l])=>`<button class="pt-mini" onclick="adScAct(this,'${id}','turn',{deg:${d}})">${l}</button>`).join('')}
+        <span class="sc-cap" style="width:100%">Cut it again, because…</span>${(AD.sc.r.redo||[]).map(x=>`<button class="pt-mini" onclick="adScAct(this,'${id}','redo',{how:'${esc(x.k)}'})">${esc(x.label)}</button>`).join('')}</div>`:'');
+  }
+  return `<div class="sc-card${c.status==='ok'?' ok':c.status==='turning'||c.status==='redoing'?' wait':''}" data-k="${id}|${esc(c.status)}"><div class="sc-top">${img}<div class="sc-side"><div class="sc-tags">${tags.join('')}</div>${zoom}</div></div>${body}
+    ${c.note?`<details class="sc-note"><summary>What the four looks read · ${esc(c.raw)}</summary>${esc(c.note)}</details>`:`<div class="sc-note">${esc(c.raw)}</div>`}</div>`;
+}
+function adScPaint(){
+  const el=document.getElementById('sc-box'); if(!el) return;
+  const r=AD.sc.r;
+  if(!r||!r.ok){ el.innerHTML=`<p class="note" style="text-align:left">${esc((r&&r.message)||'Couldn’t load your scans.')} <a href="#" onclick="adScLoad();return false">Try again</a></p>`; return; }
+  const cards=r.cards||[], nOk=cards.filter(c=>c.status==='ok').length, nCheck=cards.filter(c=>c.status==='check').length;
+  const clean=cards.filter(c=>c.status==='check'&&(c.read==='ok'||c.read==='already')).length;
+  const L=r.last;
+  const top=!r.setup?`<p style="margin:0 0 6px;font-size:13.5px"><b>Not switched on yet.</b> Add the Script Property <code>GH_SCAN_TOKEN</code> in Apps Script (the setup note in docs/patches says how, 2 minutes).</p>`:'';
+  const run=r.running?`<p style="margin:0 0 6px;font-weight:700">⏳ Processing in the cloud${r.running.run>1?' (batch '+Number(r.running.run)+')':''}, started ${adAgo(r.running.at)}${r.running.sent?', '+Number(r.running.sent)+' cards back so far':''}${r.inbox?', '+Number(r.inbox)+' scans still to go':''}. It keeps going until the inbox is empty; one DM at the end.</p><button class="pt-mini" style="margin:0 0 6px" onclick="adScStop(this)">⏹ Stop</button>`
+    :`<button class="pt-mini big pri" style="margin:0 0 6px"${r.inbox&&r.setup?'':' disabled'} onclick="adScStart(this)">☁️ Process ${r.inbox?Number(r.inbox)+' new scan'+(r.inbox===1?'':'s'):'new scans'}</button>`;
+  const head=`<div class="pt-h">New scans</div><div class="panel" style="padding:12px">${top}
+    <p style="margin:0 0 8px;font-size:13.5px">📥 <b>${Number(r.inbox)||'No'}</b> scan${r.inbox===1?'':'s'} waiting in the Drive folder <b>${esc(r.inboxName)}</b>. Scan into it from any device (the Google Drive app works on your phone); any file names. Front then back, like on the PC.</p>
+    ${run}
+    ${L?`<p class="note" style="text-align:left;margin:2px 0 0">Last run ${adAgo(L.at)}${L.runs>1?' ('+Number(L.runs)+' batches)':''}: ${Number(L.sent)} card${L.sent===1?'':'s'} out${L.failed?', ⚠️ '+Number(L.failed)+' problem'+(L.failed===1?'':'s'):''}${L.secs?' · '+Math.round(L.secs/60*10)/10+' min':''}.</p>`:''}
+    <p class="note" style="text-align:left;margin:4px 0 0">It runs your fixcards.sh + namecards.sh on a free GitHub cloud computer. Nothing is named or put in the shop until you OK it below.</p></div>`;
+  const bar=cards.length?`<div class="pt-h">To check <span class="pt-tag">${nCheck}</span>${nOk?` <span class="pt-tag">${nOk} OK’d</span>`:''}</div>
+    <p class="note" style="text-align:left;margin:0 2px 8px">For each card: the whole card is there, it’s the right way up, and the name matches the number printed on it (zoomed on the right). The line under the name says which shop card it will land on.</p>
+    <div class="sc-btns" style="margin:0 0 10px">${clean?`<button class="pt-mini" onclick="adScOkAll(this)">✅ OK the ${clean} clean read${clean===1?'':'s'}</button>`:''}${nOk?`<button class="pt-mini pri" onclick="adScImport(this,${nOk})">📦 Put ${nOk} in the shop</button>`:''}</div>`
+    :`<div class="pt-h">To check</div><p class="note" style="text-align:left;margin:0 2px 8px">Nothing waiting. Cards appear here after a cloud run.</p>`;
+  const again=(r.again||[]).length?`<div class="pt-h">Scan these again <span class="pt-tag">${r.again.length}</span></div><div class="panel" style="padding:10px"><div class="sc-mini">${r.again.map(c=>`<figure><img src="${esc(imgUrl(c.img,200))}" data-big="${esc(imgUrl(c.img,1600))}" alt="" loading="lazy" onclick="openZoom(this.dataset.big)"><figcaption>${esc(c.raw)}<br><a href="#" onclick="adScAct(null,'${esc(c.id)}','undo');return false">undo</a> · <a href="#" onclick="adScAct(null,'${esc(c.id)}','bin');return false">done</a></figcaption></figure>`).join('')}</div>
+    <p class="note" style="text-align:left;margin:6px 0 0">Rescan these into the inbox, then Process again. Tap “done” once rescanned (bins the old cut).</p></div>`:'';
+  const recent=(r.recent||[]).length?`<div class="pt-h">Recently put in the shop</div><div class="panel" style="padding:10px"><div class="sc-mini">${r.recent.map(c=>`<figure><img src="${esc(imgUrl(c.img,200))}" data-big="${esc(imgUrl(c.img,1600))}" alt="" loading="lazy" onclick="openZoom(this.dataset.big)"><figcaption>${esc(c.name)}</figcaption></figure>`).join('')}</div></div>`:'';
+  adSyncSec(el,`<div>${head}</div><div>${bar}</div><div class="sc-grid" data-sync>${cards.map(adScCardHtml).join('')}</div><div>${again}</div><div>${recent}</div>`);
+}
+async function adScStart(btn){
+  const r0=AD.sc.r, n=r0?Number(r0.inbox)||0:0;
+  if(!(await ptConfirm(`Process ${n} scan${n===1?'':'s'} in the cloud?\n\nIt straightens and crops them and reads the numbers (your fixcards + namecards), 60 at a time, carrying on by itself until the inbox is empty. About a minute per 10 scans; the cards come back here for you to check and you get one DM at the end.`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminScanStart',{}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); adScLoad(); return; }
+  ptToast(r.message||'Started'); setTimeout(adScLoad,1500);
+}
+async function adScStop(btn){
+  if(!(await ptConfirm('Stop the cloud run?\n\nCards already in “To check” stay. Scans it hasn’t finished stay in the inbox; tap Process later to carry on.'))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminScanStop',{}); });
+  if(!r) return;
+  ptToast(r.message||(r.ok?'Stopped':ptErr(r))); adScLoad();
+}
+async function adScAct(btn,id,act,extra){
+  let r=null;
+  const run=async()=>{ r=await api('adminScanDecide',Object.assign({id,act},extra||{})); };
+  if(btn) await guard(btn,run); else await run().catch(()=>{});
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  if(act==='turn'||act==='redo') AD.sc.menu='';
+  ptToast(r.message||'Done'); adScLoad();
+}
+function adScOk(btn,id,sid){
+  const v=((document.getElementById('sc-n-'+sid)||{}).value||'').trim();
+  if(!v){ ptAlert('Type the number printed on the card first, e.g. 034-100.'); return; }
+  adScAct(btn,id,'ok',{name:v});
+}
+async function adScBin(btn,id){ if(await ptConfirm('Bin this cut-out card? (It goes to Drive’s bin for 30 days.)')) adScAct(btn,id,'bin'); }
+async function adScOkAll(btn){
+  if(!(await ptConfirm('OK every card whose number was read cleanly and matches exactly one card in your Sheet?\n\nStill look at each one (whole card, right way up) before Put in the shop.'))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminScanOkAll',{}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Done'); adScLoad();
+}
+async function adScImport(btn,n){
+  if(!(await ptConfirm(`Put ${n} card photo${n===1?'':'s'} in the shop?\n\nThey’re named as you OK’d them and /import_photos runs. Cards that had no photo become visible to buyers.`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminScanImport',{}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); adScLoad(); return; }
+  ptAlert(r.message||'Done'); adScLoad();
+}
 /* v13.19: lists the quick D1 dashboard doesn't count -- each loads its own count
    from Apps Script (and keeps the list, so opening it is instant). */
 const AD_STK_LIVE=['atmarket','bundles','held'];
