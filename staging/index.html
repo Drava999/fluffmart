@@ -8193,7 +8193,7 @@ function adStgDeal(id){ AD.deal.off=false; AD.deal.who=id; adTab('deals'); }
    your OK. Server: scans.gs (adminScan*). */
 AD.sc={r:null,poll:0,menu:''};
 const SC_READ={ok:['✓ read','good'],already:['✓ read','good'],check:['⚠ check the number','warn'],skip:['✗ number not read','bad'],clash:['!! two files want this name','bad'],nocard:['✗ no card found','bad']};
-const SC_FLAG={rotated:['↻ was sideways: check it’s upright','warn'],shape:['⚠ odd shape: check nothing’s cut off','warn'],size:['⚠ odd size: border may be lost','warn'],back:['back of the card before','']};
+const SC_FLAG={rotated:['↻ was sideways: check it’s upright','warn'],shape:['⚠ odd shape: check nothing’s cut off','warn'],size:['⚠ odd size: border may be lost','warn'],darkedge:['◼ dark edge kept: black-bordered card, or black backing showing?','warn'],back:['back of the card before','']};
 function adScTab(){
   const el=document.getElementById('ad-in'); if(!el) return;
   el.innerHTML='<div id="sc-box"><p class="note" style="text-align:left">Loading…</p></div>';
