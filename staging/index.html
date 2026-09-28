@@ -6984,7 +6984,7 @@ let AD_TAB='dash', AD={dash:null,list:null,reqs:null,cur:null,rates:null,edit:nu
 function openAdmin(){ go('admin'); adTab(AD_TAB); }
 function adTab(t){ if(t==='today') t='dash'; if(t==='rates'){ t='consign'; AD.csub='rates'; } if(t!=='events'&&typeof adEvPollStop==='function') adEvPollStop(); AD_TAB=t; AD.cur=null; AD.cardOpen=-1; adLoad(); }
 // v13.17: drops & auctions are their own tab (they were under Shelf).
-function adHead(){ return ptTabs([['dash','📋 Dashboard'],['events','🎯 Events'],['deals','🤝 Deals'],['shelf','🗂️ Shelf'],['consign','🐑 Consignment'],['config','⚙️ Config']],AD_TAB,'adTab'); }
+function adHead(){ return ptTabs([['dash','📋 Dashboard'],['events','🎯 Events'],['deals','🤝 Deals'],['shelf','🗂️ Shelf'],['consign','🐑 Consignment'],['config','⚙️ Config']].concat(IS_STAGING?[['stgtest','🧪 Test']]:[]),AD_TAB,'adTab'); }
 async function adLoad(){
   const b=document.getElementById('ad-body'); if(!b) return;
   const tab=AD_TAB;
@@ -7016,6 +7016,7 @@ async function adLoad(){
     if(AD.events&&!AD.events.plan) adEvPlanEnsure();  // an older Worker doesn't carry the plan yet
   }
   else if(tab==='deals'){ adDealsTab(); }   // v13.29: 🤝 Deals
+  else if(tab==='stgtest'&&IS_STAGING){ adStgTab(); }   // v13.30: 🧪 Test (staging only)
   else if(tab==='shelf'){   // 📍 Lots
     const saved=!AD.fresh&&(AD.lots&&AD.lots.ok?AD.lots:ptLoad('adlots'));
     if(saved&&saved.ok){ AD.lots=saved; adRenderLots(); } else ptSkel(document.getElementById('ad-in'));
@@ -7981,6 +7982,55 @@ async function adDealRelease(btn,sid,cardSid){
   const gone={}; cs.forEach(c=>gone[c.id]=1); AD.res.list=(AD.res.list||[]).filter(c=>!gone[c.id]); adDealsHeldPaint(); adResPaint();
   AD.deal.cardsAt=0; adDealsCardsLoad();
 }
+/* ---------- v13.30: 🧪 Test (STAGING ONLY) ----------
+   Run the whole staging test run (stg-e2e.gs stgTestAll) from the app: the tap
+   schedules it, the report comes to your Telegram DM and the last result shows
+   here. Plus the pretend buyers (Testers A–E), one tap into a Deal for one.
+   The server refuses all of this on live. */
+AD.stg={r:null,busy:false,poll:0};
+function adStgTab(){
+  const el=document.getElementById('ad-in'); if(!el) return;
+  if(!IS_STAGING){ el.innerHTML='<p class="note">Staging only.</p>'; return; }
+  el.innerHTML='<div id="stg-box"><p class="note" style="text-align:left">Loading…</p></div>';
+  adStgLoad();
+}
+async function adStgLoad(){
+  const r=await api('adminStgStatus',{}).catch(()=>null);
+  AD.stg.r=r; adStgPaint();
+  clearTimeout(AD.stg.poll);
+  if(r&&r.ok&&r.running&&AD_TAB==='stgtest') AD.stg.poll=setTimeout(adStgLoad,20000);   // keep the result fresh while it runs
+}
+function adStgPaint(){
+  const el=document.getElementById('stg-box'); if(!el) return;
+  const r=AD.stg.r;
+  if(!r||!r.ok){ el.innerHTML=`<p class="note" style="text-align:left">${esc((r&&r.message)||'Couldn’t reach the staging test run.')} <a href="#" onclick="adStgLoad();return false">Try again</a></p>`; return; }
+  const L=r.last;
+  const last=!L?'<p class="note" style="text-align:left;margin:4px 0 0">No run from the app yet.</p>'
+    :adFacts([['Last run',(L.ok?'✅ all good':'❌ '+Number(L.problems||0)+' problem'+(L.problems===1?'':'s'))+' · '+adAgo(L.at)]])+
+     (L.fails&&L.fails.length?`<div class="ad-warnbox" style="margin-top:6px">${L.fails.map(f=>`<div>${esc(f)}</div>`).join('')}</div>`:'')+
+     `<p class="note" style="text-align:left;margin:4px 0 0">${esc(L.head||'')}</p>`;
+  el.innerHTML=`<p class="note" style="text-align:left;margin:0 2px 10px">🧪 Staging only. Nothing here exists on live.</p>
+  <div class="pt-h">Full test run</div>
+  <div class="panel" style="padding:12px">
+    <p style="margin:0 0 8px;font-size:13.5px">Pretend buyers and a pretend consignor go through claims, forfeits, offers, auctions, reserve, lot ideas, 🤝 deals, shop checkout, refunds and a consignor payout on the staging Sheet. Every Telegram message is caught, none are sent. Afterwards it removes only the rows it added.</p>
+    ${r.running?`<p style="margin:0 0 8px;font-weight:700">⏳ Running now (started ${adAgo(r.startedAt)}). The report comes to your DM; this updates by itself.</p>`
+      :`<button class="pt-mini big pri" style="margin:0" onclick="adStgRun(this)">▶ Run all tests</button>`}
+    <p class="note" style="text-align:left;margin:6px 0 0">Takes a few minutes. The full report comes to your Telegram DM. Code ${esc(r.version||'')}.</p>
+    ${last}
+  </div>
+  <div class="pt-h">Pretend buyers</div>
+  <div class="panel" style="padding:4px 12px">`+(r.testers||[]).map(t=>`<div class="pt-row" style="gap:8px;align-items:center"><div class="l" style="flex:1"><div class="t">${esc(t.name)}</div><div class="s">${esc(t.id)}</div></div>`+
+      `<div class="r"><button class="pt-mini" style="margin:0" onclick="adStgDeal('${esc(t.id)}')">🤝 Deal for them</button></div></div>`).join('')+`</div>
+  <p class="note" style="text-align:left;margin:6px 2px 0">Anything the bot sends a pretend buyer comes to your DM, starting “[to 🧪 Tester B]”. In a staging drop, comment anonymously “claim B” to claim as Tester B (A if you leave the letter off). In 🤝 Deals you can also type “tester b”.</p>`;
+}
+async function adStgRun(btn){
+  if(!(await ptConfirm('Run the full staging test run now?\n\nIt adds test cards and pretend orders to the STAGING Sheet, checks everything, then removes them. Takes a few minutes; the report comes to your DM.'))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminStgRun',{}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); adStgLoad(); return; }
+  ptToast(r.message||'Started'); setTimeout(adStgLoad,1500);
+}
+function adStgDeal(id){ AD.deal.who=id; adTab('deals'); }
 /* v13.19: lists the quick D1 dashboard doesn't count -- each loads its own count
    from Apps Script (and keeps the list, so opening it is instant). */
 const AD_STK_LIVE=['atmarket','bundles','held'];
