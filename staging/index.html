@@ -7806,7 +7806,7 @@ function adResHtml(){
       <div class="t" style="font-weight:700">${esc(c.name)}</div>
       <div class="s">for <b>${esc(c.buyer)}</b>${c.at?' · '+adAgo(c.at):''}${c.price?' · listed $'+Number(c.price).toFixed(2):''}</div>
       ${c.note?`<div class="s">📝 ${esc(c.note)}</div>`:''}
-      <div class="cn-rev-btns"><button class="pt-mini pri" onclick="adResSellOpen('${id}')">${open?'Close':'🧾 Sell to them'}</button><button class="pt-mini" onclick="adResRelease(this,'${id}')">↩️ Release</button></div>
+      <div class="cn-rev-btns">${c.off?`<button class="pt-mini pri" onclick="adTab('deals')">🤝 Record in Deals</button>`:`<button class="pt-mini pri" onclick="adResSellOpen('${id}')">${open?'Close':'🧾 Sell to them'}</button>`}<button class="pt-mini" onclick="adResRelease(this,'${id}')">↩️ Release</button></div>
       ${open?`<div class="pt-inl" style="margin-top:6px"><input id="ad-res-price" inputmode="decimal" enterkeyhint="send" placeholder="Deal price $" aria-label="Deal price for ${esc(c.name)}"><button class="pt-mini pri" onclick="adResSell(this,'${id}')">Invoice</button></div>`:''}
     </div></div>`; }).join('')+'</div>';
 }
@@ -7836,7 +7836,8 @@ async function adResRelease(btn,id){
    under a consignor's floor) or a price per card, then 📌 Hold or 🧾 Sell now
    (ONE order, ONE invoice DM). Held for buyers: grouped by buyer, invoice all
    or release. Cards in a drop/auction: use 📌 on them in Events. */
-AD.deal={who:'',q:'',sel:{},order:[],each:false,prices:{},total:'',note:'',cards:null,cardsAt:0};
+AD.deal={who:'',q:'',sel:{},order:[],each:false,prices:{},total:'',note:'',cards:null,cardsAt:0,off:false,offName:'',ch:'tiktok'};
+const DL_CH=[['tiktok','TikTok live'],['carousell','Carousell'],['instagram','Instagram'],['inperson','In person'],['other','Other']];
 const dlSid=x=>String(x==null?'':x).replace(/[^\w-]/g,'');
 const dlMoney=n=>'$'+Number(n||0).toFixed(2);
 function adDealsTab(){
@@ -7856,8 +7857,7 @@ function adDealsHtml(){
   return `<p class="note" style="text-align:left;margin:0 2px 10px">Hold or sell cards to one buyer at your price: a bundle deal, a regular’s picks, a sale from a chat. Nothing is posted.</p>
   <div class="pt-h">New deal</div>
   <div class="panel" style="padding:12px">
-    <label class="ad-res-l" for="dl-who">Buyer</label>
-    <input id="dl-who" class="ad-res-in" placeholder="@username or telegram id" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" value="${esc(D.who)}" oninput="AD.deal.who=this.value">
+    <div id="dl-buyer">${adDealsBuyerHtml()}</div>
     <label class="ad-res-l" for="dl-q" style="margin-top:10px">Cards</label>
     <input id="dl-q" class="ev-search" style="margin:0 0 4px" placeholder="🔎 Search your stock: name, set, number, id" autocomplete="off" enterkeyhint="search" value="${esc(D.q)}" oninput="AD.deal.q=this.value;adDealsList()">
     <div id="dl-list"></div>
@@ -7865,6 +7865,17 @@ function adDealsHtml(){
   </div>
   <div id="dl-held"></div>`;
 }
+// v13.31: the buyer is on Telegram (an order + invoice DM) or off-platform (TikTok, Carousell, in person: recorded as a sale, like /sell).
+function adDealsBuyerHtml(){
+  const D=AD.deal;
+  return `<div class="lt-row" style="margin:0 0 6px"><span class="lt-lab">Buyer</span><span class="lt-seg" role="group"><button type="button" aria-pressed="${D.off?'false':'true'}" onclick="adDealOff(false)">📱 On Telegram</button><button type="button" aria-pressed="${D.off?'true':'false'}" onclick="adDealOff(true)">🏪 Off-platform</button></span></div>`+
+    (D.off
+      ?`<input id="dl-offname" class="ad-res-in" placeholder="Name or handle, e.g. @jane" maxlength="60" autocomplete="off" spellcheck="false" value="${esc(D.offName)}" oninput="AD.deal.offName=this.value" aria-label="Off-platform buyer’s name or handle">
+        <div class="lt-row" style="margin:6px 0 0"><span class="lt-lab">Where</span><select id="dl-ch" onchange="AD.deal.ch=this.value" aria-label="Where the sale happened">${DL_CH.map(([v,l])=>`<option value="${v}"${D.ch===v?' selected':''}>${l}</option>`).join('')}</select></div>
+        <p class="note" style="text-align:left;margin:4px 2px 0">Not on Telegram: no order or DM. A sale is recorded like /sell (Transactions, consignors credited).</p>`
+      :`<input id="dl-who" class="ad-res-in" placeholder="@username or telegram id" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" value="${esc(D.who)}" oninput="AD.deal.who=this.value" aria-label="Buyer on Telegram">`);
+}
+function adDealOff(on){ AD.deal.off=!!on; const b=document.getElementById('dl-buyer'); if(b) b.innerHTML=adDealsBuyerHtml(); adDealsSelPaint(); }
 function adDealsList(err){
   const el=document.getElementById('dl-list'); if(!el) return;
   const D=AD.deal;
@@ -7898,8 +7909,8 @@ function adDealsSelPaint(){
     ${D.each?'':`<div class="lt-row"><label class="lt-pl" style="font-size:14px">Deal price $<input id="dl-total" class="lt-in" style="width:90px" inputmode="decimal" placeholder="${Math.round(value)}" value="${esc(D.total)}" aria-label="Deal price for all the cards" oninput="AD.deal.total=this.value"></label><span class="lt-dest">split across the cards by listed price${floors?', never under a floor':''}</span></div>`}
     <label class="ad-res-l" for="dl-note">Note (optional, only you see it)</label>
     <input id="dl-note" class="ad-res-in" maxlength="200" placeholder="e.g. with their A2 win" value="${esc(D.note)}" oninput="AD.deal.note=this.value">
-    <div class="lt-row" style="margin:12px 0 0"><button class="pt-mini big" style="margin:0" onclick="adDealGo(this,'hold')">📌 Hold for them</button><button class="pt-mini big pri" style="margin:0" onclick="adDealGo(this,'sell')">🧾 Sell now</button></div>
-    <p class="note" style="text-align:left;margin:6px 2px 0"><b>Hold</b> takes the cards off sale for them (invoice later). <b>Sell now</b> makes one order at your price and DMs them one invoice.</p></div>`;
+    <div class="lt-row" style="margin:12px 0 0"><button class="pt-mini big" style="margin:0" onclick="adDealGo(this,'hold')">📌 Hold for them</button><button class="pt-mini big pri" style="margin:0" onclick="adDealGo(this,'sell')">${D.off?'✅ Record sale (paid)':'🧾 Sell now'}</button></div>
+    <p class="note" style="text-align:left;margin:6px 2px 0">${D.off?'<b>Hold</b> takes the cards off sale for them (e.g. until a meetup). <b>Record sale</b> marks them sold at your price, for when they’ve paid.':'<b>Hold</b> takes the cards off sale for them (invoice later). <b>Sell now</b> makes one order at your price and DMs them one invoice.'}</p></div>`;
 }
 // Price for the deal: {total} or {prices}, checked here first (the server checks again).
 function adDealPrice(cs){
@@ -7916,15 +7927,20 @@ function adDealPrice(cs){
   return {total:Math.round(t*100)/100};
 }
 async function adDealGo(btn,mode){
-  const D=AD.deal, who=String(D.who||'').trim(), cs=D.order.map(id=>D.sel[id]).filter(Boolean);
-  if(!who){ ptAlert('Who is the deal for? Type their @username or telegram id.'); const i=document.getElementById('dl-who'); if(i) i.focus(); return; }
+  const D=AD.deal, cs=D.order.map(id=>D.sel[id]).filter(Boolean);
+  const chName=(DL_CH.find(x=>x[0]===D.ch)||DL_CH[4])[1];
+  const who=D.off?String(D.offName||'').trim():String(D.who||'').trim(), whoTxt=D.off?who+' ('+chName+')':who;
+  if(!who){ ptAlert(D.off?'Who is it for? Type their name or handle.':'Who is the deal for? Type their @username or telegram id.'); const i=document.getElementById(D.off?'dl-offname':'dl-who'); if(i) i.focus(); return; }
   if(!cs.length){ ptAlert('Add at least one card.'); return; }
-  const body={buyer:who,cardIds:cs.map(c=>c.id),mode,note:String(D.note||'').trim()};
+  const body={cardIds:cs.map(c=>c.id),mode,note:String(D.note||'').trim()};
+  if(D.off) body.off={name:who,channel:D.ch}; else body.buyer=who;
   if(mode==='sell'){
     const p=adDealPrice(cs); if(p.err){ ptAlert(p.err); return; }
     if(p.prices) body.prices=p.prices; else body.total=p.total;
-    if(!(await ptConfirm(`Sell ${cs.length} card${cs.length===1?'':'s'} to ${who} for ${dlMoney(p.total)}?\n\nIt makes ONE order in their box and DMs them one invoice. The cards leave the shop now.`))) return;
-  } else if(!(await ptConfirm(`Hold ${cs.length} card${cs.length===1?'':'s'} for ${who}?\n\nThey come off sale until you invoice them or release them. Nobody is messaged.`))) return;
+    if(!(await ptConfirm(D.off
+      ?`Record ${cs.length} card${cs.length===1?'':'s'} as SOLD to ${whoTxt} for ${dlMoney(p.total)}?\n\nOnly when they’ve paid. The cards leave the shop and the sale goes into Transactions (consignors credited). No order or DM.`
+      :`Sell ${cs.length} card${cs.length===1?'':'s'} to ${who} for ${dlMoney(p.total)}?\n\nIt makes ONE order in their box and DMs them one invoice. The cards leave the shop now.`))) return;
+  } else if(!(await ptConfirm(`Hold ${cs.length} card${cs.length===1?'':'s'} for ${whoTxt}?\n\nThey come off sale until you ${D.off?'record the sale':'invoice them'} or release them. Nobody is messaged.`))) return;
   let r=null;
   await guard(btn,async()=>{ r=await api('adminDeal',body); });
   if(r&&!r.ok&&r.error==='confirm'){
@@ -7937,7 +7953,7 @@ async function adDealGo(btn,mode){
   if(r.failed&&r.failed.length) ptAlert(r.message); else ptToast(r.message||'Done');
   const gone={}; cs.forEach(c=>gone[c.id]=1);
   if(D.cards) D.cards=D.cards.filter(c=>!gone[c.id]);
-  D.sel={}; D.order=[]; D.prices={}; D.total=''; D.note=''; D.q='';
+  D.sel={}; D.order=[]; D.prices={}; D.total=''; D.note=''; D.q=''; D.offName='';
   const q=document.getElementById('dl-q'); if(q) q.value='';
   const n=document.getElementById('dl-note'); if(n) n.value='';
   adDealsList(); adDealsSelPaint(); AD.deal.cardsAt=0; adDealsHeldLoad();
@@ -7952,12 +7968,12 @@ function adDealsHeldPaint(){
   el.innerHTML=`<div class="pt-h">Held for buyers <span class="pt-tag">${L.length}</span></div>`+Object.keys(g).map(k=>{
     const cs=g[k], sid=dlSid(k), value=cs.reduce((a,c)=>a+Number(c.price||0),0);
     return `<div class="panel" style="padding:10px 12px;margin:0 0 10px" data-k="dl:${esc(k)}">
-      <div class="ad-head" style="margin:0 0 4px"><b>${esc(cs[0].buyer)}</b><span class="ad-sub">${cs.length} card${cs.length===1?'':'s'} · listed ${dlMoney(value)}</span></div>`+
+      <div class="ad-head" style="margin:0 0 4px"><b>${cs[0].off?'🏪 ':''}${esc(cs[0].buyer)}</b><span class="ad-sub">${cs[0].off?'off-platform · ':''}${cs.length} card${cs.length===1?'':'s'} · listed ${dlMoney(value)}</span></div>`+
       cs.map(c=>`<div class="pt-row" style="padding:6px 0;gap:8px">${adThumb(c,30)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}</div>`+
         `${adMeta(['listed '+dlMoney(c.price),c.at?'held '+adAgo(c.at):'',c.note?'📝 '+esc(c.note):''])}</div>`+
         `<div class="r"><button class="pt-mini" style="margin:0" onclick="adDealRelease(this,'${sid}','${dlSid(c.id)}')" aria-label="Put ${esc(c.name)} back on sale">↩️</button></div></div>`).join('')+
       `<div class="lt-row" style="margin:8px 0 0"><label class="lt-pl" style="font-size:14px">Deal price $<input id="dl-inv-${sid}" class="lt-in" style="width:90px" inputmode="decimal" placeholder="${Math.round(value)}" aria-label="Deal price for ${esc(cs[0].buyer)}"></label>
-        <button class="pt-mini pri" style="margin:0" onclick="adDealInvoice(this,'${sid}')">🧾 Invoice all</button><button class="pt-mini" style="margin:0" onclick="adDealRelease(this,'${sid}')">↩️ Release all</button></div></div>`;
+        <button class="pt-mini pri" style="margin:0" onclick="adDealInvoice(this,'${sid}')">${cs[0].off?'✅ Record sale':'🧾 Invoice all'}</button><button class="pt-mini" style="margin:0" onclick="adDealRelease(this,'${sid}')">↩️ Release all</button></div></div>`;
   }).join('');
 }
 function adDealGroup(sid){ const L=AD.res.list||[]; return L.filter(c=>dlSid(c.buyerId||c.buyer)===sid); }
@@ -7965,7 +7981,9 @@ async function adDealInvoice(btn,sid){
   const cs=adDealGroup(sid); if(!cs.length) return;
   const inp=document.getElementById('dl-inv-'+sid), raw=String(inp&&inp.value||'').replace(/[$,\s]/g,''), t=Number(raw);
   if(raw===''||!(t>=0)){ ptAlert('Type the deal price first.'); if(inp) inp.focus(); return; }
-  if(!(await ptConfirm(`Invoice ${cs[0].buyer} ${dlMoney(t)} for ${cs.length} card${cs.length===1?'':'s'}?\n\nIt makes ONE order in their box and DMs them one invoice.`))) return;
+  if(!(await ptConfirm(cs[0].off
+    ?`Record ${cs.length} card${cs.length===1?'':'s'} as SOLD to ${cs[0].buyer} for ${dlMoney(t)}?\n\nOnly when they’ve paid. The sale goes into Transactions (consignors credited). No order or DM.`
+    :`Invoice ${cs[0].buyer} ${dlMoney(t)} for ${cs.length} card${cs.length===1?'':'s'}?\n\nIt makes ONE order in their box and DMs them one invoice.`))) return;
   let r=null; await guard(btn,async()=>{ r=await api('adminDealSell',{buyerId:cs[0].buyerId,cardIds:cs.map(c=>c.id),total:Math.round(t*100)/100}); });
   if(!r) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); adDealsHeldLoad(); return; }
@@ -8030,7 +8048,7 @@ async function adStgRun(btn){
   if(!r.ok){ ptAlert(r.message||ptErr(r)); adStgLoad(); return; }
   ptToast(r.message||'Started'); setTimeout(adStgLoad,1500);
 }
-function adStgDeal(id){ AD.deal.who=id; adTab('deals'); }
+function adStgDeal(id){ AD.deal.off=false; AD.deal.who=id; adTab('deals'); }
 /* v13.19: lists the quick D1 dashboard doesn't count -- each loads its own count
    from Apps Script (and keeps the list, so opening it is instant). */
 const AD_STK_LIVE=['atmarket','bundles','held'];
