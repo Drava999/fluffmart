@@ -1774,8 +1774,8 @@ body.pc #v-credit{max-width:640px}
 .sc-img{width:96px;aspect-ratio:.727;object-fit:contain;background:#fff;border-radius:6px;flex:none;cursor:zoom-in;border:1px solid var(--line)}
 .sc-img.noimg{background:var(--line)}
 .sc-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.sc-zoom{position:relative;overflow:hidden;width:100%;aspect-ratio:1.825;border-radius:6px;background:#fff;border:1px solid var(--line);cursor:zoom-in}
-.sc-zoom img{position:absolute;left:0;top:0;width:416.7%;margin-left:-50%;margin-top:-507.5%;max-width:none}
+.sc-zoom{display:flex;flex-direction:column;gap:4px;cursor:zoom-in}
+.sc-zoom div{width:100%;aspect-ratio:2.7;border-radius:6px;border:1px solid var(--line);background-color:#fff;background-repeat:no-repeat;background-size:222% auto}
 .sc-cap{font-size:11px;color:var(--hint);font-weight:700}
 .sc-tags{display:flex;flex-wrap:wrap;gap:4px}
 .sc-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--line);overflow-wrap:anywhere}
@@ -8193,7 +8193,7 @@ function adStgDeal(id){ AD.deal.off=false; AD.deal.who=id; adTab('deals'); }
    your OK. Server: scans.gs (adminScan*). */
 AD.sc={r:null,poll:0,menu:''};
 const SC_READ={ok:['✓ read','good'],already:['✓ read','good'],check:['⚠ check the number','warn'],skip:['✗ number not read','bad'],clash:['!! two files want this name','bad'],nocard:['✗ no card found','bad']};
-const SC_FLAG={rotated:['↻ was sideways: check it’s upright','warn'],shape:['⚠ odd shape: check nothing’s cut off','warn'],size:['⚠ odd size: border may be lost','warn'],darkedge:['◼ dark edge kept: black-bordered card, or black backing showing?','warn'],back:['back of the card before','']};
+const SC_FLAG={wide:['read in another spot: check it','warn'],rotated:['↻ was sideways: check it’s upright','warn'],shape:['⚠ odd shape: check nothing’s cut off','warn'],size:['⚠ odd size: border may be lost','warn'],darkedge:['◼ dark edge kept: black-bordered card, or black backing showing?','warn'],back:['back of the card before','']};
 function adScTab(){
   const el=document.getElementById('ad-in'); if(!el) return;
   el.innerHTML='<div id="sc-box"><p class="note" style="text-align:left">Loading…</p></div>';
@@ -8224,7 +8224,9 @@ function adScCardHtml(c){
   if(c.result) tags.push(`<span class="sc-tag">${esc(c.result)}</span>`);
   const big=esc(imgUrl(c.img,1600));
   const img=`<img class="sc-img" src="${esc(imgUrl(c.img,400))}" data-big="${big}" alt="Scanned card" loading="lazy" onclick="openZoom(this.dataset.big)">`;
-  const zoom=c.read==='nocard'?'':`<div class="sc-cap">Number on the card (zoomed)</div><div class="sc-zoom" onclick="openZoom('${big}')"><img src="${esc(imgUrl(c.img,1000))}" alt="Bottom-left corner of the card, zoomed" loading="lazy"></div>`;
+  // v13.41: both bottom corners (Japanese cards print the number bottom-left, older English ones bottom-right), as backgrounds so they always load
+  const zbg=esc(imgUrl(c.img,1000));
+  const zoom=c.read==='nocard'?'':`<div class="sc-cap">Number on the card (zoomed)</div><div class="sc-zoom" onclick="openZoom('${big}')" role="img" aria-label="Bottom corners of the card, zoomed"><div style="background-image:url('${zbg}');background-position:0% 100%"></div><div style="background-image:url('${zbg}');background-position:100% 100%"></div></div>`;
   let body='';
   if(c.status==='ok'){
     body=`<div class="sc-who"><b>✅ OK as ${esc(c.name)}</b></div>${adScWho(c)}<div class="sc-btns"><button class="pt-mini" onclick="adScAct(this,'${id}','undo')">↩️ Undo</button></div>`;
