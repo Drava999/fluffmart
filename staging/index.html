@@ -8249,12 +8249,12 @@ function adScPaint(){
   const clean=cards.filter(c=>c.status==='check'&&(c.read==='ok'||c.read==='already')).length;
   const L=r.last;
   const top=!r.setup?`<p style="margin:0 0 6px;font-size:13.5px"><b>Not switched on yet.</b> Add the Script Property <code>GH_SCAN_TOKEN</code> in Apps Script (the setup note in docs/patches says how, 2 minutes).</p>`:'';
-  const run=r.running?`<p style="margin:0 0 6px;font-weight:700">⏳ Processing in the cloud (started ${adAgo(r.running.at)}${r.running.sent?', '+Number(r.running.sent)+' cards back so far':''}). This updates by itself; you also get a DM.</p>`
+  const run=r.running?`<p style="margin:0 0 6px;font-weight:700">⏳ Processing in the cloud${r.running.run>1?' (batch '+Number(r.running.run)+')':''}, started ${adAgo(r.running.at)}${r.running.sent?', '+Number(r.running.sent)+' cards back so far':''}${r.inbox?', '+Number(r.inbox)+' scans still to go':''}. It keeps going until the inbox is empty; one DM at the end.</p>`
     :`<button class="pt-mini big pri" style="margin:0 0 6px"${r.inbox&&r.setup?'':' disabled'} onclick="adScStart(this)">☁️ Process ${r.inbox?Number(r.inbox)+' new scan'+(r.inbox===1?'':'s'):'new scans'}</button>`;
   const head=`<div class="pt-h">New scans</div><div class="panel" style="padding:12px">${top}
     <p style="margin:0 0 8px;font-size:13.5px">📥 <b>${Number(r.inbox)||'No'}</b> scan${r.inbox===1?'':'s'} waiting in the Drive folder <b>${esc(r.inboxName)}</b>. Scan into it from any device (the Google Drive app works on your phone); any file names. Front then back, like on the PC.</p>
     ${run}
-    ${L?`<p class="note" style="text-align:left;margin:2px 0 0">Last run ${adAgo(L.at)}: ${Number(L.sent)} card${L.sent===1?'':'s'} out${L.failed?', ⚠️ '+Number(L.failed)+' problem'+(L.failed===1?'':'s'):''}${L.secs?' · '+Math.round(L.secs/60*10)/10+' min':''}.</p>`:''}
+    ${L?`<p class="note" style="text-align:left;margin:2px 0 0">Last run ${adAgo(L.at)}${L.runs>1?' ('+Number(L.runs)+' batches)':''}: ${Number(L.sent)} card${L.sent===1?'':'s'} out${L.failed?', ⚠️ '+Number(L.failed)+' problem'+(L.failed===1?'':'s'):''}${L.secs?' · '+Math.round(L.secs/60*10)/10+' min':''}.</p>`:''}
     <p class="note" style="text-align:left;margin:4px 0 0">It runs your fixcards.sh + namecards.sh on a free GitHub cloud computer. Nothing is named or put in the shop until you OK it below.</p></div>`;
   const bar=cards.length?`<div class="pt-h">To check <span class="pt-tag">${nCheck}</span>${nOk?` <span class="pt-tag">${nOk} OK’d</span>`:''}</div>
     <p class="note" style="text-align:left;margin:0 2px 8px">For each card: the whole card is there, it’s the right way up, and the name matches the number printed on it (zoomed on the right). The line under the name says which shop card it will land on.</p>
@@ -8267,7 +8267,7 @@ function adScPaint(){
 }
 async function adScStart(btn){
   const r0=AD.sc.r, n=r0?Number(r0.inbox)||0:0;
-  if(!(await ptConfirm(`Process ${n} scan${n===1?'':'s'} in the cloud?\n\nIt straightens and crops them and reads the numbers (your fixcards + namecards). A few minutes; the cards come back here for you to check. Don’t add more scans to the inbox until it’s done.`))) return;
+  if(!(await ptConfirm(`Process ${n} scan${n===1?'':'s'} in the cloud?\n\nIt straightens and crops them and reads the numbers (your fixcards + namecards), 60 at a time, carrying on by itself until the inbox is empty. About a minute per 10 scans; the cards come back here for you to check and you get one DM at the end.`))) return;
   let r=null; await guard(btn,async()=>{ r=await api('adminScanStart',{}); });
   if(!r) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); adScLoad(); return; }
