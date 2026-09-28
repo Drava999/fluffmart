@@ -8249,7 +8249,7 @@ function adScPaint(){
   const clean=cards.filter(c=>c.status==='check'&&(c.read==='ok'||c.read==='already')).length;
   const L=r.last;
   const top=!r.setup?`<p style="margin:0 0 6px;font-size:13.5px"><b>Not switched on yet.</b> Add the Script Property <code>GH_SCAN_TOKEN</code> in Apps Script (the setup note in docs/patches says how, 2 minutes).</p>`:'';
-  const run=r.running?`<p style="margin:0 0 6px;font-weight:700">⏳ Processing in the cloud${r.running.run>1?' (batch '+Number(r.running.run)+')':''}, started ${adAgo(r.running.at)}${r.running.sent?', '+Number(r.running.sent)+' cards back so far':''}${r.inbox?', '+Number(r.inbox)+' scans still to go':''}. It keeps going until the inbox is empty; one DM at the end.</p>`
+  const run=r.running?`<p style="margin:0 0 6px;font-weight:700">⏳ Processing in the cloud${r.running.run>1?' (batch '+Number(r.running.run)+')':''}, started ${adAgo(r.running.at)}${r.running.sent?', '+Number(r.running.sent)+' cards back so far':''}${r.inbox?', '+Number(r.inbox)+' scans still to go':''}. It keeps going until the inbox is empty; one DM at the end.</p><button class="pt-mini" style="margin:0 0 6px" onclick="adScStop(this)">⏹ Stop</button>`
     :`<button class="pt-mini big pri" style="margin:0 0 6px"${r.inbox&&r.setup?'':' disabled'} onclick="adScStart(this)">☁️ Process ${r.inbox?Number(r.inbox)+' new scan'+(r.inbox===1?'':'s'):'new scans'}</button>`;
   const head=`<div class="pt-h">New scans</div><div class="panel" style="padding:12px">${top}
     <p style="margin:0 0 8px;font-size:13.5px">📥 <b>${Number(r.inbox)||'No'}</b> scan${r.inbox===1?'':'s'} waiting in the Drive folder <b>${esc(r.inboxName)}</b>. Scan into it from any device (the Google Drive app works on your phone); any file names. Front then back, like on the PC.</p>
@@ -8272,6 +8272,12 @@ async function adScStart(btn){
   if(!r) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); adScLoad(); return; }
   ptToast(r.message||'Started'); setTimeout(adScLoad,1500);
+}
+async function adScStop(btn){
+  if(!(await ptConfirm('Stop the cloud run?\n\nCards already in “To check” stay. Scans it hasn’t finished stay in the inbox; tap Process later to carry on.'))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminScanStop',{}); });
+  if(!r) return;
+  ptToast(r.message||(r.ok?'Stopped':ptErr(r))); adScLoad();
 }
 async function adScAct(btn,id,act,extra){
   let r=null;
