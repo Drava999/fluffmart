@@ -8191,9 +8191,9 @@ function adStgDeal(id){ AD.deal.off=false; AD.deal.who=id; adTab('deals'); }
    cards come back here for YOUR check (step 4 of /help_scans), then “Put in the
    shop” names them and runs /import_photos. Nothing is named or imported without
    your OK. Server: scans.gs (adminScan*). */
-AD.sc={r:null,poll:0,menu:''};
+AD.sc={r:null,poll:0,menu:'',bust:{}};
 const SC_READ={ok:['✓ read','good'],already:['✓ read','good'],check:['⚠ check the number','warn'],skip:['✗ number not read','bad'],clash:['!! two files want this name','bad'],nocard:['✗ no card found','bad']};
-const SC_FLAG={wide:['read in another spot: check it','warn'],rotated:['↻ was sideways: check it’s upright','warn'],shape:['⚠ odd shape: check nothing’s cut off','warn'],size:['⚠ odd size: border may be lost','warn'],darkedge:['◼ dark edge kept: black-bordered card, or black backing showing?','warn'],back:['back of the card before','']};
+const SC_FLAG={noback:['⚠ no back scanned — skipped? (it goes in front-only)','warn'],keepsback:['no back scanned: keeps its current back',''],wide:['read in another spot: check it','warn'],rotated:['↻ was sideways: check it’s upright','warn'],shape:['⚠ odd shape: check nothing’s cut off','warn'],size:['⚠ odd size: border may be lost','warn'],darkedge:['◼ dark edge kept: black-bordered card, or black backing showing?','warn'],back:['back of the card before','']};
 function adScTab(){
   const el=document.getElementById('ad-in'); if(!el) return;
   el.innerHTML='<div id="sc-box"><p class="note" style="text-align:left">Loading…</p></div>';
@@ -8205,8 +8205,19 @@ async function adScLoad(){
   if(r&&r.ok||!AD.sc.r) AD.sc.r=r;
   adScPaint();
   clearTimeout(AD.sc.poll);
-  const busy=r&&r.ok&&(r.running||(r.cards||[]).some(c=>c.status==='turning'||c.status==='redoing'));
+  const busy=r&&r.ok&&(r.running||r.importing||(r.cards||[]).some(c=>c.status==='turning'||c.status==='redoing'));
   if(busy) AD.sc.poll=setTimeout(()=>{ if(AD_TAB==='scans') adScLoad(); },20000);   // keep it fresh while the cloud works
+}
+/* v13.44.3: Drive often has no thumbnail yet for a picture made seconds ago (a fresh
+   scan, a straighten or a turn) and the browser keeps that broken image. Retry the
+   picture a few times with a fresh address; the retry count is part of the address
+   the list is drawn with, so the next refresh keeps the working one. */
+function adScU(c,w){ const n=AD.sc.bust[c.id]; return imgUrl(c.img,w)+(n?'&r='+n:''); }
+function adScImgErr(el,id){
+  const n=(AD.sc.bust[id]||0)+1; if(n>6) return;
+  setTimeout(()=>{ AD.sc.bust[id]=n; const c=((AD.sc.r&&AD.sc.r.cards)||[]).concat((AD.sc.r&&AD.sc.r.again)||[]).find(x=>x.id===id); if(!c||!el.isConnected) return;
+    el.src=adScU(c,400); el.dataset.big=adScU(c,1600);
+    const z=el.closest('.sc-card'); if(z) z.querySelectorAll('.sc-zoom div').forEach(d=>{ d.style.backgroundImage="url('"+adScU(c,1000)+"')"; }); },2500*n);
 }
 function adScName(c){ return c.name||c.suggest||c.proposed||''; }
 function adScWho(c){
@@ -8218,18 +8229,24 @@ function adScWho(c){
   if(w.clash) h+='<div class="sc-who pt-neg">⚠️ Different cards share this number: put the set in front, e.g. '+esc(w.cards.map(x=>String(x.set||'').toLowerCase().replace(/[^a-z0-9]+/g,'')+'-'+adScName(c)).slice(0,2).join(' or '))+'</div>';
   return h;
 }
+// v13.43: straighten a leaning card -- auto (only 0.3-5° leans change) or by hand, half a degree / a degree at a time
+function adScTiltRow(id){
+  return `<span class="sc-cap" style="width:100%">Leaning? Straighten it:</span><button class="pt-mini" onclick="adScAct(this,'${id}','straighten')">📐 Auto</button>${[[-1,'↺ 1°'],[-0.5,'↺ ½°'],[0.5,'↻ ½°'],[1,'↻ 1°']].map(([d,l])=>`<button class="pt-mini" onclick="adScAct(this,'${id}','tilt',{deg:${d}})" aria-label="Tilt ${d<0?'anticlockwise':'clockwise'} ${Math.abs(d)} degree">${l}</button>`).join('')}`;
+}
 function adScCardHtml(c){
   const id=esc(c.id), sid=String(c.id).replace(/[^\w-]/g,''), rd=SC_READ[c.read]||['',''];
   const tags=[rd[0]?`<span class="sc-tag ${rd[1]}">${rd[0]}</span>`:''].concat((c.flags||[]).filter(f=>SC_FLAG[f]).map(f=>`<span class="sc-tag ${SC_FLAG[f][1]}">${SC_FLAG[f][0]}</span>`));
   if(c.result) tags.push(`<span class="sc-tag">${esc(c.result)}</span>`);
-  const big=esc(imgUrl(c.img,1600));
-  const img=`<img class="sc-img" src="${esc(imgUrl(c.img,400))}" data-big="${big}" alt="Scanned card" loading="lazy" onclick="openZoom(this.dataset.big)">`;
+  const big=esc(adScU(c,1600));
+  const img=`<img class="sc-img" src="${esc(adScU(c,400))}" data-big="${big}" alt="Scanned card" loading="lazy" onclick="openZoom(this.dataset.big)" onerror="adScImgErr(this,'${esc(c.id)}')">`;
   // v13.41: both bottom corners (Japanese cards print the number bottom-left, older English ones bottom-right), as backgrounds so they always load
-  const zbg=esc(imgUrl(c.img,1000));
+  const zbg=esc(adScU(c,1000));
   const zoom=c.read==='nocard'?'':`<div class="sc-cap">Number on the card (zoomed)</div><div class="sc-zoom" onclick="openZoom('${big}')" role="img" aria-label="Bottom corners of the card, zoomed"><div style="background-image:url('${zbg}');background-position:0% 100%"></div><div style="background-image:url('${zbg}');background-position:100% 100%"></div></div>`;
   let body='';
   if(c.status==='ok'){
-    body=`<div class="sc-who"><b>✅ OK as ${esc(c.name)}</b></div>${adScWho(c)}<div class="sc-btns"><button class="pt-mini" onclick="adScAct(this,'${id}','undo')">↩️ Undo</button></div>`;
+    const menu=AD.sc.menu===c.id;
+    body=`<div class="sc-who"><b>✅ OK as ${esc(c.name)}</b></div>${adScWho(c)}<div class="sc-btns"><button class="pt-mini" onclick="adScAct(this,'${id}','undo')">↩️ Undo</button><button class="pt-mini" onclick="AD.sc.menu=AD.sc.menu==='${id}'?'':'${id}';adScPaint()">${menu?'Close':'📐 Leaning?'}</button></div>`+
+      (menu?`<div class="sc-more">${adScTiltRow(id)}</div>`:'');
   } else if(c.status==='turning'||c.status==='redoing'){
     body=`<div class="sc-who">⏳ ${c.status==='turning'?'Turning it':'Cutting it again'} in the cloud…</div>`;
   } else {
@@ -8237,10 +8254,10 @@ function adScCardHtml(c){
     body=(c.read==='nocard'?'':`<div class="sc-name"><input id="sc-n-${sid}" value="${esc(adScName(c))}" placeholder="e.g. 034-100" aria-label="File name for this card" autocapitalize="off" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')adScOk(this.nextElementSibling,'${id}','${sid}')"><button class="pt-mini pri" onclick="adScOk(this,'${id}','${sid}')">✅ OK</button></div>`)+
       adScWho(c)+
       `<div class="sc-btns"><button class="pt-mini" onclick="AD.sc.menu=AD.sc.menu==='${id}'?'':'${id}';adScPaint()">${menu?'Close':'Something’s wrong…'}</button><button class="pt-mini" onclick="adScAct(this,'${id}','rescan')">🔁 Scan again</button><button class="pt-mini" onclick="adScBin(this,'${id}')" aria-label="Bin this card">🗑</button></div>`+
-      (menu?`<div class="sc-more"><span class="sc-cap" style="width:100%">Turn it:</span>${[[90,'↻ right'],[180,'↕ upside down'],[270,'↺ left']].map(([d,l])=>`<button class="pt-mini" onclick="adScAct(this,'${id}','turn',{deg:${d}})">${l}</button>`).join('')}
+      (menu?`<div class="sc-more">${c.read==='nocard'?'':adScTiltRow(id)}<span class="sc-cap" style="width:100%">Turn it:</span>${[[90,'↻ right'],[180,'↕ upside down'],[270,'↺ left']].map(([d,l])=>`<button class="pt-mini" onclick="adScAct(this,'${id}','turn',{deg:${d}})">${l}</button>`).join('')}
         <span class="sc-cap" style="width:100%">Cut it again, because…</span>${(AD.sc.r.redo||[]).map(x=>`<button class="pt-mini" onclick="adScAct(this,'${id}','redo',{how:'${esc(x.k)}'})">${esc(x.label)}</button>`).join('')}</div>`:'');
   }
-  return `<div class="sc-card${c.status==='ok'?' ok':c.status==='turning'||c.status==='redoing'?' wait':''}" data-k="${id}|${esc(c.status)}"><div class="sc-top">${img}<div class="sc-side"><div class="sc-tags">${tags.join('')}</div>${zoom}</div></div>${body}
+  return `<div class="sc-card${c.status==='ok'?' ok':c.status==='turning'||c.status==='redoing'?' wait':''}" data-k="${id}|${esc(c.status)}|${esc(c.img)}"><div class="sc-top">${img}<div class="sc-side"><div class="sc-tags">${tags.join('')}</div>${zoom}</div></div>${body}
     ${c.note?`<details class="sc-note"><summary>What the four looks read · ${esc(c.raw)}</summary>${esc(c.note)}</details>`:`<div class="sc-note">${esc(c.raw)}</div>`}</div>`;
 }
 function adScPaint(){
@@ -8249,6 +8266,7 @@ function adScPaint(){
   if(!r||!r.ok){ el.innerHTML=`<p class="note" style="text-align:left">${esc((r&&r.message)||'Couldn’t load your scans.')} <a href="#" onclick="adScLoad();return false">Try again</a></p>`; return; }
   const cards=r.cards||[], nOk=cards.filter(c=>c.status==='ok').length, nCheck=cards.filter(c=>c.status==='check').length;
   const clean=cards.filter(c=>c.status==='check'&&(c.read==='ok'||c.read==='already')).length;
+  const nStr=cards.filter(c=>(c.status==='check'||c.status==='ok')&&c.read!=='nocard').length;
   const L=r.last;
   const top=!r.setup?`<p style="margin:0 0 6px;font-size:13.5px"><b>Not switched on yet.</b> Add the Script Property <code>GH_SCAN_TOKEN</code> in Apps Script (the setup note in docs/patches says how, 2 minutes).</p>`:'';
   const run=r.running?`<p style="margin:0 0 6px;font-weight:700">⏳ Processing in the cloud${r.running.run>1?' (batch '+Number(r.running.run)+')':''}, started ${adAgo(r.running.at)}${r.running.sent?', '+Number(r.running.sent)+' cards back so far':''}${r.inbox?', '+Number(r.inbox)+' scans still to go':''}. It keeps going until the inbox is empty; one DM at the end.</p><button class="pt-mini" style="margin:0 0 6px" onclick="adScStop(this)">⏹ Stop</button>`
@@ -8260,7 +8278,8 @@ function adScPaint(){
     <p class="note" style="text-align:left;margin:4px 0 0">It runs your fixcards.sh + namecards.sh on a free GitHub cloud computer. Nothing is named or put in the shop until you OK it below.</p></div>`;
   const bar=cards.length?`<div class="pt-h">To check <span class="pt-tag">${nCheck}</span>${nOk?` <span class="pt-tag">${nOk} OK’d</span>`:''}</div>
     <p class="note" style="text-align:left;margin:0 2px 8px">For each card: the whole card is there, it’s the right way up, and the name matches the number printed on it (zoomed on the right). The line under the name says which shop card it will land on.</p>
-    <div class="sc-btns" style="margin:0 0 10px">${clean?`<button class="pt-mini" onclick="adScOkAll(this)">✅ OK the ${clean} clean read${clean===1?'':'s'}</button>`:''}${nOk?`<button class="pt-mini pri" onclick="adScImport(this,${nOk})">📦 Put ${nOk} in the shop</button>`:''}</div>`
+    <div class="sc-btns" style="margin:0 0 10px">${clean?`<button class="pt-mini" onclick="adScOkAll(this)">✅ OK the ${clean} clean read${clean===1?'':'s'}</button>`:''}${nStr?`<button class="pt-mini" onclick="adScStraightenAll(this,${nStr})">📐 Straighten all ${nStr}</button>`:''}${r.importing?'':nOk?`<button class="pt-mini pri" onclick="adScImport(this,${nOk})">📦 Put ${nOk} in the shop</button>`:''}</div>
+    ${r.importing?`<p style="margin:0 2px 10px;font-weight:700">📦 Putting cards in the shop in the background: ${Number(r.importing.linked)} of ${Number(r.importing.total)} in so far. They leave this list as they go in; one DM at the end.</p>`:''}`
     :`<div class="pt-h">To check</div><p class="note" style="text-align:left;margin:0 2px 8px">Nothing waiting. Cards appear here after a cloud run.</p>`;
   const again=(r.again||[]).length?`<div class="pt-h">Scan these again <span class="pt-tag">${r.again.length}</span></div><div class="panel" style="padding:10px"><div class="sc-mini">${r.again.map(c=>`<figure><img src="${esc(imgUrl(c.img,200))}" data-big="${esc(imgUrl(c.img,1600))}" alt="" loading="lazy" onclick="openZoom(this.dataset.big)"><figcaption>${esc(c.raw)}<br><a href="#" onclick="adScAct(null,'${esc(c.id)}','undo');return false">undo</a> · <a href="#" onclick="adScAct(null,'${esc(c.id)}','bin');return false">done</a></figcaption></figure>`).join('')}</div>
     <p class="note" style="text-align:left;margin:6px 0 0">Rescan these into the inbox, then Process again. Tap “done” once rescanned (bins the old cut).</p></div>`:'';
@@ -8287,7 +8306,7 @@ async function adScAct(btn,id,act,extra){
   if(btn) await guard(btn,run); else await run().catch(()=>{});
   if(!r) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
-  if(act==='turn'||act==='redo') AD.sc.menu='';
+  if(act==='turn'||act==='redo'||act==='tilt'||act==='straighten') AD.sc.menu='';
   ptToast(r.message||'Done'); adScLoad();
 }
 function adScOk(btn,id,sid){
@@ -8303,12 +8322,19 @@ async function adScOkAll(btn){
   if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
   ptToast(r.message||'Done'); adScLoad();
 }
+async function adScStraightenAll(btn,n){
+  if(!(await ptConfirm(`Straighten all ${n} card${n===1?'':'s'} waiting here?\n\nThe cloud measures how much each one leans and turns back only the ones leaning a little (0.3–5°); straight ones are left alone. Names and OKs stay. One DM at the end.`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminScanStraightenAll',{}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Started'); setTimeout(adScLoad,1500);
+}
 async function adScImport(btn,n){
-  if(!(await ptConfirm(`Put ${n} card photo${n===1?'':'s'} in the shop?\n\nThey’re named as you OK’d them and /import_photos runs. Cards that had no photo become visible to buyers.`))) return;
+  if(!(await ptConfirm(`Put ${n} card photo${n===1?'':'s'} in the shop?\n\nThey’re named as you OK’d them and /import_photos runs, in the background (a few minutes for a big batch; one DM at the end). Cards that had no photo become visible to buyers.`))) return;
   let r=null; await guard(btn,async()=>{ r=await api('adminScanImport',{}); });
   if(!r) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); adScLoad(); return; }
-  ptAlert(r.message||'Done'); adScLoad();
+  ptToast(r.message||'Started'); setTimeout(adScLoad,1500);
 }
 /* v13.19: lists the quick D1 dashboard doesn't count -- each loads its own count
    from Apps Script (and keeps the list, so opening it is instant). */
