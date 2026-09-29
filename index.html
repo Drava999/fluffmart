@@ -8291,6 +8291,7 @@ async function adScStart(btn){
   if(!(await ptConfirm(`Process ${n} scan${n===1?'':'s'} in the cloud?\n\nIt straightens and crops them and reads the numbers (your fixcards + namecards), 60 at a time, carrying on by itself until the inbox is empty. About a minute per 10 scans; the cards come back here for you to check and you get one DM at the end.`))) return;
   let r=null; await guard(btn,async()=>{ r=await api('adminScanStart',{}); });
   if(!r) return;
+  if(adScGoogleBusy(r)) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); adScLoad(); return; }
   ptToast(r.message||'Started'); setTimeout(adScLoad,1500);
 }
@@ -8300,14 +8301,35 @@ async function adScStop(btn){
   if(!r) return;
   ptToast(r.message||(r.ok?'Stopped':ptErr(r))); adScLoad();
 }
+/* v13.44.4: Google now and then answers a busy Apps Script with its own error
+   page instead of data (the app's "web page instead of data"). The action usually
+   went through anyway, so don't alarm: say so, and re-check the list shortly. */
+function adScGoogleBusy(r){
+  if(!r||r.error!=='nonjson') return false;
+  ptToast('Google was slow to answer — checking whether it went through…');
+  clearTimeout(AD.sc.soon); AD.sc.soon=setTimeout(()=>{ if(AD_TAB==='scans') adScLoad(); },3000);
+  return true;
+}
+// one reload a moment after the last tap, instead of a full reload after every tap
+function adScSoon(){ clearTimeout(AD.sc.soon); AD.sc.soon=setTimeout(()=>{ if(AD_TAB==='scans') adScLoad(); },2500); }
 async function adScAct(btn,id,act,extra){
   let r=null;
   const run=async()=>{ r=await api('adminScanDecide',Object.assign({id,act},extra||{})); };
   if(btn) await guard(btn,run); else await run().catch(()=>{});
   if(!r) return;
+  if(adScGoogleBusy(r)) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
   if(act==='turn'||act==='redo'||act==='tilt'||act==='straighten') AD.sc.menu='';
-  ptToast(r.message||'Done'); adScLoad();
+  // show it at once; the list catches up from the server a moment later
+  const c=((AD.sc.r&&AD.sc.r.cards)||[]).find(x=>x.id===id);
+  if(c){
+    if(act==='ok'){ c.status='ok'; c.name=(extra&&extra.name)||c.name; }
+    else if(act==='undo'){ c.status='check'; c.name=''; }
+    else if(act==='rescan'||act==='bin'){ AD.sc.r.cards=AD.sc.r.cards.filter(x=>x.id!==id); }
+    else if(r.started!==false){ c.status=act==='redo'?'redoing':'turning'; }
+    adScPaint();
+  }
+  ptToast(r.message||'Done'); adScSoon();
 }
 function adScOk(btn,id,sid){
   const v=((document.getElementById('sc-n-'+sid)||{}).value||'').trim();
@@ -8319,6 +8341,7 @@ async function adScOkAll(btn){
   if(!(await ptConfirm('OK every card whose number was read cleanly and matches exactly one card in your Sheet?\n\nStill look at each one (whole card, right way up) before Put in the shop.'))) return;
   let r=null; await guard(btn,async()=>{ r=await api('adminScanOkAll',{}); });
   if(!r) return;
+  if(adScGoogleBusy(r)) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
   ptToast(r.message||'Done'); adScLoad();
 }
@@ -8326,6 +8349,7 @@ async function adScStraightenAll(btn,n){
   if(!(await ptConfirm(`Straighten all ${n} card${n===1?'':'s'} waiting here?\n\nThe cloud measures how much each one leans and turns back only the ones leaning a little (0.3–5°); straight ones are left alone. Names and OKs stay. One DM at the end.`))) return;
   let r=null; await guard(btn,async()=>{ r=await api('adminScanStraightenAll',{}); });
   if(!r) return;
+  if(adScGoogleBusy(r)) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
   ptToast(r.message||'Started'); setTimeout(adScLoad,1500);
 }
@@ -8333,6 +8357,7 @@ async function adScImport(btn,n){
   if(!(await ptConfirm(`Put ${n} card photo${n===1?'':'s'} in the shop?\n\nThey’re named as you OK’d them and /import_photos runs, in the background (a few minutes for a big batch; one DM at the end). Cards that had no photo become visible to buyers.`))) return;
   let r=null; await guard(btn,async()=>{ r=await api('adminScanImport',{}); });
   if(!r) return;
+  if(adScGoogleBusy(r)) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); adScLoad(); return; }
   ptToast(r.message||'Started'); setTimeout(adScLoad,1500);
 }
