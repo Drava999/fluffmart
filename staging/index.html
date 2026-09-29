@@ -8191,9 +8191,9 @@ function adStgDeal(id){ AD.deal.off=false; AD.deal.who=id; adTab('deals'); }
    cards come back here for YOUR check (step 4 of /help_scans), then “Put in the
    shop” names them and runs /import_photos. Nothing is named or imported without
    your OK. Server: scans.gs (adminScan*). */
-AD.sc={r:null,poll:0,menu:''};
+AD.sc={r:null,poll:0,menu:'',bust:{}};
 const SC_READ={ok:['✓ read','good'],already:['✓ read','good'],check:['⚠ check the number','warn'],skip:['✗ number not read','bad'],clash:['!! two files want this name','bad'],nocard:['✗ no card found','bad']};
-const SC_FLAG={wide:['read in another spot: check it','warn'],rotated:['↻ was sideways: check it’s upright','warn'],shape:['⚠ odd shape: check nothing’s cut off','warn'],size:['⚠ odd size: border may be lost','warn'],darkedge:['◼ dark edge kept: black-bordered card, or black backing showing?','warn'],back:['back of the card before','']};
+const SC_FLAG={noback:['⚠ no back scanned — skipped? (it goes in front-only)','warn'],keepsback:['no back scanned: keeps its current back',''],wide:['read in another spot: check it','warn'],rotated:['↻ was sideways: check it’s upright','warn'],shape:['⚠ odd shape: check nothing’s cut off','warn'],size:['⚠ odd size: border may be lost','warn'],darkedge:['◼ dark edge kept: black-bordered card, or black backing showing?','warn'],back:['back of the card before','']};
 function adScTab(){
   const el=document.getElementById('ad-in'); if(!el) return;
   el.innerHTML='<div id="sc-box"><p class="note" style="text-align:left">Loading…</p></div>';
@@ -8207,6 +8207,17 @@ async function adScLoad(){
   clearTimeout(AD.sc.poll);
   const busy=r&&r.ok&&(r.running||r.importing||(r.cards||[]).some(c=>c.status==='turning'||c.status==='redoing'));
   if(busy) AD.sc.poll=setTimeout(()=>{ if(AD_TAB==='scans') adScLoad(); },20000);   // keep it fresh while the cloud works
+}
+/* v13.44.3: Drive often has no thumbnail yet for a picture made seconds ago (a fresh
+   scan, a straighten or a turn) and the browser keeps that broken image. Retry the
+   picture a few times with a fresh address; the retry count is part of the address
+   the list is drawn with, so the next refresh keeps the working one. */
+function adScU(c,w){ const n=AD.sc.bust[c.id]; return imgUrl(c.img,w)+(n?'&r='+n:''); }
+function adScImgErr(el,id){
+  const n=(AD.sc.bust[id]||0)+1; if(n>6) return;
+  setTimeout(()=>{ AD.sc.bust[id]=n; const c=((AD.sc.r&&AD.sc.r.cards)||[]).concat((AD.sc.r&&AD.sc.r.again)||[]).find(x=>x.id===id); if(!c||!el.isConnected) return;
+    el.src=adScU(c,400); el.dataset.big=adScU(c,1600);
+    const z=el.closest('.sc-card'); if(z) z.querySelectorAll('.sc-zoom div').forEach(d=>{ d.style.backgroundImage="url('"+adScU(c,1000)+"')"; }); },2500*n);
 }
 function adScName(c){ return c.name||c.suggest||c.proposed||''; }
 function adScWho(c){
@@ -8226,10 +8237,10 @@ function adScCardHtml(c){
   const id=esc(c.id), sid=String(c.id).replace(/[^\w-]/g,''), rd=SC_READ[c.read]||['',''];
   const tags=[rd[0]?`<span class="sc-tag ${rd[1]}">${rd[0]}</span>`:''].concat((c.flags||[]).filter(f=>SC_FLAG[f]).map(f=>`<span class="sc-tag ${SC_FLAG[f][1]}">${SC_FLAG[f][0]}</span>`));
   if(c.result) tags.push(`<span class="sc-tag">${esc(c.result)}</span>`);
-  const big=esc(imgUrl(c.img,1600));
-  const img=`<img class="sc-img" src="${esc(imgUrl(c.img,400))}" data-big="${big}" alt="Scanned card" loading="lazy" onclick="openZoom(this.dataset.big)">`;
+  const big=esc(adScU(c,1600));
+  const img=`<img class="sc-img" src="${esc(adScU(c,400))}" data-big="${big}" alt="Scanned card" loading="lazy" onclick="openZoom(this.dataset.big)" onerror="adScImgErr(this,'${esc(c.id)}')">`;
   // v13.41: both bottom corners (Japanese cards print the number bottom-left, older English ones bottom-right), as backgrounds so they always load
-  const zbg=esc(imgUrl(c.img,1000));
+  const zbg=esc(adScU(c,1000));
   const zoom=c.read==='nocard'?'':`<div class="sc-cap">Number on the card (zoomed)</div><div class="sc-zoom" onclick="openZoom('${big}')" role="img" aria-label="Bottom corners of the card, zoomed"><div style="background-image:url('${zbg}');background-position:0% 100%"></div><div style="background-image:url('${zbg}');background-position:100% 100%"></div></div>`;
   let body='';
   if(c.status==='ok'){
@@ -8246,7 +8257,7 @@ function adScCardHtml(c){
       (menu?`<div class="sc-more">${c.read==='nocard'?'':adScTiltRow(id)}<span class="sc-cap" style="width:100%">Turn it:</span>${[[90,'↻ right'],[180,'↕ upside down'],[270,'↺ left']].map(([d,l])=>`<button class="pt-mini" onclick="adScAct(this,'${id}','turn',{deg:${d}})">${l}</button>`).join('')}
         <span class="sc-cap" style="width:100%">Cut it again, because…</span>${(AD.sc.r.redo||[]).map(x=>`<button class="pt-mini" onclick="adScAct(this,'${id}','redo',{how:'${esc(x.k)}'})">${esc(x.label)}</button>`).join('')}</div>`:'');
   }
-  return `<div class="sc-card${c.status==='ok'?' ok':c.status==='turning'||c.status==='redoing'?' wait':''}" data-k="${id}|${esc(c.status)}"><div class="sc-top">${img}<div class="sc-side"><div class="sc-tags">${tags.join('')}</div>${zoom}</div></div>${body}
+  return `<div class="sc-card${c.status==='ok'?' ok':c.status==='turning'||c.status==='redoing'?' wait':''}" data-k="${id}|${esc(c.status)}|${esc(c.img)}"><div class="sc-top">${img}<div class="sc-side"><div class="sc-tags">${tags.join('')}</div>${zoom}</div></div>${body}
     ${c.note?`<details class="sc-note"><summary>What the four looks read · ${esc(c.raw)}</summary>${esc(c.note)}</details>`:`<div class="sc-note">${esc(c.raw)}</div>`}</div>`;
 }
 function adScPaint(){
