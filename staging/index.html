@@ -7655,7 +7655,7 @@ function adMoneyHtml(m){
   const tile=(k,lab)=>`<button class="pstat" style="cursor:pointer;${k===cur?'border:2px solid var(--berry)':''}" onclick="AD.mp='${k}';adPaintMoney()"><div class="pn">$${Number(m.periods[k].sales||0).toFixed(0)}</div><div class="pl">${lab}</div></button>`;
   let h=`<div class="pt-stats">${tile('today','Today')}${tile('week','7 days')}${tile('month','This month')}</div>`;
   h+=`<div class="panel" style="padding:4px 12px"><div class="pt-row"><div class="l"><div class="t">${AD_MP_LABEL[cur]}: $${Number(P.sales).toFixed(2)}</div>
-      <div class="s">${P.count} sale${P.count===1?'':'s'} · profit ${adMoneyStr(P.profit)}${P.refunds?` · refunds −$${Math.abs(P.refunds).toFixed(2)}`:''}</div></div></div>`;
+      <div class="s">${P.count} sale${P.count===1?'':'s'} · profit ${adMoneyStr(P.profit)}${P.refunds?` · refunds −$${Math.abs(P.refunds).toFixed(2)}`:''}${P.credit?` · after −$${Number(P.credit).toFixed(2)} store credit`:''}</div></div></div>`;
   if(!P.sources.length) h+=`<p class="note" style="text-align:left">Nothing booked ${cur==='today'?'today':'in this period'} yet.</p>`;
   P.sources.forEach((sr,i)=>{
     const k=adKey('mny',cur+'|'+sr.key);
@@ -7664,11 +7664,40 @@ function adMoneyHtml(m){
         <div class="r ${sr.out||sr.amount<0?'pt-neg':''}">${sr.amount<0?'−':''}$${Math.abs(sr.amount).toFixed(2)} ${adXArrow(adDom('money|'+k),!!AD.open[k])}</div></div>`+
        adXBox(adDom('money|'+k),AD.open[k]?adDetHtml(k):'');
   });
+  // v13.46: sales are shown NET of store credit spent (credit was given earlier: refunds, rewards, codes)
+  if(P.credit) h+=`<div class="pt-row"><div class="l"><div class="t">Store credit spent</div><div class="s">Paid with credit you gave earlier, so it’s taken off sales (and profit)</div></div><div class="r pt-neg">−$${Number(P.credit).toFixed(2)}</div></div>`;
   const ka=adKey('mny',cur+'|');
   h+=`<div class="pt-row" style="cursor:pointer" onclick="adMoneyToggle(-1)"><div class="l"><div class="t">Every line</div><div class="s">All sales, refunds and buybacks, newest first</div></div><div class="r">${adXArrow(adDom('money|'+ka),!!AD.open[ka])}</div></div>`+
      adXBox(adDom('money|'+ka),AD.open[ka]?adDetHtml(ka):'');
   if(cur==='month'&&m.costMissing) h+=`<p class="note" style="text-align:left">${m.costMissing} sale${m.costMissing>1?'s':''} this month had no cost recorded, so their profit is the full price.</p>`;
+  h+=`<div class="pt-row" style="cursor:pointer" onclick="adLedgerToggle()"><div class="l"><div class="t">📒 Costs &amp; net (Ledger tab)</div><div class="s">All time: what you’ve spent, who paid, and where that leaves you</div></div><div class="r">${adXArrow('ad-ledger',!!AD.ledOpen)}</div></div>`+
+     adXBox('ad-ledger',AD.ledOpen?adLedgerHtml(AD.led):'');
   return h+'</div>';
+}
+/* v13.46: 📒 the Ledger tab as you keep it (type, category, amount, notes,
+   contributors + amount spent by each). Apps Script read, all time. */
+async function adLedgerToggle(){
+  AD.ledOpen=!AD.ledOpen;
+  if(!adXSet('ad-ledger',AD.ledOpen,adLedgerHtml(AD.led))) adPaintMoney();
+  if(AD.ledOpen){ const r=await api('adminLedger',{}).catch(e=>({ok:false,error:String(e&&e.message||e)})); AD.led=r; if(AD.ledOpen&&!adXSet('ad-ledger',true,adLedgerHtml(r))) adPaintMoney(); }
+}
+function adLedgerHtml(r){
+  if(!r) return '<p class="note" style="text-align:left">Loading the Ledger…</p>';
+  if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
+  const S=r.sales||{}, row=(t,s,v,neg)=>`<div class="pt-row"><div class="l"><div class="t">${t}</div>${s?`<div class="s">${s}</div>`:''}</div><div class="r ${neg?'pt-neg':''}">${v}</div></div>`;
+  let h=row('Net sales',`$${Number(S.gross||0).toFixed(2)} sold (${S.count||0})${S.refunds?` · refunds −$${Math.abs(S.refunds).toFixed(2)}`:''}${S.credit?` · store credit −$${Number(S.credit).toFixed(2)}`:''}`,adMoneyStr(S.net||0));
+  if(r.income) h+=row('Other income (Ledger)','',adMoneyStr(r.income));
+  h+=row('Costs (Ledger)',(r.byType||[]).map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · ')+(S.buybacks?` · buybacks ${adMoneyStr(S.buybacks)}`:''),'−'+adMoneyStr(r.costs+(S.buybacks||0)),true);
+  h+=row(r.net>=0?'✅ Net profit':'❌ Net so far','Net sales + other income − costs',adMoneyStr(r.net),r.net<0);
+  if((r.byWho||[]).length) h+=row('Paid by',(r.byWho||[]).map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · '),'');
+  h+=`<p class="note" style="text-align:left;margin:8px 0 4px">By category</p>`+(r.byCat||[]).map(x=>row(esc(x.k),'',adMoneyStr(x.amount),true)).join('');
+  h+=`<p class="note" style="text-align:left;margin:8px 0 4px">Every Ledger line (${(r.rows||[]).length})</p>`+(r.rows||[]).map(x=>row(
+      esc(x.notes||x.category||x.type),
+      [esc(x.type)+(x.category?' · '+esc(x.category):''), x.date?new Date(x.date).toLocaleDateString([], {day:'numeric',month:'short',year:'numeric'}):'no date',
+       (x.who||[]).map(w=>esc(w.name)+' '+adMoneyStr(w.amount)).join(', '), x.resources?esc(x.resources):'', x.splitOff?'⚠️ split doesn’t add up':''].filter(Boolean).join(' · '),
+      (x.income?'':'−')+adMoneyStr(x.amount),!x.income)).join('');
+  if(r.undated) h+=`<p class="note" style="text-align:left">${r.undated} line${r.undated>1?'s have':' has'} no date, so ${r.undated>1?'they only count':'it only counts'} here and in the all-time /pnl (not in a month).</p>`;
+  return h;
 }
 // Today / 7 days / This month: redraw only the money panel.
 function adPaintMoney(){ const el=document.getElementById('ad-money'), m=AD.dash&&AD.dash.money; if(el&&m) el.innerHTML=adMoneyHtml(m); else adRenderToday(); }
