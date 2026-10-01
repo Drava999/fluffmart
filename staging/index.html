@@ -8109,8 +8109,9 @@ function adResHtml(){
 function adHeldCard(c){
   const K=AD_HELD_K[c.kind]||['',''], id=esc(c.id), sell=c.kind==='reserved'&&AD.res.sell===c.id;
   const what=c.kind==='reserved'?(c.off?'🏪 set aside (off-platform)':'📌 set aside'):K[0]+' '+K[1].toLowerCase()+(c.ref?' · '+esc(c.ref):'');
-  let h=`<div class="pt-row" style="padding:6px 0 6px 8px;gap:8px" data-k="hc:${esc(c.kind+':'+c.id+':'+(c.ref||''))}">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}</div>`+
+  let h=`<div class="pt-row" style="padding:6px 0 6px 8px;gap:8px" data-k="hc:${esc(c.kind+':'+c.id+':'+(c.ref||''))}">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}${Number(c.qty)>1?' ×'+Number(c.qty):''}</div>`+
     adMeta([what,c.price?dlMoney(c.price):'',c.at?adAgo(c.at):'',c.note?'📝 '+esc(c.note):''])+`</div></div>`;
+  if(c.kind==='reserved'&&Number(c.qty)>1) h+=`<p class="pt-err" style="margin:0 0 4px 42px;text-align:left">All ${Number(c.qty)} copies are held. <button class="pt-mini" style="margin:0 0 0 4px" onclick="adResTrim(this,'${id}')">Hold just 1 · put ${Number(c.qty)-1} back on sale</button></p>`;
   if(c.kind==='reserved') h+=`<div class="cn-rev-btns" style="margin:0 0 6px 42px">${c.off?`<button class="pt-mini pri" onclick="adTab('deals')">🤝 Record in Deals</button>`:`<button class="pt-mini pri" onclick="adResSellOpen('${id}')">${sell?'Close':'🧾 Sell to them'}</button>`}<button class="pt-mini" onclick="adResRelease(this,'${id}')">↩️ Release</button></div>`+
     (sell?`<div class="pt-inl" style="margin:0 0 8px 42px"><input id="ad-res-price" inputmode="decimal" enterkeyhint="send" placeholder="Deal price $" aria-label="Deal price for ${esc(c.name)}"><button class="pt-mini pri" onclick="adResSell(this,'${id}')">Invoice</button></div>`:'');
   return h;
@@ -8126,6 +8127,15 @@ async function adResSell(btn,id){
   if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
   ptToast(r.message||'Invoiced'); AD.res.sell='';
   AD.res.list=(AD.res.list||[]).filter(x=>x.id!==id); adResPaint(); setTimeout(adResLoad,800);
+}
+// v13.53: a hold made before holds took one copy can have all copies held: keep 1, rest back on sale.
+async function adResTrim(btn,id){
+  const c=(AD.res.list||[]).find(x=>dlSid(x.id)===dlSid(id)); if(!c) return;
+  if(!(await ptConfirm(`Keep 1 ${c.name} held for ${c.buyer} and put the other ${Number(c.qty)-1} back on sale?`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminReserveTrim',{cardId:c.id,keep:1}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Done'); c.qty=1; adResPaint(); adDealsHeldPaint(); AD.res.at=0; setTimeout(adResLoad,600);
 }
 async function adResRelease(btn,id){
   const c=(AD.res.list||[]).find(x=>x.id===id); if(!c) return;
@@ -8275,8 +8285,9 @@ function adDealsHeldPaint(){
     const cs=g[k], sid=dlSid(k), value=cs.reduce((a,c)=>a+Number(c.price||0),0);
     return `<div class="panel" style="padding:10px 12px;margin:0 0 10px" data-k="dl:${esc(k)}">
       <div class="ad-head" style="margin:0 0 4px"><b>${cs[0].off?'🏪 ':''}${esc(cs[0].buyer)}</b><span class="ad-sub">${cs[0].off?'off-platform · ':''}${cs.length} card${cs.length===1?'':'s'} · listed ${dlMoney(value)}</span></div>`+
-      cs.map(c=>`<div class="pt-row" style="padding:6px 0;gap:8px">${adThumb(c,30)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}</div>`+
-        `${adMeta(['listed '+dlMoney(c.price),c.at?'held '+adAgo(c.at):'',c.note?'📝 '+esc(c.note):''])}</div>`+
+      cs.map(c=>`<div class="pt-row" style="padding:6px 0;gap:8px">${adThumb(c,30)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}${Number(c.qty)>1?' ×'+Number(c.qty):''}</div>`+
+        `${adMeta(['listed '+dlMoney(c.price),c.at?'held '+adAgo(c.at):'',c.note?'📝 '+esc(c.note):''])}`+
+        (Number(c.qty)>1?`<button class="pt-mini" style="margin:4px 0 0" onclick="adResTrim(this,'${dlSid(c.id)}')">Hold just 1 · put ${Number(c.qty)-1} back on sale</button>`:'')+`</div>`+
         `<div class="r"><button class="pt-mini" style="margin:0" onclick="adDealRelease(this,'${sid}','${dlSid(c.id)}')" aria-label="Put ${esc(c.name)} back on sale">↩️</button></div></div>`).join('')+
       `<div class="lt-row" style="margin:8px 0 0"><label class="lt-pl" style="font-size:14px">Deal price $<input id="dl-inv-${sid}" class="lt-in" style="width:90px" inputmode="decimal" placeholder="${Math.round(value)}" aria-label="Deal price for ${esc(cs[0].buyer)}"></label>
         <button class="pt-mini pri" style="margin:0" onclick="adDealInvoice(this,'${sid}')">${cs[0].off?'✅ Record sale':'🧾 Invoice all'}</button><button class="pt-mini" style="margin:0" onclick="adDealRelease(this,'${sid}')">↩️ Release all</button></div></div>`;
