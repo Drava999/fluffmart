@@ -7700,7 +7700,8 @@ function adLedgerHtml(r){
   h+=row(acc?'Costs (Ledger, not stock)':'Costs (Ledger)',types.map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · ')+(!acc&&S.buybacks?` · buybacks ${adMoneyStr(S.buybacks)}`:''),'−'+adMoneyStr(acc?r.expenses:r.costs+(S.buybacks||0)),true);
   if(acc){ h+=row(r.netProfit>=0?'✅ Net profit':'❌ Net loss','Gross profit + other income − costs (stock isn’t a cost until it sells)',adMoneyStr(r.netProfit),r.netProfit<0);
     h+=row('📦 Inventory now, at cost',`${Number(I.cards||0)} cards · at your prices ${adMoneyStr(I.listed||0)} · stock bought ${adMoneyStr(r.stock||0)}`,adMoneyStr(I.cost||0));
-    h+=row('💵 Cash so far',`in ${adMoneyStr(S.cashIn||0)} · out ${adMoneyStr(r.costs+(S.buybacks||0))}`,adMoneyStr(r.net),r.net<0); }
+    const C=r.cash;   // v13.50.2: every dollar in and out
+    h+=row('💵 Cash so far',C?`in ${adMoneyStr(C.in)} (cards ${adMoneyStr(C.sales)}${C.fees?' · delivery fees '+adMoneyStr(C.fees):''}${C.income?' · other '+adMoneyStr(C.income):''}) · out ${adMoneyStr(C.out)} (Ledger ${adMoneyStr(C.ledger)}${C.buybacks?' · cash buybacks '+adMoneyStr(C.buybacks):''}${C.consignors?' · consignors '+adMoneyStr(C.consignors):''}${C.postage?' · postage '+adMoneyStr(C.postage)+(C.postageEst?' ('+C.postageEst+' estimated)':''):''})`:`in ${adMoneyStr(S.cashIn||0)} · out ${adMoneyStr(r.costs+(S.buybacks||0))}`,adMoneyStr(r.net),r.net<0); }
   else h+=row(r.net>=0?'✅ Net profit':'❌ Net so far','Net sales + other income − costs',adMoneyStr(r.net),r.net<0);
   if((r.byWho||[]).length) h+=row('Paid by',(r.byWho||[]).map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · '),'');
   h+=`<p class="note" style="text-align:left;margin:8px 0 4px">By category</p>`+(r.byCat||[]).map(x=>row(esc(x.k),'',adMoneyStr(x.amount),true)).join('');
