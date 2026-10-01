@@ -7259,8 +7259,12 @@ function adBoxHtml(b){
   h+=adBoxActions(b);
   if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">📍 Pull from</div>`+lotSortLines(b.picks).map(x=>`<div style="font-size:13px;padding:2px 0;display:flex;gap:8px;align-items:center">${adThumb(x.card,30)}<span><b>${x.lot?esc(x.lot):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</span></div>`).join('');
   h+=`<div class="pt-h">Pack list · ${b.cards} card${b.cards===1?'':'s'} · $${Number(b.value||0).toFixed(2)}</div>`;
-  const units=(b.orders||[]).filter(o=>o.status!=='Refunded').reduce((a,o)=>a+(o.items||[]).reduce((x,c)=>x+((c.components&&c.components.length)?c.components.reduce((y,k)=>y+Math.max(1,Number(k.n||1)),0):1),0),0);   // every card in a bundle gets its own sleeve + toploader
-  h+=adPackSupplies(units,b.delivery);
+  // every card gets a sleeve; only cards over $3 their own toploader (a bundle's price is split over its cards)
+  let units=0, top=0;
+  (b.orders||[]).filter(o=>o.status!=='Refunded').forEach(o=>(o.items||[]).forEach(c=>{
+    const k=(c.components&&c.components.length)?c.components.reduce((y,x)=>y+Math.max(1,Number(x.n||1)),0):1;
+    units+=k; if(Number(c.price||0)/k>3) top+=k; }));
+  h+=adPackSupplies(units,b.delivery,top);
   // v13.16.4: every card says which lot to pull it from (same plan as Pull from and the pick route).
   const where={}; (b.picks||[]).forEach(x=>{ const id=x.card&&x.card.id; if(id) (where[id]=where[id]||[]).push(x); });
   b.orders.forEach(o=>{
@@ -7271,12 +7275,13 @@ function adBoxHtml(b){
   });
   return h;
 }
-/* v13.50.3: what to pack it with -- the same rule PackLog records when the box leaves (code.gs packCounts_):
-   a sleeve + a toploader per card; a mailed box has at least 2 toploaders (stiffener) and 1 bubble mailer. */
-function adPackSupplies(cards,delivery){
+/* v13.50.4: what to pack it with -- the same rule PackLog records when the box leaves (code.gs packCounts_):
+   a sleeve per card, a toploader only for cards over $3; a mailed box has at least 2 toploaders (stiffener) and 1 bubble mailer. */
+function adPackSupplies(cards,delivery,top){
   const n=Math.max(0,Math.round(Number(cards)||0)); if(!n) return '';
-  const pickup=delivery==='pickup', tl=pickup?n:Math.max(2,n);
-  return `<div class="ad-supplies" style="font-size:13px;margin:2px 0 6px;padding:6px 10px;border-radius:10px;background:var(--line)">🧰 Pack with: <b>${n} sleeve${n===1?'':'s'}</b> · <b>${tl} toploader${tl===1?'':'s'}</b>${!pickup&&tl>n?' (1 extra to stiffen it)':''}${pickup?' · no mailer (hand-over)':' · <b>1 bubble mailer</b>'}</div>`;
+  const pickup=delivery==='pickup', t=top==null?n:Math.min(n,Math.max(0,top)), tl=pickup?t:Math.max(2,t), extra=tl-t, why=[];
+  if(t) why.push(t+' card'+(t===1?'':'s')+' over $3'); if(extra>0) why.push(extra+' to stiffen it');
+  return `<div class="ad-supplies" style="font-size:13px;margin:2px 0 6px;padding:6px 10px;border-radius:10px;background:var(--line)">🧰 Pack with: <b>${n} sleeve${n===1?'':'s'}</b> · <b>${tl} toploader${tl===1?'':'s'}</b>${why.length&&tl?' ('+why.join(' + ')+')':''}${pickup?' · no mailer (hand-over)':' · <b>1 bubble mailer</b>'}</div>`;
 }
 function adPackWhere(ps){
   if(!ps||!ps.length) return '';
@@ -7786,7 +7791,7 @@ function adHowHtml(w,hints){
   const pc=v=>Math.round(Number(v||0)*100)+'%', P=t=>`<p class="note" style="text-align:left;margin:0 0 6px">${t}</p>`, man=w.manual||{};
   return `<details style="margin:6px 0 4px"><summary class="note" style="text-align:left;cursor:pointer">How this works</summary>`+
     P(`<b>Cost of a card</b> = Collectr × condition × ${Number(w.ratio).toFixed(2)}: what you actually spent on cards${w.paid?` (${dlMoney(w.paid)}: Ledger Inventory + buybacks)`:''} ÷ the value of every card you’ve had${w.legacyRef?` (${dlMoney(w.legacyRef)})`:''}. Cards from your own collection cost nothing, so they bring it down. Condition: NM 100%, LP 85%, MP 70%, HP 50%, DMG 30%. A card with its own cost recorded uses that instead.`)+
-    P(`<b>Break-even</b> = cost + ${pc(w.L)} running costs${man.L?' (set in Config)':' (software, fees and other costs in the Ledger)'} + ${pc(w.R)} losses (scams, write-offs) + packing${w.pack?` ($${Number(w.pack).toFixed(2)} a card: sleeve, toploader and a share of the mailer, from what parcels really use)`:''}. Sell under it and the sale doesn’t pay its share of the shop’s costs. A bundle’s break-even is its cards added up, packing once.`)+
+    P(`<b>Break-even</b> = cost + ${pc(w.L)} running costs${man.L?' (set in Config)':' (software, fees and other costs in the Ledger)'} + ${pc(w.R)} losses (scams, write-offs) + packing${w.pack?` ($${Number(w.pack).toFixed(2)} a card: a sleeve and a share of the mailer, from what parcels really use; + a toploader for cards over $3)`:''}. Sell under it and the sale doesn’t pay its share of the shop’s costs. A bundle’s break-even is its cards added up, packing once.`)+
     P(`<b>Under what it cost</b> (red) = cost + packing only: you lose money on the card itself.`)+
     P(`<b>Your time</b> = $${Number(w.hourly||0).toFixed(0)}/hour × ${Number(w.minSingle||0)} min to sell a card alone${w.minFiller!=null?', '+w.minFiller+' min as a lot extra':''}. It decides which cards make good lot extras; it’s never added to prices.`)+
     (hints?P(`The same check appears as a small note while a price is being set: an offer, a drop price, an auction starting bid (with few bidders it often sells at the starting bid) or a price edit. Cheap cards (worth $6 or less) and consigned cards never get a note. Nothing changes a price unless you tap it.`):'')+`</details>`;
