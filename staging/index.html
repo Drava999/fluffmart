@@ -2038,6 +2038,8 @@ span[style*="#c2405e"]{color:#A8324F!important}
    check run on every Admin screen (Dashboard, box, pick route, Stock health,
    Events + builder + picker, Lots, Consignment, Rates, Config), light and dark. */
 /* 1 · text that was light pink on cream (2.17:1) */
+.ad-flw{color:#8A5A00}                                         /* under break-even: amber, quieter than red */
+:root[data-theme="dark"] .ad-flw{color:#E8B34B}
 .pt-neg{color:#A8324F}                                        /* 5.7:1; warnings: floors, unclaimed, not in a lot */
 :root[data-theme="dark"] .pt-neg{color:var(--berry)}          /* dark keeps the light pink (6.6:1) */
 .pt-ok,.pt-pos{color:#237152}                                 /* was --mint-deep, 2.4-2.8:1: "✓ All pulled", "Packed by", balances */
@@ -7031,6 +7033,7 @@ async function adLoad(){
   const tab=AD_TAB;
   b.innerHTML=adHead()+'<div id="ad-upd" class="note" style="text-align:left;margin:-4px 2px 6px;min-height:14px"></div><div id="ad-in"></div>';
   const still=()=>AD_TAB===tab&&document.getElementById('ad-in');
+  if(tab==='dash'||tab==='events'||tab==='shelf') adPhLoad();   // v13.49.1: floors for the price hints (one read, kept 10 min)
   if(tab==='dash'||(tab==='shelf'&&AD.ssub==='health')){
     if(tab==='dash'){ AD.pickOpen=false; AD.pick=null; }
     const saved=!AD.fresh&&(AD.dash&&AD.dash.ok?AD.dash:ptLoad('addash'));
@@ -7555,7 +7558,7 @@ function adPrPreview(kind){
 function adPrPvHtml(kind){
   const pv=AD.pr.pv[kind]; if(!pv) return '';
   const go=pv.rows.filter(x=>x.to>0&&x.to!==x.from);
-  let h=`<div class="ad-prpv">`+pv.rows.map(x=>`<div class="ad-prpvl"><span>${esc(x.name)}</span><span>${!(x.to>0)?'<span class="pt-neg">no market price — skipped</span>':x.to===x.from?'<span style="color:var(--hint)">no change</span>':adPrMoney(x.from)+' → <b>'+adPrMoney(x.to)+'</b>'+(x.cons?' <span class="pt-tag">consigned</span>':'')}</span></div>`).join('')+`</div>`;
+  let h=`<div class="ad-prpv">`+pv.rows.map(x=>`<div class="ad-prpvl"><span>${esc(x.name)}</span><span>${!(x.to>0)?'<span class="pt-neg">no market price — skipped</span>':x.to===x.from?'<span style="color:var(--hint)">no change</span>':adPrMoney(x.from)+' → <b>'+adPrMoney(x.to)+'</b>'+(x.cons?' <span class="pt-tag">consigned</span>':adFloorTag(x.id,x.to,'sale'))}</span></div>`).join('')+`</div>`;
   if(pv.res) h+=`<div class="${pv.res.skipped&&pv.res.skipped.length?'pt-err':'pt-ok'}" style="font-size:12.5px">${esc(pv.res.message||'')}${(pv.res.skipped||[]).map(s=>'<br>• '+esc(s.name)+': '+esc(s.why)).join('')}</div>`;
   h+=`<div class="ev-foot">${go.length?`<button class="pt-mini pri" onclick="adPrApply(this,'${kind}')">Apply ${go.length} price${go.length===1?'':'s'}</button>`:''}<button class="pt-mini" onclick="delete AD.pr.pv['${kind}'];document.getElementById('adpr-pv-${kind}').innerHTML=''">Close preview</button></div>`;
   return h;
@@ -7584,7 +7587,8 @@ async function adPrSave(el,v){
   const inp=box.querySelector('input.ev-num'), n=Math.round(Number(String(v).replace(/[$,\s]/g,''))*100)/100;
   if(!(n>0)){ ptAlert('Type a price above $0.'); if(inp) inp.value=Number(c.price).toFixed(2); return; }
   if(n===Math.round(Number(c.price)*100)/100){ if(inp) inp.value=n.toFixed(2); return; }
-  if(AD.prAsk&&!(await ptConfirm(`Change ${c.name} from ${adPrMoney(c.price)} to ${adPrMoney(n)}?${c.market?`\n\nMarket is ${adPrMoney(c.market)}.`:''}\n\n(Turn off “Ask before saving each price” to skip this.)`))){ if(inp) inp.value=Number(c.price).toFixed(2); return; }
+  const flw=c.consignor?'':adFloorAsk(id,n,'sale');   // under break-even: always asked, even with asking turned off
+  if((AD.prAsk||flw)&&!(await ptConfirm(`Change ${c.name} from ${adPrMoney(c.price)} to ${adPrMoney(n)}?${c.market?`\n\nMarket is ${adPrMoney(c.market)}.`:''}${flw}${AD.prAsk?'\n\n(Turn off “Ask before saving each price” to skip this.)':''}`))){ if(inp) inp.value=Number(c.price).toFixed(2); return; }
   if(inp){ inp.value=n.toFixed(2); inp.classList.add('saving'); inp.classList.remove('bad'); }
   let r; try{ r=await api('adminPriceSet',{cardId:id,price:n}); }catch(e){ r={ok:false,error:'network'}; }
   if(inp) inp.classList.remove('saving');
@@ -7672,6 +7676,7 @@ function adMoneyHtml(m){
   if(cur==='month'&&m.costMissing) h+=`<p class="note" style="text-align:left">${m.costMissing} sale${m.costMissing>1?'s':''} this month had no cost recorded, so their profit is the full price.</p>`;
   h+=`<div class="pt-row" style="cursor:pointer" onclick="adLedgerToggle()"><div class="l"><div class="t">📒 Costs &amp; net (Ledger tab)</div><div class="s">All time: what you’ve spent, who paid, and where that leaves you</div></div><div class="r">${adXArrow('ad-ledger',!!AD.ledOpen)}</div></div>`+
      adXBox('ad-ledger',AD.ledOpen?adLedgerHtml(AD.led):'');
+  h+=adPhRowHtml();
   return h+'</div>';
 }
 /* v13.46: 📒 the Ledger tab as you keep it (type, category, amount, notes,
@@ -7685,10 +7690,18 @@ function adLedgerHtml(r){
   if(!r) return '<p class="note" style="text-align:left">Loading the Ledger…</p>';
   if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
   const S=r.sales||{}, row=(t,s,v,neg)=>`<div class="pt-row"><div class="l"><div class="t">${t}</div>${s?`<div class="s">${s}</div>`:''}</div><div class="r ${neg?'pt-neg':''}">${v}</div></div>`;
-  let h=row('Net sales',`$${Number(S.gross||0).toFixed(2)} sold (${S.count||0})${S.refunds?` · refunds −$${Math.abs(S.refunds).toFixed(2)}`:''}${S.credit?` · store credit −$${Number(S.credit).toFixed(2)}`:''}`,adMoneyStr(S.net||0));
+  // v13.48 accounting review: stock bought is inventory until it sells (cost of cards sold), not a cost
+  const acc=r.netProfit!=null, I=r.inventory||{};
+  let h=row('Net sales',`$${Number(S.gross||0).toFixed(2)} sold (${S.count||0})${S.refunds?` · refunds −$${Math.abs(S.refunds).toFixed(2)}`:''}${S.credit?` · promotional credit −$${Number(S.credit).toFixed(2)}`:''}`,adMoneyStr(S.net||0));
+  if(acc){ h+=row('Cost of cards sold','what the cards you sold cost you','−'+adMoneyStr(S.cogs||0),true);
+    h+=row('Gross profit',S.net>0?Math.round((S.grossProfit||0)/S.net*100)+'% of net sales':'',adMoneyStr(S.grossProfit||0)); }
   if(r.income) h+=row('Other income (Ledger)','',adMoneyStr(r.income));
-  h+=row('Costs (Ledger)',(r.byType||[]).map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · ')+(S.buybacks?` · buybacks ${adMoneyStr(S.buybacks)}`:''),'−'+adMoneyStr(r.costs+(S.buybacks||0)),true);
-  h+=row(r.net>=0?'✅ Net profit':'❌ Net so far','Net sales + other income − costs',adMoneyStr(r.net),r.net<0);
+  const types=(r.byType||[]).filter(x=>!acc||x.k!=='Inventory');
+  h+=row(acc?'Costs (Ledger, not stock)':'Costs (Ledger)',types.map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · ')+(!acc&&S.buybacks?` · buybacks ${adMoneyStr(S.buybacks)}`:''),'−'+adMoneyStr(acc?r.expenses:r.costs+(S.buybacks||0)),true);
+  if(acc){ h+=row(r.netProfit>=0?'✅ Net profit':'❌ Net loss','Gross profit + other income − costs (stock isn’t a cost until it sells)',adMoneyStr(r.netProfit),r.netProfit<0);
+    h+=row('📦 Inventory now, at cost',`${Number(I.cards||0)} cards · at your prices ${adMoneyStr(I.listed||0)} · stock bought ${adMoneyStr(r.stock||0)}`,adMoneyStr(I.cost||0));
+    h+=row('💵 Cash so far',`in ${adMoneyStr(S.cashIn||0)} · out ${adMoneyStr(r.costs+(S.buybacks||0))}`,adMoneyStr(r.net),r.net<0); }
+  else h+=row(r.net>=0?'✅ Net profit':'❌ Net so far','Net sales + other income − costs',adMoneyStr(r.net),r.net<0);
   if((r.byWho||[]).length) h+=row('Paid by',(r.byWho||[]).map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · '),'');
   h+=`<p class="note" style="text-align:left;margin:8px 0 4px">By category</p>`+(r.byCat||[]).map(x=>row(esc(x.k),'',adMoneyStr(x.amount),true)).join('');
   h+=`<p class="note" style="text-align:left;margin:8px 0 4px">Every Ledger line (${(r.rows||[]).length})</p>`+(r.rows||[]).map(x=>row(
@@ -7698,6 +7711,94 @@ function adLedgerHtml(r){
       (x.income?'':'−')+adMoneyStr(x.amount),!x.income)).join('');
   if(r.undated) h+=`<p class="note" style="text-align:left">${r.undated} line${r.undated>1?'s have':' has'} no date, so ${r.undated>1?'they only count':'it only counts'} here and in the all-time /pnl (not in a month).</p>`;
   return h;
+}
+/* v13.49.1 🏷 Prices: your stock against its break-even, as a whole (bundles count as one
+   item; cheap lot-extra cards priced low are covered by the cushion, not flagged). One Apps
+   Script read, kept 10 min; the same answer gives the floors for the small hints on offers,
+   SB/drop prices and price edits. A hint only appears when a price is actually under. */
+AD.ph=null; AD.phAt=0; AD.phBusy=false; AD.phOpen=false;
+function adPhLoad(force){
+  if(AD.phBusy||(!force&&AD.ph&&Date.now()-AD.phAt<600000)) return;
+  AD.phBusy=true;
+  api('adminPriceHealth',{}).then(r=>{ if(r&&r.ok&&r.totals){ AD.ph=r; AD.phAt=Date.now(); adPhRepaint(); } }).catch(()=>{}).finally(()=>{ AD.phBusy=false; });
+}
+function adPhRepaint(){
+  const s=document.getElementById('ad-ph-s'); if(s) s.innerHTML=adPhSub();
+  if(AD.phOpen) adXSet('ad-ph',true,adPhHtml());
+  if(document.querySelector('.ad-offers-box')) adOffersPaint();
+  document.querySelectorAll('.ev-it[data-card]').forEach(el=>{ const f=el.querySelector('.ev-fl'); if(f) f.innerHTML=adFloorTag(el.dataset.card,Number(el.dataset.p),el.dataset.m); });
+}
+function adFloor(id){ const f=AD.ph&&AD.ph.floors&&AD.ph.floors[id]; return f?{abs:f[0],be:f[1],cheap:!!f[2]}:null; }
+// null, or what's wrong with this price. Cheap cards never warn; an auction SB only warns under cost.
+function adFloorWarn(id,price,mode){
+  const f=adFloor(String(id)); price=Number(price);
+  if(!f||f.cheap||!(price>=0)) return null;
+  if(price<f.abs-0.005) return {abs:true,txt:'under cost $'+f.abs.toFixed(2),long:`That’s under what it cost you ($${f.abs.toFixed(2)} with packing), so you lose money on it.`};
+  if(mode!=='sb'&&price<f.be-0.005) return {abs:false,txt:'under break-even $'+f.be.toFixed(2),long:`That’s under its break-even ($${f.be.toFixed(2)}: cost + running costs + losses).`};
+  return null;
+}
+function adFloorTag(id,price,mode){ const w=adFloorWarn(id,price,mode); return w?` · <span class="${w.abs?'pt-neg':'ad-flw'}">${w.txt}</span>`:''; }
+function adFloorAsk(id,price,mode){ const w=adFloorWarn(id,price,mode); return w?'\n\n'+(w.abs?'⛔ ':'⚠️ ')+w.long:''; }
+function adPhSub(){
+  const r=AD.ph; if(!r) return 'Checking…';
+  const T=r.totals, n=(r.look||[]).length+(r.more||0);
+  return (T.cushion>=0?`<b>$${T.cushion.toFixed(2)}</b> above break-even`:`<b class="pt-neg">$${Math.abs(T.cushion).toFixed(2)} below break-even</b>`)+(n?` · <span class="pt-neg">${n} to look at</span>`:' · all fine');
+}
+function adPhRowHtml(){
+  if(!AD.ph) setTimeout(()=>adPhLoad(),0);
+  return `<div class="pt-row" style="cursor:pointer" onclick="adPhToggle()"><div class="l"><div class="t">🏷 Prices</div><div class="s" id="ad-ph-s">${adPhSub()}</div></div><div class="r">${adXArrow('ad-ph',!!AD.phOpen)}</div></div>`+adXBox('ad-ph',AD.phOpen?adPhHtml():'');
+}
+function adPhToggle(){ AD.phOpen=!AD.phOpen; adXSet('ad-ph',AD.phOpen,adPhHtml()); if(AD.phOpen) adPhLoad(); }
+function adPhHtml(){
+  const r=AD.ph; if(!r) return '<p class="note" style="text-align:left">Checking prices…</p>';
+  const T=r.totals, m=v=>'$'+Number(v).toFixed(2), pc=v=>Math.round(v*100)+'%', P=t=>`<p class="note" style="text-align:left;margin:0 0 6px">${t}</p>`;
+  let h=P(`Everything you own that’s for sale (${T.cards} cards${T.bundles?' + '+T.bundles+' bundle'+(T.bundles===1?'':'s'):''}) is listed at <b>${m(T.listed)}</b>. To cover what it cost plus running costs and losses it needs <b>${m(T.breakEven)}</b>. The difference is your cushion: <b>${T.cushion>=0?m(T.cushion)+' to spare':m(-T.cushion)+' short'}</b>.`);
+  h+=P(`Markup ${pc(T.markup)} over cost · break-even needs ${pc(T.markupNeedBE)} · paying your time too needs ${pc(T.markupNeedWorth)}.`);
+  if(T.cheapUnder) h+=P(`🧩 ${T.cheapUnder} cheap card${T.cheapUnder===1?' is':'s are'} priced under break-even. That’s fine: they sell best as extras in a lot (<a href="#" onclick="adTab('bundles');return false">📦 Bundles</a>) and the cushion covers them.`);
+  const L=r.look||[];
+  if(!L.length) h+=P('✅ Nothing to look at.');
+  else {
+    h+=`<div class="pt-h" style="margin-top:8px">To look at <span class="pt-tag warn">${L.length+(r.more||0)}</span></div>`+P('Cards worth more than $'+Number(r.cheapMax||6)+' (and bundles) priced under break-even. Tap the price to raise it to break-even, or <b>Leave it</b> if it’s low on purpose: it stays hidden until its price changes.');
+    h+=L.map(c=>`<div class="pt-row" data-k="${esc(c.id)}"><div class="l"><div class="t">${c.bundle?'📦 ':''}${esc(c.name)}${c.qty>1?' ×'+c.qty:''}</div><div class="s">now ${m(c.price)} · break-even ${m(c.breakEven)}${c.level==='abs'?' · <span class="pt-neg">under what it cost ('+m(c.absFloor)+')</span>':''}${c.status!=='available'?' · '+esc(c.status.replace('_hold','').replace('drop','in a drop').replace('auction','in an auction')):''}</div></div>`+
+      `<div class="r" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="pt-mini pri" aria-label="Raise ${esc(c.name)} to ${m(c.raiseTo)}" onclick="adPhRaise(this,['${esc(c.id)}'])">${m(c.raiseTo)}</button><button class="pt-mini" onclick="adPhKeep(this,'${esc(c.id)}')">Leave it</button></div></div>`).join('');
+    if(r.more) h+=P(`…and ${r.more} more (/pricecheck in Telegram).`);
+    if(L.length>1) h+=`<div class="ev-foot"><button class="pt-mini" onclick="adPhRaise(this,null)">Raise all ${L.length} to break-even</button></div>`;
+  }
+  h+=adHowHtml(r.how,true);
+  return h;
+}
+/* "How this works": ONE explanation of the cost / break-even maths, shared by 🏷 Prices and
+   📦 Bundles so both screens say the same thing with the same live numbers. Folded by default. */
+function adHowHtml(w,hints){
+  if(!w) return '';
+  const pc=v=>Math.round(Number(v||0)*100)+'%', P=t=>`<p class="note" style="text-align:left;margin:0 0 6px">${t}</p>`, man=w.manual||{};
+  return `<details style="margin:6px 0 4px"><summary class="note" style="text-align:left;cursor:pointer">How this works</summary>`+
+    P(`<b>Cost of a card</b> = Collectr × condition × ${Number(w.ratio).toFixed(2)}. That ${Number(w.ratio).toFixed(2)} is what your card buying (Ledger, type Inventory) works out to per $1 of card value${man.ratio?' (set by hand in Config)':w.paid?` (${dlMoney(w.paid)} spent ÷ ${dlMoney(w.legacyRef)} of card value)`:', recalculated from the Sheet'}. A card with its own cost recorded uses that instead.`)+
+    P(`<b>Break-even</b> = cost + ${pc(w.L)} running costs${man.L?' (set in Config)':' (mailers, software, fees in the Ledger)'} + ${pc(w.R)} losses (scams, write-offs) + packing. Sell under it and the sale doesn’t pay its share of the shop’s costs. A bundle’s break-even is its cards added up, packing once.`)+
+    P(`<b>Under what it cost</b> (red) = cost + packing only: you lose money on the card itself.`)+
+    P(`<b>Your time</b> = $${Number(w.hourly||0).toFixed(0)}/hour × ${Number(w.minSingle||0)} min to sell a card alone${w.minFiller!=null?', '+w.minFiller+' min as a lot extra':''}. It decides which cards make good lot extras; it’s never added to prices.`)+
+    (hints?P(`The same check appears as a small note while a price is being set: an offer, a drop price, an auction starting bid (only if under cost; bids push it up) or a price edit. Cheap cards (worth $6 or less) and consigned cards never get a note. Nothing changes a price unless you tap it.`):'')+`</details>`;
+}
+async function adPhRaise(btn,ids){
+  const L=(AD.ph&&AD.ph.look)||[], go=L.filter(c=>!ids||ids.indexOf(c.id)>=0); if(!go.length) return;
+  const q=go.length===1?`Raise ${go[0].name} from $${go[0].price.toFixed(2)} to $${go[0].raiseTo.toFixed(2)}?`:`Raise ${go.length} prices to break-even (rounded up to .49/.99)?`;
+  if(!(await ptConfirm(q+' Buyers see the new price straight away.'))) return;
+  await guard(btn, async()=>{
+    let r; try{ r=await api('adminPriceBulk',{items:go.map(c=>({cardId:c.id,price:c.raiseTo}))}); }catch(e){ r={ok:false,error:'network'}; }
+    if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+    const done={}; (r.cards||[]).forEach(c=>{ done[c.id]=1; try{ adPrApplyCard(c,c.lists); }catch(e){} });
+    AD.ph.look=L.filter(c=>!done[c.id]);
+    if((r.skipped||[]).length) ptAlert(r.message+'\n'+r.skipped.map(s=>'• '+s.name+': '+s.why).join('\n'));
+    adPhRepaint(); adPhLoad(true);
+  });
+}
+async function adPhKeep(btn,id){
+  const c=((AD.ph&&AD.ph.look)||[]).find(x=>x.id===id); if(!c) return;
+  await guard(btn, async()=>{
+    const r=await api('adminPriceKeep',{cardId:id,price:c.price}).catch(()=>null);
+    if(!r||!r.ok){ ptAlert(ptErr(r||{error:'network'})); return; }
+    AD.ph.look=AD.ph.look.filter(x=>x.id!==id); adPhRepaint();
+  });
 }
 // Today / 7 days / This month: redraw only the money panel.
 function adPaintMoney(){ const el=document.getElementById('ad-money'), m=AD.dash&&AD.dash.money; if(el&&m) el.innerHTML=adMoneyHtml(m); else adRenderToday(); }
@@ -7863,7 +7964,7 @@ function adOfferRow(o){
   else acts=`<button class="pt-mini" onclick="adOfferDo(this,'${id}','dismiss')">Dismiss</button>`;
   return `<div class="ad-of" data-k="${id}">${img}<div class="ad-of-b">
     <div class="t" style="font-weight:700">${esc(o.cardName)}</div>
-    <div class="s">${o.price!=null?'Listed $'+Number(o.price).toFixed(2)+' · ':''}<b>offered $${Number(o.offered).toFixed(2)}</b>${pct!=null?' ('+pct+'%)':''}</div>
+    <div class="s">${o.price!=null?'Listed $'+Number(o.price).toFixed(2)+' · ':''}<b>offered $${Number(o.offered).toFixed(2)}</b>${pct!=null?' ('+pct+'%)':''}${o.status==='open'?adFloorTag(o.cardId,o.offered,'sale'):''}</div>
     <div class="s">${esc(o.buyer.charAt(0)==='@'||/^\d+$/.test(o.buyer)?o.buyer:'@'+o.buyer)} · ${adAgo(o.created)}${o.dropId?' · from '+esc(o.dropId):''}</div>
     ${tags?'<div>'+tags+'</div>':''}
     <div class="cn-rev-btns">${acts}</div>
@@ -7880,8 +7981,8 @@ async function adOfferDo(btn,id,act){
   let price=null;
   if(act==='counter'){ price=ptNum('ad-ofp'); if(!(price>0)){ ptAlert('Type your price first.'); return; } }
   const out=o.held&&!o.heldForThem?` It comes out of ${o.held.where||'its drop'} first.`:'';
-  const q={accept:`Accept ${who}'s $${Number(o.offered).toFixed(2)} for ${o.cardName}?${out} It makes a real order at that price and DMs them the invoice.`,
-    counter:`Counter ${who} at $${Number(price||0).toFixed(2)} for ${o.cardName}?${out} They get it by DM with a one-tap Accept (48 hours).`,
+  const q={accept:`Accept ${who}'s $${Number(o.offered).toFixed(2)} for ${o.cardName}?${out} It makes a real order at that price and DMs them the invoice.${adFloorAsk(o.cardId,o.offered,'sale')}`,
+    counter:`Counter ${who} at $${Number(price||0).toFixed(2)} for ${o.cardName}?${out} They get it by DM with a one-tap Accept (48 hours).${adFloorAsk(o.cardId,price,'sale')}`,
     decline:`Decline ${who}'s offer on ${o.cardName}? They'll get a polite DM.`,
     dismiss:`Take this offer off the list? Nobody is messaged.`}[act];
   if(!(await ptConfirm(q))) return;
@@ -8160,7 +8261,7 @@ async function adDealRelease(btn,sid,cardSid){
    (lotMakeCore_ mode bundle -> bnMakeCore_) takes the cards off sale so only the
    bundle is buyable, and refuses a price under consignor floors. Bundles in stock
    are listed with their cards; Take apart = /unbundle (cards back on sale). */
-AD.bn={q:'',sel:{},order:[],name:'',price:'',list:null};
+AD.bn={q:'',sel:{},order:[],name:'',price:'',list:null,sug:null,sugBusy:false,sugPrice:{},check:{}};
 function adBnTab(){
   const el=document.getElementById('ad-in'); if(!el) return;
   const B=AD.bn;
@@ -8174,10 +8275,11 @@ function adBnTab(){
     <div id="bn-list"></div>
     <div id="bn-sel"></div>
   </div>
+  <div id="bn-sug"></div>
   <div id="bn-have"></div>`;
-  adBnList(); adBnSelPaint(); adBnHavePaint();
+  adBnList(); adBnSelPaint(); adBnSugPaint(); adBnHavePaint();
   if(!AD.deal.cards||Date.now()-AD.deal.cardsAt>60000) api('adminEventCards',{}).then(r=>{ if(r&&r.ok){ AD.deal.cards=r.cards||[]; AD.deal.cardsAt=Date.now(); adBnList(); } else adBnList(true); }).catch(()=>adBnList(true));
-  adBnLoad();
+  adBnLoad(); if(!AD.bn.sug&&!AD.bn.sugBusy) adBnSugLoad();
 }
 function adBnLoad(){ api('adminBundles',{}).then(r=>{ if(r&&r.ok){ AD.bn.list=r.bundles||[]; adBnHavePaint(); } }).catch(()=>{}); }
 function adBnList(err){
@@ -8236,8 +8338,70 @@ function adBnHavePaint(){
   el.innerHTML=`<div class="pt-h">Bundles in stock <span class="pt-tag">${L.length}</span></div>`+L.map(b=>`<div class="panel" style="padding:10px 12px;margin:0 0 10px" data-k="bn:${esc(b.id)}">
     <div class="ad-head" style="margin:0 0 4px"><b>${esc(b.name)}</b><span class="ad-sub"><b>${dlMoney(b.price)}</b> · ${b.cards.length} card${b.cards.length===1?'':'s'} (listed ${dlMoney(b.listed)})${ST[b.status]?' · '+ST[b.status]:''} · ${esc(b.id)}</span></div>`+
     b.cards.map(c=>`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}${c.n>1?' ×'+Number(c.n):''}</div>${adMeta([esc([c.set,c.number].filter(Boolean).join(' · '))])}</div></div>`).join('')+
+    adBnCheckLine(b.id)+
     (ST[b.status]?`<p class="note" style="text-align:left;margin:4px 2px 0">It’s ${ST[b.status]}: take it out there before taking it apart.</p>`:`<div class="lt-row" style="margin:8px 0 0"><button class="pt-mini" style="margin:0" onclick="adBnApart(this,'${dlSid(b.id)}')">🔓 Take apart</button></div>`)+
     `</div>`).join('');
+}
+/* v13.48: ⚓ Suggested lots -- Bryan's lot pricing rule. One card people want (full price) +
+   1–3 weak hit cards at 75%, rounded up to .49/.99; never above the singles total, never below
+   the anchor alone, at least 10% over the lot floor. Floors use the card cost ratio and overhead
+   share worked out from the live Sheet. Suggests only; Create bundle makes a normal bundle. */
+function adBnSugLoad(){
+  AD.bn.sugBusy=true; adBnSugPaint();
+  api('adminBundleSuggest',{}).then(r=>{ AD.bn.sugBusy=false; AD.bn.sug=r||{ok:false};
+    AD.bn.check={}; ((r&&r.bundleCheck)||[]).forEach(b=>AD.bn.check[b.id]=b); adBnSugPaint(); adBnHavePaint(); })
+    .catch(e=>{ AD.bn.sugBusy=false; AD.bn.sug={ok:false,error:String(e&&e.message||e)}; adBnSugPaint(); });
+}
+function adBnCheckLine(id){
+  const c=AD.bn.check&&AD.bn.check[id]; if(!c) return '';
+  const V={above:'⚠️ More than the cards cost separately',margin:'⚠️ Under break-even',ok:'✅ Price OK',missing:'❓ Some cards missing'};
+  return `<p class="note" style="text-align:left;margin:4px 2px 0">${V[c.verdict]||esc(c.verdict)} · separately ${dlMoney(c.singles)} · break-even ${dlMoney(c.breakEven!=null?c.breakEven:c.floor)}`+
+    (c.verdict==='above'&&c.range?` · themed range ${dlMoney(c.range[0])}–${dlMoney(c.range[1])}`:'')+(c.reserved?' · reserved: keeps its agreed price':'')+`</p>`;
+}
+function adBnSugPaint(){
+  const el=document.getElementById('bn-sug'); if(!el) return;
+  const B=AD.bn, r=B.sug;
+  let h=`<div class="pt-h">⚓ Suggested lots${r&&r.ok?` <span class="pt-tag">${r.lots.length}</span>`:''} <button class="pt-mini" style="margin:0 0 0 6px" onclick="adBnSugLoad()"${B.sugBusy?' disabled':''}>↻</button></div>`;
+  if(B.sugBusy&&!r){ el.innerHTML=h+`<p class="note" style="text-align:left;margin:0 2px 10px">Working out lots from your stock…</p>`; return; }
+  if(!r){ el.innerHTML=''; return; }
+  if(!r.ok){ el.innerHTML=h+`<p class="pt-err">${esc(ptErr(r))}</p>`; return; }
+  const a=r.plan||{}, co=a.costing;
+  h+=`<p class="note" style="text-align:left;margin:0 2px 8px">One card people want at full price, plus 1–3 cards that don’t sell on their own, charged at 75%. `+
+     `${a.lots} lot${a.lots===1?'':'s'} place ${a.placed} of ${a.fillers} weak card${a.fillers===1?'':'s'}.`+
+     ((a.waiting||[]).length?`<br>Waiting for an anchor: ${a.waiting.map(esc).join(', ')}`:'')+
+     ((a.singles||[]).length?`<br>Anchors left as singles: ${a.singles.map(esc).join(', ')}`:'')+
+     ' Every suggestion is at or above its break-even and never more than the cards cost separately.</p>'+adHowHtml(co,false);
+  if(!r.lots.length) h+=`<p class="note" style="text-align:left;margin:0 2px 10px">No lot fits the rules with today’s stock.</p>`;
+  h+=r.lots.map((it,i)=>{ const k=it.cards.map(c=>c.id).join(','), pv=B.sugPrice[k]!=null?B.sugPrice[k]:it.bundle.toFixed(2);
+    return `<div class="panel" style="padding:10px 12px;margin:0 0 10px" data-k="sug:${esc(k)}">
+    <div class="ad-head" style="margin:0 0 4px"><b>${esc(it.title)}</b><span class="ad-sub"><b>${dlMoney(it.bundle)}</b> · separately ${dlMoney(it.singles)} (saves ${dlMoney(it.singles-it.bundle)}) · break-even ${dlMoney(it.breakEven!=null?it.breakEven:it.lotFloor)}</span></div>`+
+    it.cards.map((c,j)=>`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${j?'':'⚓ '}${esc(c.name)}</div>${adMeta([j?'extra at 75%':'anchor, full price','listed '+dlMoney(c.price),j&&c.worthSingle?'needs '+dlMoney(c.worthSingle)+' to be worth selling alone':''])}</div>`+
+      (j?`<div class="r"><button class="pt-mini" style="margin:0" onclick="adBnSugSwap(this,${i},${j})" aria-label="Swap ${esc(c.name)}">🔁</button></div>`:'')+`</div>`).join('')+
+    `<div class="lt-row" style="margin:8px 0 0"><label class="lt-pl">Bundle price $<input class="lt-in" style="width:80px" inputmode="decimal" value="${esc(pv)}" aria-label="Bundle price ${i+1}" oninput="adBnSugP(${i},this.value)"></label>`+
+    `<button class="pt-mini pri" style="margin:0" onclick="adBnSugMake(this,${i})">📦 Create bundle</button></div></div>`; }).join('');
+  el.innerHTML=h;
+}
+function adBnSugP(i,v){ const it=AD.bn.sug&&AD.bn.sug.lots[i]; if(it) AD.bn.sugPrice[it.cards.map(c=>c.id).join(',')]=v; }
+async function adBnSugSwap(btn,i,j){
+  const B=AD.bn, it=B.sug&&B.sug.lots[i]; if(!it) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminBundleSwap',{cardIds:it.cards.map(c=>c.id),out:it.cards[j].id}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  B.sug.lots[i]=r.idea; adBnSugPaint();
+}
+async function adBnSugMake(btn,i){
+  const B=AD.bn, it=B.sug&&B.sug.lots[i]; if(!it) return;
+  const k=it.cards.map(c=>c.id).join(','), raw=String(B.sugPrice[k]!=null?B.sugPrice[k]:it.bundle).replace(/[$,\s]/g,''), price=Number(raw);
+  if(!(price>0)){ ptAlert('Type the bundle price first.'); return; }
+  const warn=it.absFloor&&price<it.absFloor?`\n\n⛔ That’s below what these cards cost you (${dlMoney(it.absFloor)}): this loses money on the cards themselves.`:
+    price>it.singles?`\n\n⚠️ That’s above buying the cards separately (${dlMoney(it.singles)}).`:price<it.cards[0].price?`\n\n⚠️ That’s below the anchor alone (${dlMoney(it.cards[0].price)}).`:'';
+  if(!(await ptConfirm(`Create “${it.title}” for ${dlMoney(price)}?\n\n${it.cards.length} cards leave the shop; only the bundle can be bought. You can take it apart later.${warn}`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminBundleMake',{cardIds:it.cards.map(c=>c.id),title:it.title,price:Math.round(price*100)/100}); });
+  if(!r) return;
+  if(!r.ok){ ptAlert(String(r.message||ptErr(r)).replace(/\nShuffle for fresh ideas\./,'')); adBnSugLoad(); return; }
+  ptToast(r.message||'Bundle made');
+  const gone={}; it.cards.forEach(c=>gone[c.id]=1); if(AD.deal.cards) AD.deal.cards=AD.deal.cards.filter(c=>!gone[c.id]);
+  AD.deal.cardsAt=0; adBnLoad(); adBnSugLoad();
 }
 async function adBnApart(btn,id){
   const b=(AD.bn.list||[]).find(x=>dlSid(x.id)===id); if(!b) return;
@@ -8789,8 +8953,9 @@ function adEvItemHtml(d,it,i){
   const inputs=auc
     ? `SB $<input class="ev-num" data-f="start" inputmode="decimal" enterkeyhint="done" value="${Number(it.price||0).toFixed(2)}" aria-label="Starting bid for ${esc(c.name)}" onchange="adEvSet(this,'${did}','start')">`
     : `<input class="ev-num qty" data-f="qty" inputmode="numeric" enterkeyhint="done" value="${Number(it.qty||1)}" aria-label="Copies of ${esc(c.name)}" onchange="adEvSet(this,'${did}','qty')"> of ${Number(it.stock||0)} × $<input class="ev-num" data-f="price" inputmode="decimal" enterkeyhint="done" value="${Number(it.price||0).toFixed(2)}" aria-label="Price for ${esc(c.name)}" onchange="adEvSet(this,'${did}','price')"><span class="ev-free">${Number(it.price)<=0?' <span class="pt-tag warn">FREE</span>':''}</span>`;
-  return `<div class="ev-it" data-drop="${did}">${adThumb(c)}<div style="flex:1;min-width:0"><div class="nm"><span class="ev-n">${i+1}</span>. ${adLotCard(c)}</div>`+
-    `<div class="sub">${lot?'📍 '+esc(lot)+' · ':''}${esc(c.id)}${c.consignor?' · '+esc(c.consignor)+'’s':''}${it.floor?' · <span class="pt-neg">floor '+adEvMoney(it.floor)+'</span>':''}</div>`+
+  const fm=auc?'sb':'sale';
+  return `<div class="ev-it" data-drop="${did}" data-card="${esc(c.id)}" data-p="${Number(it.price||0)}" data-m="${fm}">${adThumb(c)}<div style="flex:1;min-width:0"><div class="nm"><span class="ev-n">${i+1}</span>. ${adLotCard(c)}</div>`+
+    `<div class="sub">${lot?'📍 '+esc(lot)+' · ':''}${esc(c.id)}${c.consignor?' · '+esc(c.consignor)+'’s':''}${it.floor?' · <span class="pt-neg">floor '+adEvMoney(it.floor)+'</span>':''}<span class="ev-fl">${c.consignor?'':adFloorTag(c.id,Number(it.price||0),fm)}</span></div>`+
     `<div class="ev-in">${inputs}</div></div><button class="ev-rm" data-card="${esc(c.id)}" data-name="${esc(c.name)}" aria-label="Reserve ${esc(c.name)} for a buyer" title="Reserve for a buyer" onclick="adResOpen(this)">📌</button><button class="ev-rm" aria-label="Take ${esc(c.name)} out" onclick="adEvRm(this,'${did}')">✕</button></div>`;
 }
 /* Bring the open builder in line with its data WITHOUT redrawing it: rows that went
@@ -8813,6 +8978,7 @@ function adEvPatch(k){
       el.querySelectorAll('input[data-f]').forEach(inp=>{ if(inp===document.activeElement) return;
         const v=inp.dataset.f==='qty'?String(Number(it.qty||1)):Number(it.price||0).toFixed(2); if(inp.value!==v) inp.value=v; inp.classList.remove('saving'); });
       const fr=el.querySelector('.ev-free'); if(fr) fr.innerHTML=Number(it.price)<=0?' <span class="pt-tag warn">FREE</span>':'';
+      el.dataset.p=Number(it.price||0); const fl=el.querySelector('.ev-fl'); if(fl&&!(it.card||{}).consignor) fl.innerHTML=adFloorTag((it.card||{}).id,Number(it.price||0),el.dataset.m);
     }
     if(wrap.children[i]!==el) wrap.insertBefore(el,wrap.children[i]||null);
   });
