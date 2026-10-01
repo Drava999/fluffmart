@@ -1968,6 +1968,9 @@ body.pc #v-credit{max-width:640px}
 .pt-cfg-row:last-child{border-bottom:0}
 .pt-cfg-row .pt-inl{grid-column:1 / -1}
 body.pc .ad-cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start}
+/* v13.51.1: Bundles + Deals: what you have on the left, making a new one on the right (PC); a phone shows the new one first */
+body:not(.pc) .ad-mk-cols{display:flex;flex-direction:column}
+body:not(.pc) .ad-mk-cols .ad-mk{order:-1}
 body.pc .pt-tabs .chip{font-size:13.5px;padding:8px 16px}
 
 /* ===== FloofMart cleanup pass ===== */
@@ -7942,7 +7945,7 @@ function adRenderDash(){
   const m=d.money||{}, c=d.consign||{};
   const jobs=adJobSecs(d).map(([key,html])=>`<div id="adsec-${key}">${html}</div>`).join('');
   const money=`<div id="ad-money">${adMoneyHtml(m)}</div>`+`<div class="pt-h">Consignment</div><button class="feat" onclick="adTab('consign')"><div class="ic">🐑</div><div><h3>$${Number(c.owed||0).toFixed(2)} owed</h3><p>${Number(c.openRequests||0)} open request${c.openRequests===1?'':'s'}</p></div><span class="chev">›</span></button>`;
-  adIn(`<div class="ad-cols"><div>${jobs}<div id="ad-offers" class="ad-offers-box">${adOffersHtml()}</div><div id="ad-reserved">${adResHtml()}</div></div><div>${money}</div></div>`+adFoot(d));
+  adIn(`<div class="ad-cols"><div>${jobs}<div id="ad-offers" class="ad-offers-box">${adOffersHtml()}</div></div><div>${money}<div id="ad-reserved">${adResHtml()}</div></div></div>`+adFoot(d));
   window.scrollTo(0,y);
   if(!AD.offers||Date.now()-(AD.offersAt||0)>60000) adOffersLoad();
   if(!AD.res.list||Date.now()-(AD.res.at||0)>60000) adResLoad();
@@ -8028,6 +8031,7 @@ async function adOfferDo(btn,id,act){
    invoice by DM) or Release it back to the shop. Auction lots with bids can't be
    pulled; a live drop card with claims asks first, and every claimer is told. */
 AD.res={list:null,at:0,busy:false,sell:''};
+AD.held={r:null,tab:'all',open:{}};
 function adResOpen(btn){
   const id=btn.getAttribute('data-card'), name=btn.getAttribute('data-name')||id;
   adResClose();
@@ -8066,24 +8070,50 @@ async function adResDo(btn,id){
     try{ const d=adEvCur(); if(d){ const e=await adEvCall('adminEvent',{kind:d.kind,id:d.id,live:1}); if(e&&e.ok) adEvApply({ok:true,event:e},d.kind,d.id); } }catch(e){}
   }
 }
+/* v13.52: 🙋 Held for buyers (Dashboard) -- EVERY card set aside for one person right now, one list
+   grouped by buyer, with tabs: 📌 set aside (Deals / reserve / offer holds), 🧾 waiting to pay,
+   ✅ paid but not verified yet, 📦 paid and sitting in their box. adminHeld (Apps Script) also returns
+   the reserved list, so Sell / Release keep working (AD.res.list) and update this in place. */
 function adResLoad(){
   if(AD.res.busy) return; AD.res.busy=true;
-  api('adminReserved',{}).then(r=>{ if(r&&r.ok){ AD.res.list=r.cards||[]; AD.res.at=Date.now(); adResPaint(); } })
+  api('adminHeld',{}).then(r=>{ if(r&&r.ok){ AD.held.r=r; AD.res.list=r.reserved||[]; AD.res.at=Date.now(); adResPaint(); } })
     .catch(()=>{}).finally(()=>{ AD.res.busy=false; });
 }
 function adResPaint(){ const el=document.getElementById('ad-reserved'); if(el) el.innerHTML=adResHtml(); }
+const AD_HELD_K={reserved:['📌','Set aside'],unpaid:['🧾','Waiting to pay'],verify:['✅','Paid, to verify'],box:['📦','In their box']};
+function adHeldBuyers(){
+  const r=AD.held.r, res=AD.res.list; if(!r&&!res) return null;
+  const B={}, slot=(k,b,id,off)=>B[k]=B[k]||{key:k,buyer:b,buyerId:id,off:!!off,cards:[]};
+  (res||[]).forEach(c=>slot(c.off?'off:'+c.buyer:String(c.buyerId||c.buyer),c.buyer,c.buyerId,c.off).cards.push(Object.assign({kind:'reserved',ref:''},c)));
+  ((r&&r.buyers)||[]).forEach(b=>b.cards.forEach(c=>{ if(c.kind!=='reserved') slot(b.key,b.buyer,b.buyerId,b.off).cards.push(c); }));
+  return Object.values(B).filter(b=>b.cards.length).sort((a,b)=>b.cards.length-a.cards.length||a.buyer.localeCompare(b.buyer));
+}
 function adResHtml(){
-  const L=AD.res.list;
-  if(!L||!L.length) return '';   // nothing reserved: no section at all
-  return `<div class="pt-h">Reserved for buyers <span class="pt-tag">${L.length}</span> <a href="#" style="font-size:12px;font-weight:700" onclick="adTab('deals');return false">Open 🤝 Deals</a></div><div class="panel" style="padding:2px 12px">`+L.map(c=>{
-    const id=esc(c.id), open=AD.res.sell===c.id;
-    return `<div class="ad-of" data-k="rs:${id}">${adThumb(c)}<div class="ad-of-b">
-      <div class="t" style="font-weight:700">${esc(c.name)}</div>
-      <div class="s">for <b>${esc(c.buyer)}</b>${c.at?' · '+adAgo(c.at):''}${c.price?' · listed $'+Number(c.price).toFixed(2):''}</div>
-      ${c.note?`<div class="s">📝 ${esc(c.note)}</div>`:''}
-      <div class="cn-rev-btns">${c.off?`<button class="pt-mini pri" onclick="adTab('deals')">🤝 Record in Deals</button>`:`<button class="pt-mini pri" onclick="adResSellOpen('${id}')">${open?'Close':'🧾 Sell to them'}</button>`}<button class="pt-mini" onclick="adResRelease(this,'${id}')">↩️ Release</button></div>
-      ${open?`<div class="pt-inl" style="margin-top:6px"><input id="ad-res-price" inputmode="decimal" enterkeyhint="send" placeholder="Deal price $" aria-label="Deal price for ${esc(c.name)}"><button class="pt-mini pri" onclick="adResSell(this,'${id}')">Invoice</button></div>`:''}
-    </div></div>`; }).join('')+'</div>';
+  const L=adHeldBuyers(); if(!L) return '';
+  const H=AD.held, n={all:0,reserved:0,unpaid:0,verify:0,box:0};
+  L.forEach(b=>b.cards.forEach(c=>{ n.all++; n[c.kind]=(n[c.kind]||0)+1; }));
+  if(H.tab!=='all'&&!n[H.tab]) H.tab='all';
+  let h=`<div class="pt-h">🙋 Held for buyers <span class="pt-tag">${n.all}</span> <a href="#" style="font-size:12px;font-weight:700" onclick="adTab('deals');return false">Open 🤝 Deals</a></div>`;
+  if(!n.all) return h+`<p class="note" style="text-align:left;margin:0 2px 10px">Nothing is held for anyone right now.</p>`;
+  h+=`<div class="chips" style="margin:0 0 8px;flex-wrap:wrap" role="tablist">`+[['all','All']].concat(Object.keys(AD_HELD_K).map(k=>[k,AD_HELD_K[k][0]+' '+AD_HELD_K[k][1]])).filter(([k])=>k==='all'||n[k])
+    .map(([k,l])=>`<button type="button" class="chip${H.tab===k?' on':''}" role="tab" aria-selected="${H.tab===k}" onclick="AD.held.tab='${k}';adResPaint()">${l} ${n[k]}</button>`).join('')+`</div>`;
+  const vis=L.map(b=>Object.assign({},b,{cards:b.cards.filter(c=>H.tab==='all'||c.kind===H.tab)})).filter(b=>b.cards.length);
+  h+=`<div class="panel" style="padding:2px 12px" data-sync>`+vis.map(b=>{
+    const k=dlSid(b.key), open=!!H.open[k], val=b.cards.reduce((a,c)=>a+Number(c.price||0),0);
+    const tags=Object.keys(AD_HELD_K).map(t=>{ const m=b.cards.filter(c=>c.kind===t).length; return m?AD_HELD_K[t][0]+m:''; }).filter(Boolean).join(' ');
+    return `<div data-k="held:${esc(b.key)}"><div class="pt-row" style="cursor:pointer" onclick="AD.held.open['${k}']=!AD.held.open['${k}'];adResPaint()" role="button" aria-expanded="${open}">`+
+      `<div class="l"><div class="t">${b.off?'🏪 ':''}${esc(b.buyer)}</div><div class="s">${b.cards.length} card${b.cards.length===1?'':'s'} · ${dlMoney(val)}${b.off?' · off-platform':''}</div></div><div class="r">${tags} <span aria-hidden="true">${open?'▾':'▸'}</span></div></div>`+
+      (open?b.cards.map(adHeldCard).join(''):'')+`</div>`; }).join('')+`</div>`;
+  return h;
+}
+function adHeldCard(c){
+  const K=AD_HELD_K[c.kind]||['',''], id=esc(c.id), sell=c.kind==='reserved'&&AD.res.sell===c.id;
+  const what=c.kind==='reserved'?(c.off?'🏪 set aside (off-platform)':'📌 set aside'):K[0]+' '+K[1].toLowerCase()+(c.ref?' · '+esc(c.ref):'');
+  let h=`<div class="pt-row" style="padding:6px 0 6px 8px;gap:8px" data-k="hc:${esc(c.kind+':'+c.id+':'+(c.ref||''))}">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}</div>`+
+    adMeta([what,c.price?dlMoney(c.price):'',c.at?adAgo(c.at):'',c.note?'📝 '+esc(c.note):''])+`</div></div>`;
+  if(c.kind==='reserved') h+=`<div class="cn-rev-btns" style="margin:0 0 6px 42px">${c.off?`<button class="pt-mini pri" onclick="adTab('deals')">🤝 Record in Deals</button>`:`<button class="pt-mini pri" onclick="adResSellOpen('${id}')">${sell?'Close':'🧾 Sell to them'}</button>`}<button class="pt-mini" onclick="adResRelease(this,'${id}')">↩️ Release</button></div>`+
+    (sell?`<div class="pt-inl" style="margin:0 0 8px 42px"><input id="ad-res-price" inputmode="decimal" enterkeyhint="send" placeholder="Deal price $" aria-label="Deal price for ${esc(c.name)}"><button class="pt-mini pri" onclick="adResSell(this,'${id}')">Invoice</button></div>`:'');
+  return h;
 }
 function adResSellOpen(id){ AD.res.sell=AD.res.sell===id?'':id; adResPaint(); const i=document.getElementById('ad-res-price'); if(i) i.focus(); }
 async function adResSell(btn,id){
@@ -8095,7 +8125,7 @@ async function adResSell(btn,id){
   if(!r) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
   ptToast(r.message||'Invoiced'); AD.res.sell='';
-  AD.res.list=(AD.res.list||[]).filter(x=>x.id!==id); adResPaint();
+  AD.res.list=(AD.res.list||[]).filter(x=>x.id!==id); adResPaint(); setTimeout(adResLoad,800);
 }
 async function adResRelease(btn,id){
   const c=(AD.res.list||[]).find(x=>x.id===id); if(!c) return;
@@ -8129,7 +8159,9 @@ function adDealsHeldLoad(){
 }
 function adDealsHtml(){
   const D=AD.deal;
+  // v13.52: side by side like 📦 Bundles: held for buyers on the left, New deal on the right (phone: New deal first)
   return `<p class="note" style="text-align:left;margin:0 2px 10px">Hold or sell cards to one buyer at your price: a bundle deal, a regular’s picks, a sale from a chat. Nothing is posted.</p>
+  <div class="ad-cols ad-mk-cols"><div id="dl-held"></div><div class="ad-mk">
   <div class="pt-h">New deal</div>
   <div class="panel" style="padding:12px">
     <div id="dl-buyer">${adDealsBuyerHtml()}</div>
@@ -8137,8 +8169,7 @@ function adDealsHtml(){
     <input id="dl-q" class="ev-search" style="margin:0 0 4px" placeholder="🔎 Search your stock: name, set, number, id" autocomplete="off" enterkeyhint="search" value="${esc(D.q)}" oninput="AD.deal.q=this.value;adDealsList()">
     <div id="dl-list"></div>
     <div id="dl-sel"></div>
-  </div>
-  <div id="dl-held"></div>`;
+  </div></div></div>`;
 }
 // v13.31: the buyer is on Telegram (an order + invoice DM) or off-platform (TikTok, Carousell, in person: recorded as a sale, like /sell).
 function adDealsBuyerHtml(){
@@ -8284,7 +8315,10 @@ AD.bn={q:'',sel:{},order:[],name:'',price:'',list:null,sug:null,sugBusy:false,su
 function adBnTab(){
   const el=document.getElementById('ad-in'); if(!el) return;
   const B=AD.bn;
+  /* v13.51.1: side by side like the Shelf (ad-cols): bundles you have on the left, making new ones on
+     the right. A phone stacks them with Make a bundle first (ad-mk), so you don't scroll past the list. */
   el.innerHTML=`<p class="note" style="text-align:left;margin:0 2px 10px">Put cards together as one item at one price. Its cards leave the shop; only the bundle can be bought. Take it apart any time to put them back.</p>
+  <div class="ad-cols ad-mk-cols"><div id="bn-have"></div><div class="ad-mk">
   <div class="pt-h">Make a bundle</div>
   <div class="panel" style="padding:12px">
     <label class="ad-res-l" for="bn-name">Name (optional)</label>
@@ -8294,8 +8328,7 @@ function adBnTab(){
     <div id="bn-list"></div>
     <div id="bn-sel"></div>
   </div>
-  <div id="bn-sug"></div>
-  <div id="bn-have"></div>`;
+  <div id="bn-sug"></div></div></div>`;
   adBnList(); adBnSelPaint(); adBnSugPaint(); adBnHavePaint();
   if(!AD.deal.cards||Date.now()-AD.deal.cardsAt>60000) api('adminEventCards',{}).then(r=>{ if(r&&r.ok){ AD.deal.cards=r.cards||[]; AD.deal.cardsAt=Date.now(); adBnList(); } else adBnList(true); }).catch(()=>adBnList(true));
   adBnLoad(); if(!AD.bn.sug&&!AD.bn.sugBusy) adBnSugLoad();
