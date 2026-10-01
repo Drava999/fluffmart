@@ -7729,12 +7729,12 @@ function adPhRepaint(){
   document.querySelectorAll('.ev-it[data-card]').forEach(el=>{ const f=el.querySelector('.ev-fl'); if(f) f.innerHTML=adFloorTag(el.dataset.card,Number(el.dataset.p),el.dataset.m); });
 }
 function adFloor(id){ const f=AD.ph&&AD.ph.floors&&AD.ph.floors[id]; return f?{abs:f[0],be:f[1],cheap:!!f[2]}:null; }
-// null, or what's wrong with this price. Cheap cards never warn; an auction SB only warns under cost.
+// null, or what's wrong with this price. Cheap cards never warn. v13.49.4: an auction SB warns under break-even too (few bidders = it sells at the SB).
 function adFloorWarn(id,price,mode){
   const f=adFloor(String(id)); price=Number(price);
   if(!f||f.cheap||!(price>=0)) return null;
   if(price<f.abs-0.005) return {abs:true,txt:'under cost $'+f.abs.toFixed(2),long:`That’s under what it cost you ($${f.abs.toFixed(2)} with packing), so you lose money on it.`};
-  if(mode!=='sb'&&price<f.be-0.005) return {abs:false,txt:'under break-even $'+f.be.toFixed(2),long:`That’s under its break-even ($${f.be.toFixed(2)}: cost + running costs + losses).`};
+  if(price<f.be-0.005) return {abs:false,txt:(mode==='sb'?'starting bid ':'')+'under break-even $'+f.be.toFixed(2),long:mode==='sb'?`That starting bid is under its break-even ($${f.be.toFixed(2)}). With only a few bidders an auction often ends at the starting bid.`:`That’s under its break-even ($${f.be.toFixed(2)}: cost + running costs + losses).`};
   return null;
 }
 function adFloorTag(id,price,mode){ const w=adFloorWarn(id,price,mode); return w?` · <span class="${w.abs?'pt-neg':'ad-flw'}">${w.txt}</span>`:''; }
@@ -7777,7 +7777,7 @@ function adHowHtml(w,hints){
     P(`<b>Break-even</b> = cost + ${pc(w.L)} running costs${man.L?' (set in Config)':' (mailers, software, fees in the Ledger)'} + ${pc(w.R)} losses (scams, write-offs) + packing. Sell under it and the sale doesn’t pay its share of the shop’s costs. A bundle’s break-even is its cards added up, packing once.`)+
     P(`<b>Under what it cost</b> (red) = cost + packing only: you lose money on the card itself.`)+
     P(`<b>Your time</b> = $${Number(w.hourly||0).toFixed(0)}/hour × ${Number(w.minSingle||0)} min to sell a card alone${w.minFiller!=null?', '+w.minFiller+' min as a lot extra':''}. It decides which cards make good lot extras; it’s never added to prices.`)+
-    (hints?P(`The same check appears as a small note while a price is being set: an offer, a drop price, an auction starting bid (only if under cost; bids push it up) or a price edit. Cheap cards (worth $6 or less) and consigned cards never get a note. Nothing changes a price unless you tap it.`):'')+`</details>`;
+    (hints?P(`The same check appears as a small note while a price is being set: an offer, a drop price, an auction starting bid (with few bidders it often sells at the starting bid) or a price edit. Cheap cards (worth $6 or less) and consigned cards never get a note. Nothing changes a price unless you tap it.`):'')+`</details>`;
 }
 async function adPhRaise(btn,ids){
   const L=(AD.ph&&AD.ph.look)||[], go=L.filter(c=>!ids||ids.indexOf(c.id)>=0); if(!go.length) return;
@@ -9434,6 +9434,13 @@ function adLotsDone(r,ids){
   if(r.event&&r.eventId) adEvApply(r,r.kind,r.eventId);
   adLotsPaint();
 }
+/* v13.49.4: starting bids under break-even, as one paragraph for a confirm box ('' if none).
+   rows: [{n: name, p: starting bid, be: break-even}]. You can still go ahead. */
+function adLotBeWarn(rows){
+  const low=rows.filter(r=>r.be>0&&r.p<r.be-0.005); if(!low.length) return '';
+  return '\n\n⚠️ Starting bid under break-even (with only a few bidders an auction often ends at the starting bid):\n'+
+    low.slice(0,8).map(r=>'• '+r.n+': $'+Number(r.p).toFixed(2)+' (break-even $'+Number(r.be).toFixed(2)+')').join('\n')+(low.length>8?'\n…and '+(low.length-8)+' more':'')+'\n\nYou can still go ahead.';
+}
 async function adLotMake(btn,i,mode){
   const s=adLotsState(), it=s.r&&s.r.ideas[i]; if(!it) return;
   adLotsKeep();
@@ -9447,7 +9454,7 @@ async function adLotMake(btn,i,mode){
     if(!(price>0)){ ptAlert('Give a price above $0.'); return; }
     if(it.floor&&price<it.floor){ ptAlert('That’s under the consignor floors ($'+Number(it.floor).toFixed(2)+'). Raise it first.'); return; }
     const ok=await ptConfirm(kind==='auction'
-      ?`Make “${t}” a lot in ${where}, starting at $${price.toFixed(2)}?\n\nIts ${it.cards.length} cards leave the shop now. Nothing is posted.`
+      ?`Make “${t}” a lot in ${where}, starting at $${price.toFixed(2)}?\n\nIts ${it.cards.length} cards leave the shop now. Nothing is posted.${adLotBeWarn([{n:'This lot',p:price,be:it.be}])}`
       :kind==='drop'
       ?`Put “${t}” in ${where} at $${price.toFixed(2)} for the first to claim?\n\nIts ${it.cards.length} cards leave the shop now. Nothing is posted.`
       :`Make “${t}” a shop bundle at $${price.toFixed(2)}?\n\nIts ${it.cards.length} cards leave the shop; only the bundle is buyable.`);
@@ -9474,9 +9481,12 @@ async function adLotMake(btn,i,mode){
     it.cards.filter(c=>c.hit).forEach(one);                     // the hits after the lot: people stay for them
   }
   if(bad.length){ ptAlert('Fix these first:\n• '+bad.join('\n• ')); return; }
-  const ok=await ptConfirm(sell==='each'
+  // v13.49.4: you choose the starting bids; anything under break-even is listed in the confirm
+  const bw=kind!=='auction'?'':adLotBeWarn(items.map(x=>{ if(x.cardIds){ const rs=it.cards.filter(c=>x.cardIds.indexOf(c.id)>=0); return {n:'The lot',p:x.price,be:rs.reduce((a,c)=>a+Number(c.be||0),0)}; }
+    const c=it.cards.find(y=>y.id===x.cardId)||{}; return {n:c.name,p:x.price,be:Number(c.be||0)}; }));
+  const ok=await ptConfirm((sell==='each'
     ?`Put ${items.length} cards into ${where}, each as its own ${kind==='auction'?'lot':'item'}?\n\nThey leave the shop now. Nothing is posted.`
-    :`Put ${items.length-1} hit${items.length===2?'':'s'} on ${items.length===2?'its':'their'} own plus a lot of ${items[0].cardIds.length} into ${where}?\n\nThe cards leave the shop now. Nothing is posted.`);
+    :`Put ${items.length-1} hit${items.length===2?'':'s'} on ${items.length===2?'its':'their'} own plus a lot of ${items[0].cardIds.length} into ${where}?\n\nThe cards leave the shop now. Nothing is posted.`)+bw);
   if(!ok) return;
   await guard(btn,async()=>{
     const r=await adEvCall('adminLotItems',{kind,eventId:d?d.id:'',title:t,items});
