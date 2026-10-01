@@ -7281,7 +7281,7 @@ function adPackSupplies(cards,delivery,top){
   const n=Math.max(0,Math.round(Number(cards)||0)); if(!n) return '';
   const pickup=delivery==='pickup', t=top==null?n:Math.min(n,Math.max(0,top)), tl=pickup?t:Math.max(2,t), extra=tl-t, why=[];
   if(t) why.push(t+' card'+(t===1?'':'s')+' over $3'); if(extra>0) why.push(extra+' to stiffen it');
-  return `<div class="ad-supplies" style="font-size:13px;margin:2px 0 6px;padding:6px 10px;border-radius:10px;background:var(--line)">🧰 Pack with: <b>${n} sleeve${n===1?'':'s'}</b> · <b>${tl} toploader${tl===1?'':'s'}</b>${why.length&&tl?' ('+why.join(' + ')+')':''}${pickup?' · no mailer (hand-over)':' · <b>1 bubble mailer</b>'}</div>`;
+  return `<div class="ad-supplies" style="font-size:13px;margin:2px 0 6px;padding:6px 10px;border-radius:10px;background:var(--line)">🧰 Pack with: <b>${n} sleeve${n===1?'':'s'}</b> · <b>${tl} toploader${tl===1?'':'s'}</b>${why.length&&tl?' ('+why.join(' + ')+')':''} · <b>1 team bag</b>${pickup?' · no mailer (hand-over)':' · <b>1 bubble mailer</b>'}</div>`;
 }
 function adPackWhere(ps){
   if(!ps||!ps.length) return '';
@@ -7713,7 +7713,7 @@ function adLedgerHtml(r){
   const types=(r.byType||[]).filter(x=>!acc||x.k!=='Inventory');
   h+=row(acc?'Costs (Ledger, not stock)':'Costs (Ledger)',types.map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · ')+(!acc&&S.buybacks?` · buybacks ${adMoneyStr(S.buybacks)}`:''),'−'+adMoneyStr(acc?r.expenses:r.costs+(S.buybacks||0)),true);
   const PK=r.packing;   // v13.50.3: what parcels actually used (PackLog), part of the costs above
-  if(acc&&PK&&(PK.parcels||r.suppliesBought)) h+=row('📦 Packing & postage used',`${PK.parcels} parcel${PK.parcels===1?'':'s'} · ${PK.sleeves} sleeves · ${PK.toploaders} toploaders · ${PK.mailers} mailer${PK.mailers===1?'':'s'}${PK.postage?' · postage '+adMoneyStr(PK.postage):''}${PK.estimated?' · '+PK.estimated+' estimated':''}${r.suppliesBought?` · sleeves/toploaders/mailers bought ${adMoneyStr(r.suppliesBought)} count as they’re used`:''}${r.packUnits?` · unit prices from the Ledger: ${esc(r.packUnits)}`:''}`,'−'+adMoneyStr(PK.cost||0),true);
+  if(acc&&PK&&(PK.parcels||r.suppliesBought)) h+=row('📦 Packing & postage used',`${PK.parcels} parcel${PK.parcels===1?'':'s'} · ${PK.sleeves} sleeves · ${PK.toploaders} toploaders · ${PK.mailers} mailer${PK.mailers===1?'':'s'} · ${PK.teambags||0} team bag${PK.teambags===1?'':'s'}${PK.postage?' · postage '+adMoneyStr(PK.postage):''}${PK.estimated?' · '+PK.estimated+' estimated':''}${r.suppliesBought?` · sleeves/toploaders/mailers/team bags bought ${adMoneyStr(r.suppliesBought)} count as they’re used`:''}${r.packUnits?` · unit prices from the Ledger: ${esc(r.packUnits)}`:''}`,'−'+adMoneyStr(PK.cost||0),true);
   if(acc){ h+=row(r.netProfit>=0?'✅ Net profit':'❌ Net loss','Gross profit + other income − costs (stock isn’t a cost until it sells)',adMoneyStr(r.netProfit),r.netProfit<0);
     h+=row('📦 Inventory now, at cost',`${Number(I.cards||0)} cards · at your prices ${adMoneyStr(I.listed||0)} · stock bought ${adMoneyStr(r.stock||0)}`,adMoneyStr(I.cost||0));
     const C=r.cash;   // v13.50.2: every dollar in and out
