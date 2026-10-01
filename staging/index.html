@@ -7773,7 +7773,7 @@ function adHowHtml(w,hints){
   if(!w) return '';
   const pc=v=>Math.round(Number(v||0)*100)+'%', P=t=>`<p class="note" style="text-align:left;margin:0 0 6px">${t}</p>`, man=w.manual||{};
   return `<details style="margin:6px 0 4px"><summary class="note" style="text-align:left;cursor:pointer">How this works</summary>`+
-    P(`<b>Cost of a card</b> = Collectr × condition × ${Number(w.ratio).toFixed(2)}. That ${Number(w.ratio).toFixed(2)} is what your card buying (Ledger, type Inventory) works out to per $1 of card value${man.ratio?' (set by hand in Config)':w.paid?` (${dlMoney(w.paid)} spent ÷ ${dlMoney(w.legacyRef)} of card value)`:', recalculated from the Sheet'}. A card with its own cost recorded uses that instead.`)+
+    P(`<b>Cost of a card</b> = Collectr × condition × ${Number(w.ratio).toFixed(2)} (the shop’s fixed card cost: 70 cents per $1 of card value). Condition: NM 100%, LP 85%, MP 70%, HP 50%, DMG 30%. A card with its own cost recorded uses that instead.`)+
     P(`<b>Break-even</b> = cost + ${pc(w.L)} running costs${man.L?' (set in Config)':' (mailers, software, fees in the Ledger)'} + ${pc(w.R)} losses (scams, write-offs) + packing. Sell under it and the sale doesn’t pay its share of the shop’s costs. A bundle’s break-even is its cards added up, packing once.`)+
     P(`<b>Under what it cost</b> (red) = cost + packing only: you lose money on the card itself.`)+
     P(`<b>Your time</b> = $${Number(w.hourly||0).toFixed(0)}/hour × ${Number(w.minSingle||0)} min to sell a card alone${w.minFiller!=null?', '+w.minFiller+' min as a lot extra':''}. It decides which cards make good lot extras; it’s never added to prices.`)+
