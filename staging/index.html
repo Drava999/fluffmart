@@ -1968,6 +1968,8 @@ body.pc #v-credit{max-width:640px}
 .pt-cfg-row:last-child{border-bottom:0}
 .pt-cfg-row .pt-inl{grid-column:1 / -1}
 body.pc .ad-cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start}
+body:not(.pc) .bn-cols{display:flex;flex-direction:column}
+body:not(.pc) .bn-cols .bn-new{order:-1}
 body.pc .pt-tabs .chip{font-size:13.5px;padding:8px 16px}
 
 /* ===== FloofMart cleanup pass ===== */
@@ -8284,7 +8286,10 @@ AD.bn={q:'',sel:{},order:[],name:'',price:'',list:null,sug:null,sugBusy:false,su
 function adBnTab(){
   const el=document.getElementById('ad-in'); if(!el) return;
   const B=AD.bn;
+  /* v13.51.1: side by side like the Shelf (ad-cols): bundles you have on the left, making new ones on
+     the right. A phone stacks them with Make a bundle first (bn-new), so you don't scroll past the list. */
   el.innerHTML=`<p class="note" style="text-align:left;margin:0 2px 10px">Put cards together as one item at one price. Its cards leave the shop; only the bundle can be bought. Take it apart any time to put them back.</p>
+  <div class="ad-cols bn-cols"><div id="bn-have"></div><div class="bn-new">
   <div class="pt-h">Make a bundle</div>
   <div class="panel" style="padding:12px">
     <label class="ad-res-l" for="bn-name">Name (optional)</label>
@@ -8294,8 +8299,7 @@ function adBnTab(){
     <div id="bn-list"></div>
     <div id="bn-sel"></div>
   </div>
-  <div id="bn-sug"></div>
-  <div id="bn-have"></div>`;
+  <div id="bn-sug"></div></div></div>`;
   adBnList(); adBnSelPaint(); adBnSugPaint(); adBnHavePaint();
   if(!AD.deal.cards||Date.now()-AD.deal.cardsAt>60000) api('adminEventCards',{}).then(r=>{ if(r&&r.ok){ AD.deal.cards=r.cards||[]; AD.deal.cardsAt=Date.now(); adBnList(); } else adBnList(true); }).catch(()=>adBnList(true));
   adBnLoad(); if(!AD.bn.sug&&!AD.bn.sugBusy) adBnSugLoad();
