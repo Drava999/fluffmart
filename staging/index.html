@@ -8322,7 +8322,7 @@ async function adDealRelease(btn,sid,cardSid){
    (lotMakeCore_ mode bundle -> bnMakeCore_) takes the cards off sale so only the
    bundle is buyable, and refuses a price under consignor floors. Bundles in stock
    are listed with their cards; Take apart = /unbundle (cards back on sale). */
-AD.bn={q:'',sel:{},order:[],name:'',price:'',list:null,sug:null,sugBusy:false,sugPrice:{},check:{},ed:null,pic:null};
+AD.bn={q:'',sel:{},order:[],name:'',price:'',list:null,sug:null,sugBusy:false,sugPrice:{},check:{},eds:{},pics:{},open:{}};
 function adBnTab(){
   const el=document.getElementById('ad-in'); if(!el) return;
   const B=AD.bn;
@@ -8392,87 +8392,103 @@ async function adBnMake(btn){
   B.sel={}; B.order=[]; B.name=''; B.price=''; B.q='';
   AD.deal.cardsAt=0; adBnTab();
 }
+/* v13.54: Bundles in stock, smoother.
+   - Each bundle folds into one line (▸ name · price · cards · 🖼) like a drop-down; tap to open.
+     ▾ Open all / ▸ Fold all at the top. What's open is remembered while you work.
+   - Several bundles can be edited at once (AD.bn.eds by id); saving or a picture repaints ONLY
+     that bundle, so nothing you're typing elsewhere resets.
+   - Make picture asks the server for the card fronts first (adminBundleFaces): no image host
+     limits, so it works for every bundle, not just the first few. */
+AD.bn.eds=AD.bn.eds||{}; AD.bn.pics=AD.bn.pics||{}; AD.bn.open=AD.bn.open||{};
 function adBnHavePaint(){
   const el=document.getElementById('bn-have'); if(!el) return;
   const L=AD.bn.list;
   if(!L){ el.innerHTML=''; return; }
   if(!L.length){ el.innerHTML=`<div class="pt-h">Bundles in stock</div><p class="note" style="text-align:left;margin:0 2px">None yet.</p>`; return; }
-  el.innerHTML=`<div class="pt-h">Bundles in stock <span class="pt-tag">${L.length}</span></div>`+L.map(adBnHaveOne).join('');
+  const y=window.scrollY;
+  el.innerHTML=`<div class="pt-h">Bundles in stock <span class="pt-tag">${L.length}</span> <button class="pt-mini" style="margin:0 0 0 6px" onclick="adBnOpenAll(true)">▾ Open all</button><button class="pt-mini" style="margin:0 0 0 4px" onclick="adBnOpenAll(false)">▸ Fold all</button></div>`+L.map(adBnHaveOne).join('');
+  window.scrollTo(0,y);
 }
-/* v13.51: one bundle in stock. On sale -> ✏️ Edit (name, price, cards in/out), 🖼 Make picture
-   (all the cards' fronts stitched into one image = the bundle's cover; each card's own photos
-   still go in the post's comments), 🔓 Take apart. In a drop/auction or held: picture only. */
+function adBnOpenAll(on){ AD.bn.open={}; if(on) (AD.bn.list||[]).forEach(b=>AD.bn.open[b.id]=1); adBnHavePaint(); }
+function adBnToggle(id){ const b=adBnFind(id); if(!b) return; if(AD.bn.open[b.id]&&!AD.bn.eds[b.id]&&!AD.bn.pics[b.id]) delete AD.bn.open[b.id]; else AD.bn.open[b.id]=1; adBnRepaintOne(b.id); }
+function adBnFind(id){ return (AD.bn.list||[]).find(x=>dlSid(x.id)===dlSid(id)); }
 const AD_BN_ST={drop_hold:'in a drop',auction_hold:'in an auction',reserved:'held for a buyer'};
 function adBnCoverText(b){ return b.imageType==='collage'?'🖼 Picture made: all the cards in one image':!b.image?'No picture yet':(b.cards[0]&&b.cards[0].image===b.image)?'No picture yet: posts show the first card’s photo':'No picture yet: posts show a photo you set by hand'; }
 function adBnHaveOne(b){
-  const ST=AD_BN_ST, E=AD.bn.ed&&AD.bn.ed.id===b.id?AD.bn.ed:null, P=AD.bn.pic&&AD.bn.pic.id===b.id?AD.bn.pic:null;
-  let h=`<div class="panel" style="padding:10px 12px;margin:0 0 10px" data-k="bn:${esc(b.id)}">
-    <div class="ad-head" style="margin:0 0 4px"><b>${esc(b.name)}</b>${b.imageType==='collage'?' <span class="pt-tag">🖼 Picture made</span>':''}<span class="ad-sub"><b>${dlMoney(b.price)}</b> · ${b.cards.length} card${b.cards.length===1?'':'s'} (listed ${dlMoney(b.listed)})${ST[b.status]?' · '+ST[b.status]:''} · ${esc(b.id)}</span></div>`;
+  const ST=AD_BN_ST, sid=dlSid(b.id), E=AD.bn.eds[b.id], P=AD.bn.pics[b.id], open=!!(AD.bn.open[b.id]||E||P);
+  let h=`<div class="panel" style="padding:8px 12px;margin:0 0 8px" data-k="bn:${esc(b.id)}">
+    <div class="pt-row" style="padding:2px 0;gap:8px;cursor:pointer" role="button" aria-expanded="${open}" onclick="adBnToggle('${sid}')">${open?'':adThumb({image:b.image},28)}<div class="l" style="min-width:0;flex:1">
+      <div class="t"><b>${esc(b.name)}</b>${b.imageType==='collage'?' <span class="pt-tag">🖼 Picture made</span>':''}${E?' <span class="pt-tag">✏️ editing</span>':''}</div>
+      <div class="s"><b>${dlMoney(b.price)}</b> · ${b.cards.length} card${b.cards.length===1?'':'s'}${b.qty>1?' · '+b.qty+' sets':''}${ST[b.status]?' · '+ST[b.status]:''}${open?' · listed '+dlMoney(b.listed)+' · '+esc(b.id):''}</div></div>
+      <div class="r" aria-hidden="true">${open?'▾':'▸'}</div></div>`;
+  if(!open) return h+`</div>`;
   if(E) return h+adBnEdHtml(b,E)+`</div>`;
-  // v13.53.2: a made picture shows as a real preview (tap to enlarge); otherwise the small cover thumb
   h+=(b.imageType==='collage'&&b.image
     ?`<div style="margin:4px 0 6px"><img src="${esc(imgUrl(b.image,800))}" data-big="${esc(imgUrl(b.image,1600))}" loading="lazy" alt="Picture of ${esc(b.name)}" title="Tap to enlarge" class="bn-pic" style="display:block;width:100%;max-width:420px;border-radius:8px;cursor:zoom-in;background:#1d1b2e" onclick="openZoom(this.dataset.big)"><div class="ad-sub" style="font-size:12px;font-weight:700;margin-top:4px">${esc(adBnCoverText(b))}</div></div>`
     :`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb({image:b.image},40)}<div class="l" style="min-width:0;flex:1"><div class="ad-sub" style="font-size:12px">${esc(adBnCoverText(b))}</div></div></div>`)+
     b.cards.map(c=>`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}${c.n>1?' ×'+Number(c.n):''}</div>${adMeta([esc([c.set,c.number].filter(Boolean).join(' · ')),'listed '+dlMoney(c.price)])}</div></div>`).join('')+
-    adBnCheckLine(b.id);
+    `<span class="bn-ck" data-id="${esc(b.id)}">${adBnCheckLine(b.id)}</span>`;
   if(P) h+=adBnPicHtml(b,P);
   else h+=`<div class="lt-row" style="margin:8px 0 0;flex-wrap:wrap;gap:6px">`+
-    (ST[b.status]?'':`<button class="pt-mini" style="margin:0" onclick="adBnEdOpen('${dlSid(b.id)}')">✏️ Edit</button>`)+
-    `<button class="pt-mini" style="margin:0" onclick="adBnPic(this,'${dlSid(b.id)}')">🖼 ${b.imageType==='collage'?'Remake picture':'Make picture'}</button>`+
-    (ST[b.status]?'':`<button class="pt-mini" style="margin:0" onclick="adBnApart(this,'${dlSid(b.id)}')">🔓 Take apart</button>`)+`</div>`+
+    (ST[b.status]?'':`<button class="pt-mini" style="margin:0" onclick="adBnEdOpen('${sid}')">✏️ Edit</button>`)+
+    `<button class="pt-mini" style="margin:0" onclick="adBnPic(this,'${sid}')">🖼 ${b.imageType==='collage'?'Remake picture':'Make picture'}</button>`+
+    (ST[b.status]?'':`<button class="pt-mini" style="margin:0" onclick="adBnApart(this,'${sid}')">🔓 Take apart</button>`)+`</div>`+
     (ST[b.status]?`<p class="note" style="text-align:left;margin:4px 2px 0">It’s ${ST[b.status]}: take it out there to edit it or take it apart.</p>`:'');
   return h+`</div>`;
 }
 function adBnRepaintOne(id){
-  const b=(AD.bn.list||[]).find(x=>x.id===id), el=document.getElementById('bn-have'); if(!el) return;
-  const old=[...el.querySelectorAll('[data-k]')].find(n=>n.getAttribute('data-k')==='bn:'+id);
+  const b=adBnFind(id), el=document.getElementById('bn-have'); if(!el) return;
+  const old=b&&[...el.querySelectorAll('[data-k]')].find(n=>n.getAttribute('data-k')==='bn:'+b.id);
   if(!b||!old){ adBnHavePaint(); return; }
   const t=document.createElement('div'); t.innerHTML=adBnHaveOne(b); old.replaceWith(t.firstElementChild);
 }
-/* ---- ✏️ Edit ---- */
+// The price check lines refresh in place (Suggested lots reloads them), never the whole list.
+function adBnCheckRefresh(){ document.querySelectorAll('#bn-have .bn-ck').forEach(n=>{ n.innerHTML=adBnCheckLine(n.getAttribute('data-id')); }); }
+/* ---- ✏️ Edit (one or several at once) ---- */
 function adBnEdOpen(id){
-  const b=(AD.bn.list||[]).find(x=>dlSid(x.id)===id); if(!b) return;
-  const prev=AD.bn.ed&&AD.bn.ed.id; AD.bn.ed={id:b.id,name:b.name,price:b.price.toFixed(2),rm:{},add:[],q:''}; AD.bn.pic=null;
-  if(prev&&prev!==b.id) adBnRepaintOne(prev);
+  const b=adBnFind(id); if(!b) return;
+  if(!AD.bn.eds[b.id]) AD.bn.eds[b.id]={id:b.id,name:b.name,price:b.price.toFixed(2),rm:{},add:[],q:''};
+  delete AD.bn.pics[b.id]; AD.bn.open[b.id]=1;
   adBnRepaintOne(b.id);
-  if(!AD.deal.cards) api('adminEventCards',{}).then(r=>{ if(r&&r.ok){ AD.deal.cards=r.cards||[]; AD.deal.cardsAt=Date.now(); adBnEdFind(); } }).catch(()=>{});
+  if(!AD.deal.cards) api('adminEventCards',{}).then(r=>{ if(r&&r.ok){ AD.deal.cards=r.cards||[]; AD.deal.cardsAt=Date.now(); adBnEdFind(b.id); } }).catch(()=>{});
 }
-function adBnEdClose(){ const id=AD.bn.ed&&AD.bn.ed.id; AD.bn.ed=null; if(id) adBnRepaintOne(id); }
+function adBnEd(id){ const b=adBnFind(id); return b?AD.bn.eds[b.id]:null; }
+function adBnEdClose(id){ const b=adBnFind(id); if(!b) return; delete AD.bn.eds[b.id]; adBnRepaintOne(b.id); }
 function adBnEdCards(b,E){
   const add=E.add.map(id=>(AD.deal.cards||[]).find(c=>c.id===id)).filter(Boolean);
   const keep=b.cards.filter(c=>!E.rm[c.id]);
   return {keep, add, all:keep.map(c=>({price:c.price*(c.n||1),floor:0,n:c.n||1})).concat(add.map(c=>({price:Number(c.price||0),floor:Number(c.floor||0),n:1})))};
 }
 function adBnEdHtml(b,E){
-  const X=adBnEdCards(b,E), listed=X.all.reduce((a,c)=>a+c.price,0), n=X.keep.length+X.add.length;
-  return `<label class="ad-res-l" for="bne-name">Name</label>
-    <input id="bne-name" class="ad-res-in" maxlength="80" value="${esc(E.name)}" oninput="AD.bn.ed.name=this.value">
-    <div class="lt-row" style="margin:10px 0 4px"><label class="lt-pl" style="font-size:14px">Price $<input id="bne-price" class="lt-in" style="width:90px" inputmode="decimal" value="${esc(E.price)}" aria-label="Bundle price" oninput="AD.bn.ed.price=this.value"></label><span class="lt-dest" id="bne-listed">the cards list for ${dlMoney(listed)} on their own</span></div>
+  const s=dlSid(b.id), X=adBnEdCards(b,E), listed=X.all.reduce((a,c)=>a+c.price,0), n=X.keep.length+X.add.length;
+  return `<label class="ad-res-l" for="bne-name-${s}">Name</label>
+    <input id="bne-name-${s}" class="ad-res-in bne-name" maxlength="80" value="${esc(E.name)}" oninput="adBnEd('${s}').name=this.value">
+    <div class="lt-row" style="margin:10px 0 4px"><label class="lt-pl" style="font-size:14px">Price $<input id="bne-price-${s}" class="lt-in bne-price" style="width:90px" inputmode="decimal" value="${esc(E.price)}" aria-label="Bundle price" oninput="adBnEd('${s}').price=this.value"></label><span class="lt-dest">the cards list for ${dlMoney(listed)} on their own</span></div>
     <div class="ad-sub" style="margin:8px 2px 2px">Cards in it (${n}) — ✕ takes a card out (it goes back on sale)</div>`+
     b.cards.map(c=>{ const out=!!E.rm[c.id]; return `<div class="pt-row" style="padding:4px 0;gap:8px;${out?'opacity:.45':''}">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px;${out?'text-decoration:line-through':''}">${esc(c.name)}${c.n>1?' ×'+Number(c.n):''}</div>${adMeta([out?'goes back on sale':esc([c.set,c.number].filter(Boolean).join(' · ')),'listed '+dlMoney(c.price)])}</div>`+
-      `<div class="r"><button class="pt-mini" style="margin:0" onclick="adBnEdRm('${dlSid(c.id)}')" aria-label="${out?'Keep':'Take out'} ${esc(c.name)}">${out?'↩︎':'✕'}</button></div></div>`; }).join('')+
+      `<div class="r"><button class="pt-mini" style="margin:0" onclick="adBnEdRm('${s}','${dlSid(c.id)}')" aria-label="${out?'Keep':'Take out'} ${esc(c.name)}">${out?'↩︎':'✕'}</button></div></div>`; }).join('')+
     X.add.map(c=>`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">＋ ${esc(c.name)}</div>${adMeta(['added','listed '+dlMoney(c.price),c.floor?'<span class="pt-neg">floor '+dlMoney(c.floor)+'</span>':''])}</div>`+
-      `<div class="r"><button class="pt-mini" style="margin:0" onclick="adBnEdUnadd('${dlSid(c.id)}')" aria-label="Don’t add ${esc(c.name)}">✕</button></div></div>`).join('')+
-    `<input id="bne-q" class="ev-search" style="margin:8px 0 4px" placeholder="🔎 Add a card: name, set, number, id" autocomplete="off" enterkeyhint="search" value="${esc(E.q)}" oninput="AD.bn.ed.q=this.value;adBnEdFind()">
-    <div id="bne-find"></div>
-    <div class="lt-row" style="margin:10px 0 0;gap:6px"><button class="pt-mini big pri" style="margin:0" onclick="adBnEdSave(this)">Save</button><button class="pt-mini" style="margin:0" onclick="adBnEdClose()">Cancel</button></div>`;
+      `<div class="r"><button class="pt-mini" style="margin:0" onclick="adBnEdUnadd('${s}','${dlSid(c.id)}')" aria-label="Don’t add ${esc(c.name)}">✕</button></div></div>`).join('')+
+    `<input id="bne-q-${s}" class="ev-search bne-q" style="margin:8px 0 4px" placeholder="🔎 Add a card: name, set, number, id" autocomplete="off" enterkeyhint="search" value="${esc(E.q)}" oninput="adBnEd('${s}').q=this.value;adBnEdFind('${s}')">
+    <div id="bne-find-${s}" class="bne-find"></div>
+    <div class="lt-row" style="margin:10px 0 0;gap:6px"><button class="pt-mini big pri" style="margin:0" onclick="adBnEdSave(this,'${s}')">Save</button><button class="pt-mini" style="margin:0" onclick="adBnEdClose('${s}')">Cancel</button></div>`;
 }
-function adBnEdFind(){
-  const el=document.getElementById('bne-find'), E=AD.bn.ed; if(!el||!E) return;
+function adBnEdFind(id){
+  const s=dlSid(id), el=document.getElementById('bne-find-'+s), E=adBnEd(s); if(!el||!E) return;
   const q=String(E.q||'').trim().toLowerCase(); if(!q){ el.innerHTML=''; return; }
   if(!AD.deal.cards){ el.innerHTML='<p class="note" style="text-align:left;margin:4px 2px">Loading your stock…</p>'; return; }
   const L=AD.deal.cards.filter(c=>!c.bundle&&E.add.indexOf(c.id)<0&&[c.name,c.set,c.number,c.photoKey,c.variance,c.id].join(' ').toLowerCase().indexOf(q)>=0);
   if(!L.length){ el.innerHTML=`<p class="note" style="text-align:left;margin:4px 2px">No card on sale matches “${esc(E.q)}”.</p>`; return; }
-  el.innerHTML=`<div class="dl-res">`+L.slice(0,20).map(c=>`<button type="button" class="dl-row" onclick="adBnEdAdd('${dlSid(c.id)}')" aria-label="Add ${esc(c.name)}">${adThumb(c,30)}<span class="dl-row-b"><span class="t">${esc(c.name)}</span>`+
+  el.innerHTML=`<div class="dl-res">`+L.slice(0,20).map(c=>`<button type="button" class="dl-row" onclick="adBnEdAdd('${s}','${dlSid(c.id)}')" aria-label="Add ${esc(c.name)}">${adThumb(c,30)}<span class="dl-row-b"><span class="t">${esc(c.name)}</span>`+
     `${adMeta([esc([c.set,c.number].filter(Boolean).join(' · ')),'<b>'+dlMoney(c.price)+'</b>',c.consignor?'🤝 floor '+dlMoney(c.floor):'',esc(c.id)])}</span><span class="dl-plus">＋</span></button>`).join('')+`</div>`;
 }
-function adBnEdRm(id){ const E=AD.bn.ed; if(!E) return; const b=(AD.bn.list||[]).find(x=>x.id===E.id); const c=b&&b.cards.find(x=>dlSid(x.id)===id); if(!c) return; if(E.rm[c.id]) delete E.rm[c.id]; else E.rm[c.id]=1; adBnRepaintOne(E.id); }
-function adBnEdAdd(id){ const E=AD.bn.ed; if(!E) return; const c=(AD.deal.cards||[]).find(x=>dlSid(x.id)===id); if(!c) return;
-  const b=(AD.bn.list||[]).find(x=>x.id===E.id); if(b&&b.cards.length-Object.keys(E.rm).length+E.add.length>=12){ ptAlert('A bundle can hold up to 12 cards.'); return; }
-  E.add.push(c.id); E.q=''; adBnRepaintOne(E.id); }
-function adBnEdUnadd(id){ const E=AD.bn.ed; if(!E) return; E.add=E.add.filter(x=>dlSid(x)!==id); adBnRepaintOne(E.id); }
-async function adBnEdSave(btn){
-  const E=AD.bn.ed; if(!E) return; const b=(AD.bn.list||[]).find(x=>x.id===E.id); if(!b) return;
+function adBnEdRm(id,cid){ const E=adBnEd(id), b=adBnFind(id); if(!E||!b) return; const c=b.cards.find(x=>dlSid(x.id)===cid); if(!c) return; if(E.rm[c.id]) delete E.rm[c.id]; else E.rm[c.id]=1; adBnRepaintOne(b.id); }
+function adBnEdAdd(id,cid){ const E=adBnEd(id), b=adBnFind(id); if(!E||!b) return; const c=(AD.deal.cards||[]).find(x=>dlSid(x.id)===cid); if(!c) return;
+  if(b.cards.length-Object.keys(E.rm).length+E.add.length>=12){ ptAlert('A bundle can hold up to 12 cards.'); return; }
+  E.add.push(c.id); E.q=''; adBnRepaintOne(b.id); }
+function adBnEdUnadd(id,cid){ const E=adBnEd(id), b=adBnFind(id); if(!E||!b) return; E.add=E.add.filter(x=>dlSid(x)!==cid); adBnRepaintOne(b.id); }
+async function adBnEdSave(btn,id){
+  const b=adBnFind(id), E=b&&AD.bn.eds[b.id]; if(!E) return;
   const X=adBnEdCards(b,E), n=X.keep.length+X.add.length, listed=X.all.reduce((a,c)=>a+c.price,0);
   const name=String(E.name||'').trim(), raw=String(E.price||'').replace(/[$,\s]/g,''), price=Number(raw);
   if(!name){ ptAlert('Give the bundle a name.'); return; }
@@ -8483,7 +8499,7 @@ async function adBnEdSave(btn){
   if(Math.abs(price-b.price)>0.004) ch.push('Price: '+dlMoney(b.price)+' → '+dlMoney(price));
   if(rm.length) ch.push(rm.length+' card'+(rm.length===1?'':'s')+' out (back on sale)');
   if(X.add.length) ch.push(X.add.length+' card'+(X.add.length===1?'':'s')+' in (leave the shop)');
-  if(!ch.length){ adBnEdClose(); return; }
+  if(!ch.length){ adBnEdClose(b.id); return; }
   const warn=price>listed+0.004?`\n\n⚠️ That’s more than the cards cost separately (${dlMoney(listed)}).`:'';
   const pic=(rm.length||X.add.length)&&b.imageType==='collage'?'\n\nThe stitched picture shows the old cards: make a new one after saving.':'';
   if(!(await ptConfirm(`Save changes to “${b.name}”?\n\n• ${ch.join('\n• ')}${warn}${pic}`))) return;
@@ -8493,22 +8509,28 @@ async function adBnEdSave(btn){
   if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
   ptToast(String(r.message||'Saved').split('\n')[0]);
   if(X.add.length&&AD.deal.cards){ const g={}; X.add.forEach(c=>g[c.id]=1); AD.deal.cards=AD.deal.cards.filter(c=>!g[c.id]); }
-  AD.deal.cardsAt=0; AD.bn.ed=null;
-  api('adminBundles',{}).then(q=>{ if(q&&q.ok){ AD.bn.list=q.bundles||[]; adBnRepaintOne(b.id); } }).catch(()=>{});
+  AD.deal.cardsAt=0; delete AD.bn.eds[b.id];
+  // show the change straight away; then take the server's copy of THIS bundle only (other open editors stay as they are)
+  b.name=name; b.price=Math.round(price*100)/100; adBnRepaintOne(b.id);
+  api('adminBundles',{}).then(q=>{ if(!(q&&q.ok)) return; const nb=(q.bundles||[]).find(x=>x.id===b.id);
+    if(nb){ const i=AD.bn.list.findIndex(x=>x.id===b.id); if(i>=0) AD.bn.list[i]=nb; adBnRepaintOne(b.id); } }).catch(()=>{});
   adBnSugLoad();
 }
-/* ---- 🖼 Make picture: every card's front in one image, drawn here from the cards' own
-   photos (lh3 host = CORS, like the haul picture), saved as the bundle's cover. ---- */
+/* ---- 🖼 Make picture ---- */
 function adBnGrid(n){ const cols=n<=3?n:n===4?2:n<=6?3:n<=8?4:n===9?3:4; return {cols, rows:Math.ceil(n/cols)}; }
 function adBnContain(x,im,l,t,w,h){ const s=Math.min(w/im.width,h/im.height), dw=im.width*s, dh=im.height*s, dx=l+(w-dw)/2, dy=t+(h-dh)/2;
   x.save(); rrect(x,dx,dy,dw,dh,Math.max(6,dw*0.035)); x.clip(); x.drawImage(im,dx,dy,dw,dh); x.restore(); }
+function adBnDataImg(src){ return new Promise(res=>{ if(!src) return res(null); const im=new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src=src; }); }
 async function adBnCollage(b){
   const faces=[]; b.cards.forEach(c=>{ for(let i=0;i<Math.min(c.n||1,2);i++) faces.push(c); });
   const n=faces.length, g=adBnGrid(n), CW=400, CH=Math.round(CW*88/63), GAP=28, PAD=44, FOOT=70;
   const cv=document.createElement('canvas'); cv.width=PAD*2+g.cols*CW+(g.cols-1)*GAP; cv.height=PAD*2+g.rows*CH+(g.rows-1)*GAP+FOOT;
   const x=cv.getContext('2d');
   const bg=x.createLinearGradient(0,0,0,cv.height); bg.addColorStop(0,'#1d1b2e'); bg.addColorStop(1,'#0f0e18'); x.fillStyle=bg; x.fillRect(0,0,cv.width,cv.height);
-  const ims=await Promise.all(faces.map(c=>loadHaulArt(c.image,800)));
+  // v13.54: the server hands over the card fronts (no image-host limits); anything it couldn't get is tried directly
+  let srv=[]; try{ const r=await api('adminBundleFaces',{bundleId:b.id}); if(r&&r.ok) srv=r.faces||[]; }catch(e){}
+  const ims=[];
+  for(let i=0;i<faces.length;i++){ let im=await adBnDataImg(srv[i]&&srv[i].data); if(!im&&faces[i].image) im=await loadHaulArt(faces[i].image,800); ims.push(im); }
   let miss=0;
   faces.forEach((c,i)=>{
     const r=Math.floor(i/g.cols), inRow=r===g.rows-1?n-r*g.cols:g.cols, off=(g.cols-inRow)*(CW+GAP)/2;
@@ -8525,28 +8547,27 @@ async function adBnCollage(b){
   return {jpeg:out.toDataURL('image/jpeg',0.85), miss};
 }
 async function adBnPic(btn,id){
-  const b=(AD.bn.list||[]).find(x=>dlSid(x.id)===id); if(!b) return;
-  if(!b.cards.some(c=>c.image)){ ptAlert('None of these cards has a photo yet.'); return; }
+  const b=adBnFind(id); if(!b) return;
   let res=null; await guard(btn,async()=>{ try{ res=await adBnCollage(b); }catch(e){ res={err:String(e&&e.message||e)}; } });
   if(!res||res.err){ ptAlert('Couldn’t draw the picture'+(res&&res.err?': '+res.err:'')+'. Try again in a moment.'); return; }
-  const prev=AD.bn.ed&&AD.bn.ed.id; AD.bn.ed=null; if(prev&&prev!==b.id) adBnRepaintOne(prev);
-  AD.bn.pic={id:b.id,jpeg:res.jpeg,miss:res.miss}; adBnRepaintOne(b.id);
+  if(res.miss>=b.cards.length){ ptAlert('None of the card photos could be loaded for '+b.name+'. Check the cards have photos (Shelf), then try again.'); return; }
+  AD.bn.pics[b.id]={id:b.id,jpeg:res.jpeg,miss:res.miss}; AD.bn.open[b.id]=1; adBnRepaintOne(b.id);
 }
 function adBnPicHtml(b,P){
+  const s=dlSid(b.id);
   return `<div style="margin:8px 0 0"><img src="${P.jpeg}" alt="Stitched picture of ${esc(b.name)}" style="width:100%;max-width:420px;border-radius:8px;display:block">`+
-    (P.miss?`<p class="pt-err" style="margin:6px 2px 0">${P.miss} card photo${P.miss===1?'':'s'} wouldn’t load (shown as a name). Try again, or use it anyway.</p>`:'')+
+    (P.miss?`<p class="pt-err" style="margin:6px 2px 0">${P.miss} card photo${P.miss===1?'':'s'} wouldn’t load (shown as a name). Redraw, or use it anyway.</p>`:'')+
     `<p class="note" style="text-align:left;margin:6px 2px 0">This becomes the bundle’s picture on its drop/auction post. Each card’s own photos still go in the post’s comments.</p>
-    <div class="lt-row" style="margin:8px 0 0;gap:6px"><button class="pt-mini big pri" style="margin:0" onclick="adBnPicUse(this)">Use this picture</button><button class="pt-mini" style="margin:0" onclick="adBnPicRedo(this)">↻ Redraw</button><button class="pt-mini" style="margin:0" onclick="adBnPicCancel()">Cancel</button></div></div>`;
+    <div class="lt-row" style="margin:8px 0 0;gap:6px"><button class="pt-mini big pri" style="margin:0" onclick="adBnPicUse(this,'${s}')">Use this picture</button><button class="pt-mini" style="margin:0" onclick="adBnPic(this,'${s}')">↻ Redraw</button><button class="pt-mini" style="margin:0" onclick="adBnPicCancel('${s}')">Cancel</button></div></div>`;
 }
-function adBnPicCancel(){ const id=AD.bn.pic&&AD.bn.pic.id; AD.bn.pic=null; if(id) adBnRepaintOne(id); }
-function adBnPicRedo(btn){ const id=AD.bn.pic&&AD.bn.pic.id; if(id) adBnPic(btn,dlSid(id)); }
-async function adBnPicUse(btn){
-  const P=AD.bn.pic; if(!P) return; const b=(AD.bn.list||[]).find(x=>x.id===P.id); if(!b) return;
+function adBnPicCancel(id){ const b=adBnFind(id); if(!b) return; delete AD.bn.pics[b.id]; adBnRepaintOne(b.id); }
+async function adBnPicUse(btn,id){
+  const b=adBnFind(id), P=b&&AD.bn.pics[b.id]; if(!P) return;
   let r=null; await guard(btn,async()=>{ r=await api('adminBundleImage',{bundleId:b.id,image:P.jpeg}); });
   if(!r) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
   ptToast(String(r.message||'Picture set').split('.')[0]);
-  b.image=r.image||b.image; b.imageType='collage'; AD.bn.pic=null; adBnRepaintOne(b.id);
+  b.image=r.image||b.image; b.imageType='collage'; delete AD.bn.pics[b.id]; adBnRepaintOne(b.id);
 }
 /* v13.48: ⚓ Suggested lots -- Bryan's lot pricing rule. One card people want (full price) +
    1–3 weak hit cards at 75%, rounded up to .49/.99; never above the singles total, never below
@@ -8555,7 +8576,7 @@ async function adBnPicUse(btn){
 function adBnSugLoad(){
   AD.bn.sugBusy=true; adBnSugPaint();
   api('adminBundleSuggest',{}).then(r=>{ AD.bn.sugBusy=false; AD.bn.sug=r||{ok:false};
-    AD.bn.check={}; ((r&&r.bundleCheck)||[]).forEach(b=>AD.bn.check[b.id]=b); adBnSugPaint(); adBnHavePaint(); })
+    AD.bn.check={}; ((r&&r.bundleCheck)||[]).forEach(b=>AD.bn.check[b.id]=b); adBnSugPaint(); adBnCheckRefresh(); })
     .catch(e=>{ AD.bn.sugBusy=false; AD.bn.sug={ok:false,error:String(e&&e.message||e)}; adBnSugPaint(); });
 }
 function adBnCheckLine(id){
