@@ -8409,7 +8409,10 @@ function adBnHaveOne(b){
   let h=`<div class="panel" style="padding:10px 12px;margin:0 0 10px" data-k="bn:${esc(b.id)}">
     <div class="ad-head" style="margin:0 0 4px"><b>${esc(b.name)}</b>${b.imageType==='collage'?' <span class="pt-tag">🖼 Picture made</span>':''}<span class="ad-sub"><b>${dlMoney(b.price)}</b> · ${b.cards.length} card${b.cards.length===1?'':'s'} (listed ${dlMoney(b.listed)})${ST[b.status]?' · '+ST[b.status]:''} · ${esc(b.id)}</span></div>`;
   if(E) return h+adBnEdHtml(b,E)+`</div>`;
-  h+=`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb({image:b.image},40)}<div class="l" style="min-width:0;flex:1"><div class="ad-sub" style="font-size:12px${b.imageType==='collage'?';font-weight:700':''}">${esc(adBnCoverText(b))}</div></div></div>`+
+  // v13.53.2: a made picture shows as a real preview (tap to enlarge); otherwise the small cover thumb
+  h+=(b.imageType==='collage'&&b.image
+    ?`<div style="margin:4px 0 6px"><img src="${esc(imgUrl(b.image,800))}" data-big="${esc(imgUrl(b.image,1600))}" loading="lazy" alt="Picture of ${esc(b.name)}" title="Tap to enlarge" class="bn-pic" style="display:block;width:100%;max-width:420px;border-radius:8px;cursor:zoom-in;background:#1d1b2e" onclick="openZoom(this.dataset.big)"><div class="ad-sub" style="font-size:12px;font-weight:700;margin-top:4px">${esc(adBnCoverText(b))}</div></div>`
+    :`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb({image:b.image},40)}<div class="l" style="min-width:0;flex:1"><div class="ad-sub" style="font-size:12px">${esc(adBnCoverText(b))}</div></div></div>`)+
     b.cards.map(c=>`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}${c.n>1?' ×'+Number(c.n):''}</div>${adMeta([esc([c.set,c.number].filter(Boolean).join(' · ')),'listed '+dlMoney(c.price)])}</div></div>`).join('')+
     adBnCheckLine(b.id);
   if(P) h+=adBnPicHtml(b,P);
