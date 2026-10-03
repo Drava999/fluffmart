@@ -8406,7 +8406,8 @@ function adBnHavePaint(){
   if(!L){ el.innerHTML=''; return; }
   if(!L.length){ el.innerHTML=`<div class="pt-h">Bundles in stock</div><p class="note" style="text-align:left;margin:0 2px">None yet.</p>`; return; }
   const y=window.scrollY;
-  el.innerHTML=`<div class="pt-h">Bundles in stock <span class="pt-tag">${L.length}</span> <button class="pt-mini" style="margin:0 0 0 6px" onclick="adBnOpenAll(true)">▾ Open all</button><button class="pt-mini" style="margin:0 0 0 4px" onclick="adBnOpenAll(false)">▸ Fold all</button></div>`+L.map(adBnHaveOne).join('');
+  el.innerHTML=`<div class="pt-h">Bundles in stock <span class="pt-tag">${L.length}</span> <button class="pt-mini" style="margin:0 0 0 6px" onclick="adBnOpenAll(true)">▾ Open all</button><button class="pt-mini" style="margin:0 0 0 4px" onclick="adBnOpenAll(false)">▸ Fold all</button><button class="pt-mini${AD.bn.multi?' pri':''}" style="margin:0 0 0 4px" onclick="adBnBulkToggle()">${AD.bn.multi?'✕ Done':'☑ Edit several'}</button></div>`+
+    (AD.bn.multi?`<div id="bn-bulk">${adBnBulkHtml()}</div>`:'')+L.map(adBnHaveOne).join('');
   window.scrollTo(0,y);
 }
 function adBnOpenAll(on){ AD.bn.open={}; if(on) (AD.bn.list||[]).forEach(b=>AD.bn.open[b.id]=1); adBnHavePaint(); }
@@ -8416,8 +8417,9 @@ const AD_BN_ST={drop_hold:'in a drop',auction_hold:'in an auction',reserved:'hel
 function adBnCoverText(b){ return b.imageType==='collage'?'🖼 Picture made: all the cards in one image':!b.image?'No picture yet':(b.cards[0]&&b.cards[0].image===b.image)?'No picture yet: posts show the first card’s photo':'No picture yet: posts show a photo you set by hand'; }
 function adBnHaveOne(b){
   const ST=AD_BN_ST, sid=dlSid(b.id), E=AD.bn.eds[b.id], P=AD.bn.pics[b.id], open=!!(AD.bn.open[b.id]||E||P);
+  const tick=AD.bn.multi?(ST[b.status]?`<span class="bn-tk" title="${esc(ST[b.status])}" style="width:22px;text-align:center;color:var(--hint)">–</span>`:`<input type="checkbox" class="bn-tk" style="width:22px;height:22px;flex:none" ${AD.bn.bk.sel[b.id]?'checked':''} onclick="event.stopPropagation()" onchange="adBnBulkTick('${sid}',this.checked)" aria-label="Tick ${esc(b.name)}">`):'';
   let h=`<div class="panel" style="padding:8px 12px;margin:0 0 8px" data-k="bn:${esc(b.id)}">
-    <div class="pt-row" style="padding:2px 0;gap:8px;cursor:pointer" role="button" aria-expanded="${open}" onclick="adBnToggle('${sid}')">${open?'':adThumb({image:b.image},28)}<div class="l" style="min-width:0;flex:1">
+    <div class="pt-row" style="padding:2px 0;gap:8px;cursor:pointer" role="button" aria-expanded="${open}" onclick="adBnToggle('${sid}')">${tick}${open?'':adThumb({image:b.image},28)}<div class="l" style="min-width:0;flex:1">
       <div class="t"><b>${esc(b.name)}</b>${b.imageType==='collage'?' <span class="pt-tag">🖼 Picture made</span>':''}${E?' <span class="pt-tag">✏️ editing</span>':''}</div>
       <div class="s"><b>${dlMoney(b.price)}</b> · ${b.cards.length} card${b.cards.length===1?'':'s'}${b.qty>1?' · '+b.qty+' sets':''}${ST[b.status]?' · '+ST[b.status]:''}${open?' · listed '+dlMoney(b.listed)+' · '+esc(b.id):''}</div></div>
       <div class="r" aria-hidden="true">${open?'▾':'▸'}</div></div>`;
@@ -8441,6 +8443,65 @@ function adBnRepaintOne(id){
   const old=b&&[...el.querySelectorAll('[data-k]')].find(n=>n.getAttribute('data-k')==='bn:'+b.id);
   if(!b||!old){ adBnHavePaint(); return; }
   const t=document.createElement('div'); t.innerHTML=adBnHaveOne(b); old.replaceWith(t.firstElementChild);
+}
+/* ---- ☑ Edit several (v13.58): tick bundles, then one price change (set / ± % / ± $, optional
+   round up to .49/.99) and/or a find → replace in their names. Preview first; one save
+   (adminBundleBulk = bnEditCore_ for each, same checks); a bundle that can't be saved says why. */
+AD.bn.bk=AD.bn.bk||{sel:{},mode:'pct',val:'',round:true,find:'',repl:''};
+function adBnBulkToggle(){ AD.bn.multi=!AD.bn.multi; if(!AD.bn.multi) AD.bn.bk.sel={}; adBnHavePaint(); }
+function adBnBulkTick(id,on){ const b=adBnFind(id); if(!b) return; if(on) AD.bn.bk.sel[b.id]=1; else delete AD.bn.bk.sel[b.id]; adBnBulkPrev(); }
+function adBnBulkAll(on){ const K=AD.bn.bk; K.sel={}; if(on) (AD.bn.list||[]).forEach(b=>{ if(!AD_BN_ST[b.status]) K.sel[b.id]=1; }); adBnHavePaint(); }
+function adBnUp49(p){ const c=Math.round(p*100), d=Math.floor(c/100), r=c%100; return r===49||r===99?c/100:(r<49?d+0.49:d+0.99); }
+function adBnBulkNew(b){
+  const K=AD.bn.bk, v=Number(String(K.val||'').replace(/[$,%\s]/g,''));
+  let p=Number(b.price);
+  if(String(K.val||'').trim()!==''&&isFinite(v)){
+    if(K.mode==='set') p=v; else if(K.mode==='pct') p=p*(1+v/100); else p=p+v;
+    p=Math.round(p*100)/100;
+    if(K.round&&p>0) p=adBnUp49(p);
+  }
+  let name=b.name;
+  if(K.find){ const f=String(K.find); if(name.toLowerCase().indexOf(f.toLowerCase())>=0) name=name.replace(new RegExp(f.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'ig'),String(K.repl||'')).replace(/\s+/g,' ').trim(); }
+  return {price:p,name};
+}
+function adBnBulkHtml(){
+  const K=AD.bn.bk;
+  return `<div class="panel" style="padding:12px;margin:0 0 10px">
+    <div class="ad-sub" style="margin:0 0 6px"><b>Tick the bundles to change</b> · <a href="#" onclick="adBnBulkAll(true);return false">tick all</a> · <a href="#" onclick="adBnBulkAll(false);return false">none</a></div>
+    <div class="lt-row" style="flex-wrap:wrap;gap:6px;margin:0 0 6px"><span class="lt-pl" style="font-size:14px">Price:</span>
+      ${[['set','Set to $'],['pct','Change by %'],['amt','Change by $']].map(([k,l])=>`<button class="pt-mini${K.mode===k?' pri':''}" style="margin:0" onclick="AD.bn.bk.mode='${k}';adBnBulkRepaint()">${l}</button>`).join('')}
+      <input id="bnk-val" class="lt-in" style="width:90px" inputmode="decimal" placeholder="${K.mode==='set'?'e.g. 19.99':K.mode==='pct'?'e.g. -10':'e.g. 2'}" value="${esc(K.val)}" aria-label="Price change" oninput="AD.bn.bk.val=this.value;adBnBulkPrev()"></div>
+    <label class="lt-pl" style="font-size:13px;display:flex;gap:6px;align-items:center;margin:0 0 6px"><input type="checkbox" ${K.round?'checked':''} onchange="AD.bn.bk.round=this.checked;adBnBulkPrev()"> Round up to .49 / .99</label>
+    <div class="lt-row" style="flex-wrap:wrap;gap:6px;margin:0 0 6px"><span class="lt-pl" style="font-size:14px">Names:</span>
+      <input id="bnk-find" class="lt-in" style="width:130px" placeholder="find" value="${esc(K.find)}" aria-label="Find in names" oninput="AD.bn.bk.find=this.value;adBnBulkPrev()"> →
+      <input id="bnk-repl" class="lt-in" style="width:130px" placeholder="replace with" value="${esc(K.repl)}" aria-label="Replace with" oninput="AD.bn.bk.repl=this.value;adBnBulkPrev()"></div>
+    <div id="bnk-prev">${adBnBulkPrevHtml()}</div></div>`;
+}
+function adBnBulkRepaint(){ const el=document.getElementById('bn-bulk'); if(el) el.innerHTML=adBnBulkHtml(); }
+function adBnBulkRows(){ return (AD.bn.list||[]).filter(b=>AD.bn.bk.sel[b.id]&&!AD_BN_ST[b.status]).map(b=>({b,n:adBnBulkNew(b)})); }
+function adBnBulkPrevHtml(){
+  const R=adBnBulkRows(), ch=R.filter(x=>Math.abs(x.n.price-x.b.price)>0.004||x.n.name!==x.b.name);
+  if(!R.length) return `<p class="note" style="text-align:left;margin:4px 2px 0">Nothing ticked yet.</p>`;
+  const bad=R.filter(x=>!(x.n.price>0));
+  return `<div class="ad-sub" style="margin:4px 2px">${R.length} ticked · ${ch.length} will change</div>`+
+    ch.slice(0,60).map(x=>`<div class="pt-row" style="padding:3px 0;font-size:13px"><div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(x.n.name)}${x.n.name!==x.b.name?' <span class="ad-sub">(was '+esc(x.b.name)+')</span>':''}</div>`+
+      `${adMeta([dlMoney(x.b.price)+' → <b>'+dlMoney(x.n.price)+'</b>',x.n.price>x.b.listed+0.004?'<span class="pt-neg">more than its cards ('+dlMoney(x.b.listed)+')</span>':'',!(x.n.price>0)?'<span class="pt-neg">not a price</span>':''])}</div></div>`).join('')+
+    `<div class="lt-row" style="margin:8px 0 0"><button class="pt-mini big pri" style="margin:0" onclick="adBnBulkSave(this)"${!ch.length||bad.length?' disabled':''}>Save ${ch.length} bundle${ch.length===1?'':'s'}</button></div>`;
+}
+function adBnBulkPrev(){ const el=document.getElementById('bnk-prev'); if(el) el.innerHTML=adBnBulkPrevHtml(); }
+async function adBnBulkSave(btn){
+  const ch=adBnBulkRows().filter(x=>Math.abs(x.n.price-x.b.price)>0.004||x.n.name!==x.b.name);
+  if(!ch.length) return;
+  if(ch.some(x=>!(x.n.price>0))){ ptAlert('One of the new prices isn’t a price.'); return; }
+  const over=ch.filter(x=>x.n.price>x.b.listed+0.004).length;
+  if(!(await ptConfirm(`Save ${ch.length} bundle${ch.length===1?'':'s'}?\n\n${ch.slice(0,12).map(x=>'• '+x.n.name+': '+dlMoney(x.b.price)+' → '+dlMoney(x.n.price)).join('\n')}${ch.length>12?'\n…+'+(ch.length-12)+' more':''}${over?`\n\n⚠️ ${over} will cost more than their cards separately.`:''}\n\nConsignor floors are checked; a bundle that can’t take its new price is left as it was and listed.`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminBundleBulk',{items:ch.map(x=>({bundleId:x.b.id,price:x.n.price,name:x.n.name!==x.b.name?x.n.name:undefined}))}); });
+  if(!r) return;
+  if(!r.ok&&!(r.done&&r.done.length)){ ptAlert(r.message||ptErr(r)); return; }
+  const ok={}; (r.done||[]).forEach(id=>ok[id]=1);
+  ch.forEach(x=>{ if(ok[x.b.id]){ x.b.price=x.n.price; x.b.name=x.n.name; } });
+  if(r.failed&&r.failed.length) ptAlert(r.message); else ptToast(r.message||'Saved');
+  AD.bn.bk.val=''; AD.bn.bk.find=''; AD.bn.bk.repl=''; adBnHavePaint(); adBnSugLoad();
 }
 // The price check lines refresh in place (Suggested lots reloads them), never the whole list.
 function adBnCheckRefresh(){ document.querySelectorAll('#bn-have .bn-ck').forEach(n=>{ n.innerHTML=adBnCheckLine(n.getAttribute('data-id')); }); }
