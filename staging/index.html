@@ -8304,7 +8304,7 @@ async function adDealInvoice(btn,sid){
   let r=null; await guard(btn,async()=>{ r=await api('adminDealSell',{buyerId:cs[0].buyerId,cardIds:cs.map(c=>c.id),total:Math.round(t*100)/100}); });
   if(!r) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); adDealsHeldLoad(); return; }
-  ptToast(r.message||'Invoiced');
+  if(r.pull&&r.pull.length) ptAlert(r.message); else ptToast(r.message||'Invoiced');   // v13.58.1: off-platform = hand the cards over now: which lot each comes from stays on screen
   const gone={}; cs.forEach(c=>gone[c.id]=1); AD.res.list=(AD.res.list||[]).filter(c=>!gone[c.id]); adDealsHeldPaint(); adResPaint();
 }
 async function adDealRelease(btn,sid,cardSid){
