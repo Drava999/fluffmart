@@ -8426,7 +8426,7 @@ function adBnHaveOne(b){
   h+=(b.imageType==='collage'&&b.image
     ?`<div style="margin:4px 0 6px"><img src="${esc(imgUrl(b.image,800))}" data-big="${esc(imgUrl(b.image,1600))}" loading="lazy" alt="Picture of ${esc(b.name)}" title="Tap to enlarge" class="bn-pic" style="display:block;width:100%;max-width:420px;border-radius:8px;cursor:zoom-in;background:#1d1b2e" onclick="openZoom(this.dataset.big)"><div class="ad-sub" style="font-size:12px;font-weight:700;margin-top:4px">${esc(adBnCoverText(b))}</div></div>`
     :`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb({image:b.image},40)}<div class="l" style="min-width:0;flex:1"><div class="ad-sub" style="font-size:12px">${esc(adBnCoverText(b))}</div></div></div>`)+
-    b.cards.map(c=>`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}${c.n>1?' ×'+Number(c.n):''}</div>${adMeta([esc([c.set,c.number].filter(Boolean).join(' · ')),'listed '+dlMoney(c.price)])}</div></div>`).join('')+
+    b.cards.map(c=>`<div class="pt-row" style="padding:4px 0;gap:8px">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}${c.n>1?' ×'+Number(c.n):''}</div>${adMeta([esc([c.set,c.number].filter(Boolean).join(' · ')),'listed '+dlMoney(c.price),c.image?'':'<span class="pt-neg">📷 no photo yet</span>'])}</div></div>`).join('')+
     `<span class="bn-ck" data-id="${esc(b.id)}">${adBnCheckLine(b.id)}</span>`;
   if(P) h+=adBnPicHtml(b,P);
   else h+=`<div class="lt-row" style="margin:8px 0 0;flex-wrap:wrap;gap:6px">`+
@@ -8531,8 +8531,8 @@ async function adBnCollage(b){
   let srv=[]; try{ const r=await api('adminBundleFaces',{bundleId:b.id}); if(r&&r.ok) srv=r.faces||[]; }catch(e){}
   const ims=[];
   for(let i=0;i<faces.length;i++){ let im=await adBnDataImg(srv[i]&&srv[i].data); if(!im&&faces[i].image) im=await loadHaulArt(faces[i].image,800); ims.push(im); }
-  let miss=0;
-  faces.forEach((c,i)=>{
+  let miss=0; const missNames=[];
+  faces.forEach((c,i)=>{ if(!ims[i]&&missNames.indexOf(c.name)<0) missNames.push(c.name);
     const r=Math.floor(i/g.cols), inRow=r===g.rows-1?n-r*g.cols:g.cols, off=(g.cols-inRow)*(CW+GAP)/2;
     const l=PAD+off+(i%g.cols)*(CW+GAP), t=PAD+r*(CH+GAP);
     x.save(); x.shadowColor='rgba(0,0,0,.45)'; x.shadowBlur=24; x.shadowOffsetY=8;
@@ -8544,19 +8544,21 @@ async function adBnCollage(b){
   x.fillText(n+' cards · FloofMart',cv.width/2,cv.height-PAD/2-FOOT/2+10);
   const MAX=1600; let out=cv;
   if(cv.width>MAX||cv.height>MAX){ const s=MAX/Math.max(cv.width,cv.height); out=document.createElement('canvas'); out.width=Math.round(cv.width*s); out.height=Math.round(cv.height*s); out.getContext('2d').drawImage(cv,0,0,out.width,out.height); }
-  return {jpeg:out.toDataURL('image/jpeg',0.85), miss};
+  return {jpeg:out.toDataURL('image/jpeg',0.85), miss, missNames, noPhoto:faces.filter(c=>!c.image).map(c=>c.name)};
 }
 async function adBnPic(btn,id){
   const b=adBnFind(id); if(!b) return;
   let res=null; await guard(btn,async()=>{ try{ res=await adBnCollage(b); }catch(e){ res={err:String(e&&e.message||e)}; } });
   if(!res||res.err){ ptAlert('Couldn’t draw the picture'+(res&&res.err?': '+res.err:'')+'. Try again in a moment.'); return; }
-  if(res.miss>=b.cards.length){ ptAlert('None of the card photos could be loaded for '+b.name+'. Check the cards have photos (Shelf), then try again.'); return; }
-  AD.bn.pics[b.id]={id:b.id,jpeg:res.jpeg,miss:res.miss}; AD.bn.open[b.id]=1; adBnRepaintOne(b.id);
+  if(res.miss>=b.cards.length){ ptAlert((res.noPhoto||[]).length?'These cards have no photo yet: '+res.noPhoto.join(', ')+'. Add their photos (📷 Scans, or /photo), then make the picture.':'None of the card photos could be loaded for '+b.name+'. Try again in a moment.'); return; }
+  AD.bn.pics[b.id]={id:b.id,jpeg:res.jpeg,miss:res.miss,missNames:res.missNames||[],noPhoto:res.noPhoto||[]}; AD.bn.open[b.id]=1; adBnRepaintOne(b.id);
 }
 function adBnPicHtml(b,P){
   const s=dlSid(b.id);
   return `<div style="margin:8px 0 0"><img src="${P.jpeg}" alt="Stitched picture of ${esc(b.name)}" style="width:100%;max-width:420px;border-radius:8px;display:block">`+
-    (P.miss?`<p class="pt-err" style="margin:6px 2px 0">${P.miss} card photo${P.miss===1?'':'s'} wouldn’t load (shown as a name). Redraw, or use it anyway.</p>`:'')+
+    // v13.54.1: say WHICH card, and whether it simply has no photo yet (nothing to stitch) or didn't load (redraw)
+    ((P.noPhoto||[]).length?`<p class="pt-err" style="margin:6px 2px 0">📷 No photo yet: ${P.noPhoto.map(esc).join(', ')}. It shows as its name. Add its photo (📷 Scans, or send it to the bot captioned /photo with its id), then Remake picture.</p>`:'')+
+    (P.miss>(P.noPhoto||[]).length?`<p class="pt-err" style="margin:6px 2px 0">Didn’t load this time: ${(P.missNames||[]).filter(n=>(P.noPhoto||[]).indexOf(n)<0).map(esc).join(', ')}. Tap ↻ Redraw.</p>`:'')+
     `<p class="note" style="text-align:left;margin:6px 2px 0">This becomes the bundle’s picture on its drop/auction post. Each card’s own photos still go in the post’s comments.</p>
     <div class="lt-row" style="margin:8px 0 0;gap:6px"><button class="pt-mini big pri" style="margin:0" onclick="adBnPicUse(this,'${s}')">Use this picture</button><button class="pt-mini" style="margin:0" onclick="adBnPic(this,'${s}')">↻ Redraw</button><button class="pt-mini" style="margin:0" onclick="adBnPicCancel('${s}')">Cancel</button></div></div>`;
 }
