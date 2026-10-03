@@ -8304,7 +8304,7 @@ async function adDealInvoice(btn,sid){
   let r=null; await guard(btn,async()=>{ r=await api('adminDealSell',{buyerId:cs[0].buyerId,cardIds:cs.map(c=>c.id),total:Math.round(t*100)/100}); });
   if(!r) return;
   if(!r.ok){ ptAlert(r.message||ptErr(r)); adDealsHeldLoad(); return; }
-  ptToast(r.message||'Invoiced');
+  if(r.pull&&r.pull.length) ptAlert(r.message); else ptToast(r.message||'Invoiced');   // v13.58.1: off-platform = hand the cards over now: which lot each comes from stays on screen
   const gone={}; cs.forEach(c=>gone[c.id]=1); AD.res.list=(AD.res.list||[]).filter(c=>!gone[c.id]); adDealsHeldPaint(); adResPaint();
 }
 async function adDealRelease(btn,sid,cardSid){
@@ -8475,7 +8475,8 @@ function adBnBulkHtml(){
     <div class="lt-row" style="flex-wrap:wrap;gap:6px;margin:0 0 6px"><span class="lt-pl" style="font-size:14px">Names:</span>
       <input id="bnk-find" class="lt-in" style="width:130px" placeholder="find" value="${esc(K.find)}" aria-label="Find in names" oninput="AD.bn.bk.find=this.value;adBnBulkPrev()"> →
       <input id="bnk-repl" class="lt-in" style="width:130px" placeholder="replace with" value="${esc(K.repl)}" aria-label="Replace with" oninput="AD.bn.bk.repl=this.value;adBnBulkPrev()"></div>
-    <div id="bnk-prev">${adBnBulkPrevHtml()}</div></div>`;
+    <div id="bnk-prev">${adBnBulkPrevHtml()}</div>
+    <div class="lt-row" style="margin:10px 0 0;border-top:1px solid var(--line,rgba(0,0,0,.08));padding-top:10px"><button class="pt-mini" style="margin:0" onclick="adBnBulkApart(this)">🔓 Take the ticked bundles apart</button><span class="lt-dest">their cards go back on sale</span></div></div>`;
 }
 function adBnBulkRepaint(){ const el=document.getElementById('bn-bulk'); if(el) el.innerHTML=adBnBulkHtml(); }
 function adBnBulkRows(){ return (AD.bn.list||[]).filter(b=>AD.bn.bk.sel[b.id]&&!AD_BN_ST[b.status]).map(b=>({b,n:adBnBulkNew(b)})); }
@@ -8502,6 +8503,20 @@ async function adBnBulkSave(btn){
   ch.forEach(x=>{ if(ok[x.b.id]){ x.b.price=x.n.price; x.b.name=x.n.name; } });
   if(r.failed&&r.failed.length) ptAlert(r.message); else ptToast(r.message||'Saved');
   AD.bn.bk.val=''; AD.bn.bk.find=''; AD.bn.bk.repl=''; adBnHavePaint(); adBnSugLoad();
+}
+// v13.58.2: take every ticked bundle apart in one go (same as 🔓 Take apart on each; held ones are refused and listed)
+async function adBnBulkApart(btn){
+  const L=(AD.bn.list||[]).filter(b=>AD.bn.bk.sel[b.id]&&!AD_BN_ST[b.status]);
+  if(!L.length){ ptAlert('Tick the bundles to take apart first.'); return; }
+  const cards=L.reduce((a,b)=>a+b.cards.length,0);
+  if(!(await ptConfirm(`Take ${L.length} bundle${L.length===1?'':'s'} apart?\n\n${L.slice(0,12).map(b=>'• '+b.name+' ('+b.cards.length+' cards)').join('\n')}${L.length>12?'\n…+'+(L.length-12)+' more':''}\n\nTheir ${cards} cards go back on sale at their own prices, and the bundles leave the shop. This can’t be undone (you’d make them again).`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminBundleApart',{bundleIds:L.map(b=>b.id)}); });
+  if(!r) return;
+  if(!r.ok&&!(r.done&&r.done.length)){ ptAlert(r.message||ptErr(r)); adBnLoad(); return; }
+  const gone={}; (r.done||[]).forEach(id=>gone[id]=1);
+  AD.bn.list=(AD.bn.list||[]).filter(b=>!gone[b.id]); (r.done||[]).forEach(id=>delete AD.bn.bk.sel[id]);
+  if(r.failed&&r.failed.length) ptAlert(r.message); else ptToast(r.message||'Taken apart');
+  AD.deal.cardsAt=0; adBnHavePaint(); adBnSugLoad();
 }
 // The price check lines refresh in place (Suggested lots reloads them), never the whole list.
 function adBnCheckRefresh(){ document.querySelectorAll('#bn-have .bn-ck').forEach(n=>{ n.innerHTML=adBnCheckLine(n.getAttribute('data-id')); }); }
