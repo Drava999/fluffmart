@@ -8742,8 +8742,14 @@ function adScWho(c){
   const w=c.who||{cards:[]};
   if(c.read==='nocard') return '<div class="sc-who">Nothing to name: scan it again, or try cutting it again.</div>';
   if(!adScName(c)) return '<div class="sc-who">Type the number printed on the card.</div>';
+  // v13.57: you have this card in more than one version (Normal + Reverse Holo): say which one this scan is
+  if(w.needVer&&w.needVer.length){
+    const cid=esc(c.id);
+    return `<div class="sc-who">→ ${w.back?'<b>back</b> of ':''}<b>${esc(w.card.name)}</b> · ${esc(w.card.set)} ${esc(w.card.number)}</div><div class="sc-who pt-neg">You have it in ${w.needVer.length} versions: which one is this?</div><div class="sc-btns">${w.needVer.map(v=>`<button class="pt-mini${v.photo?'':' pri'}" onclick="adScAct(this,'${cid}','ok',{name:'${esc(v.name)}'})">${esc(v.label)}${v.photo?'':' · no photo yet'}</button>`).join('')}</div>`;
+  }
+  if(w.verMiss) return `<div class="sc-who pt-neg">⚠️ You don’t have a ${esc(w.verMiss)} copy of this card in your Sheet. Check the version, or take the -${esc(String(w.verMiss).toLowerCase().split(' ')[0])} off the name.</div>`;
   if(!w.cards.length) return `<div class="sc-who pt-neg">⚠️ No card in your Sheet has this name yet${/b$/.test(adScName(c))?'':' (a new card? import its Collectr CSV first)'}.</div>`;
-  let h=w.cards.map(x=>`<div class="sc-who">→ ${w.back?'<b>back</b> of ':''}<b>${esc(x.name)}</b> · ${esc(x.set)} ${esc(x.number)}${x.copies>1?' · '+x.copies+' copies':''}${x.sold?' · sold (kept for a restock)':''}${x.photo&&!w.back?' · <i>replaces its photo</i>':''}</div>`).join('');
+  let h=w.cards.map(x=>`<div class="sc-who">→ ${w.back?'<b>back</b> of ':''}<b>${esc(x.name)}</b>${x.fin?' <span class="sc-tag">'+esc(x.fin)+'</span>':''} · ${esc(x.set)} ${esc(x.number)}${x.copies>1?' · '+x.copies+' copies':''}${x.sold?' · sold (kept for a restock)':''}${x.photo&&!w.back?' · <i>replaces its photo</i>':''}</div>`).join('');
   if(w.clash) h+='<div class="sc-who pt-neg">⚠️ Different cards share this number: put the set in front, e.g. '+esc(w.cards.map(x=>String(x.set||'').toLowerCase().replace(/[^a-z0-9]+/g,'')+'-'+adScName(c)).slice(0,2).join(' or '))+'</div>';
   return h;
 }
@@ -8783,7 +8789,7 @@ function adScPaint(){
   const r=AD.sc.r;
   if(!r||!r.ok){ el.innerHTML=`<p class="note" style="text-align:left">${esc((r&&r.message)||'Couldn’t load your scans.')} <a href="#" onclick="adScLoad();return false">Try again</a></p>`; return; }
   const cards=r.cards||[], nOk=cards.filter(c=>c.status==='ok').length, nCheck=cards.filter(c=>c.status==='check').length;
-  const clean=cards.filter(c=>c.status==='check'&&(c.read==='ok'||c.read==='already')).length;
+  const clean=cards.filter(c=>c.status==='check'&&(c.read==='ok'||c.read==='already')&&!(c.who&&c.who.needVer)).length;   // v13.57: a card that needs its version isn't OK'd in bulk
   const nStr=cards.filter(c=>(c.status==='check'||c.status==='ok')&&c.read!=='nocard').length;
   const L=r.last;
   const top=!r.setup?`<p style="margin:0 0 6px;font-size:13.5px"><b>Not switched on yet.</b> Add the Script Property <code>GH_SCAN_TOKEN</code> in Apps Script (the setup note in docs/patches says how, 2 minutes).</p>`:'';
