@@ -9190,7 +9190,7 @@ function adEvBuilderHtml(d){
   const items=adEvDraftItems(d); AD.ev.items=items;
   return `<div class="evb"><div id="evb-title">${adEvTitleHtml(d)}</div>`+(d.kind==='auction'?`<div id="evb-clock">${adEvClockHtml(d)}</div>`:'')+
     `<div id="evb-items">${items.length?items.map((it,i)=>adEvItemHtml(d,it,i)).join(''):adEvEmptyHtml()}${adEvAddingHtml()}</div>`+
-    `<div id="evb-sum">${adEvSumHtml(d,items)}</div><div id="evb-foot">${adEvFootHtml(d,items)}</div></div>`;
+    `<div id="evb-sum">${adEvSumHtml(d,items)}</div>`+(d.kind==='auction'?adPcaBox(d):'')+`<div id="evb-foot">${adEvFootHtml(d,items)}</div></div>`;
 }
 const adEvEmptyHtml=()=>'<p class="note ev-empty" style="text-align:left;margin:4px 0">No cards yet — tap <b>＋ Add cards</b>.</p>';
 const adEvAddingHtml=()=>AD.ev.adding?Array.from({length:Math.min(AD.ev.adding,6)},()=>'<div class="ev-it ev-adding"><div class="skelcard" style="height:48px;flex:1"></div></div>').join(''):'';
@@ -9385,7 +9385,95 @@ function adEvLiveInner(d){
     `<div class="evl-items" data-sync>${its.map(it=>adEvLiveItem(d,it)).join('')}</div>`+
     `<p class="note" style="text-align:left;margin:6px 0 0">Updates by itself every 15 s while open${d.at?'':''}. Reports from the bot go to your DM.</p>`;
 }
-function adEvLiveHtml(d){ return `<div class="evl" id="evl-${adDom(adEvK(d.kind,d.id))}">${adEvLiveInner(d)}</div>`; }
+function adEvLiveHtml(d){ return `<div class="evl" id="evl-${adDom(adEvK(d.kind,d.id))}">${adEvLiveInner(d)}</div>`+(d.kind==='auction'&&d.state==='live'?adPcaBox(d):''); }
+/* v13.60 📈 PriceCharting on auction lots (Bryan: S$ only, auctions only, vet it first).
+   Look up → each card's match waits here; only ✅ ones show on the lot post + bid board. */
+AD.pca={};
+function adPcaBox(d){
+  const id=String(d.id), st=AD.pca[id]||(AD.pca[id]={d:null,busy:false,open:'',poll:0,shut:true});
+  if(!st.d&&!st.busy&&!st.shut) setTimeout(()=>adPcaLoad(id),0);
+  return `<div class="pca panel" id="pca-${adDom(id)}" style="padding:10px 12px;margin:8px 0">${adPcaHtml(id)}</div>`;
+}
+function adPcaToggle(id){ const st=AD.pca[id]; if(!st) return; st.shut=!st.shut; adPcaPaint(id); if(!st.shut&&!st.d) adPcaLoad(id); }
+async function adPcaLoad(id){
+  const st=AD.pca[id]; if(!st) return; st.busy=true; adPcaPaint(id);
+  const r=await api('adminAucPc',{id}).catch(()=>null);
+  st.busy=false; st.d=r&&r.ok?r:{ok:false,message:(r&&r.message)||ptErr(r)}; adPcaPaint(id);
+  clearTimeout(st.poll);
+  if(r&&r.ok&&r.running) st.poll=setTimeout(()=>{ if(document.getElementById('pca-'+adDom(id))&&!st.shut) adPcaLoad(id); },20000);   // fill in as they come
+}
+function adPcaPaint(id){ const el=document.getElementById('pca-'+adDom(id)); if(el&&!el.contains(document.activeElement)) el.innerHTML=adPcaHtml(id); }
+function adPcaHtml(id){
+  const st=AD.pca[id]||{}, d=st.d, sid=adLotsSid(id);
+  const head=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:14px">📈 PriceCharting</b>`+
+    `<button class="pt-mini" style="margin:0" onclick="adPcaToggle('${sid}')" aria-expanded="${st.shut?'false':'true'}">${st.shut?'Open':'Close'}</button></div>`;
+  if(st.shut){
+    const sh=d&&d.ok?` · ${Number(d.shown||0)} of ${(d.cards||[]).length} shown`:'';
+    return head+`<p class="note" style="text-align:left;margin:4px 0 0">Show PriceCharting's price (in S$) on lot posts. You check every match first${sh}.</p>`;
+  }
+  if(!d) return head+'<p class="note" style="text-align:left;margin:6px 0 0">Loading…</p>';
+  if(!d.ok) return head+`<p class="pt-err">${esc(d.message||'Couldn’t load.')}</p>`;
+  const todo=d.cards.filter(c=>!c.status).length;
+  let h=head+`<p class="note" style="text-align:left;margin:4px 0 8px">Only prices you <b>✅ Show</b> go on the lot post and the bid board, as “📈 PriceCharting ~S$15”. Graded cards use their grade’s price. A bundle shows only when all its cards are ✅. US$1 = S$${Number(d.rate).toFixed(2)}.${d.on?'':' <span class="pt-neg">Turned off in Config (auction_show_pc).</span>'}</p>`;
+  if(!d.token) h+=`<div class="pt-err" style="font-size:12.5px">No Apify token set, so PriceCharting can’t be searched (the same token /prices uses).</div>`;
+  if(d.running) h+=`<p class="note" style="text-align:left;margin:0 0 8px">⏳ Looking them up in the background (${Number(d.left||0)} left). Matches fill in below; you get a DM when it’s done.</p>`;
+  else if(todo) h+=`<button class="pt-mini pri" style="margin:0 0 8px" onclick="adPcaStart(this,'${sid}',${todo})">🔎 Look up ${todo} card${todo===1?'':'s'} on PriceCharting</button>`;
+  if(!d.cards.length) h+='<p class="note" style="text-align:left">No cards in this auction yet.</p>';
+  h+=d.cards.map(c=>adPcaCardHtml(id,c,st)).join('');
+  return h;
+}
+function adPcaCardHtml(aid,c,st){
+  const cid=adLotsSid(c.cardId), said=adLotsSid(aid), open=st.open===c.cardId, rate=Number(st.d.rate)||1.29;
+  const sgd=v=>'S$'+Number(v).toFixed(2);
+  let b=`<div class="pt-row" style="padding:8px 0;gap:8px;align-items:flex-start">${adThumb(c,34)}<div class="l" style="min-width:0;flex:1">`+
+    `<div class="t" style="font-size:13px">${esc(c.name)}${c.number?' · '+esc(c.number):''}${c.grade?' · '+esc(c.grade):''}</div>`+
+    `<div class="s">${esc(c.set||'')}${c.inBundle?' · in bundle '+esc(c.inBundle):''}</div>`;
+  if(!c.status) b+=`<div class="s">Not looked up yet.</div>`;
+  else if(c.status==='pending') b+=`<div class="s">⏳ Searching PriceCharting…</div>`;
+  else if(c.status!=='ok') b+=`<div class="s pt-neg">${c.status==='no_token'?'No Apify token: not searched.':c.status==='error'?'Search failed: '+esc(c.note||''):'No PriceCharting match'+(c.query?' for “'+esc(c.query)+'”':'')+'.'}</div>`;
+  else {
+    b+=`<div class="s">PriceCharting: <b>${esc(c.pcName)}</b> · ${esc(c.pcSet)}${c.pcNumber?' #'+esc(c.pcNumber):''}${c.url?` <a href="#" data-u="${esc(c.url)}" onclick="openExt(this.dataset.u);return false" aria-label="Open on PriceCharting">↗</a>`:''}${c.unsure?' <span class="pt-neg">⚠️ unsure match</span>':''}</div>`;
+    b+=c.sgd!=null?`<div class="s">${esc(c.label)}: <b>${sgd(c.sgd)}</b> <small>(US$${Number(c.usd).toFixed(2)})</small></div>`
+      :`<div class="s pt-neg">PriceCharting has no ${esc(c.label)} price, so nothing will show.</div>`;
+    const on=c.vet==='ok', off=c.vet==='no';
+    b+=`<div class="lt-row" style="margin:4px 0 0"><span class="lt-seg" role="group">`+
+      `<button type="button" aria-pressed="${on?'true':'false'}" onclick="adPcaVet(this,'${said}','${cid}','ok')"${c.sgd==null?' disabled':''}>✅ Show</button>`+
+      `<button type="button" aria-pressed="${off?'true':'false'}" onclick="adPcaVet(this,'${said}','${cid}','no')">🚫 Don’t show</button></span>`+
+      `${!on&&!off?'<span class="lt-tag">not checked</span>':''}</div>`;
+  }
+  if(c.status&&c.status!=='pending') b+=`<button class="pt-mini" style="margin:4px 0 0" onclick="adPcaOpen('${said}','${cid}')">${open?'Close':c.status==='ok'?'Wrong card?':'Search again'}</button>`;
+  b+='</div></div>';
+  if(open){
+    b+=`<div class="prf-fix" style="margin:0 0 8px 42px">`+(c.alts&&c.alts.length?`<div class="prf-cap">Other matches:</div>`+c.alts.map((a,i)=>`<button class="pt-mini" onclick="adPcaPick(this,'${said}','${cid}',${i})">${esc(a.name)} · ${esc(a.set)}${a.number?' #'+esc(a.number):''}${a.raw!=null?' · '+sgd(a.raw*rate):''}</button>`).join(''):'')+
+      `<div class="pt-inl" style="margin-top:6px"><input id="pca-q-${cid}" class="lt-in" style="width:auto;flex:1;min-width:140px" placeholder="e.g. Charizard ex 125 Obsidian" value="${esc(c.query||'')}" aria-label="Search PriceCharting for ${esc(c.name)}"><button class="pt-mini" style="margin:0" onclick="adPcaAgain(this,'${said}','${cid}')">Search again</button></div></div>`;
+  }
+  return b;
+}
+function adPcaOpen(aid,cid){ const st=AD.pca[aid]; if(!st) return; st.open=st.open===cid?'':cid; adPcaPaint(aid); }
+async function adPcaStart(btn,aid,n){
+  if(!(await ptConfirm(`Look up ${n} card${n===1?'':'s'} on PriceCharting?\n\nSearched through your Apify account (a few cents each); cards looked up before are reused for free. It runs in the background. Nothing shows on the posts until you ✅ each match.`))) return;
+  let r=null; await guard(btn,async()=>{ r=await api('adminAucPcStart',{id:aid}); });
+  if(!r) return; if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Started'); setTimeout(()=>adPcaLoad(aid),1500);
+}
+async function adPcaVet(btn,aid,cid,v){
+  const st=AD.pca[aid], c=st&&st.d&&st.d.cards.find(x=>x.cardId===cid); if(!c) return;
+  const nv=c.vet===v?'':v;                                        // tap again = undo
+  let r=null; await guard(btn,async()=>{ r=await api('adminAucPcVet',{cardId:cid,v:nv}); });
+  if(!r) return; if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  st.d.cards.forEach(x=>{ if(x.cardId===cid) x.vet=nv; }); st.d.shown=st.d.cards.filter(x=>x.vet==='ok'&&x.sgd).length; adPcaPaint(aid); ptToast(r.message||'Saved');
+}
+async function adPcaPick(btn,aid,cid,i){
+  let r=null; await guard(btn,async()=>{ r=await api('adminAucPcPick',{cardId:cid,i}); });
+  if(!r) return; if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Switched'); const st=AD.pca[aid]; if(st) st.open=''; adPcaLoad(aid);
+}
+async function adPcaAgain(btn,aid,cid){
+  const q=(document.getElementById('pca-q-'+cid)||{}).value||'';
+  let r=null; await guard(btn,async()=>{ r=await api('adminAucPcAgain',{cardId:cid,q:q.trim()}); });
+  if(!r) return; if(!r.ok){ ptAlert(r.message||ptErr(r)); return; }
+  ptToast(r.message||'Searching'); const st=AD.pca[aid]; if(st) st.open=''; setTimeout(()=>adPcaLoad(aid),1500);
+}
 function adEvLivePatch(k){
   const d=AD.ev.det[k], el=document.getElementById('evl-'+adDom(k));
   if(!el||!adEvIsLive(d)) return false;
@@ -9633,7 +9721,7 @@ async function adLotsLoad(recipe,shuffle){
   const s=adLotsState(); s.recipe=recipe||s.recipe||'mix'; s.busy=true; adLotsPaint();
   const seed=shuffle||!s.r||s.r.recipe!==s.recipe?Math.floor(Math.random()*1e6)+1:(s.r&&s.r.seed);
   const r=await adEvCall('adminLotIdeas',{recipe:s.recipe,seed,size:s.size,f:s.f,q:s.q});
-  s.busy=false; s.r=r&&r.ok?r:{ok:false,message:(r&&r.message)||ptErr(r),ideas:[]};
+  s.busy=false; s.showN=10; s.r=r&&r.ok?r:{ok:false,message:(r&&r.message)||ptErr(r),ideas:[]};
   const keep={}; Object.keys(s.vals).forEach(k=>{ if(k==='q'||k.indexOf('f|')===0||k.indexOf('plan|')===0) keep[k]=s.vals[k]; }); s.vals=keep; adLotsPaint(true);   // new ideas start from their own suggested prices
 }
 function adLotDraft(kind){ return adEvList().find(e=>e.kind===kind&&e.state==='draft')||null; }
@@ -9683,7 +9771,11 @@ function adLotsHtml(){
     body=`<p class="note" style="text-align:left;margin:4px 2px 8px">${Number(r.onSale||0)} cards on sale${narrowed?` · <b>${Number(r.matching||0)} match</b>`:''} · ${Number(r.hits||0)} hits · ${Number(r.hard||0)} hard to sell · card facts for ${Number(fa.have||0)} of ${Number(fa.of||0)}`+
       ` · <a href="#" onclick="adLotFacts(this);return false">Look up more cards</a></p>`;
     if(!r.ideas.length) body+=`<p class="note" style="text-align:left">${narrowed&&Number(r.matching||0)<2?'Too few cards match the search/filters. Loosen them.':needs&&!fa.have?'This recipe needs card facts (artist, type, evolution line). Tap “Look up more cards”, or wait for tonight’s automatic lookup.':'No ideas for this recipe with these cards. Try another.'}</p>`;
-    body+=r.ideas.map((it,i)=>adLotIdeaHtml(it,i)).join('');
+    // v13.59.4: a theme now covers every card that fits it, so ideas come 10 at a time
+    const shown=Math.min(r.ideas.length,Number(s.showN)||10);
+    if(r.ideas.length>1&&r.used!=null) body+=`<p class="note" style="text-align:left;margin:0 2px 8px">${r.ideas.length} idea${r.ideas.length===1?'':'s'} using <b>${Number(r.used)}</b> of ${Number(r.matching||0)} cards${Number(r.used)<Number(r.matching||0)?' (the rest don’t share this theme with another card)':''}</p>`;
+    body+=r.ideas.slice(0,shown).map((it,i)=>adLotIdeaHtml(it,i)).join('');
+    if(shown<r.ideas.length) body+=`<button class="pt-mini" style="margin:0 0 8px" onclick="adLotsMore()">Show ${Math.min(10,r.ideas.length-shown)} more (${r.ideas.length-shown} left)</button>`;
   }
   return h+body+`<p class="note" style="text-align:left;margin:8px 2px 0">Nothing is posted: ideas go into a <b>draft</b> you check in Events. <b>One lot</b> = the cards as one bundle · <b>Each card</b> = every card its own item · <b>Hit + lot</b> = the hits alone, the rest as one lot. Consignor floors are always respected.</p></div>`;
 }
@@ -9725,6 +9817,7 @@ function adLotIdeaHtml(it,i){
     <div style="font-size:12px;margin:6px 0">Shop value <b>$${Number(it.value).toFixed(2)}</b> · market $${Number(it.market).toFixed(2)}${it.floor?` · floors $${Number(it.floor).toFixed(2)}`:''}</div>
     <div class="lt-row" style="margin:0">${price}<button class="pt-mini pri" style="margin:0 0 0 auto" onclick="adLotMake(this,${i})">${go}</button></div></div>`;
 }
+function adLotsMore(){ const s=adLotsState(); s.showN=(Number(s.showN)||10)+10; adLotsPaint(); }
 function adLotsSellI(i,v){ const s=adLotsState(), it=s.r&&s.r.ideas[i]; if(it) adLotsSell(it.key,v); }
 async function adLotSwap(btn,i,cardId){
   const s=adLotsState(), it=s.r&&s.r.ideas[i]; if(!it) return;
