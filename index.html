@@ -9705,10 +9705,11 @@ const LOT_TYPE_EMOJI={Psychic:'🔮',Fire:'🔥',Water:'💧',Grass:'🌿',Light
 function adLotsState(){
   if(!AD.ev.lots){ let sv={}; try{ sv=JSON.parse(localStorage.getItem('fm_lots')||'{}')||{}; }catch(e){}
     AD.ev.lots={open:false,recipe:'mix',r:null,busy:false,forK:['auction','drop','shop'].includes(sv.forK)?sv.forK:'auction',size:Number(sv.size)||0,
-      q:'',f:Object.assign({},LOT_F0,sv.f||{}),fOpen:false,sell:{},vals:{},plan:null,planN:Number(sv.planN)||8,planBusy:false}; }
+      q:'',f:Object.assign({},LOT_F0,sv.f||{}),fOpen:false,sell:{},vals:{},plan:null,planN:Number(sv.planN)||8,planBusy:false,
+      singles:sv.singles!==false}; }   // v13.60.3 (Bryan: bundles aren't popular): 🃏 Singles only, on unless turned off
   return AD.ev.lots;
 }
-function adLotsSave(){ const s=adLotsState(); try{ localStorage.setItem('fm_lots',JSON.stringify({forK:s.forK,size:s.size,f:s.f,planN:s.planN})); }catch(e){} }
+function adLotsSave(){ const s=adLotsState(); try{ localStorage.setItem('fm_lots',JSON.stringify({forK:s.forK,size:s.size,f:s.f,planN:s.planN,singles:!!s.singles})); }catch(e){} }
 function adLotsKeep(){ const s=adLotsState(); document.querySelectorAll('#ev-lots [data-v]').forEach(el=>{ s.vals[el.getAttribute('data-v')]=el.value; }); }
 function adLotsV(k,d){ const v=adLotsState().vals[k]; return v==null?d:v; }
 const adLotsNum=v=>Number(String(v==null?'':v).replace(/[$,\s]/g,''));
@@ -9727,6 +9728,7 @@ async function adLotsLoad(recipe,shuffle){
   const keep={}; Object.keys(s.vals).forEach(k=>{ if(k==='q'||k.indexOf('f|')===0||k.indexOf('plan|')===0) keep[k]=s.vals[k]; }); s.vals=keep; adLotsPaint(true);   // new ideas start from their own suggested prices
 }
 function adLotDraft(kind){ return adEvList().find(e=>e.kind===kind&&e.state==='draft')||null; }
+function adLotsSingles(){ const s=adLotsState(); s.singles=!s.singles; s.plan=null; adLotsSave(); adLotsPaint(); }
 function adLotsFor(k){ const s=adLotsState(); if(s.forK===k) return; s.forK=k; if(s.plan&&s.plan.kind!==k) s.plan=null; adLotsSave(); adLotsPaint(); }
 function adLotsSize(v){ const s=adLotsState(); s.size=Number(v)||0; adLotsSave(); adLotsLoad(null,false); }
 function adLotsSearch(){ const s=adLotsState(); adLotsKeep(); s.q=String(s.vals['q']||'').trim().slice(0,60); s.plan=null; adLotsLoad(null,true); }
@@ -9759,7 +9761,8 @@ function adLotsHtml(){
   let h=`<div class="panel lt-panel" style="padding:12px;margin:0 0 10px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px"><b style="font-size:14px">💡 Lot ideas</b>
       <span style="display:flex;gap:6px"><button class="pt-mini" style="margin:0" onclick="adLotsLoad(null,true)"${busy}>↻ Shuffle</button><button class="pt-mini" style="margin:0" onclick="adLotsToggle()">Close</button></span></div>
-    <div class="lt-row"><span class="lt-lab">For</span>${adLotsSeg(LOT_FOR,s.forK,'adLotsFor')}<span class="lt-dest">${s.forK==='shop'?'a bundle in the shop':adLotsDest(s.forK)}</span></div>
+    <div class="lt-row"><span class="lt-lab">For</span>${adLotsSeg(LOT_FOR,s.forK,'adLotsFor')}<span class="lt-dest">${s.forK==='shop'?'a bundle in the shop':adLotsDest(s.forK)}</span></div>`+
+    (s.forK==='shop'?'':`<div class="lt-row"><label class="lt-lab" style="min-width:0;display:flex;gap:6px;align-items:center"><input type="checkbox" ${s.singles?'checked':''} onchange="adLotsSingles()" aria-label="Singles only"> 🃏 Singles only</label><span class="lt-dest">${s.singles?'every card goes in as its own item, no bundles':'ideas go in as one lot unless you pick Each card'}</span></div>`)+`
     <div class="lt-row"><input class="ev-search lt-q" data-v="q" value="${esc(adLotsV('q',s.q))}" placeholder="🔎 Theme: Pokémon, artist, set, rarity…" maxlength="60" aria-label="Search a theme" enterkeyhint="search" onkeydown="if(event.key==='Enter'){event.preventDefault();adLotsSearch()}"><button class="pt-mini" style="margin:0" onclick="adLotsSearch()"${busy}>Search</button>${s.q?`<button class="pt-mini" style="margin:0" onclick="adLotsSearchClear()" aria-label="Clear search">✕</button>`:''}</div>
     <div class="lt-row"><label class="lt-lab" style="min-width:0">Cards per idea <select onchange="adLotsSize(this.value)" aria-label="Cards per idea">${LOT_SIZES.map(([v,l])=>`<option value="${v}"${s.size===v?' selected':''}>${l}</option>`).join('')}</select></label>
       <button class="pt-mini${fc?' pri':''}" style="margin:0" onclick="adLotsFiltToggle()" aria-expanded="${s.fOpen?'true':'false'}">⚙️ Filters${fc?' ('+fc+' on)':''}</button></div>`;
@@ -9803,7 +9806,7 @@ function adLotCardMeta(c){
 }
 function adLotIdeaHtml(it,i){
   const s=adLotsState(), kind=s.forK, k=it.key;
-  let sell=kind==='shop'?'one':(s.sell[k]||'one'); if(sell==='mix'&&!adLotMixable(it)) sell='one';
+  let sell=kind==='shop'?'one':(s.sell[k]||(s.singles?'each':'one')); if(sell==='mix'&&!adLotMixable(it)) sell=s.singles?'each':'one';
   const perCard=c=>sell==='each'||(sell==='mix'&&c.hit);
   const cards=it.cards.map(c=>`<div class="pt-row" style="padding:6px 0;gap:8px">${adThumb(c,30)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}</div><div class="s">${adLotCardMeta(c)}</div></div>`+
     `<div class="r" style="gap:6px;align-items:center">${perCard(c)?`<label class="lt-pl">${kind==='auction'?'start ':''}$<input class="lt-in" data-v="${esc(k)}|c|${kind}|${esc(c.id)}" inputmode="decimal" aria-label="${kind==='auction'?'Start bid':'Price'} for ${esc(c.name)}" value="${esc(adLotsV(k+'|c|'+kind+'|'+c.id,kind==='auction'?c.start1:c.drop1))}"></label>`:(sell==='mix'?'<span class="lt-tag">in the lot</span>':'')}`+
@@ -9915,7 +9918,7 @@ async function adLotMake(btn,i,mode){
 async function adLotsPlan(shuffle){
   const s=adLotsState(); if(s.forK==='shop') return;
   s.planBusy=true; adLotsPaint();
-  const r=await adEvCall('adminLotPlan',{kind:s.forK,items:s.planN,f:s.f,q:s.q,seed:Math.floor(Math.random()*1e6)+1});
+  const r=await adEvCall('adminLotPlan',{kind:s.forK,items:s.planN,f:s.f,q:s.q,singles:!!s.singles,seed:Math.floor(Math.random()*1e6)+1});
   s.planBusy=false;
   Object.keys(s.vals).forEach(k=>{ if(k.indexOf('plan|')===0) delete s.vals[k]; });
   s.plan=r&&r.ok?Object.assign({},r.plan,{pct:r.pct,n0:r.plan.items.length}):{err:(r&&r.message)||ptErr(r)};
