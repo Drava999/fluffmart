@@ -9699,7 +9699,9 @@ async function adEvCreate(btn){
 const LOT_RECIPE_LIST=[['mix','✨ Surprise me'],['hitmix','🔥 Hit + hard-to-sell'],['species','🐾 Same Pokémon'],['line','🧬 Evolution line'],['artist','🎨 Same artist'],['type','🌈 Type theme'],['set','📦 Same set'],['rarity','💎 Rarity set'],['band','🎲 Price band'],['slow','🐢 Slow sellers']];
 const LOT_FOR=[['auction','🔨 Auction'],['drop','🎯 Drop'],['shop','📦 Shop bundle']];
 const LOT_SIZES=[[0,'Auto'],[3,'3'],[5,'5'],[8,'8'],[12,'12'],[99,'All']];
-const LOT_F0={min:'',max:'',hits:'any',src:'all',days:0};
+const LOT_F0={min:'',max:'',hits:'any',src:'all',days:0,type:''};
+// v13.60.1: a row of type buttons (Bryan): one tap = only that type, with any theme
+const LOT_TYPE_EMOJI={Psychic:'🔮',Fire:'🔥',Water:'💧',Grass:'🌿',Lightning:'⚡',Fighting:'🥊',Darkness:'🌑',Metal:'⚙️',Fairy:'🧚',Dragon:'🐉',Colorless:'⚪'};
 function adLotsState(){
   if(!AD.ev.lots){ let sv={}; try{ sv=JSON.parse(localStorage.getItem('fm_lots')||'{}')||{}; }catch(e){}
     AD.ev.lots={open:false,recipe:'mix',r:null,busy:false,forK:['auction','drop','shop'].includes(sv.forK)?sv.forK:'auction',size:Number(sv.size)||0,
@@ -9733,11 +9735,20 @@ function adLotsFiltToggle(){ const s=adLotsState(); s.fOpen=!s.fOpen; adLotsPain
 function adLotsFilt(){
   const s=adLotsState(); adLotsKeep(); const v=k=>s.vals['f|'+k];
   const n=x=>{ const y=adLotsNum(x); return y>0?String(y):''; };
-  s.f={min:n(v('min')),max:n(v('max')),hits:v('hits')||'any',src:v('src')||'all',days:Number(v('days'))||0};
+  s.f={min:n(v('min')),max:n(v('max')),hits:v('hits')||'any',src:v('src')||'all',days:Number(v('days'))||0,type:(s.f&&s.f.type)||''};
   s.plan=null; adLotsSave(); adLotsLoad(null,true);
 }
 function adLotsFiltClear(){ const s=adLotsState(); s.f=Object.assign({},LOT_F0); Object.keys(s.vals).forEach(k=>{ if(k.indexOf('f|')===0) delete s.vals[k]; }); s.plan=null; adLotsSave(); adLotsLoad(null,true); }
 function adLotsFiltCount(f){ return (f.min?1:0)+(f.max?1:0)+(f.hits!=='any'?1:0)+(f.src!=='all'?1:0)+(Number(f.days)?1:0); }
+function adLotsType(t){ const s=adLotsState(); s.f=Object.assign({},LOT_F0,s.f||{}); s.f.type=s.f.type===t?'':t; s.plan=null; adLotsSave(); adLotsLoad(null,true); }
+function adLotsTypesHtml(){
+  const s=adLotsState(), r=s.r, cur=(s.f&&s.f.type)||'', tc=(r&&r.types)||{};
+  const keys=Object.keys(tc).sort((a,b)=>tc[b]-tc[a]); if(cur&&keys.indexOf(cur)<0) keys.unshift(cur);
+  if(!keys.length) return '';
+  return `<div class="lt-row lt-types" role="group" aria-label="Only one type" style="flex-wrap:wrap;gap:6px"><span class="lt-lab">Type</span>`+
+    keys.map(t=>`<button type="button" class="pt-mini${cur===t?' pri':''}" style="margin:0" aria-pressed="${cur===t?'true':'false'}" onclick="adLotsType('${adLotsSid(t)}')">${LOT_TYPE_EMOJI[t]||'🃏'} ${esc(t)} <small>${Number(tc[t]||0)}</small></button>`).join('')+
+    (cur?`<button type="button" class="pt-mini" style="margin:0" onclick="adLotsType('${adLotsSid(cur)}')" aria-label="All types">✕ all types</button>`:'')+`</div>`;
+}
 function adLotsSell(key,v){ const s=adLotsState(); s.sell[key]=v; adLotsPaint(); }
 const adLotsSeg=(opts,cur,fn,dis)=>`<span class="lt-seg" role="group">${opts.map(([k,l])=>`<button type="button" aria-pressed="${cur===k?'true':'false'}" onclick="${fn}('${k}')"${dis&&dis(k)?' disabled':''}>${esc(l)}</button>`).join('')}</span>`;
 function adLotsDest(kind){ const d=adLotDraft(kind); return d?`adds to <b>${esc(d.short||'the draft')}</b> (draft)`:'makes a new draft'; }
@@ -9756,7 +9767,7 @@ function adLotsHtml(){
       <div class="lt-row"><span class="lt-lab">Price</span>$<input class="lt-in" data-v="f|min" inputmode="decimal" value="${esc(adLotsV('f|min',f.min))}" placeholder="any" aria-label="Lowest price" onchange="adLotsFilt()"> to $<input class="lt-in" data-v="f|max" inputmode="decimal" value="${esc(adLotsV('f|max',f.max))}" placeholder="any" aria-label="Highest price" onchange="adLotsFilt()"></div>
       <div class="lt-row"><span class="lt-lab">Show</span>${sel('hits',[['any','Hits and the rest'],['only','Only hits 🔥'],['none','No hits']],f.hits)}${sel('src',[['all','All cards'],['mine','Only mine'],['consigned','Only consigned 🤝']],f.src)}</div>
       <div class="lt-row"><span class="lt-lab">Listed</span>${sel('days',[[0,'Any time'],[14,'14+ days'],[30,'30+ days'],[60,'60+ days'],[90,'90+ days']],f.days)}${fc?`<button class="pt-mini" style="margin:0" onclick="adLotsFiltClear()">Clear filters</button>`:''}</div></div>`;
-  h+=`<div class="ev-new" style="margin:0 0 6px">${chips}</div>`;
+  h+=`<div class="ev-new" style="margin:0 0 6px">${chips}</div>`+adLotsTypesHtml();
   // 🪄 plan a whole event
   if(s.forK==='shop') h+=`<p class="note" style="text-align:left;margin:4px 2px 8px">🪄 Pick <b>Auction</b> or <b>Drop</b> above to plan a whole event.</p>`;
   else h+=`<div class="lt-row" style="margin:4px 0 8px"><button class="pt-mini big" style="margin:0" onclick="adLotsPlan()"${s.planBusy?' disabled':''}>🪄 Plan a whole ${s.forK==='auction'?'auction':'drop'}</button>
@@ -9767,7 +9778,7 @@ function adLotsHtml(){
   if(s.busy&&!r) body='<p class="note" style="text-align:left">Finding ideas…</p>';
   else if(r&&!r.ok) body=`<p class="note" style="text-align:left">${esc(r.message||'Couldn’t load ideas.')}</p>`;
   else if(r){
-    const fa=r.facts||{have:0,of:0}, needs=['line','type','artist'].indexOf(s.recipe)>=0, narrowed=s.q||fc;
+    const fa=r.facts||{have:0,of:0}, needs=['line','type','artist'].indexOf(s.recipe)>=0, narrowed=s.q||fc||(f&&f.type);
     body=`<p class="note" style="text-align:left;margin:4px 2px 8px">${Number(r.onSale||0)} cards on sale${narrowed?` · <b>${Number(r.matching||0)} match</b>`:''} · ${Number(r.hits||0)} hits · ${Number(r.hard||0)} hard to sell · card facts for ${Number(fa.have||0)} of ${Number(fa.of||0)}`+
       ` · <a href="#" onclick="adLotFacts(this);return false">Look up more cards</a></p>`;
     if(!r.ideas.length) body+=`<p class="note" style="text-align:left">${narrowed&&Number(r.matching||0)<2?'Too few cards match the search/filters. Loosen them.':needs&&!fa.have?'This recipe needs card facts (artist, type, evolution line). Tap “Look up more cards”, or wait for tonight’s automatic lookup.':'No ideas for this recipe with these cards. Try another.'}</p>`;
