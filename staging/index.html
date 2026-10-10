@@ -128,6 +128,38 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .search input{border:none;background:none;outline:none;flex:1;font-size:14px;color:var(--text);font-family:inherit}
 .chips{display:flex;gap:7px;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
+/* Sets & bulk (stock Worker). Hidden on live until STOCK_API is set. */
+.sets-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:40px;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--text);font-family:inherit;font-size:14px;font-weight:600;min-width:0}
+.sv-era{font-family:'Plus Jakarta Sans';font-size:13px;color:var(--fawn-deep);margin:16px 4px 6px}
+.sv-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 10px;min-width:0}
+.sv-hd h2{font-family:'Plus Jakarta Sans';font-size:18px;font-weight:600;margin:0;min-width:0;overflow-wrap:anywhere}
+.sv-hd p{margin:2px 0 0;font-size:12.5px;color:var(--hint)}
+.sv-lang{flex-shrink:0;margin-bottom:0}
+.sv-lang .oseg-b{flex:none;padding:7px 11px}
+.sv-q{font-size:12px;color:var(--hint);margin:8px 2px 4px;overflow-wrap:anywhere}
+.sv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px;min-width:0}
+.sv-tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px;min-width:0;display:flex;flex-direction:column;gap:4px}
+.sv-tile.off{opacity:.55}
+.sv-img{aspect-ratio:5/7;border-radius:10px;background:var(--ruff);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:30px}
+.sv-img img{width:100%;height:100%;object-fit:cover;display:block}
+.sv-nm{font-size:12.5px;font-weight:600;line-height:1.25;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sv-sub{font-size:11px;color:var(--hint);overflow-wrap:anywhere}
+.sv-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto}
+.sv-row .price{font-size:14px;font-weight:700}
+.sv-no{font-size:11px;color:var(--hint);font-style:italic}
+.sv-add{width:30px;height:30px;border-radius:50%;border:none;background:var(--fawn-deep);color:#fff;font-size:18px;line-height:1;flex-shrink:0;font-family:inherit}
+.sv-add:disabled{opacity:.4}
+.sv-more{text-align:center;padding:18px 0;font-size:13px;color:var(--hint);cursor:pointer}
+.sv-ta{width:100%;min-height:150px;box-sizing:border-box;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px;font-family:inherit;font-size:14px;resize:vertical}
+.sv-line{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 10px;margin-bottom:8px;min-width:0}
+.sv-line .sv-th{width:38px;height:53px;border-radius:6px;background:var(--ruff);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.sv-line .sv-th img{width:100%;height:100%;object-fit:cover;display:block}
+.sv-line .sv-tx{flex:1;min-width:0;font-size:13px;overflow-wrap:anywhere}
+.sv-line .sv-tx b{font-weight:600}
+.sv-line .sv-tx small{display:block;color:var(--hint);font-size:11.5px}
+.sv-line .sv-go{flex-shrink:0;text-align:right;font-size:13px;font-weight:700;white-space:nowrap}
+.sv-btn{margin-top:4px;background:var(--fawn-deep);color:#fff;border:none;border-radius:12px;padding:6px 11px;font-family:inherit;font-size:12.5px;font-weight:700}
+.sv-btn:disabled{opacity:.4}
 .chip{white-space:nowrap;font-size:12.5px;font-weight:700;padding:6px 13px;border-radius:20px;
   background:var(--card);border:1px solid var(--line);color:var(--hint)}
 .chip.on{background:var(--fawn);border-color:var(--fawn);color:#fff}
@@ -2136,6 +2168,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
     </button>
     <div class="tools">
       <div class="search">🔎<input id="q" placeholder="Search cards…" oninput="renderStore()"></div>
+      <button class="sets-btn hidden" id="setsBtn" onclick="openSets()">📚 Sets &amp; bulk</button>
       <div class="toolrow">
         <button class="tbtn" onclick="openFilters()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h18"></path><path d="M6 12h12"></path><path d="M10 19h4"></path></svg>
@@ -2148,6 +2181,12 @@ span[style*="#c2405e"]{color:#A8324F!important}
       <div class="chips" id="activeFilters"></div>
     </div>
     <div id="storeGrid"></div>
+  </div>
+
+  <!-- SETS & BULK (stock Worker): browse sets, tick off a set, paste a list. Filled by sets block below. -->
+  <div class="view hidden" id="v-sets">
+    <button class="back-btn" onclick="setsBack()">‹ Back</button>
+    <div id="setsBody"></div>
   </div>
 
   <!-- ORDERS -->
@@ -2478,6 +2517,9 @@ if (IS_STAGING) {
     '<div style="position:sticky;top:0;z-index:99999;background:#FFD400;color:#000;font:700 13px/1.2 system-ui,sans-serif;text-align:center;padding:6px 8px">🧪 TEST SHOP — nothing here is real</div>');
   if (document.body) addBar(); else document.addEventListener('DOMContentLoaded', addBar);
 }
+/* Bulk stock (stock Worker). '' = the Sets & bulk screen is hidden everywhere. */
+const STOCK_API = IS_STAGING ? 'https://floofmart-stock-staging.shrimaniac.workers.dev' : '';
+(function(){ const b=document.getElementById('setsBtn'); if(b && STOCK_API) b.classList.remove('hidden'); })();
 /* ================================ */
 
 function imgUrl(u,w){ if(!u) return u; u=String(u).split('|')[0].split('~')[0].trim(); return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
@@ -3127,7 +3169,7 @@ function go(tab,dir){
     dir = (a>=0&&b>=0) ? Math.sign(b-a) : 0;
   }
   STATE.tab=tab;
-  ['overview','store','orders','buyback','support','profile','credit','settings','consign','admin'].forEach(t=>{
+  ['overview','store','orders','buyback','support','profile','credit','settings','consign','admin','sets'].forEach(t=>{
     const el=document.getElementById('v-'+t); if(!el) return;
     el.classList.remove('slide-in-right','slide-in-left');
     el.classList.toggle('hidden',t!==tab);
@@ -3205,7 +3247,11 @@ async function bootApp(){
   // 2) one round trip refreshes both  // 'boot' is served by Apps Script; 'inventory' comes from D1 at the edge.
   // Two parallel calls beat one round trip to the Sheet.
   let ov,invr;
-  try{ [ov,invr]=await Promise.all([api('overview'),api('inventory')]); }
+  // v13.61: draw the shop the moment the edge copy arrives; the overview (Apps
+  // Script, slower) fills in the home tiles when it lands.
+  const invP=api('inventory');
+  invP.then(x=>{ if(x&&x.ok){ STATE.inventory=mergeInventory(x.items||[]); STATE.invTs=Date.now(); renderStore(); renderActiveChips(); } }).catch(()=>{});
+  try{ [ov,invr]=await Promise.all([api('overview'),invP]); }
   catch(e){   // v13.24: a dropped connection at start-up: try once more shortly (it used to stay on grey cards)
     setTimeout(()=>{ loadOverview().catch(()=>{}); loadStore().catch(()=>{}); },2500); return;
   }
@@ -3600,7 +3646,7 @@ function renderStore(){
   }
 
   const tile=c=>{
-    const inCart=STATE.cart.filter(x=>x.id===c.id).length;
+    const inCart=STATE.cart.filter(x=>!x.bulk&&x.id===c.id).length;
     const soldOut=(c.qty-inCart)<=0;
     const faces=faceList(c);
     const front=faces.length>1 ? fanHtml(faces,400)
@@ -3629,10 +3675,19 @@ function renderStore(){
       '</div></div>';
   };
 
+  // v13.61: draw a screenful at a time. Drawing every tile at once is fine at
+  // a few hundred cards and freezes the phone at thousands. The same filters
+  // and search keep how far you've scrolled (adding to cart re-draws); a new
+  // filter or search starts again from the top.
+  const sig=list.length+'|'+list.slice(0,STORE_PAGE).map(c=>c.id).join(',');
+  if(sig!==STORE_SIG){ STORE_SIG=sig; STORE_SHOW=STORE_PAGE; }
+  const shown=list.slice(0,STORE_SHOW);
+  const total={}; list.forEach(c=>{ const k=sectionKey(c); total[k]=(total[k]||0)+1; });
+
   // Group into sections in list order — the list is already sorted, so a simple
   // run-length walk gives the right bands with no second sort.
   const sections=[];
-  list.forEach(c=>{
+  shown.forEach(c=>{
     const k=sectionKey(c);
     const last=sections[sections.length-1];
     if(last&&last.k===k) last.items.push(c); else sections.push({k:k,items:[c]});
@@ -3646,12 +3701,24 @@ function renderStore(){
   grid.innerHTML=adminNote+sections.map(s=>
     '<div class="sect">'+
       '<div class="sect-hd"><div class="sect-t">'+esc(s.k)+'</div>'+
-        '<div class="sect-n">'+s.items.length+' card'+(s.items.length===1?'':'s')+'</div></div>'+
+        '<div class="sect-n">'+total[s.k]+' card'+(total[s.k]===1?'':'s')+'</div></div>'+
       '<div class="grid">'+s.items.map(tile).join('')+'</div>'+
-    '</div>').join('');
+    '</div>').join('')+
+    (shown.length<list.length?'<div id="storeMore" class="sect-n" style="text-align:center;padding:18px 0">Loading more…</div>':'');
 
   armFans();
   renderJustIn();
+  storeWatchMore();
+}
+var STORE_PAGE=60, STORE_SHOW=60, STORE_SIG='', STORE_IO=null;
+// Draw the next screenful when the "Loading more…" line scrolls into view.
+function storeWatchMore(){
+  if(STORE_IO){ STORE_IO.disconnect(); STORE_IO=null; }
+  const el=document.getElementById('storeMore'); if(!el) return;
+  const more=()=>{ STORE_SHOW+=STORE_PAGE; renderStore(); };
+  if(!('IntersectionObserver' in window)){ el.textContent='Show more'; el.style.cursor='pointer'; el.onclick=more; return; }
+  STORE_IO=new IntersectionObserver(es=>{ if(es.some(e=>e.isIntersecting)){ STORE_IO.disconnect(); STORE_IO=null; more(); } },{rootMargin:'600px 0px'});
+  STORE_IO.observe(el);
 }
 
 async function askPics(id){
@@ -3671,7 +3738,7 @@ function openCardView(id){
   const anyBack = cvFaces.some(x=>x.b);
   const front = f0.f?`<img src="${imgUrl(f0.f,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo yet</span></div>`;
   const hasBack = anyBack;
-  const soldOut=(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0;
+  const soldOut=(c.qty-STATE.cart.filter(x=>!x.bulk&&x.id===c.id).length)<=0;
   document.getElementById('cardViewBody').innerHTML = `
     <div class="cv-panel">
       <button class="cv-close" aria-label="Close" onclick="closeCardView()">✕</button>
@@ -3794,11 +3861,263 @@ async function sendOffer(){
   tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
 }
 
+/* ============ SETS & BULK (stock Worker) ============
+   Bulk cards live in the stock Worker, not the Sheet. Buyers browse by set,
+   tick a set's checklist, or paste a list. A bulk cart line is
+   {id: listing key "BK:...", bulk:true, price, ...} and sits in the SAME cart.
+   Every entry point stays hidden while STOCK_API is '' (live, for now). */
+async function stockReq(path, opts){
+  if(!STOCK_API) return {ok:false, error:'off'};
+  const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),15000);
+  try{
+    const r=await fetch(STOCK_API+path, Object.assign({signal:ctl.signal}, opts||{}));
+    let out; try{ out=JSON.parse(await r.text()); }catch(e){ return {ok:false, error:'bad_response', status:r.status}; }
+    return (out && typeof out==='object') ? out : {ok:false, error:'bad_response'};
+  }catch(e){ return {ok:false, error:(e&&e.name==='AbortError')?'timeout':'network'}; }
+  finally{ clearTimeout(tm); }
+}
+function stockGet(path){ return stockReq(path); }
+function stockPost(path, body){ return stockReq(path,{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); }
+/* Same rule as the website: a link with no file extension gets the small image. */
+function stockImg(u){
+  u=String(u||'').trim(); if(!u) return '';
+  if(/^data:/i.test(u)) return u;
+  const cut=u.indexOf('?');
+  const base=(cut>=0?u.slice(0,cut):u).replace(/\/+$/,'');
+  const query=cut>=0?u.slice(cut):'';
+  const last=base.split('/').pop();
+  if(/\.[a-z0-9]{2,5}$/i.test(last)) return u;
+  return base+'/low.webp'+query;
+}
+function stockImgFail(el){ try{ const s=document.createElement('span'); s.textContent='🃏'; el.replaceWith(s); }catch(e){} }
+/* One listing, read the same way whether it came from a set, a list or a search. */
+function stockListingFrom(it, fallbackSet){
+  it=it||{};
+  return {key:String(it.key||''), card_id:String(it.card_id||''), name:String(it.name||''),
+    set:String(it.set_name||it.set||fallbackSet||''), number:String(it.local_id==null?(it.number||''):it.local_id),
+    image:stockImg(it.image), variant:String(it.variant||''), condition:String(it.condition||''),
+    qty:parseInt(it.qty,10)||0, price:(it.price==null||!isFinite(Number(it.price)))?null:Number(it.price)};
+}
+
+const SV={lang:'en', mode:'list', seq:0, listed:false, loaded:false, sets:[], setId:'', setName:'', cards:[], shown:60, io:null,
+  wantText:'', want:null, wantAdd:[]};
+/* Remembers EN / JP like the other saved preferences (_store/_load). */
+function setsLoadLang(){
+  if(SV.loaded) return; SV.loaded=true;
+  try{ _load(FM_CK+'setslang', v=>{
+    if((v==='en'||v==='ja') && v!==SV.lang){ SV.lang=v; if(SV.listed && SV.mode==='list') setsShowList(); }
+  }); }catch(e){}
+}
+function setsLangSet(l){
+  if((l!=='en'&&l!=='ja') || l===SV.lang) return;
+  SV.lang=l;
+  try{ _store(FM_CK+'setslang', l); }catch(e){}
+  if(SV.mode==='want'){ document.querySelectorAll('[data-slang]').forEach(b=>b.classList.toggle('on', b.dataset.slang===SV.lang)); return; }
+  setsShowList();   // a set's id is per language, so the list starts again
+}
+function setsHead(title, sub){
+  return '<div class="sv-hd"><div style="min-width:0"><h2>'+esc(title)+'</h2>'+(sub?'<p>'+esc(sub)+'</p>':'')+'</div>'+
+    '<div class="oseg sv-lang" role="group" aria-label="Card names">'+
+      '<button class="oseg-b'+(SV.lang==='en'?' on':'')+'" data-slang="en" onclick="setsLangSet(\'en\')">EN</button>'+
+      '<button class="oseg-b'+(SV.lang==='ja'?' on':'')+'" data-slang="ja" onclick="setsLangSet(\'ja\')">JP</button></div></div>';
+}
+function setsBody(html){ const b=document.getElementById('setsBody'); if(b) b.innerHTML=html; }
+function setsError(retry){
+  return '<div class="empty"><div class="e-ic">🐑</div><p>We couldn\'t load that just now.</p>'+
+    '<button class="cta-alt" style="max-width:220px;margin:12px auto 0" onclick="'+retry+'">Try again</button></div>';
+}
+function openSets(){
+  if(!STOCK_API) return;
+  setsLoadLang();
+  go('sets');
+  setsShowList();
+}
+function setsBack(){ if(SV.mode==='list'){ go('store'); return; } setsShowList(); }
+
+async function setsShowList(){
+  SV.mode='list'; SV.listed=true;
+  const my=++SV.seq;
+  setsBody(setsHead('Sets & bulk','')+'<p class="note" style="text-align:left;margin:4px 4px 0">Loading sets…</p>');
+  const j=await stockGet('/api/sets?lang='+encodeURIComponent(SV.lang));
+  if(my!==SV.seq || SV.mode!=='list') return;
+  if(!j.ok){ setsBody(setsHead('Sets & bulk','')+setsError('setsShowList()')); return; }
+  SV.sets=Array.isArray(j.sets)?j.sets:[];
+  const eras=new Map();
+  SV.sets.forEach((s,i)=>{ const e=String(s.era||'More sets'); if(!eras.has(e)) eras.set(e,[]); eras.get(e).push(i); });
+  let html='';
+  eras.forEach((idx,era)=>{
+    html+='<div class="sv-era">'+esc(era)+'</div>';
+    idx.forEach(i=>{
+      const s=SV.sets[i], total=Number(s.total)||Number(s.printed_total)||0, n=Number(s.cards_in_stock)||0;
+      html+='<button class="feat" onclick="openSetAt('+i+')"><div class="ic">📚</div>'+
+        '<div style="min-width:0"><h3>'+esc(s.name||s.set_id)+'</h3><p>'+esc(total?(n+' of '+total+' in stock'):(n+' in stock'))+'</p></div>'+
+        '<span class="chev">›</span></button>';
+    });
+  });
+  setsBody(setsHead('Sets & bulk','Sets with cards in stock')+
+    '<button class="cta-alt" style="margin:0 0 12px" onclick="setsShowWant()">📝 Paste a list</button>'+
+    (SV.sets.length?html:'<div class="empty"><div class="e-ic">📚</div><p>No sets with stock yet. Check back soon 🐾</p></div>'));
+}
+
+async function openSetAt(i){
+  const s=SV.sets[i]; if(!s) return;
+  SV.mode='set'; SV.setId=String(s.set_id||''); SV.setName=String(s.name||s.set_id||''); SV.shown=60; SV.cards=[];
+  const my=++SV.seq;
+  setsBody(setsHead(SV.setName,'Loading the set…'));
+  const j=await stockGet('/api/set?set_id='+encodeURIComponent(SV.setId)+'&lang='+encodeURIComponent(SV.lang));
+  if(my!==SV.seq || SV.mode!=='set') return;
+  if(!j.ok || !j.set){ setsBody(setsHead(SV.setName,'')+setsError('openSetAt('+i+')')); return; }
+  SV.setName=String(j.set.name||SV.setName);
+  SV.cards=(Array.isArray(j.cards)?j.cards:[]).map(c=>{
+    const image=stockImg(c.image);
+    const ls=(Array.isArray(c.listings)?c.listings:[])
+      .map(l=>stockListingFrom(Object.assign({}, l, {card_id:c.card_id, name:c.name, local_id:c.local_id, image:c.image}), SV.setName))
+      .filter(l=>l.key && l.qty>0 && l.price!=null)
+      .sort((a,b)=>a.price-b.price);
+    return {name:String(c.name||''), number:String(c.local_id==null?'':c.local_id), image:image, best:ls[0]||null};
+  });
+  setsPaintSet();
+}
+function setsPaintSet(){
+  const n=SV.cards.length, have=SV.cards.filter(c=>c.best).length;
+  const shown=SV.cards.slice(0,SV.shown);
+  setsBody(setsHead(SV.setName, have+' of '+n+' in stock')+
+    (n ? '<div class="sv-grid">'+shown.map((c,i)=>setsTileHtml(c,i)).join('')+'</div>'+
+         (shown.length<n?'<div id="svMore" class="sv-more">Show more</div>':'')
+       : '<div class="empty"><p>No cards listed for this set yet.</p></div>'));
+  setsWatchMore();
+}
+function setsTileHtml(c,i){
+  const b=c.best;
+  const inCart=b?STATE.cart.filter(x=>x.id===b.key).length:0;
+  const full=!b||inCart>=b.qty;
+  const sub=[c.number?'#'+c.number:'', b?[b.variant&&b.variant!=='normal'?b.variant:'', b.condition].filter(Boolean).join(' · '):'']
+    .filter(Boolean).join(' · ');
+  const img=c.image?'<img src="'+esc(c.image)+'" alt="" loading="lazy" onerror="stockImgFail(this)">':'🃏';
+  return '<div class="sv-tile'+(b?'':' off')+'">'+
+    '<div class="sv-img">'+img+'</div>'+
+    '<div class="sv-nm">'+esc(c.name)+'</div>'+
+    '<div class="sv-sub">'+esc(sub)+'</div>'+
+    (b
+      ? '<div class="sv-row"><span class="price">'+money(b.price)+(inCart?' <span class="sv-no">'+inCart+' in cart</span>':'')+'</span>'+
+        '<button class="sv-add" aria-label="Add '+esc(c.name)+' to cart"'+(full?' disabled':'')+' onclick="setsAddAt('+i+')">+</button></div>'
+      : '<div class="sv-row"><span class="sv-no">not in stock</span></div>')+
+    '</div>';
+}
+function setsAddAt(i){
+  const c=SV.cards[i]; if(!c||!c.best) return;
+  if(addBulkToCart(c.best)) setsPaintSet();   // keeps how far you've scrolled: SV.shown stays
+}
+/* Draws the next 60 when the "Show more" line scrolls into view (like the store). */
+function setsWatchMore(){
+  if(SV.io){ SV.io.disconnect(); SV.io=null; }
+  const el=document.getElementById('svMore'); if(!el) return;
+  const more=()=>{ SV.shown+=60; setsPaintSet(); };
+  el.onclick=more;
+  if(!('IntersectionObserver' in window)) return;
+  SV.io=new IntersectionObserver(es=>{ if(es.some(e=>e.isIntersecting)){ SV.io.disconnect(); SV.io=null; more(); } },{rootMargin:'600px 0px'});
+  SV.io.observe(el);
+}
+
+/* ---- paste a list ---- */
+function setsShowWant(){
+  SV.mode='want'; SV.seq++;
+  setsBody(setsHead('Paste a list','One card per line, like “Pikachu 25/165” or “MEW 025”.')+
+    '<textarea id="svWantText" class="sv-ta" placeholder="Pikachu 25/165&#10;MEW 025" oninput="SV.wantText=this.value"></textarea>'+
+    '<button class="cta" id="svWantGo" style="margin-top:10px" onclick="guard(this,setsCheckList)">Check my list</button>'+
+    '<div id="svWantSum" class="note" style="text-align:left;margin:10px 4px 6px"></div><div id="svWantRes"></div>');
+  const ta=document.getElementById('svWantText'); if(ta) ta.value=SV.wantText||'';
+  if(SV.want) setsPaintWant();
+}
+async function setsCheckList(){
+  const text=String(SV.wantText||'').trim();
+  const n=text.split('\n').filter(s=>s.trim()).length;
+  if(!n){ ptToast('Paste at least one card first.'); return; }
+  const sum=document.getElementById('svWantSum');
+  if(sum) sum.textContent='Checking '+n+' line'+(n===1?'':'s')+'…';
+  const my=++SV.seq;
+  const j=await stockPost('/api/wantlist',{text:text, lang:SV.lang});
+  if(my!==SV.seq || SV.mode!=='want') return;
+  if(!j.ok){ SV.want=null; SV.wantAdd=[]; setsPaintWant(true); return; }
+  SV.wantAdd=[];
+  const addLine=(l,auto)=>{ SV.wantAdd.push({l:l, auto:auto}); return SV.wantAdd.length-1; };
+  SV.want=(Array.isArray(j.lines)?j.lines:[]).map(r=>{
+    const line=String(r.line||'');
+    const m=r.matched?stockListingFrom(r.matched):null;
+    if(m && m.key && m.qty>0 && m.price!=null) return {line:line, kind:'add', i:addLine(m,true)};
+    const opts=(Array.isArray(r.options)?r.options:[]).map(o=>stockListingFrom(o)).filter(x=>x.key && x.qty>0 && x.price!=null);
+    if(opts.length) return {line:line, kind:'pick', opts:opts.map(o=>({l:o, i:addLine(o,false)}))};
+    if(r.why==='ambiguous') return {line:line, kind:'many'};
+    if(r.card) return {line:line, kind:'out', card:{name:String(r.card.name||''), set:String(r.card.set_name||''),
+      number:String(r.card.local_id==null?'':r.card.local_id), image:stockImg(r.card.image)}};
+    return {line:line, kind:'none'};
+  });
+  setsPaintWant();
+}
+function setsCardRowHtml(l, action){
+  const meta=[l.set, l.number?'#'+l.number:'', [l.variant&&l.variant!=='normal'?l.variant:'', l.condition].filter(Boolean).join(' · ')].filter(Boolean).join(' · ');
+  return '<div class="sv-line"><div class="sv-th">'+(l.image?'<img src="'+esc(l.image)+'" alt="" loading="lazy" onerror="stockImgFail(this)">':'🃏')+'</div>'+
+    '<div class="sv-tx"><b>'+esc(l.name)+'</b><small>'+esc(meta)+'</small></div>'+
+    '<div class="sv-go">'+(l.price!=null?money(l.price):'')+(l.qty?'<small style="display:block;font-weight:500;color:var(--hint)">'+l.qty+' left</small>':'')+
+    (action?'<div>'+action+'</div>':'')+'</div></div>';
+}
+function setsPaintWant(failed){
+  const res=document.getElementById('svWantRes'), sum=document.getElementById('svWantSum');
+  if(!res||!sum) return;
+  if(failed || !SV.want){ sum.textContent='We could not check your list just now. Please try again.'; res.innerHTML=''; return; }
+  const rows=SV.want, found=rows.filter(r=>r.kind==='add').length;
+  const nAuto=SV.wantAdd.filter(x=>x.auto).length;
+  sum.textContent=rows.length ? (found+' of '+rows.length+' line'+(rows.length===1?'':'s')+' in stock') : 'Nothing on that list.';
+  let html=nAuto>1?'<button class="cta" style="margin:4px 0 10px" onclick="setsAddAll()">Add all found ('+nAuto+')</button>':'';
+  html+=rows.map(r=>{
+    const q='<div class="sv-q">'+esc(r.line)+'</div>';
+    const addBtn=i=>'<button class="sv-btn" onclick="setsWantAdd('+i+',this)">Add</button>';
+    if(r.kind==='add') return q+setsCardRowHtml(SV.wantAdd[r.i].l, addBtn(r.i));
+    if(r.kind==='pick') return q+'<div class="sv-no" style="margin:0 2px 6px">Several cards match. Tap the one you mean:</div>'+
+      r.opts.map(o=>setsCardRowHtml(o.l, addBtn(o.i))).join('');
+    if(r.kind==='out') return q+setsCardRowHtml({name:r.card.name, set:r.card.set, number:r.card.number, image:r.card.image, price:null, qty:0}, '<span class="sv-no">not in stock right now</span>');
+    if(r.kind==='many') return q+'<div class="sv-no" style="margin:0 2px 10px">Several cards match this line. Add the set name or number to narrow it.</div>';
+    return q+'<div class="sv-no" style="margin:0 2px 10px">We couldn\'t find this one. Check the spelling, or add the number, like “Pikachu 25”.</div>';
+  }).join('');
+  res.innerHTML=html;
+}
+function setsWantAdd(i, btn){
+  const x=SV.wantAdd[i]; if(!x) return;
+  if(addBulkToCart(x.l) && btn) btn.textContent='Added ✓';
+}
+function setsAddAll(){
+  let n=0;
+  SV.wantAdd.forEach(x=>{ if(x.auto && addBulkToCart(x.l, true)) n++; });
+  ptToast(n ? 'Added '+n+' card'+(n===1?'':'s')+' to your cart' : 'Nothing new to add. Those are already in your cart, or sold out.');
+  setsPaintWant();
+}
+
+/* One unit of a bulk listing into the same cart as the Sheet cards. Stock (qty)
+   counts the units of that key already in the cart. */
+function addBulkToCart(L, quiet){
+  const say=m=>{ if(!quiet) ptToast(m); };
+  if(!L || String(L.key||'').indexOf('BK:')!==0) return false;
+  if(L.price==null || !isFinite(Number(L.price))){ say('That card has no price yet.'); return false; }
+  const have=STATE.cart.filter(x=>x.id===L.key).length;
+  if(have>=Number(L.qty||0)){ say(have ? 'You already have all the copies in stock in your cart.' : 'Sold out.'); return false; }
+  STATE.cart.push({id:String(L.key), name:String(L.name||'Card'), tier:'Bulk', price:Number(L.price),
+    number:String(L.number||''), image:stockImg(L.image), bulk:true, set:String(L.set||''),
+    cond:[L.variant&&L.variant!=='normal'?L.variant:'', L.condition].filter(Boolean).join(' · ')});
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  sfx('add');
+  updateCartDot();
+  ['cartDot','cartBar'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.classList.remove('kick'); void el.offsetWidth; el.classList.add('kick');
+  });
+  return true;
+}
+
 /* ============ CART ============ */
 function addToCart(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
   if(!faceList(c).length&&!STATE.isAdmin) return;   // v13.28: no photo, not for sale (hidden from buyers anyway)
-  const inCart = STATE.cart.filter(x=>x.id===id).length;
+  const inCart = STATE.cart.filter(x=>!x.bulk&&x.id===id).length;
   if(inCart>=c.qty) return;
   STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price,number:c.number||'',image:c.image||''});
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
@@ -3846,8 +4165,10 @@ function renderCart(){
     ? `<div class="nudge">🧺 These join the box we're already holding for you — no extra postage.</div>`
     : `<div class="nudge">🧺 This starts your box. Pay for the cards now, choose delivery whenever you're ready.</div>`;
   body.innerHTML = STATE.cart.map((c,i)=>
-    `<div class="crow"><div class="ci">${c.image?`<img src="${imgUrl(c.image,200)}" alt="">`:(EMOJI[c.tier]||'🃏')}</div>
-      <div class="cn">${esc(c.name)}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.number?esc(c.number)+' · ':''}${esc(rarityLabel(c))}</div></div>
+    `<div class="crow"><div class="ci">${c.image?`<img src="${imgUrl(c.image,200)}" alt=""${c.bulk?' onerror="stockImgFail(this)"':''}>`:(EMOJI[c.tier]||'🃏')}</div>
+      <div class="cn">${esc(c.name)}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.bulk
+        ? esc([c.set,c.number?'#'+c.number:'',c.cond||''].filter(Boolean).join(' · '))
+        : (c.number?esc(c.number)+' · ':'')+esc(rarityLabel(c))}</div></div>
       <span class="cp">$${c.price.toFixed(2)}</span>
       <button class="rm" aria-label="Close" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
     `<div class="field" style="margin:10px 0 4px"><label>Order note (optional)</label><input id="ord-note" value="${(STATE.note||'').replace(/"/g,'&quot;')}" maxlength="200" oninput="STATE.note=this.value" placeholder="e.g. double-sleeve please"></div>` +
@@ -3961,7 +4282,7 @@ async function checkout(){
   let r=null;
   // A thrown fetch used to leave the QR on screen with "Reserving your cards…"
   // forever, and the next line threw on r.ok.
-  try { r = await api('submitOrder',{cart:snap.map(c=>({id:c.id})),useCredit:cred0,note:(STATE.note||'').trim(),orderId:rid||''}); }
+  try { r = await api('submitOrder',{cart:snap.map(c=>c.bulk?{id:c.id,price:c.price}:{id:c.id}),useCredit:cred0,note:(STATE.note||'').trim(),orderId:rid||''}); }
   catch(e){ r = null; }
   if(!r){
     closeInvoice();
@@ -4020,20 +4341,55 @@ async function checkout(){
     }
   } else if(r.error==='unavailable'){
     const gone=(r.cards||[]).map(String);
-    const goneNames=STATE.cart.filter(c=>gone.includes(String(c.id))).map(c=>c.name);
-    STATE.cart=STATE.cart.filter(c=>!gone.includes(String(c.id)));
+    const isGone=c=>gone.includes(String(c.id));
+    // Bulk lines (BK: keys) that sold are just taken out. They never get the
+    // "claimed by someone else" wording, which is for Sheet cards.
+    const bulkGone=STATE.cart.some(c=>c.bulk&&isGone(c));
+    const goneNames=STATE.cart.filter(c=>!c.bulk&&isGone(c)).map(c=>c.name);
+    STATE.cart=STATE.cart.filter(c=>!isGone(c));
     updateCartDot();
     loadStore();
     const named=goneNames.length?('\u201c'+goneNames.slice(0,3).join('\u201d, \u201c')+'\u201d'+(goneNames.length>3?(' and '+(goneNames.length-3)+' more'):'')):'A card';
-    if(STATE.cart.length){
-      const msg=named+' just got claimed by someone else, so we took '+(goneNames.length>1?'them':'it')+' out. The rest of your cart is ready \u2014 tap checkout again. \ud83d\udc3e';
+    const left=STATE.cart.length>0;
+    let note='';
+    if(goneNames.length) note=named+' just got claimed'+(left?' by someone else, so we took '+(goneNames.length>1?'them':'it')+' out.':' and that was your last item, so your cart is empty now.');
+    else if(!bulkGone) note='A card just got claimed'+(left?' by someone else, so we took it out.':' and that was your last item, so your cart is empty now.');
+    if(bulkGone) note=(note?note+' ':'')+'Some bulk cards just sold \u2014 removed from your cart.';
+    if(left){
+      const msg=note+' The rest of your cart is ready \u2014 tap checkout again. \ud83d\udc3e';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       renderCart();
     } else {
-      const msg=named+' just got claimed and that was your last item, so your cart is empty now. Back to the shop! \ud83d\udc3e';
+      const msg=note+' Back to the shop! \ud83d\udc3e';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
       closeCart(); go('store');
     }
+  } else if(r.error==='price_changed' && (r.cards||[]).some(k=>String(k).indexOf('BK:')===0)){
+    // A bulk price moved after the cart was priced. Fetch those listings again and
+    // put the new price into the cart. The buyer checks it and pays again.
+    const keys=[...new Set((r.cards||[]).map(String).filter(k=>k.indexOf('BK:')===0))];
+    const fresh=await Promise.all(keys.map(k=>stockGet('/api/listing?key='+encodeURIComponent(k))));
+    let changed=0, dropped=0, failed=0;
+    keys.forEach((k,i)=>{
+      const j=fresh[i];
+      if(!j||!j.ok){ failed++; return; }
+      const L=j.listing||{};
+      const price=(L.price==null||!isFinite(Number(L.price)))?null:Number(L.price);
+      const qty=Number(L.qty)||0;
+      if(price==null||qty<1){ const before=STATE.cart.length; STATE.cart=STATE.cart.filter(c=>!(c.bulk&&c.id===k)); dropped+=before-STATE.cart.length; return; }
+      // Fewer copies left than units in the cart: take the extra lines out.
+      let units=STATE.cart.filter(c=>c.bulk&&c.id===k).length;
+      while(units>qty){ const idx=STATE.cart.map(c=>!!(c.bulk&&c.id===k)).lastIndexOf(true); STATE.cart.splice(idx,1); units--; dropped++; }
+      STATE.cart.forEach(c=>{ if(c.bulk&&c.id===k&&Math.abs(c.price-price)>0.001){ c.price=price; changed++; } });
+    });
+    updateCartDot();
+    const parts=[];
+    if(changed) parts.push('Price updated for '+changed+' card'+(changed===1?'':'s')+' \u2014 please check and pay again.');
+    if(dropped) parts.push(dropped+' bulk cop'+(dropped===1?'y is':'ies are')+' no longer in stock, so '+(dropped===1?'it was':'they were')+' taken out.');
+    if(!parts.length) parts.push(failed ? 'We couldn\'t check the new prices just now. Try again in a moment.' : 'Those prices are up to date now \u2014 tap checkout again.');
+    const msg=parts.join(' ')+' \ud83d\udc3e';
+    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    renderCart();
   } else if(r.error==='cart_too_big'){
     (tg&&tg.showAlert?tg.showAlert:alert)('That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');
   } else { (tg&&tg.showAlert?tg.showAlert:alert)('Checkout error: '+(r&&(r.error||r.raw)?JSON.stringify(r.error||r.raw).slice(0,200):'unknown')+'. Try again in a sec.'); }
@@ -6102,6 +6458,8 @@ function paint_viewInvoice(id){
   const o=STATE.orders.filter(x=>x.id===id)[0]; if(!o) return;
   if(o.status==='Awaiting Payment'){ closeCardView&&closeCardView(); resumePayment(id); return; }
   const findImg=(it)=>{ if(it.image) return imgUrl(it.image,200);
+    // A bulk copy (K + 7 digits) is not a Sheet card: never borrow a photo by name.
+    if(/^K\d{7}$/.test(String(it.id||it.cardId||it.card_id||''))) return '';
     const c=STATE.inventory.filter(x=>x.name===it.name)[0]; return c&&c.image?imgUrl(c.image,200):''; };
   const cancelled=!!o.cancelled;
   const items=o.items||[];
