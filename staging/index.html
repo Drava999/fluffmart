@@ -2204,7 +2204,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
 
   <!-- BUYBACK -->
   <div class="view hidden" id="v-buyback">
-    <div class="pt-tabs" id="sell-tabs"><span class="chip on" data-m="bb" onclick="sellMode('bb')">Sell to us</span><span class="chip" data-m="cn" onclick="sellMode('cn')">🐑 Consign with us</span></div>
+    <div class="pt-tabs hidden" id="sell-tabs"><span class="chip on" data-m="bb" onclick="sellMode('bb')">Sell to us</span><span class="chip" data-m="cn" onclick="sellMode('cn')">🐑 Consign with us</span></div>
     <div id="sell-cn" class="hidden"></div>
     <div id="sell-bb">
     <div class="section-t">Sell your cards to us</div>
@@ -2220,7 +2220,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
       <button class="cta" id="bb-submit" onclick="guard(this,submitBuyback)">Send &amp; talk to us</button>
       <p class="note">This starts a chat — no commitment. We'll reply in Telegram to sort out a price.</p>
     </div>
-    <p class="note" style="margin-top:12px">Rather keep more of the sale? <a href="#" onclick="sellMode('cn');return false">Consign with us</a> — we sell it for you and you get paid when it sells.</p>
+    <p class="note hidden" id="sell-cn-promo" style="margin-top:12px">Rather keep more of the sale? <a href="#" onclick="sellMode('cn');return false">Consign with us</a> — we sell it for you and you get paid when it sells.</p>
     </div>
   </div>
 
@@ -2278,7 +2278,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
         <div class="hb-step"><span>📸</span><div><b>48 hours.</b> Message us with photos or videos within 48 hours of delivery and we'll refund or replace it.</div></div>
         <div class="hb-step"><span>📮</span><div><b>Normal mail travels at your risk.</b> It's cheaper but it isn't tracked, so we can't cover it if it goes astray. Tracked postage is covered.</div></div>
         <div class="hb-step"><span>🔄</span><div><b>Changed your mind?</b> Free to cancel before you pay. Excessive or fradulent refunds will result in warnings or a ban.</div></div>
-        <div class="hb-step"><span>🏆</span><div><b>Assume cards are binder condition.</b> We can send as many photos as you need on request, but we can't refund a grade you didn't like.</div></div>
+        <div class="hb-step"><span>🏆</span><div><b>All cards are NM-LP (binder condition) unless the listing says otherwise.</b> We can send as many photos as you need on request, but we can't refund a grade you didn't like.</div></div>
         <div class="hb-step"><span>💳</span><div><b>How refunds come back.</b> Whatever you paid with credit returns as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
       </div>
     </div>
@@ -2618,7 +2618,7 @@ function armFans(){
 function mergeInventory(items){
   const key=c=>{
     const g=String(c.grade||'').trim().toLowerCase();
-    return [c.name,c.set,c.number,c.condition,(g==='ungraded'?'':g),c.variance,
+    return [c.name,c.set,c.number,condKey(c.condition),(g==='ungraded'?'':g),c.variance,
             Number(c.price||0).toFixed(2)]
       .map(v=>String(v==null?'':v).trim().toLowerCase()).join('|');
   };
@@ -2998,13 +2998,15 @@ function rarityRank(c){
   return p === undefined ? 999 : p;
 }
 
-/* Condition vocabulary — the same table the bot uses, so a card reads the same
-   in the shop as it does in the drop post. NM is spelled out in full on the
-   card page; the grid tile keeps the short code so it fits. */
+/* Condition vocabulary — the same table the bot uses (CONDITIONS_ in code.gs), so a
+   card reads the same in the shop as it does in the drop post. Shop policy (10 Oct
+   2026): blank / NM / Near Mint / NM-LP / binder = "NM-LP (binder condition)";
+   the grid tile keeps the short code "NM-LP" so it fits. */
+const COND_POLICY='All cards are NM-LP (binder condition) unless the listing says otherwise 🐾';
 const CONDITIONS = [
   {c:'GEM', full:'Gem Mint',          re:/^(gem[\s_-]*mint|gem|gm)$/i,  blurb:'flawless — perfectly centred, razor corners'},
   {c:'M',   full:'Mint',              re:/^(mint|m)$/i,                  blurb:'as it left the pack — no wear at all'},
-  {c:'NM',  full:'Near Mint',         re:/^(near[\s_-]*mint|nm|nm[\s_-]*m|n\/m)$/i, blurb:'pack-fresh — at most a tiny edge nick under bright light'},
+  {c:'NM-LP', full:'NM-LP (binder condition)', re:/^(near[\s_-]*mint|nm|nm[\s_-]*m|n\/m|nm[\s_\-\/]*(to[\s_-]*)?lp|binder([\s_-]*cond(ition)?)?|nm[\s_\-\/]*lp[\s_-]*\(?binder[\s_-]*condition\)?)$/i, blurb:'kept in a binder — light handling at most, no creases or bends'},
   {c:'EX',  full:'Excellent',         re:/^(excellent|exc|nm[\s_-]*ex)$/i, blurb:'very light handling, still displays beautifully'},
   {c:'LP',  full:'Lightly Played',    re:/^(lightly[\s_-]*played|light[\s_-]*play|slightly[\s_-]*played|lp|sp)$/i, blurb:'minor edge or surface wear — no creases, no bends'},
   {c:'MP',  full:'Moderately Played', re:/^(moderately[\s_-]*played|moderate[\s_-]*play|played|mp|pl)$/i, blurb:'visible whitening or a light scratch — sleeves up fine'},
@@ -3015,16 +3017,23 @@ const CONDITIONS = [
 function condEntry(v){
   const s = String(v == null ? '' : v).trim();
   if(!s) return null;
-  return CONDITIONS.find(x => x.re.test(s)) || null;
+  const t = s.replace(/\s*\([A-Za-z-]{1,6}\)\s*$/, '');
+  return CONDITIONS.find(x => x.re.test(s) || (t && t !== s && x.re.test(t))) || null;
 }
 function condFull(v){
   const e = condEntry(v);
-  if(e) return e.full + (e.c ? ' (' + e.c + ')' : '');
-  return String(v == null ? '' : v).trim() || 'Near Mint (NM)';
+  if(e) return e.full + (e.c && e.full.indexOf(e.c + ' ') !== 0 ? ' (' + e.c + ')' : '');
+  return String(v == null ? '' : v).trim() || 'NM-LP (binder condition)';
 }
 function condShort(v){
   const e = condEntry(v);
-  return e ? (e.c || 'Sealed') : (String(v || '').trim() || 'NM');
+  return e ? (e.c || 'Sealed') : (String(v || '').trim() || 'NM-LP');
+}
+/* Same listing for every spelling of the policy bucket (condGroupKey_ in code.gs). */
+function condKey(v){
+  const s = String(v == null ? '' : v).trim();
+  const e = s ? condEntry(s) : null;
+  return (!s || (e && e.c === 'NM-LP')) ? 'nm-lp' : s.toLowerCase();
 }
 function condBlurb(v){ const e = condEntry(v); return e ? e.blurb : ''; }
 /* Which of the three visual bands this rarity sits in. Driven by position in
@@ -3180,6 +3189,7 @@ function go(tab,dir){
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
   // Stock moves constantly (other buyers, claim drops, auctions). Anything older
   // than a minute is refetched, otherwise sold cards linger on the shelf.
+  if(tab==='buyback'&&typeof caCheckOpen==='function') caCheckOpen();   // v13.63: consigning open/closed
   if(tab==='store'){
     if(!STATE.inventory.length||Date.now()-(STATE.invTs||0)>60000) loadStore();
     else { renderStore(); renderActiveChips(); }   // re-render: boot painted it while hidden
@@ -3762,6 +3772,7 @@ function openCardView(id){
           <span class="cv-tag">${c.grade?('Graded '+esc(c.grade)):esc(condFull(c.condition))}</span>
         </div>
         ${c.grade?'':(condBlurb(c.condition||'NM')?`<div class="cv-hint" style="margin-top:0">${esc(condBlurb(c.condition||'NM'))}</div>`:'')}
+        <div class="cv-hint cv-policy" style="margin-top:0">${esc(COND_POLICY)}</div>
         <button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups — we'll send them in chat</span><span class="ap-go">Ask ›</span></button>
         <div class="cv-price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="cv-was">$${c.marketPrice.toFixed(2)}</span>`:''}</div>
         <button class="cta" ${soldOut?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">${soldOut?'In your cart':'Add to cart'}</button>
@@ -3991,7 +4002,7 @@ function setsTileHtml(c,i){
   const b=c.best;
   const inCart=b?STATE.cart.filter(x=>x.id===b.key).length:0;
   const full=!b||inCart>=b.qty;
-  const sub=[c.number?'#'+c.number:'', b?[b.variant&&b.variant!=='normal'?b.variant:'', b.condition].filter(Boolean).join(' · '):'']
+  const sub=[c.number?'#'+c.number:'', b?[b.variant&&b.variant!=='normal'?b.variant:'', b.condition?condShort(b.condition):''].filter(Boolean).join(' · '):'']
     .filter(Boolean).join(' · ');
   const img=c.image?'<img src="'+esc(c.image)+'" alt="" loading="lazy" onerror="stockImgFail(this)">':'🃏';
   return '<div class="sv-tile'+(b?'':' off')+'">'+
@@ -4055,7 +4066,7 @@ async function setsCheckList(){
   setsPaintWant();
 }
 function setsCardRowHtml(l, action){
-  const meta=[l.set, l.number?'#'+l.number:'', [l.variant&&l.variant!=='normal'?l.variant:'', l.condition].filter(Boolean).join(' · ')].filter(Boolean).join(' · ');
+  const meta=[l.set, l.number?'#'+l.number:'', [l.variant&&l.variant!=='normal'?l.variant:'', l.condition?condShort(l.condition):''].filter(Boolean).join(' · ')].filter(Boolean).join(' · ');
   return '<div class="sv-line"><div class="sv-th">'+(l.image?'<img src="'+esc(l.image)+'" alt="" loading="lazy" onerror="stockImgFail(this)">':'🃏')+'</div>'+
     '<div class="sv-tx"><b>'+esc(l.name)+'</b><small>'+esc(meta)+'</small></div>'+
     '<div class="sv-go">'+(l.price!=null?money(l.price):'')+(l.qty?'<small style="display:block;font-weight:500;color:var(--hint)">'+l.qty+' left</small>':'')+
@@ -4102,7 +4113,7 @@ function addBulkToCart(L, quiet){
   if(have>=Number(L.qty||0)){ say(have ? 'You already have all the copies in stock in your cart.' : 'Sold out.'); return false; }
   STATE.cart.push({id:String(L.key), name:String(L.name||'Card'), tier:'Bulk', price:Number(L.price),
     number:String(L.number||''), image:stockImg(L.image), bulk:true, set:String(L.set||''),
-    cond:[L.variant&&L.variant!=='normal'?L.variant:'', L.condition].filter(Boolean).join(' · ')});
+    cond:[L.variant&&L.variant!=='normal'?L.variant:'', L.condition?condShort(L.condition):''].filter(Boolean).join(' · ')});
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
   sfx('add');
   updateCartDot();
@@ -4171,6 +4182,7 @@ function renderCart(){
         : (c.number?esc(c.number)+' · ':'')+esc(rarityLabel(c))}</div></div>
       <span class="cp">$${c.price.toFixed(2)}</span>
       <button class="rm" aria-label="Close" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
+    `<p class="hold-hint cond-policy">${esc(COND_POLICY)}</p>` +
     `<div class="field" style="margin:10px 0 4px"><label>Order note (optional)</label><input id="ord-note" value="${(STATE.note||'').replace(/"/g,'&quot;')}" maxlength="200" oninput="STATE.note=this.value" placeholder="e.g. double-sleeve please"></div>` +
     (STATE.credit>0?`<div class="creditrow"><span>Use store credit ($${STATE.credit.toFixed(2)})</span>
       <button class="switch ${STATE.useCredit?'on':''}" onclick="toggleCredit()"></button></div>`:'');
@@ -5633,7 +5645,15 @@ function haulWorld(f){
     const have = await loadCors(u, 8000);
     if(have) return have;
     ptToast('Painting your card\u2019s world \u2014 about 10 seconds the first time \uD83C\uDFA8');
-    return await loadCors(u + '&make=1', 40000);
+    // art Worker a5: painting needs the Mini App sign-in (a header, which an <img> can't send)
+    const tgI = (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) || '';
+    const ac = (typeof AbortController === 'function') ? new AbortController() : null;
+    const tm = ac ? setTimeout(() => ac.abort(), 40000) : null;
+    const mk = await fetch(u + '&make=1', { headers: { 'X-Init-Data': tgI }, signal: ac ? ac.signal : undefined }).catch(() => null);
+    if (tm) clearTimeout(tm);
+    if (!mk || !mk.ok) return null;
+    const blob = await mk.blob().catch(() => null);
+    return blob ? await loadCors(URL.createObjectURL(blob), 8000) : null;
   })());
   return HAUL_ART.get(k);
 }
@@ -7150,6 +7170,7 @@ const PT_ERRS={not_admin:'Admins only — your Telegram id isn\'t in ADMIN_IDS o
   not_consignor:'You\'re not set up as a consignor.',
   rate_limited:'Too many tries — give it a little while.',
   already_consignor:'You\'re already a consignor — open My shelf → Consign more.',
+  consign_closed:'We\'re not taking new consignments right now 🐾',
   unknown_action:'The server is running older code. In Apps Script: add portal.gs, paste the new code.gs and consign.gs, run portalSetup() once, then Deploy → Manage deployments → Edit → New version.',
   nonjson:'The server sent back a web page instead of data — usually the Apps Script deployment needs access set to "Anyone", or a new version deployed.',
   gas_empty_response:'The server gave an empty answer — try again in a moment.',
@@ -7262,7 +7283,7 @@ function ptPrefetch(){
   if(STATE.isAdmin) ptFetch('adminDash',{},'addash');
 }
 async function openConsign(){
-  go('consign');
+  go('consign'); caCheckOpen();
   const b=document.getElementById('cz-body');
   const saved=CZ&&CZ.ok?CZ:ptLoad('consignMe');
   if(saved&&saved.ok){ CZ=saved; renderConsign(); } else ptSkel(b);
@@ -7278,7 +7299,8 @@ function renderConsign(){
   const b=document.getElementById('cz-body'); if(!b) return;
   const r=CZ;
   if(!r||!r.ok){ b.innerHTML=`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="openConsign()">Try again</button></div>`; return; }
-  if(!r.isConsignor){ b.innerHTML='<div class="empty"><div class="e-ic">🐑</div><p>You\'re not set up as a consignor yet.</p><button class="pt-mini" onclick="go(\'buyback\');sellMode(\'cn\')">Consign with us</button></div>'; return; }
+  if(!r.isConsignor){ b.innerHTML='<div class="empty"><div class="e-ic">🐑</div><p>'+(CONSIGN_OPEN?'You\'re not set up as a consignor yet.</p><button class="pt-mini" onclick="go(\'buyback\');sellMode(\'cn\')">Consign with us</button>':'You don\'t have any cards consigned with us.</p>')+'</div>'; return; }
+  if(!CONSIGN_OPEN&&CZ_TAB==='more') CZ_TAB='shelf';   // v13.63: consigning closed
   let payBtn;
   const czSt=String(r.accountStatus||'active');
   if(czSt==='review') payBtn='<button class="cta" disabled>Payouts are paused for now</button>';
@@ -7295,12 +7317,13 @@ function renderConsign(){
     <div class="pt-row" style="margin-top:6px"><div class="l"><div class="t">PayNow</div><div class="s">${r.paynow?esc(r.paynow):'Not set — we need this to pay you'}</div></div>
       <button class="pt-mini" onclick="czPaynowForm()">${r.paynow?'Change':'Add'}</button></div>
     <div id="cz-paynow"></div>`;
-  h+=ptTabs([['shelf','On the shelf'],['sales','Sales'],['payouts','Payouts'],['rates','My rates'],['requests','Requests'],['more','Consign more']],CZ_TAB,'czTab');
+  h+=ptTabs([['shelf','On the shelf'],['sales','Sales'],['payouts','Payouts'],['rates','My rates'],['requests','Requests']].concat(CONSIGN_OPEN?[['more','Consign more']]:[]),CZ_TAB,'czTab');
+  if(!CONSIGN_OPEN) h+=`<p class="note" style="text-align:left;margin:6px 2px 0">We're not taking new consignments for now 🐾 Your cards here stay on sale, and you're paid for every one that sells.</p>`;
   h+='<div class="panel">';
   if(CZ_TAB==='shelf'){
     h+= (r.shelf&&r.shelf.length)? r.shelf.map((c,i)=>{
       const meta=[c.set,c.number?'#'+c.number:'',c.grade||c.condition].filter(Boolean).map(esc).join(' · ');
-      const canAsk=c.state!=='Returned to you'&&c.state!=='Being checked';
+      const canAsk=CONSIGN_OPEN&&c.state!=='Returned to you'&&c.state!=='Being checked';
       return `<div class="pt-card">${c.image?`<img src="${esc(c.image)}" loading="lazy" alt="">`:'<div class="noimg"></div>'}<div class="b">
         <div class="t" style="font-weight:700">${esc(c.name)}${c.qty>1?' ×'+c.qty:''}</div><div class="s" style="color:var(--hint);font-size:11.5px">${meta}</div>
         <div style="margin-top:3px"><b>$${Number(c.price||0).toFixed(2)}</b>${c.floor?` <span style="color:var(--hint);font-size:12px">· won't sell below $${Number(c.floor).toFixed(2)}</span>`:''}</div>
@@ -8121,7 +8144,8 @@ function adFloorAsk(id,price,mode){ const w=adFloorWarn(id,price,mode); return w
 function adPhSub(){
   const r=AD.ph; if(!r) return 'Checking…';
   const T=r.totals, n=(r.look||[]).length+(r.more||0);
-  return (T.cushion>=0?`<b>$${T.cushion.toFixed(2)}</b> above break-even`:`<b class="pt-neg">$${Math.abs(T.cushion).toFixed(2)} below break-even</b>`)+(n?` · <span class="pt-neg">${n} to look at</span>`:' · all fine');
+  const np=(r.needPrice||[]).length;
+  return (T.cushion>=0?`<b>$${T.cushion.toFixed(2)}</b> above break-even`:`<b class="pt-neg">$${Math.abs(T.cushion).toFixed(2)} below break-even</b>`)+(n?` · <span class="pt-neg">${n} to look at</span>`:' · all fine')+(np?` · <span class="pt-neg">${np} new card${np===1?' needs':'s need'} a price</span>`:'');
 }
 function adPhRowHtml(){
   if(!AD.ph) setTimeout(()=>adPhLoad(),0);
@@ -8133,6 +8157,7 @@ function adPhHtml(){
   const T=r.totals, m=v=>'$'+Number(v).toFixed(2), pc=v=>Math.round(v*100)+'%', P=t=>`<p class="note" style="text-align:left;margin:0 0 6px">${t}</p>`;
   let h=P(`Everything you own that’s for sale (${T.cards} cards${T.bundles?' + '+T.bundles+' bundle'+(T.bundles===1?'':'s'):''}) is listed at <b>${m(T.listed)}</b>. To cover what it cost plus running costs and losses it needs <b>${m(T.breakEven)}</b>. The difference is your cushion: <b>${T.cushion>=0?m(T.cushion)+' to spare':m(-T.cushion)+' short'}</b>.`);
   h+=P(`Markup ${pc(T.markup)} over cost · break-even needs ${pc(T.markupNeedBE)} · paying your time too needs ${pc(T.markupNeedWorth)}.`);
+  h+=adNpHtml(r);
   if(T.cheapUnder) h+=P(`🧩 ${T.cheapUnder} cheap card${T.cheapUnder===1?' is':'s are'} priced under break-even. That’s fine: they sell best as extras in a lot (<a href="#" onclick="adTab('bundles');return false">📦 Bundles</a>) and the cushion covers them.`);
   const L=r.look||[];
   if(!L.length) h+=P('✅ Nothing to look at.');
@@ -8169,6 +8194,36 @@ async function adPhRaise(btn,ids){
     AD.ph.look=L.filter(c=>!done[c.id]);
     if((r.skipped||[]).length) ptAlert(r.message+'\n'+r.skipped.map(s=>'• '+s.name+': '+s.why).join('\n'));
     adPhRepaint(); adPhLoad(true);
+  });
+}
+/* New singles are priced from PriceCharting as they enter (bulk.gs). The ones it couldn't match for
+   sure wait OFF SALE here until Bryan types a price (or fixes the name/number and asks again). */
+function adNpHtml(r){
+  const L=r.needPrice||[]; if(!L.length) return '';
+  const P=t=>`<p class="note" style="text-align:left;margin:0 0 6px">${t}</p>`;
+  return `<div class="pt-h" style="margin-top:8px">🔎 New cards that need a price <span class="pt-tag warn">${L.length}</span></div>`+
+    P('PriceCharting couldn’t match these for sure, so they’re off sale. Type a price to put one on sale, or fix its name / number / set in the Sheet and ask again.')+
+    L.map(c=>`<div class="pt-row" data-k="np-${esc(c.id)}"><div class="l"><div class="t">${esc(c.name)}${c.qty>1?' ×'+c.qty:''}</div><div class="s">${esc([c.set,c.number,c.grade||c.condition].filter(Boolean).join(' · '))} · ${esc(c.why)}</div></div>`+
+      `<div class="r" style="display:flex;gap:4px;align-items:center;justify-content:flex-end"><input inputmode="decimal" placeholder="$" aria-label="Price for ${esc(c.name)}" style="width:68px;min-width:0"><button class="pt-mini pri" onclick="adNpSet(this,'${esc(c.id)}')">Set</button></div></div>`).join('')+
+    `<div class="ev-foot"><button class="pt-mini" onclick="adNpAgain(this)">Ask PriceCharting again</button></div>`;
+}
+async function adNpSet(btn,id){
+  const c=((AD.ph&&AD.ph.needPrice)||[]).find(x=>x.id===id); if(!c) return;
+  const inp=btn.closest('.pt-row').querySelector('input'), v=Math.round(Number(String(inp.value||'').replace(/[$\s,]/g,''))*100)/100;
+  if(!(v>0)){ ptAlert('Type a price first.'); return; }
+  if(!(await ptConfirm(`Put ${c.name} on sale at $${v.toFixed(2)}?`+adFloorAsk(id,v)))) return;
+  await guard(btn, async()=>{
+    const r=await api('adminPriceCheckSet',{cardId:id,price:v}).catch(()=>null);
+    if(!r||!r.ok){ ptAlert((r&&r.message)||ptErr(r||{error:'network'})); return; }
+    AD.ph.needPrice=AD.ph.needPrice.filter(x=>x.id!==id); adPhRepaint();
+  });
+}
+async function adNpAgain(btn){
+  await guard(btn, async()=>{
+    const r=await api('adminPriceCheckAgain',{}).catch(()=>null);
+    if(!r){ ptAlert(ptErr({error:'network'})); return; }
+    if(r.need) AD.ph.needPrice=r.need;
+    ptAlert(r.message||ptErr(r)); adPhRepaint();
   });
 }
 async function adPhKeep(btn,id){
@@ -11180,7 +11235,23 @@ async function adRatesReset(btn){
 
 /* ---------- Sell tab → Consign with us (anyone) ---------- */
 let CA=null, CA_PHOTOS=[];
+/* v13.63: consigning can be closed (Config consign_open, default no). The answer rides
+   in consignInfo (`open`); hidden until the server says open, so an older server or a
+   failed call keeps "Consign with us" out of sight. Existing consignors keep My shelf. */
+let CONSIGN_OPEN=false, CA_CHECKED=false;
+function caApplyOpen(r){
+  if(r&&r.ok) CONSIGN_OPEN=r.open===true;
+  const t=document.getElementById('sell-tabs'), pr=document.getElementById('sell-cn-promo');
+  if(t) t.classList.toggle('hidden',!CONSIGN_OPEN); if(pr) pr.classList.toggle('hidden',!CONSIGN_OPEN);
+  if(!CONSIGN_OPEN){ const cn=document.getElementById('sell-cn'); if(cn&&!cn.classList.contains('hidden')) sellMode('bb'); }
+}
+function caCheckOpen(){
+  if(CA_CHECKED) return; CA_CHECKED=true;
+  const saved=ptLoad('consignInfo'); if(saved&&saved.ok) caApplyOpen(saved);
+  ptFetch('consignInfo').then(r=>{ if(r&&r.ok){ CA=r; caApplyOpen(r); if(STATE.tab==='consign'&&CZ&&CZ.ok) renderConsign(); } else CA_CHECKED=false; });
+}
 function sellMode(m){
+  if(m==='cn'&&!CONSIGN_OPEN) m='bb';
   document.querySelectorAll('#sell-tabs .chip').forEach(c=>c.classList.toggle('on',c.dataset.m===m));
   document.getElementById('sell-bb').classList.toggle('hidden',m!=='bb');
   document.getElementById('sell-cn').classList.toggle('hidden',m!=='cn');
@@ -11190,13 +11261,16 @@ function sellMode(m){
 async function loadConsignApply(){
   const b=document.getElementById('sell-cn'); if(!b) return;
   if(!CA) ptSkel(b);
-  const r=await api('consignInfo'); CA=r; renderConsignApply();
+  const r=await api('consignInfo'); CA=r; if(r&&r.ok) caApplyOpen(r); renderConsignApply();
 }
 function renderConsignApply(){
   const b=document.getElementById('sell-cn'); if(!b) return;
   const r=CA;
   let h='<div class="section-t">Consign with us</div>';
   if(!r||!r.ok){ b.innerHTML=h+`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="loadConsignApply()">Try again</button></div>`; return; }
+  if(r.ok&&r.open!==true&&!r.isConsignor){ CONSIGN_OPEN=false; b.innerHTML=h+`<div class="panel"><p style="margin:0">We're not taking new consignments right now 🐾 Want to sell your cards? Use Sell to us and we'll make you an offer.</p></div>`; return; }
+  if(r.isConsignor&&r.open!==true){ b.innerHTML=h+`<div class="panel"><p style="margin:0 0 10px">You're a FloofMart consignor 🐑 We're not taking new consignments for now, but your cards stay on sale and you're paid for each one that sells.</p>
+      <button class="cta" onclick="openConsign()">Open My shelf</button></div>`; return; }
   if(r.isConsignor){
     b.innerHTML=h+`<div class="panel"><p style="margin:0 0 10px">You're already a FloofMart consignor 🐑</p>
       <button class="cta" onclick="openConsign().then(()=>czTab('more'))">Consign more cards</button>
