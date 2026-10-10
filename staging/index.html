@@ -4392,7 +4392,8 @@ async function checkout(){
     renderCart();
   } else if(r.error==='cart_too_big'){
     (tg&&tg.showAlert?tg.showAlert:alert)('That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');
-  } else { (tg&&tg.showAlert?tg.showAlert:alert)('Checkout error: '+(r&&(r.error||r.raw)?JSON.stringify(r.error||r.raw).slice(0,200):'unknown')+'. Try again in a sec.'); }
+  } else if(r&&r.message){ (tg&&tg.showAlert?tg.showAlert:alert)(String(r.message)); }   // e.g. too_many_unpaid (v13.63.4): the server's own words
+  else { (tg&&tg.showAlert?tg.showAlert:alert)('Checkout error: '+(r&&(r.error||r.raw)?JSON.stringify(r.error||r.raw).slice(0,200):'unknown')+'. Try again in a sec.'); }
   } finally {
     STATE.placing=false;
     const cs=document.getElementById('cartSheet');
