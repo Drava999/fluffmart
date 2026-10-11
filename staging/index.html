@@ -156,6 +156,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .sv-line .sv-th img{width:100%;height:100%;object-fit:cover;display:block}
 .sv-line .sv-tx{flex:1;min-width:0;font-size:13px;overflow-wrap:anywhere}
 .sv-line .sv-tx b{font-weight:600}
+.sv-lt{display:inline-block;margin-left:4px;padding:0 4px;border-radius:4px;font-size:10px;font-weight:700;line-height:1.5;vertical-align:1px;color:var(--hint);box-shadow:inset 0 0 0 1px var(--line,rgba(0,0,0,.12))}.sv-lt.jp{color:var(--accent,#3b82f6)}
 .sv-line .sv-tx small{display:block;color:var(--hint);font-size:11.5px}
 .sv-line .sv-go{flex-shrink:0;text-align:right;font-size:13px;font-weight:700;white-space:nowrap}
 .sv-btn{margin-top:4px;background:var(--fawn-deep);color:#fff;border:none;border-radius:12px;padding:6px 11px;font-family:inherit;font-size:12.5px;font-weight:700}
@@ -360,6 +361,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .inv-total{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;font-size:16px;border-top:1px dashed var(--line);margin-top:6px;padding-top:8px}
 .paynow{background:var(--ruff);border-radius:14px;padding:14px;text-align:center;margin-bottom:12px}
 .pn-title{font-family:'Plus Jakarta Sans';font-weight:800;letter-spacing:-.02em;color:var(--fawn-deep);margin-bottom:8px}
+/* s33.11 (Bryan: a phone camera shows the PayNow code as a wall of text): the QR says it is for a bank app */
+.pn-bank{margin:0 0 10px;line-height:1.3}
+.dmrow{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#e8f0fb;color:#2a5aa5;border-radius:12px;padding:8px 12px;margin:6px 0 10px;font-weight:700;font-size:13px}
+.dmrow-b{border:0;background:#2a5aa5;color:#fff;border-radius:10px;padding:6px 12px;font-weight:800;font-size:13px;text-decoration:none;flex:none}
+.pn-bank b{display:block;font-size:13.5px;color:var(--fawn-deep);font-weight:800}
+.pn-bank small{display:block;font-size:11.5px;color:var(--hint);font-weight:600;margin-top:3px}
 .pn-qr{width:150px;height:150px;object-fit:contain;margin:0 auto 8px;border-radius:8px;background:#fff;display:block}
 .pn-qr-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--hint);font-weight:700;font-size:13px}
 .pn-qr-ph span{font-size:11px;font-weight:600}
@@ -376,6 +383,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 #pnQr img,#pnQr canvas{display:block}
 .pn-num{font-size:13px;color:var(--text);line-height:1.5}.pn-num b{font-size:15px}
 .pn-note{font-size:11.5px;color:var(--fawn-deep);margin-top:8px}
+/* s33.2 visual pass: pay in three pictured steps; "your box" as a picture (one box, one postage) */
+.pay-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:800;color:var(--text);font-size:14px;margin:4px 0 8px}
+.pay-h span:last-child{color:var(--fawn-deep);font-size:12.5px}
+.pay-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0 4px}
+.pay-steps>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 4px;text-align:center;font-size:12px;font-weight:800;color:var(--text);min-width:0;overflow-wrap:anywhere}
+.pay-steps i{display:block;font-style:normal;font-size:20px;line-height:1.2}
+.pay-steps small{display:block;font-weight:600;color:var(--hint);font-size:10.5px;margin-top:2px}
+.boxpic{display:flex;align-items:center;gap:10px;background:var(--ruff);border-radius:14px;padding:10px 12px;margin:10px 0 4px}
+.boxpic .bp-ic{font-size:30px;line-height:1;flex:none}
+.boxpic .bp-t{flex:1;min-width:0;background:var(--card);border-radius:10px;padding:6px 8px;text-align:center}
+.boxpic .bp-t span{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--hint)}
+.boxpic .bp-t b{display:block;font-size:15px;color:var(--text);font-variant-numeric:tabular-nums}
+.bp-note{font-size:11.5px;color:var(--fawn-deep);text-align:center;margin:4px 0 0;font-weight:700}
 .upl{display:block;text-align:center;border:2px dashed var(--fawn);color:var(--fawn-deep);border-radius:12px;
   padding:12px;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:10px}
 .proof-img{width:100%;max-height:200px;object-fit:contain;border-radius:10px;margin-bottom:10px;border:1px solid var(--line)}
@@ -1734,6 +1754,30 @@ body.pc #v-credit{max-width:640px}
 .pt-tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:12px;background:var(--line);color:var(--fawn-deep);margin:3px 4px 0 0}
 .pt-tag.warn{background:#fde2e4;color:#b23a48}
 .pt-tag.ok{background:#dff5ea;color:#1f7a52}
+/* s33.2 visual pass (Bryan approved the mockups, 11 Oct): numbers first, the long story behind a "?" */
+.pt-q{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--hint);font-size:11px;font-weight:800;cursor:help;padding:0;vertical-align:middle;margin-left:4px;flex:none}
+.pt-q[aria-expanded="true"]{color:var(--berry-deep);border-color:var(--berry-deep)}
+.pt-qt{display:block;font-size:12px;line-height:1.45;color:var(--hint);font-weight:500;margin:4px 0 6px;text-align:left;text-transform:none;letter-spacing:0}
+.pt-ph-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 4px}
+.pt-ph-h .t{font-weight:800;color:var(--text)}
+.pt-big{font-size:13px;color:var(--hint);font-weight:700}
+.pt-big b{display:block;font-size:24px;line-height:1.2;color:var(--text);font-variant-numeric:tabular-nums}
+.pt-cush{height:14px;border-radius:999px;background:var(--line);overflow:hidden;display:flex;margin:8px 0 6px}
+.pt-cush i{display:block;height:100%;background:var(--berry)}
+.pt-cush i.c{background:var(--mint-deep)}.pt-cush i.s{background:#b23a48}
+.pt-cushlg{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12px;color:var(--hint)}
+.pt-cushlg b{color:var(--text);font-variant-numeric:tabular-nums}
+.pt-cushlg .c b{color:var(--mint-deep)}.pt-cushlg .s b{color:#b23a48}
+.pt-cushlg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;background:var(--berry);vertical-align:0}
+.pt-cushlg .c i{background:var(--mint-deep)}.pt-cushlg .s i{background:#b23a48}
+.pt-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.pt-tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center;min-width:0}
+.pt-tile b{display:block;font-size:18px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+.pt-tile span{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--hint)}
+.pt-chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;background:var(--card);color:var(--text);margin:4px 6px 0 0}
+details.pt-det>summary{list-style:none;cursor:pointer;display:inline-flex}
+details.pt-det>summary::-webkit-details-marker{display:none}
+.pt-qt[hidden]{display:none}
 /* v13.27: admin detail screens -- a header line, label/value rows, tidy lists, one action row */
 .ad-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 8px}
 .ad-head .pt-tag{font-size:12px;padding:3px 10px;margin:0 6px 0 0}
@@ -2098,6 +2142,23 @@ span[style*="#c2405e"]{color:#A8324F!important}
 .ad-res{width:100%;max-width:420px;background:var(--card);color:var(--text);border-radius:18px;padding:16px 16px 14px;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
 .ad-res-l{display:block;font-size:12.5px;font-weight:700;color:var(--hint);margin:8px 0 4px}
 .ad-res-in{width:100%;font:inherit;font-size:16px;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+/* ---- Buyer fixes (UX review, 10 Oct) ---- */
+/* Card sheet: price + Add to cart pinned to the bottom of the sheet, always in reach. */
+.cv-buybar{position:sticky;bottom:0;z-index:41;display:flex;align-items:center;gap:12px;
+  background:var(--card);border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.cv-bb-p{font-family:'Plus Jakarta Sans';font-weight:800;font-size:17px;color:var(--fawn-deep);white-space:nowrap}
+.cv-buybar>button{flex:1;min-width:0;margin:0;padding-top:12px;padding-bottom:12px}
+/* Narrow phones: a smaller photo so the details start above the fold. */
+@media (max-width:600px){ .cv-card{width:min(58vw,200px,calc(34vh * 63 / 88))} .cv-top{padding-top:22px;padding-bottom:12px} }
+/* A photo that wouldn't load: a soft tile, never the broken-image icon. */
+img.img-ph{object-fit:contain;background:#f6eee9}
+/* Checkout trouble, inside the cart, with the button that fixes it. */
+.ck-err{border:1.5px solid var(--fawn);background:var(--ruff);color:var(--text);border-radius:14px;padding:12px 14px;margin:0 0 12px}
+.ck-err-m{white-space:pre-line;font-size:13.5px;line-height:1.5;margin-bottom:10px;overflow-wrap:anywhere}
+.ck-err>button{margin:0}
+.ck-cap{font-size:11px;color:var(--fawn-deep);font-weight:700;margin-top:2px}
+.gd-skip{display:block;margin:8px auto 0;background:none;border:0;color:var(--hint);font-size:12.5px;font-weight:700;padding:6px 12px;min-height:32px}
 </style>
 </head>
 <body>
@@ -2126,7 +2187,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
     <div id="ov-justin"></div>
     <div class="section-t">What you can do</div>
     <button class="feat" onclick="go('store')">
-      <div class="ic" data-ic="store">🛍️</div><div><h3>Browse the store</h3><p>Singles, sealed &amp; merch — claim them now</p></div>
+      <div class="ic" data-ic="store">🛍️</div><div><h3>Browse the store</h3><p>Cards, sealed &amp; merch — claim them now</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('orders')">
@@ -2168,7 +2229,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
     </button>
     <div class="tools">
       <div class="search">🔎<input id="q" placeholder="Search cards…" oninput="renderStore()"></div>
-      <button class="sets-btn hidden" id="setsBtn" onclick="openSets()">📚 Sets &amp; bulk</button>
+      <button class="sets-btn hidden" id="setsBtn" onclick="openSets()">📚 Sets</button>
       <div class="toolrow">
         <button class="tbtn" onclick="openFilters()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h18"></path><path d="M6 12h12"></path><path d="M10 19h4"></path></svg>
@@ -2277,7 +2338,8 @@ span[style*="#c2405e"]{color:#A8324F!important}
         <div class="hb-step"><span>🎥</span><div><b>Film the opening.</b> For anything missing from a packet or damaged in transit, we need an unbroken unboxing video. It protects both of us.</div></div>
         <div class="hb-step"><span>📸</span><div><b>48 hours.</b> Message us with photos or videos within 48 hours of delivery and we'll refund or replace it.</div></div>
         <div class="hb-step"><span>📮</span><div><b>Normal mail travels at your risk.</b> It's cheaper but it isn't tracked, so we can't cover it if it goes astray. Tracked postage is covered.</div></div>
-        <div class="hb-step"><span>🔄</span><div><b>Changed your mind?</b> Free to cancel before you pay. Excessive or fradulent refunds will result in warnings or a ban.</div></div>
+        <div class="hb-step"><span>🔄</span><div><b>Changed your mind?</b> Free to cancel before you pay. Excessive or fraudulent refunds will result in warnings or a ban.</div></div>
+        <div class="hb-step"><span>4️⃣</span><div><b>Max 4 of the same card per person every 30 days.</b> Four is a full playset, so players can always build a deck, and the limit helps the community by stopping resellers from buying out the shelf.</div></div>
         <div class="hb-step"><span>🏆</span><div><b>All cards are NM-LP (binder condition) unless the listing says otherwise.</b> We can send as many photos as you need on request, but we can't refund a grade you didn't like.</div></div>
         <div class="hb-step"><span>💳</span><div><b>How refunds come back.</b> Whatever you paid with credit returns as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
       </div>
@@ -2475,6 +2537,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
   <div class="sh-ft">
     <div class="gd-dots" id="gdDots"></div>
     <button class="cta" id="gdNext" onclick="guideNext()">Next</button>
+    <button class="gd-skip" id="gdSkip" onclick="closeGuide()">Skip for now</button>
   </div>
 </div>
 
@@ -2517,12 +2580,23 @@ if (IS_STAGING) {
     '<div style="position:sticky;top:0;z-index:99999;background:#FFD400;color:#000;font:700 13px/1.2 system-ui,sans-serif;text-align:center;padding:6px 8px">🧪 TEST SHOP — nothing here is real</div>');
   if (document.body) addBar(); else document.addEventListener('DOMContentLoaded', addBar);
 }
-/* Bulk stock (stock Worker). '' = the Sets & bulk screen is hidden everywhere. */
+/* Stock Worker. '' = the Sets screen and the scanned cards are hidden everywhere (live, for now). */
 const STOCK_API = IS_STAGING ? 'https://floofmart-stock-staging.shrimaniac.workers.dev' : '';
+/* s31.3 ONE LIST (one inventory Phase 1): the shop shows the scanned cards (stock Worker /api/list)
+   in the SAME list as the Sheet cards, with the same card view, cart and rules. On only where the
+   stock Worker is linked (staging); live keeps its old shop until STOCK_API is set there. */
+const ONE_LIST = !!STOCK_API;
 (function(){ const b=document.getElementById('setsBtn'); if(b && STOCK_API) b.classList.remove('hidden'); })();
 /* ================================ */
 
-function imgUrl(u,w){ if(!u) return u; u=String(u).split('|')[0].split('~')[0].trim(); return u.indexOf('drive.google.com/thumbnail')>=0 ? u.replace(/sz=w\d+/,'sz=w'+w) : u; }
+/* Drive photos load from lh3.googleusercontent.com FIRST (like the website): it's faster and
+   steadier inside Telegram's webview than drive.google.com/thumbnail, which is now only the
+   retry (thumbRetry). Any other URL is passed through unchanged. */
+function imgUrl(u,w){
+  if(!u) return u; u=String(u).split('|')[0].split('~')[0].trim();
+  const m=/^https:\/\/(drive\.google\.com\/(thumbnail|open|uc|file)|lh3\.googleusercontent\.com\/d\/)/.test(u) && (u.match(/[?&]id=([\w-]{10,})/)||u.match(/\/d\/([\w-]{10,})/));
+  return m ? 'https://lh3.googleusercontent.com/d/'+m[1]+'=w'+w : u;
+}
 
 /* A bundle with no photo of its own shows its cards instead: image holds the
    first, image_back holds the rest joined with "|". Only bundles do this, so
@@ -2563,7 +2637,7 @@ function fanHtml(faces,w){
     const off=i-mid;
     const t=`translateX(${(off*step).toFixed(1)}%) rotate(${(off*tilt).toFixed(1)}deg)`;
     const s=`translateX(${(off*step*1.3).toFixed(1)}%) rotate(${(off*tilt*1.2).toFixed(1)}deg)`;
-        return `<img src="${imgUrl(u.f,w)}" loading="lazy" alt="" `+
+        return `<img src="${imgUrl(u.f,w)}" loading="lazy" alt="" data-w="${w}" data-keep="1" onerror="thumbRetry(this)" `+
            `style="height:${h}%;transform:${t};--spread:${s};z-index:${i+1}">`;
   }).join('');
   return `<div class="bfan">${cards}</div>`+(extra>0?`<span class="bmore">+${extra}</span>`:'');
@@ -2583,10 +2657,10 @@ function cvFace(el,i){
   const card=document.getElementById('cvCard');
   const fi=card&&card.querySelector('.cv-front img');
   const bi=card&&card.querySelector('.cv-back img');
-  if(fi) fi.src=imgUrl(f.f,800);
+  if(fi) cvSetImg(fi,f.f,800);
   if(card) card.classList.remove('flipped');
   if(bi){
-    if(f.b){ bi.src=imgUrl(f.b,800); if(card) card.classList.remove('noflip'); }
+    if(f.b){ cvSetImg(bi,f.b,800); if(card) card.classList.remove('noflip'); }
     else { bi.removeAttribute('src'); if(card) card.classList.add('noflip'); }
   }
   const hint=document.querySelector('.cv-flip-hint');
@@ -2735,15 +2809,36 @@ function thumbHtml(u, w, alt, tier){
   return '<img src="'+esc(imgUrl(u,w))+'" alt="'+esc(alt||'')+'" decoding="async" data-w="'+w+'" data-emo="'+esc(emo)+'" onerror="thumbRetry(this)">';
 }
 function thumbRetry(el){
-  const id=driveId(el.getAttribute('src'));
+  const src=el.getAttribute('src')||'', id=driveId(src);
   if(id && !el.dataset.retried){
     el.dataset.retried='1';
-    el.src='https://lh3.googleusercontent.com/d/'+id+'=w'+(el.dataset.w||400);
+    const w=el.dataset.w||400;
+    // lh3 is tried first (imgUrl); the retry is the other Google host.
+    el.src=src.indexOf('lh3.googleusercontent.com')>=0
+      ? 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+w
+      : 'https://lh3.googleusercontent.com/d/'+id+'=w'+w;
     return;
   }
   el.onerror=null;
+  // data-keep (card view, zoom): keep the <img> so the photo strip can still swap it,
+  // and show a soft card-shaped placeholder instead of the browser's broken-image icon.
+  if(el.dataset.keep){ el.src=imgPh(el.dataset.emo); el.classList.add('img-ph'); return; }
   const s=document.createElement('span'); s.textContent=el.dataset.emo||'🃏';
   el.replaceWith(s);
+}
+function imgPh(emo){
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 63 88"><rect width="63" height="88" rx="4" fill="#f6eee9"/><text x="31.5" y="50" font-size="22" text-anchor="middle">'+String(emo||'🃏').replace(/[<&>]/g,'')+'</text></svg>');
+}
+/* Card view / zoom pictures: same Drive → lh3 → placeholder chain as the grid. */
+function cvImgHtml(u,w,alt,emo,extra){
+  return '<img src="'+esc(imgUrl(u,w))+'" alt="'+esc(alt||'')+'" data-w="'+w+'" data-emo="'+esc(emo||'🃏')+'" data-keep="1" onerror="thumbRetry(this)"'+(extra||'')+'>';
+}
+function cvSetImg(img,u,w){
+  if(!img) return;
+  img.classList.remove('img-ph'); img.dataset.retried=''; img.dataset.keep='1';
+  if(!img.dataset.w) img.dataset.w=String(w);
+  img.setAttribute('onerror','thumbRetry(this)');
+  img.src=imgUrl(u,w);
 }
 
 /* The sheet stamps "Payment Verified · <time>" with whatever locale Apps Script
@@ -2990,9 +3085,68 @@ RARITY_ORDER.forEach((r,i) => { RARITY_POS[r.toLowerCase()] = i; });
 
 // The words on the card. tier now holds Collectr's rarity; rarity is the same
 // value straight from the API. Either is fine — prefer whichever is present.
+// s32.2 (Bryan: "why do cards still say single? make it say its rarity"): only a real rarity,
+// readable (lower-case catalogue spellings capitalised); "single"/"card"/"none" show nothing.
 function rarityLabel(c){
-  return String((c && (c.rarity || c.tier)) || '').trim();
+  const t=String((c && (c.rarity || c.tier)) || '').trim().replace(/\s+/g,' ');
+  if(!t || /^(singles?|cards?|none|n\/a|unknown|-+)$/i.test(t)) return '';
+  return t.replace(/(^|[\s-])([a-z])/g,(x,a,b)=>a+b.toUpperCase());
 }
+/* RARITY-ABBR-BEGIN (byte-identical in index.html and stock/site.html; test_rarity_abbr.js checks)
+   s33.11 (Bryan, 11 Oct: "use C/UC/R or the proper rarities ... with the standard abbreviation"):
+   a card's rarity chip is ONE short standard code; the full name goes in the tooltip and the card page.
+   Keys are lower-case with single spaces: English (TCGdex, Collectr) and Japanese names and codes. */
+const RAR_ABBR = {
+  'common': 'C', 'c': 'C', 'uncommon': 'U', 'u': 'U', 'uc': 'U',
+  'rare': 'R', 'r': 'R', 'holo rare': 'R', 'rare holo': 'R', 'rh': 'R', 'holo': 'R', 'rare holofoil': 'R', 'holofoil rare': 'R',
+  'double rare': 'RR', 'rr': 'RR', 'holo rare v': 'RR', 'rare holo v': 'RR', 'rare holo ex': 'RR', 'rare holo gx': 'RR', 'rare holo lv.x': 'LV.X', 'rare holo lvx': 'LV.X',
+  'holo rare vmax': 'RRR', 'rare holo vmax': 'RRR', 'holo rare vstar': 'RRR', 'rare holo vstar': 'RRR', 'triple rare': 'RRR', 'rrr': 'RRR',
+  'ace spec rare': 'ACE', 'ace spec': 'ACE', 'rare ace': 'ACE', 'ace': 'ACE',
+  'illustration rare': 'AR', 'art rare': 'AR', 'ar': 'AR',
+  'special illustration rare': 'SAR', 'special art rare': 'SAR', 'sar': 'SAR',
+  'super rare': 'SR', 'secret rare': 'SR', 'rare secret': 'SR', 'full art trainer': 'SR', 'rare ultra': 'SR', 'sr': 'SR',
+  'ultra rare': 'UR', 'ur': 'UR', 'rare rainbow': 'HR', 'hyper rare': 'HR', 'hr': 'HR', 'mega hyper rare': 'MUR', 'mega ultra rare': 'MUR', 'mur': 'MUR',
+  'mega attack rare': 'MA', 'ma': 'MA',
+  'character rare': 'CHR', 'chr': 'CHR', 'character holo rare': 'CHR', 'character super rare': 'CSR', 'csr': 'CSR',
+  'shiny rare': 'S', 'rare shiny': 'S', 'shiny holo rare': 'S', 'shiny rare v': 'S', 'shiny rare vmax': 'S', 'rare shiny gx': 'S', 's': 'S',
+  'shiny ultra rare': 'SSR', 'shiny super rare': 'SSR', 'ssr': 'SSR',
+  'promo': 'PR', 'promos': 'PR', 'pr': 'PR', 'p': 'PR', 'black star promo': 'PR',
+  'trainer rare': 'TR', 'tr': 'TR', 'trainer gallery': 'TG', 'trainer gallery holo rare': 'TG', 'trainer gallery rare holo': 'TG', 'galarian gallery': 'GG',
+  'radiant rare': 'Radiant', 'radiant': 'Radiant', 'k': 'K',
+  'amazing rare': 'A', 'a': 'A', 'rare prime': 'PRM', 'prime': 'PRM', 'legend': 'LGD', 'rare break': 'BRK', 'break': 'BRK', 'rare holo star': 'STAR',
+  'classic collection': 'CC', 'black white rare': 'BWR', 'bwr': 'BWR', 'futuristic rare': 'FR', 'ancient rare': 'AnR', 'pikachu rare': 'PIKA',
+  'one diamond': '◆', 'two diamond': '◆◆', 'three diamond': '◆◆◆', 'four diamond': '◆◆◆◆',
+  'one star': '☆', 'two star': '☆☆', 'three star': '☆☆☆', 'crown': '♛', 'one shiny': 'S', 'two shiny': 'SS'
+};
+/* A rarity that came in as a code, spelled out for the tooltip ("SAR" -> "Special Illustration Rare"). */
+const RAR_FULL = { C: 'Common', U: 'Uncommon', UC: 'Uncommon', R: 'Rare', RR: 'Double Rare', RRR: 'Triple Rare', ACE: 'ACE SPEC Rare', AR: 'Illustration Rare', SAR: 'Special Illustration Rare',
+  SR: 'Super Rare', UR: 'Ultra Rare', HR: 'Hyper Rare', MUR: 'Mega Ultra Rare', MA: 'Mega Attack Rare', CHR: 'Character Rare', CSR: 'Character Super Rare', S: 'Shiny Rare',
+  SSR: 'Shiny Super Rare', PR: 'Promo', PROMO: 'Promo', TR: 'Trainer Rare', TG: 'Trainer Gallery', GG: 'Galarian Gallery', K: 'Radiant (K)', A: 'Amazing Rare', BWR: 'Black White Rare' };
+const RAR_NONE = /^(singles?|cards?|bundles?|none|n\/a|unknown|-+)$/i;
+function rarKeyOf(v) { return String(v == null ? '' : v).trim().replace(/[\s_]+/g, ' ').replace(/\s*\((jp|ja|en)\)$/i, '').toLowerCase(); }
+/* rarAbbr("Special illustration rare") = "SAR". num = the printed number: TG12 / GG05 win. '' = no rarity.
+   Unknown: its first word when that is short ("Gold"), else the words' first letters ("Very Odd Thing" -> "VOT"); never a cut-off word. */
+function rarAbbr(v, num) {
+  const n = String(num == null ? '' : num).trim().toUpperCase();
+  if (/^TG\d/.test(n)) return 'TG';
+  if (/^GG\d/.test(n)) return 'GG';
+  const k = rarKeyOf(v);
+  if (!k || RAR_NONE.test(k)) return '';
+  if (RAR_ABBR[k]) return RAR_ABBR[k];
+  const w = k.split(' ').filter(Boolean);
+  if (w[0].length <= 6) return w[0].charAt(0).toUpperCase() + w[0].slice(1);
+  return w.map(x => x.charAt(0).toUpperCase()).join('').slice(0, 4);
+}
+/* The full name for the tooltip and the card page ("Special Illustration Rare"; a code is spelled out). */
+function rarFull(v) {
+  const t = String(v == null ? '' : v).trim().replace(/\s+/g, ' ');
+  if (!t || RAR_NONE.test(t)) return '';
+  if (t === t.toUpperCase() && RAR_FULL[t]) return RAR_FULL[t];
+  return t.replace(/(^|[\s-])([a-z])/g, (x, a, b) => a + b.toUpperCase()).replace(/\bAce Spec\b/, 'ACE SPEC');
+}
+/* A card's name without a language tag the shelf put in it ("Hydrapple ex (JP)" -> "Hydrapple ex"): the EN/JP chip says it. */
+function nameNoLang(v) { return String(v == null ? '' : v).replace(/\s*[(\[](jp|ja|jpn|japanese|en|eng|english)[)\]]\s*$/i, '').trim(); }
+/* RARITY-ABBR-END */
 function rarityRank(c){
   const p = RARITY_POS[rarityLabel(c).toLowerCase()];
   return p === undefined ? 999 : p;
@@ -3192,7 +3346,7 @@ function go(tab,dir){
   if(tab==='buyback'&&typeof caCheckOpen==='function') caCheckOpen();   // v13.63: consigning open/closed
   if(tab==='store'){
     if(!STATE.inventory.length||Date.now()-(STATE.invTs||0)>60000) loadStore();
-    else { renderStore(); renderActiveChips(); }   // re-render: boot painted it while hidden
+    else { renderStore(); renderActiveChips(); loadGroups(); }   // re-render: boot painted it while hidden
   }
   if(tab==='orders') loadOrders();
   if(tab==='profile') loadProfile();
@@ -3252,7 +3406,7 @@ async function bootApp(){
   // 1) paint instantly from the last snapshot (stale-while-revalidate)
   try{ const c=JSON.parse(localStorage.getItem(FM_CK+'boot')||'null');
     if(c&&c.overview){ applyOverview(c.overview); }
-    if(c&&c.inventory){ STATE.inventory=mergeInventory(c.inventory); renderStore(); renderActiveChips(); }
+    if(c&&c.inventory){ STATE.inventory=withGroups(mergeInventory(c.inventory)); renderStore(); renderActiveChips(); }
   }catch(e){}
   // 2) one round trip refreshes both  // 'boot' is served by Apps Script; 'inventory' comes from D1 at the edge.
   // Two parallel calls beat one round trip to the Sheet.
@@ -3260,7 +3414,7 @@ async function bootApp(){
   // v13.61: draw the shop the moment the edge copy arrives; the overview (Apps
   // Script, slower) fills in the home tiles when it lands.
   const invP=api('inventory');
-  invP.then(x=>{ if(x&&x.ok){ STATE.inventory=mergeInventory(x.items||[]); STATE.invTs=Date.now(); renderStore(); renderActiveChips(); } }).catch(()=>{});
+  invP.then(x=>{ if(x&&x.ok){ STATE.inventory=withGroups(mergeInventory(x.items||[])); STATE.invTs=Date.now(); renderStore(); renderActiveChips(); loadGroups(); } }).catch(()=>{});
   try{ [ov,invr]=await Promise.all([api('overview'),invP]); }
   catch(e){   // v13.24: a dropped connection at start-up: try once more shortly (it used to stay on grey cards)
     setTimeout(()=>{ loadOverview().catch(()=>{}); loadStore().catch(()=>{}); },2500); return;
@@ -3268,7 +3422,7 @@ async function bootApp(){
   const r={ok:true,overview:ov,inventory:invr};
   if(r&&r.ok){
     if(r.overview&&r.overview.ok){ applyOverview(r.overview); setTimeout(ptPrefetch,1500); ptOpenBoxLink(); }
-    if(r.inventory&&r.inventory.ok){ STATE.inventory=mergeInventory(r.inventory.items||[]); STATE.invTs=Date.now(); renderStore(); renderActiveChips(); }
+    if(r.inventory&&r.inventory.ok){ STATE.inventory=withGroups(mergeInventory(r.inventory.items||[])); STATE.invTs=Date.now(); renderStore(); renderActiveChips(); }
     try{ localStorage.setItem(FM_CK+'boot',JSON.stringify({overview:r.overview,inventory:(r.inventory&&r.inventory.items)||[]})); }catch(e){}
   } else { loadOverview(); loadStore(); }
 }
@@ -3412,7 +3566,7 @@ function renderJustIn(){
       <button class="ja" onclick="go('store')">See all ›</button></div>
     <div class="jrail${wide?' fill':''}">${list.map(c=>{
       const faces=faceList(c);
-      const im=faces.length?`<img src="${imgUrl(faces[0].f,300)}" loading="lazy" alt="">`:(EMOJI[c.tier]||'🃏');
+      const im=faces.length?`<img src="${esc(imgUrl(faces[0].f,300))}" loading="lazy" alt="" data-w="300" data-emo="${esc(EMOJI[c.tier]||'🃏')}" onerror="thumbRetry(this)">`:(EMOJI[c.tier]||'🃏');
       const fresh=newest && Number(c.dateAdded) && (newest-Number(c.dateAdded))<3*DAY;
       return `<button class="jcard" onclick="openCardView('${c.id}')">
         <div class="jimg">${im}${fresh?'<span class="jnew">NEW</span>':''}</div>
@@ -3434,7 +3588,7 @@ function shareReferral(link){
 const SORTS=[{v:'rarity',l:'Rarity — rarest first'},{v:'price-desc',l:'Price — high to low'},
              {v:'price-asc',l:'Price — low to high'},{v:'name',l:'Name — A to Z'},
              {v:'set',l:'Set — A to Z'}];
-const CATS=[{c:'single',l:'Singles'},{c:'sealed',l:'Sealed'},
+const CATS=[{c:'single',l:'Cards'},{c:'sealed',l:'Sealed'},
             {c:'bundle',l:'Bundles'},{c:'merch',l:'Merch'}];
 const PRICE_PRESETS=[{l:'Under $10',min:null,max:10},{l:'$10–$25',min:10,max:25},
                      {l:'$25–$50',min:25,max:50},{l:'$50+',min:50,max:null}];
@@ -3596,9 +3750,44 @@ async function loadStore(){
   const grid=document.getElementById('storeGrid');
   if(!STATE.inventory.length) grid.innerHTML = Array(6).fill('<div class="skelcard"></div>').join('');
   const r = await api('inventory');
-  STATE.inventory = mergeInventory(r.items||[]);
+  STATE.inventory = withGroups(mergeInventory(r.items||[]));
   STATE.invTs = Date.now();
   renderStore(); renderActiveChips();
+  loadGroups();
+}
+/* ---------- s31.3 ONE LIST: the scanned cards in the same shop list ----------
+   One card per version + condition (the stock Worker's listing), shaped like a Sheet card:
+   id = the key checkout already knows (BK:…), bulk = true (checkout sends its price), its photo =
+   the scan of a copy; no scan = no photo = hidden from buyers like any card (no photo, no sale).
+   Per-card cap: the same card (name + number) counts across every version, Sheet or scanned. */
+var GROUPS={list:[], at:0, busy:null};
+function groupCard(it){
+  const key=String(it.key||''), body=key.slice(2), v=String(it.variant||'normal');
+  return {id:'BK:'+body, key:key, bulk:true, card_id:String(it.card_id||''), name:String(it.name||''), set:String(it.set_name||''),
+    number:String(it.local_id||''), rarity:String(it.rarity||''), tier:'', category:'single', price:Number(it.price)||0, qty:parseInt(it.qty,10)||0,
+    image:String(it.photo||''), imageBack:String(it.back||''), condition:String(it.condition_label||it.condition||''), variance:v==='normal'?'':String(it.variant_label||v),
+    grade:'', marketPrice:0, status:'available', ids:['BK:'+body]};
+}
+function withGroups(inv){ return (inv||[]).filter(c=>!c.bulk).concat(ONE_LIST?GROUPS.list:[]); }
+async function loadGroups(force){
+  if(!ONE_LIST) return;
+  if(GROUPS.busy) return GROUPS.busy;
+  if(!force && GROUPS.at && Date.now()-GROUPS.at<60000) return;
+  GROUPS.busy=(async()=>{
+    const j=await stockGet('/api/list?src=scan');
+    if(j&&j.ok&&Array.isArray(j.items)){
+      GROUPS.list=j.items.filter(it=>/^L:[^|]+\|/.test(String(it.key||''))&&Number(it.qty)>0&&Number(it.price)>0).map(groupCard);
+      GROUPS.at=Date.now();
+      STATE.inventory=withGroups(STATE.inventory);
+      if(document.getElementById('storeGrid')){ renderStore(); renderActiveChips(); }
+    }
+  })().finally(()=>{ GROUPS.busy=null; });
+  return GROUPS.busy;
+}
+/* The other listings of the same card in the shop (every version, Sheet or scanned), for the card view. */
+function sameCardOthers(c){
+  const k=perCardKey(c.name,c.number); if(!k) return [];
+  return STATE.inventory.filter(x=>x!==c&&x.id!==c.id&&perCardKey(x.name,x.number)===k&&Number(x.qty)>0&&(faceList(x).length||STATE.isAdmin));
 }
 // The filtered, sorted list — shared by the grid and by the "Show N cards"
 // button, so the two can never disagree.
@@ -3656,11 +3845,11 @@ function renderStore(){
   }
 
   const tile=c=>{
-    const inCart=STATE.cart.filter(x=>!x.bulk&&x.id===c.id).length;
+    const inCart=STATE.cart.filter(x=>x.id===c.id).length;
     const soldOut=(c.qty-inCart)<=0;
     const faces=faceList(c);
     const front=faces.length>1 ? fanHtml(faces,400)
-      : faces.length ? '<img src="'+imgUrl(faces[0].f,400)+'" loading="lazy" alt="">'
+      : faces.length ? '<img src="'+esc(imgUrl(faces[0].f,400))+'" loading="lazy" alt="" data-w="400" data-emo="'+esc(EMOJI[c.tier]||'🃏')+'" onerror="thumbRetry(this)">'
       : (EMOJI[c.tier]||'🃏');
     const stockTag=c.qty===1?'Only 1':(c.qty<=3&&c.qty>1?c.qty+' left':'');
     const cond=[c.variance?esc(c.variance):'',
@@ -3673,7 +3862,7 @@ function renderStore(){
         (stockTag?'<div class="stock-tag">'+stockTag+'</div>':'')+
         (soldOut?'<div class="soldout">Claimed</div>':'')+((window.FM_isNew&&FM_isNew(c))?'<span class="jnew">NEW</span>':'')+'</div>'+
       '<div class="body">'+
-        '<div class="rar">'+esc(rarityLabel(c))+'</div>'+
+        '<div class="rar" title="'+esc(rarFull(c.rarity||c.tier))+'">'+esc(rarAbbr(c.rarity||c.tier,c.number))+'</div>'+
         '<div class="nm">'+esc(c.name)+'</div>'+
         '<div class="meta">'+esc(c.set||'')+(c.number?' · '+esc(c.number):'')+'</div>'+
         '<div class="desc">'+cond+'</div>'+
@@ -3746,9 +3935,11 @@ function openCardView(id){
   // A bundle flips if ANY of its cards has a back — cvFace swaps the back face
   // in as you pick each one, so the card has to be built flippable up front.
   const anyBack = cvFaces.some(x=>x.b);
-  const front = f0.f?`<img src="${imgUrl(f0.f,800)}" alt="">`:`<div class="cv-noimg">${EMOJI[c.tier]||'🃏'}<span>No photo yet</span></div>`;
+  const emo = EMOJI[c.tier]||'🃏';
+  const front = f0.f?cvImgHtml(f0.f,800,'',emo):`<div class="cv-noimg">${emo}<span>No photo yet</span></div>`;
   const hasBack = anyBack;
-  const soldOut=(c.qty-STATE.cart.filter(x=>!x.bulk&&x.id===c.id).length)<=0;
+  const soldOut=(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0;
+  const capped=!soldOut&&cartAtCap(c.name,c.number,c.tier);
   document.getElementById('cardViewBody').innerHTML = `
     <div class="cv-panel">
       <button class="cv-close" aria-label="Close" onclick="closeCardView()">✕</button>
@@ -3756,12 +3947,12 @@ function openCardView(id){
         <div class="cv-card ${hasBack?'':'noflip'}" id="cvCard" ${hasBack?`onclick="if(!this.classList.contains('noflip'))this.classList.toggle('flipped')"`:''}>
           <div class="cv-inner">
             <div class="cv-face cv-front">${front}</div>
-            ${hasBack?`<div class="cv-face cv-back"><img src="${f0.b?imgUrl(f0.b,800):''}" alt="back"></div>`:''}
+            ${hasBack?`<div class="cv-face cv-back">${f0.b?cvImgHtml(f0.b,800,'back',emo):`<img alt="back" data-w="800" data-emo="${esc(emo)}">`}</div>`:''}
           </div>
           ${c.image?`<button class="cv-zoom" onclick="event.stopPropagation();zoomCard('${c.id}')">🔍</button>`:''}
         </div>
         ${hasBack?'<div class="cv-flip-hint">tap card to flip ⤾ · 🔍 to zoom</div>':(c.image?'<div class="cv-flip-hint">🔍 tap to zoom in</div>':'')}
-                ${cvFaces.length>1?`<div class="cv-strip">${cvFaces.map((u,i)=>`<img src="${imgUrl(u.f,200)}" alt="" class="${i===0?'on':''}" onclick="event.stopPropagation();cvFace(this,${i})">`).join('')}</div>`:''}
+                ${cvFaces.length>1?`<div class="cv-strip">${cvFaces.map((u,i)=>cvImgHtml(u.f,200,'',emo,` class="${i===0?'on':''}" onclick="event.stopPropagation();cvFace(this,${i})"`)).join('')}</div>`:''}
       </div>
       <div class="cv-meta">
         <div class="cv-name">${esc(c.name)}</div>
@@ -3773,10 +3964,14 @@ function openCardView(id){
         </div>
         ${c.grade?'':(condBlurb(c.condition||'NM')?`<div class="cv-hint" style="margin-top:0">${esc(condBlurb(c.condition||'NM'))}</div>`:'')}
         <div class="cv-hint cv-policy" style="margin-top:0">${esc(COND_POLICY)}</div>
-        <button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups — we'll send them in chat</span><span class="ap-go">Ask ›</span></button>
+        ${c.bulk?'':`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups — we'll send them in chat</span><span class="ap-go">Ask ›</span></button>`}
         <div class="cv-price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="cv-was">$${c.marketPrice.toFixed(2)}</span>`:''}</div>
-        <button class="cta" ${soldOut?'disabled':''} onclick="addToCart('${c.id}');closeCardView()">${soldOut?'In your cart':'Add to cart'}</button>
-        <button class="cta-alt" onclick="makeOfferById('${c.id}')">💬 Make an offer</button>
+        ${c.bulk?'':`<button class="cta-alt" onclick="makeOfferById('${c.id}')">💬 Make an offer</button>`}
+        ${cvOthersHtml(c)}
+      </div>
+      <div class="cv-buybar">
+        <span class="cv-bb-p">S$${c.price.toFixed(2)}</span>
+        <button class="cta" ${soldOut||capped?'disabled':''} onclick="if(addToCart('${c.id}')!==false)closeCardView()">${soldOut?'In your cart':capped?PER_CARD_HINT:'Add to cart'}</button>
       </div>
     </div>`;
   // A card opened from the shop starts a fresh trail - it is never "inside"
@@ -3785,6 +3980,12 @@ function openCardView(id){
   document.getElementById('cardViewScrim').classList.add('show');
   document.getElementById('cardView').classList.add('show');
   cvSyncBack();
+}
+/* s31.3 one list: the same card in other versions / conditions (scanned or from the shelf), one tap away. */
+function cvOthersHtml(c){
+  const o=sameCardOthers(c).slice(0,8); if(!o.length) return '';
+  return '<div class="cv-hint" style="margin-top:10px;font-weight:800">Also in stock</div><div class="cv-tags" style="margin-top:4px">'+
+    o.map(x=>'<button class="cv-tag" style="cursor:pointer;border:0" onclick="openCardView(\''+esc(x.id)+'\')">'+esc([x.variance||'Normal',x.grade?('Graded '+x.grade):condShort(x.condition)].join(' · ')+' · $'+Number(x.price).toFixed(2))+'</button>').join('')+'</div>';
 }
 function closeCardView(){ CV_STACK=[]; cvSyncBack(); document.getElementById('cardViewScrim').classList.remove('show'); document.getElementById('cardView').classList.remove('show'); }
 
@@ -3901,12 +4102,15 @@ function stockImg(u){
   return base+'/low.webp'+query;
 }
 function stockImgFail(el){ try{ const s=document.createElement('span'); s.textContent='🃏'; el.replaceWith(s); }catch(e){} }
-/* One listing, read the same way whether it came from a set, a list or a search. */
+/* One listing, read the same way whether it came from a set, a list or a search.
+   s33.1: the card's English name (label) with an EN/JP tag; the printed Japanese name stays as a tooltip. */
+function stockLangOf(it){ it=it||{}; return String(it.lang_label||'')==='JP'||/^ja:/.test(String(it.card_id||''))?'JP':'EN'; }
+function stockLangTag(l){ return '<span class="sv-lt'+(l==='JP'?' jp':'')+'" title="'+(l==='JP'?'Japanese':'English')+' card">'+l+'</span>'; }
 function stockListingFrom(it, fallbackSet){
   it=it||{};
-  return {key:String(it.key||''), card_id:String(it.card_id||''), name:String(it.name||''),
-    set:String(it.set_name||it.set||fallbackSet||''), number:String(it.local_id==null?(it.number||''):it.local_id),
-    image:stockImg(it.image), variant:String(it.variant||''), condition:String(it.condition||''),
+  return {key:String(it.key||''), card_id:String(it.card_id||''), name:String(it.label||it.name_en||it.name||''), name_ja:String(it.name||''), lang:stockLangOf(it),
+    set:String(it.set_en||it.set_name||it.set||fallbackSet||''), number:String(it.local_id==null?(it.number||''):it.local_id),
+    image:stockImg(it.image), variant:String(it.variant||''), vlabel:String(it.variant_label||''), condition:String(it.condition||''),
     qty:parseInt(it.qty,10)||0, price:(it.price==null||!isFinite(Number(it.price)))?null:Number(it.price)};
 }
 
@@ -3948,10 +4152,10 @@ function setsBack(){ if(SV.mode==='list'){ go('store'); return; } setsShowList()
 async function setsShowList(){
   SV.mode='list'; SV.listed=true;
   const my=++SV.seq;
-  setsBody(setsHead('Sets & bulk','')+'<p class="note" style="text-align:left;margin:4px 4px 0">Loading sets…</p>');
+  setsBody(setsHead('Sets','')+'<p class="note" style="text-align:left;margin:4px 4px 0">Loading sets…</p>');
   const j=await stockGet('/api/sets?lang='+encodeURIComponent(SV.lang));
   if(my!==SV.seq || SV.mode!=='list') return;
-  if(!j.ok){ setsBody(setsHead('Sets & bulk','')+setsError('setsShowList()')); return; }
+  if(!j.ok){ setsBody(setsHead('Sets','')+setsError('setsShowList()')); return; }
   SV.sets=Array.isArray(j.sets)?j.sets:[];
   const eras=new Map();
   SV.sets.forEach((s,i)=>{ const e=String(s.era||'More sets'); if(!eras.has(e)) eras.set(e,[]); eras.get(e).push(i); });
@@ -3965,7 +4169,7 @@ async function setsShowList(){
         '<span class="chev">›</span></button>';
     });
   });
-  setsBody(setsHead('Sets & bulk','Sets with cards in stock')+
+  setsBody(setsHead('Sets','Sets with cards in stock')+
     '<button class="cta-alt" style="margin:0 0 12px" onclick="setsShowWant()">📝 Paste a list</button>'+
     (SV.sets.length?html:'<div class="empty"><div class="e-ic">📚</div><p>No sets with stock yet. Check back soon 🐾</p></div>'));
 }
@@ -3982,10 +4186,10 @@ async function openSetAt(i){
   SV.cards=(Array.isArray(j.cards)?j.cards:[]).map(c=>{
     const image=stockImg(c.image);
     const ls=(Array.isArray(c.listings)?c.listings:[])
-      .map(l=>stockListingFrom(Object.assign({}, l, {card_id:c.card_id, name:c.name, local_id:c.local_id, image:c.image}), SV.setName))
+      .map(l=>stockListingFrom(Object.assign({}, l, {card_id:c.card_id, name:c.name, name_en:c.name_en, label:c.label, lang_label:c.lang_label, local_id:c.local_id, image:c.image}), SV.setName))
       .filter(l=>l.key && l.qty>0 && l.price!=null)
       .sort((a,b)=>a.price-b.price);
-    return {name:String(c.name||''), number:String(c.local_id==null?'':c.local_id), image:image, best:ls[0]||null};
+    return {name:String(c.label||c.name_en||c.name||''), name_ja:String(c.name||''), lang:stockLangOf(c), number:String(c.local_id==null?'':c.local_id), image:image, best:ls[0]||null};
   });
   setsPaintSet();
 }
@@ -4001,16 +4205,17 @@ function setsPaintSet(){
 function setsTileHtml(c,i){
   const b=c.best;
   const inCart=b?STATE.cart.filter(x=>x.id===b.key).length:0;
-  const full=!b||inCart>=b.qty;
-  const sub=[c.number?'#'+c.number:'', b?[b.variant&&b.variant!=='normal'?b.variant:'', b.condition?condShort(b.condition):''].filter(Boolean).join(' · '):'']
+  const capped=!!b&&cartAtCap(b.name||c.name,b.number||c.number);
+  const full=!b||inCart>=b.qty||capped;
+  const sub=[c.number?'#'+c.number:'', b?[b.variant&&b.variant!=='normal'?(b.vlabel||b.variant):'', b.condition?condShort(b.condition):''].filter(Boolean).join(' · '):'']
     .filter(Boolean).join(' · ');
   const img=c.image?'<img src="'+esc(c.image)+'" alt="" loading="lazy" onerror="stockImgFail(this)">':'🃏';
   return '<div class="sv-tile'+(b?'':' off')+'">'+
     '<div class="sv-img">'+img+'</div>'+
-    '<div class="sv-nm">'+esc(c.name)+'</div>'+
+    '<div class="sv-nm" title="'+esc(c.name_ja&&c.name_ja!==c.name?c.name+' · '+c.name_ja:c.name)+'">'+esc(c.name)+stockLangTag(c.lang)+'</div>'+
     '<div class="sv-sub">'+esc(sub)+'</div>'+
     (b
-      ? '<div class="sv-row"><span class="price">'+money(b.price)+(inCart?' <span class="sv-no">'+inCart+' in cart</span>':'')+'</span>'+
+      ? '<div class="sv-row"><span class="price">'+money(b.price)+(inCart?' <span class="sv-no">'+inCart+' in cart'+(capped?' · '+PER_CARD_HINT:'')+'</span>':'')+'</span>'+
         '<button class="sv-add" aria-label="Add '+esc(c.name)+' to cart"'+(full?' disabled':'')+' onclick="setsAddAt('+i+')">+</button></div>'
       : '<div class="sv-row"><span class="sv-no">not in stock</span></div>')+
     '</div>';
@@ -4066,9 +4271,9 @@ async function setsCheckList(){
   setsPaintWant();
 }
 function setsCardRowHtml(l, action){
-  const meta=[l.set, l.number?'#'+l.number:'', [l.variant&&l.variant!=='normal'?l.variant:'', l.condition?condShort(l.condition):''].filter(Boolean).join(' · ')].filter(Boolean).join(' · ');
+  const meta=[l.set, l.number?'#'+l.number:'', [l.variant&&l.variant!=='normal'?(l.vlabel||l.variant):'', l.condition?condShort(l.condition):''].filter(Boolean).join(' · ')].filter(Boolean).join(' · ');
   return '<div class="sv-line"><div class="sv-th">'+(l.image?'<img src="'+esc(l.image)+'" alt="" loading="lazy" onerror="stockImgFail(this)">':'🃏')+'</div>'+
-    '<div class="sv-tx"><b>'+esc(l.name)+'</b><small>'+esc(meta)+'</small></div>'+
+    '<div class="sv-tx"><b>'+esc(l.name)+'</b>'+(l.lang?stockLangTag(l.lang):'')+'<small>'+esc(meta)+'</small></div>'+
     '<div class="sv-go">'+(l.price!=null?money(l.price):'')+(l.qty?'<small style="display:block;font-weight:500;color:var(--hint)">'+l.qty+' left</small>':'')+
     (action?'<div>'+action+'</div>':'')+'</div></div>';
 }
@@ -4107,13 +4312,15 @@ function setsAddAll(){
    counts the units of that key already in the cart. */
 function addBulkToCart(L, quiet){
   const say=m=>{ if(!quiet) ptToast(m); };
+  if(L && /^L:[^|]+\|/.test(String(L.key||''))) L=Object.assign({}, L, {key:'BK:'+String(L.key).slice(2)});   // s31.3: one-list key -> the key checkout knows
   if(!L || String(L.key||'').indexOf('BK:')!==0) return false;
   if(L.price==null || !isFinite(Number(L.price))){ say('That card has no price yet.'); return false; }
   const have=STATE.cart.filter(x=>x.id===L.key).length;
   if(have>=Number(L.qty||0)){ say(have ? 'You already have all the copies in stock in your cart.' : 'Sold out.'); return false; }
-  STATE.cart.push({id:String(L.key), name:String(L.name||'Card'), tier:'Bulk', price:Number(L.price),
+  if(cartAtCap(L.name,L.number)){ say(PER_CARD_HINT); return false; }
+  STATE.cart.push({id:String(L.key), name:String(L.name||'Card'), tier:'Card', price:Number(L.price),
     number:String(L.number||''), image:stockImg(L.image), bulk:true, set:String(L.set||''),
-    cond:[L.variant&&L.variant!=='normal'?L.variant:'', L.condition?condShort(L.condition):''].filter(Boolean).join(' · ')});
+    cond:[L.variant&&L.variant!=='normal'?(L.vlabel||L.variant):'', L.condition?condShort(L.condition):''].filter(Boolean).join(' · ')});
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
   sfx('add');
   updateCartDot();
@@ -4125,12 +4332,31 @@ function addBulkToCart(L, quiet){
 }
 
 /* ============ CART ============ */
+/* Per-card limit (server: perCardLimitHit_, Config max_per_card, default 4 every 30 days). The cart
+   stops at 4 of the same card (same name + number before the slash, like the server) so a
+   buyer finds out while shopping, not at checkout. Bundles don't count. The server still
+   has the final say (it also counts what they bought in the last 30 days). */
+const PER_CARD_MAX=4, PER_CARD_HINT='max 4 per person 🐾';
+function perCardKey(name,number){
+  const nm=String(name||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const num=String(number==null?'':number).split('/')[0].replace(/^0+(?=\d)/,'').trim().toLowerCase();
+  return nm?nm+'|'+num:'';
+}
+function cartSameCard(name,number){
+  const k=perCardKey(name,number); if(!k) return 0;
+  return STATE.cart.filter(x=>String(x.tier||'').toLowerCase()!=='bundle'&&perCardKey(x.name,x.number)===k).length;
+}
+function cartAtCap(name,number,tier){ return String(tier||'').toLowerCase()!=='bundle' && cartSameCard(name,number)>=PER_CARD_MAX; }
 function addToCart(id){
-  const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
-  if(!faceList(c).length&&!STATE.isAdmin) return;   // v13.28: no photo, not for sale (hidden from buyers anyway)
-  const inCart = STATE.cart.filter(x=>!x.bulk&&x.id===id).length;
-  if(inCart>=c.qty) return;
-  STATE.cart.push({id:c.id,name:c.name,tier:c.tier,price:c.price,number:c.number||'',image:c.image||''});
+  const c = STATE.inventory.find(x=>x.id===id); if(!c) return false;
+  if(!faceList(c).length&&!STATE.isAdmin) return false;   // v13.28: no photo, not for sale (hidden from buyers anyway)
+  const inCart = STATE.cart.filter(x=>x.id===id).length;
+  if(inCart>=c.qty) return false;
+  if(cartAtCap(c.name,c.number,c.tier)){ ptToast(PER_CARD_HINT); return false; }
+  STATE.cartErr=null;
+  // s31.3: a scanned card (c.bulk) goes in like any card; checkout sends its price (the Worker holds a copy)
+  STATE.cart.push(c.bulk?{id:c.id,name:c.name,tier:'Card',price:c.price,number:c.number||'',image:c.image||'',bulk:true,set:c.set||'',cond:[c.variance||'',condShort(c.condition)].filter(Boolean).join(' · ')}
+    :{id:c.id,name:c.name,tier:c.tier,price:c.price,number:c.number||'',image:c.image||''});
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
   sfx('add');
   updateCartDot(); renderStore();
@@ -4138,8 +4364,9 @@ function addToCart(id){
     const el=document.getElementById(id); if(!el) return;
     el.classList.remove('kick'); void el.offsetWidth; el.classList.add('kick');
   });
+  return true;
 }
-function removeFromCart(idx){ STATE.cart.splice(idx,1); updateCartDot(); renderCart(); renderStore(); }
+function removeFromCart(idx){ STATE.cart.splice(idx,1); STATE.cartErr=null; updateCartDot(); renderCart(); renderStore(); }
 function updateCartDot(){
   const d=document.getElementById('cartDot'); d.textContent=STATE.cart.length;
   d.classList.toggle('hidden',!STATE.cart.length);
@@ -4164,7 +4391,46 @@ function openCart(){
   document.getElementById('cartSheet').classList.add('show');
   if(STATE.cart.length) ensureReservedId();     // fire and forget
 }
-function closeCart(){ document.getElementById('scrim').classList.remove('show'); document.getElementById('cartSheet').classList.remove('show'); }
+function closeCart(){ STATE.cartErr=null; document.getElementById('scrim').classList.remove('show'); document.getElementById('cartSheet').classList.remove('show'); }
+/* Checkout trouble, shown INSIDE the cart with a button that fixes it (not a dead-end alert).
+   kind: limit (per_card_limit) | unpaid (too_many_unpaid) | retry (anything else). The server's
+   own words are shown only when they are plain sentences (cleanMsg); details go to the console. */
+function cartErrHtml(){
+  const e=STATE.cartErr; if(!e) return '';
+  const btn = e.kind==='limit' ? '<button class="cta" onclick="cartFixLimit()">Fix my cart</button>'
+    : e.kind==='unpaid' ? '<button class="cta" onclick="closeCart();go(\'orders\')">Go to my orders</button>'
+    : '<button class="cta" onclick="guard(this,checkout)">Try again</button>';
+  return '<div class="ck-err" role="alert"><div class="ck-err-m">'+esc(e.msg)+'</div>'+btn+'</div>';
+}
+/* Trim each named card to what the server says is still allowed ("· Pikachu ex: you can take 2 more"). */
+function cartFixLimit(){
+  const e=STATE.cartErr||{}, allow={};
+  String(e.msg||'').split('\n').forEach(l=>{
+    const m=l.match(/^\s*·\s*(.+?):\s*(?:you can take (\d+) more|you already have)/i);
+    if(m) allow[m[1].trim().toLowerCase()]=m[2]?Number(m[2]):0;
+  });
+  const seen={}; let cut=0;
+  const keep=STATE.cart.filter(c=>{
+    if(String(c.tier||'').toLowerCase()==='bundle') return true;
+    const nm=String(c.name||'').trim().toLowerCase();
+    const max=Object.prototype.hasOwnProperty.call(allow,nm)?allow[nm]:PER_CARD_MAX;
+    const k=perCardKey(c.name,c.number); seen[k]=(seen[k]||0)+1;
+    if(seen[k]>max){ cut++; return false; }
+    return true;
+  });
+  STATE.cart=keep; STATE.cartErr=null;
+  updateCartDot(); renderCart(); renderStore();
+  ptToast(cut?('took out '+cut+' extra cop'+(cut===1?'y':'ies')+' 🐾 you can check out now'):'your cart looks good now 🐾');
+}
+/* A server message is shown to a buyer only if it reads like a sentence: no JSON, HTML or HTTP codes. */
+function cleanMsg(m){
+  m=String(m==null?'':m).trim();
+  return (m && m.length<600 && !/^[\[{<]|HTTP \d|\bat [\w.]+ \(|Exception|undefined|null\b|":/.test(m)) ? m : '';
+}
+function buyerErr(r, fallback, where){
+  try{ console.warn('[FloofMart] '+(where||'request')+' failed', r); }catch(e){}
+  return cleanMsg(r&&r.message) || fallback;
+}
 function renderCart(){
   const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
   if(!STATE.cart.length){
@@ -4175,11 +4441,11 @@ function renderCart(){
  const nudge = STATE.openParcel
     ? `<div class="nudge">🧺 These join the box we're already holding for you — no extra postage.</div>`
     : `<div class="nudge">🧺 This starts your box. Pay for the cards now, choose delivery whenever you're ready.</div>`;
-  body.innerHTML = STATE.cart.map((c,i)=>
-    `<div class="crow"><div class="ci">${c.image?`<img src="${imgUrl(c.image,200)}" alt=""${c.bulk?' onerror="stockImgFail(this)"':''}>`:(EMOJI[c.tier]||'🃏')}</div>
+  body.innerHTML = cartErrHtml() + STATE.cart.map((c,i)=>
+    `<div class="crow"><div class="ci">${c.image?`<img src="${esc(imgUrl(c.image,200))}" alt=""${c.bulk?' onerror="stockImgFail(this)"':` data-w="200" data-emo="${esc(EMOJI[c.tier]||'🃏')}" onerror="thumbRetry(this)"`}>`:(EMOJI[c.tier]||'🃏')}</div>
       <div class="cn">${esc(c.name)}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.bulk
         ? esc([c.set,c.number?'#'+c.number:'',c.cond||''].filter(Boolean).join(' · '))
-        : (c.number?esc(c.number)+' · ':'')+esc(rarityLabel(c))}</div></div>
+        : (c.number?esc(c.number)+' · ':'')+esc(rarAbbr(c.rarity||c.tier,c.number))}</div>${cartAtCap(c.name,c.number,c.tier)?`<div class="ck-cap">${PER_CARD_HINT}</div>`:''}</div>
       <span class="cp">$${c.price.toFixed(2)}</span>
       <button class="rm" aria-label="Close" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
     `<p class="hold-hint cond-policy">${esc(COND_POLICY)}</p>` +
@@ -4193,7 +4459,7 @@ function renderCart(){
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
     <button class="cta" ${STATE.placing?'disabled':''} onclick="guard(this,checkout)">${STATE.placing?'Placing your order…':'Place order · $'+total.toFixed(2)}</button>
-<p class="hold-hint">No postage now. Your cards wait in your box 🧺 until you say send — then $${cfgNum(STATE.shipFlat,3).toFixed(2)} to deliver${fsMin?', or free once your box passes $'+fsMin.toFixed(2):''}. Collecting it yourself is always free.</p>`;
+${boxPicHtml(STATE.cart.length,cfgNum(STATE.shipFlat,3),'$')}<p class="bp-note">✨ keep shopping, one postage for all${fsMin?' · free over $'+fsMin.toFixed(0):''} · collecting is free</p>`;
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
@@ -4247,9 +4513,44 @@ async function confirmShip(){
       paynowName:r.paynowName||(STATE.payInfo&&STATE.payInfo.name)||'FloofMart TCG',
       paymentWindowMins:Number(r.paymentWindowMins||10) });
   }
-  else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||('Could not start shipping ('+(r.error||JSON.stringify(r).slice(0,120))+')'));
+  else (tg&&tg.showAlert?tg.showAlert:alert)(buyerErr(r,'🥺 we couldn’t set up delivery just now. give it another try in a moment 🐾','parcelDelivery'));
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
+/* s33.11 ALLOW MESSAGES (Bryan, 11 Oct): invoices and parcel updates come by Telegram DM, which Telegram allows only
+   when the buyer let the bot write to them. At the FIRST checkout, if Telegram doesn't already say so
+   (allows_write_to_pm) and Apps Script can't reach them (dmStatus -> dmHelloCore_), one line of why, then Telegram's
+   own Allow pop-up (requestWriteAccess). Allow or Cancel, the order goes ahead. My orders keeps a small
+   "turn on messages for updates · Allow" row until it works; old Telegram apps get the bot's Start link instead. */
+const DMA={canDm:null, asked:false};
+function tgAllowsWrite(){ try{ return !!(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.allows_write_to_pm===true); }catch(e){ return false; } }
+function dmStartLink(){ const m=/t\.me\/([A-Za-z0-9_]{3,40})/.exec(String(STATE.refLink||'')); return 'https://t.me/'+(m?m[1]:'FloofMartBot')+'?start=web'; }
+function dmRequest(withWhy){
+  return new Promise(res=>{
+    if(!tg||typeof tg.requestWriteAccess!=='function'){ res(false); return; }
+    const go=()=>{ try{ tg.requestWriteAccess(ok=>{ if(ok){ DMA.canDm=true; try{ api('dmStatus',{allowed:1}); }catch(e){} } paintDmRow(); res(!!ok); }); }catch(e){ res(false); } };
+    if(withWhy&&tg.showAlert) tg.showAlert('💌 we send your invoice and parcel updates here on Telegram. tap Allow on the next screen 🐾', go); else go();
+  });
+}
+async function dmAskOnce(){
+  if(DMA.asked) return; DMA.asked=true;
+  if(tgAllowsWrite()){ DMA.canDm=true; return; }
+  let st=null; try{ st=await api('dmStatus',{}); }catch(e){ st=null; }
+  if(st&&st.ok&&st.canDm){ DMA.canDm=true; return; }
+  DMA.canDm=false;
+  await dmRequest(true);
+}
+function dmRowHtml(){
+  if(DMA.canDm!==false) return '';
+  const can=!!(tg&&typeof tg.requestWriteAccess==='function');
+  return '<div class="dmrow" id="dmRow" role="status"><span>🔔 turn on messages for updates</span>'+(can?'<button type="button" class="dmrow-b" onclick="dmRequest(false)">Allow</button>'
+    :'<a class="dmrow-b" href="'+esc(dmStartLink())+'" target="_blank" rel="noopener" onclick="if(tg&&tg.openTelegramLink){event.preventDefault();tg.openTelegramLink(this.href);}">Open the bot · Start</a>')+'</div>';
+}
+function paintDmRow(){ const old=document.getElementById('dmRow'); const h=dmRowHtml(); const box=document.getElementById('oseg-orders'); if(old) old.remove(); if(h&&box) box.insertAdjacentHTML('afterbegin',h); }
+async function dmCheckOrders(){
+  if(DMA.canDm===true) return;
+  if(DMA.canDm===null){ if(tgAllowsWrite()){ DMA.canDm=true; return; } let st=null; try{ st=await api('dmStatus',{}); }catch(e){ st=null; } if(st&&st.ok&&typeof st.canDm==='boolean') DMA.canDm=st.canDm; }
+  paintDmRow();
+}
 async function checkout(){
   /* ONE order in flight at a time, tracked on STATE — not on the button.
      guard() only disables the button it was handed, and renderCart() builds a
@@ -4265,9 +4566,10 @@ async function checkout(){
     else (tg&&tg.showAlert?tg.showAlert:alert)('Your order is still going through — one moment 🐾');
     return;
   }
-  STATE.placing=true;
+  STATE.placing=true; STATE.cartErr=null;
   renderCart();                      // shows the disabled "Placing your order…"
   try {
+  if(!DMA.asked){ try{ await dmAskOnce(); }catch(e){} }   // s33.11: the Allow pop-up once, then the order goes ahead either way
   const sub0=STATE.cart.reduce((s,c)=>s+c.price,0);
   const cred0=STATE.useCredit?Math.min(STATE.credit,sub0):0;
   const tot0=sub0-cred0;
@@ -4278,7 +4580,6 @@ async function checkout(){
   if(rid) STATE.lastHaul={orderId:rid, items:snap.map(c=>({name:c.name,number:c.number||'',price:c.price,image:c.image||'',imageBack:c.imageBack||'',tier:c.tier||'',category:c.category||''}))};
   const pay=STATE.payInfo||{};
   const shownQr=!!(rid && tot0>0 && pay.mobile);
-  const warn=shownQr?'⚠️ DON\'T pay that QR — this order didn\'t go through and nothing was charged.\n\n':'';
   // Everything the QR needs is already here: payee, amount, and the reference
   // we reserved while they were reading the cart. Draw it now; the order is
   // still being written. The upload button stays locked until it confirms.
@@ -4366,7 +4667,7 @@ async function checkout(){
     let note='';
     if(goneNames.length) note=named+' just got claimed'+(left?' by someone else, so we took '+(goneNames.length>1?'them':'it')+' out.':' and that was your last item, so your cart is empty now.');
     else if(!bulkGone) note='A card just got claimed'+(left?' by someone else, so we took it out.':' and that was your last item, so your cart is empty now.');
-    if(bulkGone) note=(note?note+' ':'')+'Some bulk cards just sold \u2014 removed from your cart.';
+    if(bulkGone) note=(note?note+' ':'')+'Some cards just sold \u2014 removed from your cart.';
     if(left){
       const msg=note+' The rest of your cart is ready \u2014 tap checkout again. \ud83d\udc3e';
       tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
@@ -4397,15 +4698,21 @@ async function checkout(){
     updateCartDot();
     const parts=[];
     if(changed) parts.push('Price updated for '+changed+' card'+(changed===1?'':'s')+' \u2014 please check and pay again.');
-    if(dropped) parts.push(dropped+' bulk cop'+(dropped===1?'y is':'ies are')+' no longer in stock, so '+(dropped===1?'it was':'they were')+' taken out.');
+    if(dropped) parts.push(dropped+' cop'+(dropped===1?'y is':'ies are')+' no longer in stock, so '+(dropped===1?'it was':'they were')+' taken out.');
     if(!parts.length) parts.push(failed ? 'We couldn\'t check the new prices just now. Try again in a moment.' : 'Those prices are up to date now \u2014 tap checkout again.');
     const msg=parts.join(' ')+' \ud83d\udc3e';
     tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
     renderCart();
   } else if(r.error==='cart_too_big'){
     (tg&&tg.showAlert?tg.showAlert:alert)('That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');
-  } else if(r&&r.message){ (tg&&tg.showAlert?tg.showAlert:alert)(String(r.message)); }   // e.g. too_many_unpaid (v13.63.4): the server's own words
-  else { (tg&&tg.showAlert?tg.showAlert:alert)('Checkout error: '+(r&&(r.error||r.raw)?JSON.stringify(r.error||r.raw).slice(0,200):'unknown')+'. Try again in a sec.'); }
+  } else if(r.error==='per_card_limit'){
+    STATE.cartErr={kind:'limit', msg:buyerErr(r,'🐾 to keep cards fair for everyone, it’s max '+PER_CARD_MAX+' of the same card per person every 30 days\n\ntake the extra copies out of your cart and you’re good to go 💛','checkout')};
+  } else if(r.error==='too_many_unpaid'){
+    STATE.cartErr={kind:'unpaid', msg:buyerErr(r,'🐾 you already have orders waiting for payment\n\npay or cancel one of them in Orders first, then this cart is all yours 💌','checkout')};
+  } else {
+    STATE.cartErr={kind:'retry', msg:buyerErr(r,'🥺 we couldn’t place your order just now\n\nnothing was charged and your cart is still here. give it another go in a moment 🐾','checkout')};
+  }
+  if(STATE.cartErr && !document.getElementById('cartSheet').classList.contains('show')) openCart();
   } finally {
     STATE.placing=false;
     const cs=document.getElementById('cartSheet');
@@ -4428,12 +4735,22 @@ function showInvoiceSkeleton(){
       <div class="inv-row inv-total"><span>Total to pay</span><span>$${tot.toFixed(2)}</span></div>
     </div>
     <div class="paynow">
-      <div class="pn-title">Scan to pay by PayNow</div>
+      <div class="pn-bank"><b>🏦 Scan with your banking app (PayNow) — a normal camera shows only text</b><small>DBS/POSB, OCBC, UOB, PayLah!… · amount filled in</small></div>
       <div class="pn-qr"><div class="pn-qr-ph">Holding your cards<br><span>your QR code lands here</span></div></div>
     </div>
     <div class="skelcard" style="height:52px"></div>`;
   document.getElementById('invScrim').classList.add('show');
   document.getElementById('invSheet').classList.add('show');
+}
+/* s33.2: three pictured steps instead of a sentence (🐾 voice: amount · deadline, then what to do) */
+function payStepsHtml(inv, cur, deadlineMs){
+  const by=deadlineMs?new Date(deadlineMs).toLocaleString('en-SG',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):'';
+  return `<div class="pay-h"><span>💌 pay ${cur}${Number(inv.total||0).toFixed(2)}</span>${by?`<span>⏰ by ${esc(by)}</span>`:''}</div>
+      <div class="pay-steps"><div><i>📱</i>Scan the QR<small>amount filled in</small></div><div><i>✅</i>Check the name<small>${esc(inv.paynowName||'FloofMart TCG')}</small></div><div><i>🖼️</i>Upload proof<small>a screenshot</small></div></div>`;
+}
+/* "your box": one box, one postage, as a picture */
+function boxPicHtml(cards, postage, cur){
+  return `<div class="boxpic"><span class="bp-ic" aria-hidden="true">🧺</span><div class="bp-t"><span>your box</span><b>${cards} card${cards===1?'':'s'}</b></div><div class="bp-t"><span>postage later</span><b>${cur}${Number(postage||0).toFixed(Number(postage)%1?2:0)}</b></div></div>`;
 }
 function showInvoice(inv){
   INVOICE=inv; PAYPROOF=null;
@@ -4457,11 +4774,12 @@ function showInvoice(inv){
       <div class="inv-row inv-total"><span>Total to pay</span><span>$${inv.total.toFixed(2)}</span></div>
     </div>
     <div class="paynow">
-      <div class="pn-title">Scan to pay by PayNow</div>
+      <div class="pn-bank"><b>🏦 Scan with your banking app (PayNow) — a normal camera shows only text</b><small>DBS/POSB, OCBC, UOB, PayLah!… · amount filled in</small></div>
       <div class="pn-qr" id="pnQr"></div>
-      <div class="pn-num">Paying: <b>${inv.paynowName||'FloofMart TCG'}</b><br>
-        <span style="font-size:11.5px;color:#c2405e;font-weight:800">⚠️ Before you send, check your bank app shows this exact name.</span><br>
-        <span style="font-size:11px;color:var(--hint)">Reference: ${inv.orderId}</span></div>
+      ${payStepsHtml(inv,'$',noDeadline?0:Date.now()+(inv._resumeSecs!=null?inv._resumeSecs:mins*60)*1000)}
+      <div class="pn-num">Paying: <b>${esc(inv.paynowName||'FloofMart TCG')}</b><br>
+        <span style="font-size:11.5px;color:#c2405e;font-weight:800">🙏 before you send, check your bank app shows this exact name</span><br>
+        <span style="font-size:11px;color:var(--hint)">Reference: ${esc(inv.orderId)}</span></div>
       <div class="pn-note">The QR fills in the amount ($${inv.total.toFixed(2)}) and reference for you. Confirm the payee name matches, pay, then upload your screenshot below.</div>
     </div>
     <label class="upl" id="uplLabel">📎 Upload payment screenshot
@@ -4469,8 +4787,8 @@ function showInvoice(inv){
     </label>
     <div id="proofPreview"></div>
     <button class="cta" id="invSubmit" onclick="guard(this,submitProof)" disabled>Upload a screenshot to confirm</button>
-    <p class="note">Your cards are reserved. Once we verify payment we'll pack & ship — track it in Orders.</p>
-    <button class="cta-alt" onclick="closeInvoice()" style="margin-top:4px">Close — I'll pay later</button>`;
+    <p class="note">🧺 your cards wait in your box · we'll ask before sending</p>
+    <button class="cta-alt" onclick="closeInvoice()" style="margin-top:4px">Close, I’ll pay later</button>`;
   // Paint the invoice first, then draw the QR on the next frame. Generating it
   // inline holds back the whole sheet until it finishes.
   requestAnimationFrame(()=>renderPayQR(inv));
@@ -4653,10 +4971,13 @@ async function loadOrders(force){
     try{ const c=JSON.parse(localStorage.getItem(FM_CK+'orders')||'null'); if(c&&c.orders){ applyOrdersPayload(c); paintOrders(); } }catch(e){}
     if(!ORDERS_CACHE) list.innerHTML='<div class="skelcard" style="height:150px"></div>';
   }
+  // Buyers see a friendly line + Try again; the details go to the console only.
+  const oops='<div class="empty"><div class="e-ic">🥺</div><p>your orders are taking a nap<br>give it another try in a moment 🐾</p>'+
+    '<button class="cta-alt" style="max-width:220px;margin:12px auto 0" onclick="loadOrders(true)">Try again</button></div>';
   let r;
   try { r = await api('orders', STATE.ordersAll?{all:1}:{}); }
-  catch(e){ if(!ORDERS_CACHE) list.innerHTML='<div class="empty"><div class="e-ic">⚠️</div><p>Couldn\'t load orders.</p></div>'; return; }
-  if(!r || r.ok===false){ if(!ORDERS_CACHE) list.innerHTML='<div class="empty"><div class="e-ic">⚠️</div><p>Orders didn\'t load.<br><small style="opacity:.7;word-break:break-all">'+(r&&r.raw?('HTTP '+r.status+': '+r.raw):JSON.stringify(r).slice(0,400))+'</small></p></div>'; return; }
+  catch(e){ try{ console.warn('[FloofMart] orders failed', e); }catch(x){} if(!ORDERS_CACHE) list.innerHTML=oops; return; }
+  if(!r || r.ok===false){ try{ console.warn('[FloofMart] orders failed', r); }catch(x){} if(!ORDERS_CACHE) list.innerHTML=oops; return; }
   applyOrdersPayload(r); ORDERS_TS=Date.now();
   try{ localStorage.setItem(FM_CK+'orders',JSON.stringify(r)); }catch(e){}
   paintOrders();
@@ -4970,8 +5291,8 @@ function actionsHtml(m){
     const need=(p.freeShipMin||0)-(p.merchValue||0);
     acts.push('<div class="oact oact-go"><div class="oact-hd"><span class="oact-ic">📦</span><div><div class="oact-t">Your box is ready to send</div>'+
       '<div class="oact-s">'+b.cards+' card'+(b.cards===1?'':'s')+' · '+(fee<=0?'postage is free on this one':(need>0&&need<=15?'add $'+need.toFixed(2)+' more for free postage':'one postage fee for the lot'))+'</div></div></div>'+
-      '<div class="oact-2"><button class="oact-b" onclick="guard(this,()=>chooseDelivery(\'ship\',\''+p.id+'\'))">🚚 Ship to me<small>'+(fee<=0?'FREE':'$'+Number(fee).toFixed(2))+'</small></button>'+
-      '<button class="oact-b oact-b2" onclick="guard(this,()=>chooseDelivery(\'pickup\',\''+p.id+'\'))">🤝 Self-pickup<small>FREE</small></button></div></div>');
+      '<div class="oact-2"><button class="oact-b" onclick="guard(this,()=>chooseDelivery(\'ship\',\''+p.id+'\'))">🚚 Ship to me<small>'+(fee<=0?'free':'$'+Number(fee).toFixed(2))+'</small></button>'+
+      '<button class="oact-b oact-b2" onclick="guard(this,()=>chooseDelivery(\'pickup\',\''+p.id+'\'))">🤝 Self-pickup<small>free</small></button></div></div>');
   });
   return acts.slice(0,2).join('');
 }
@@ -5027,6 +5348,7 @@ function paintOrders(){
   const hb=document.getElementById('ohistBtn');
   if(hb) hb.classList.toggle('has', m.past.length>0||m.closed.length>0);
   buildBinder();
+  dmCheckOrders();   // s33.11 "turn on messages for updates · Allow"
 }
 
 /* ---------- one box, opened ---------- */
@@ -5060,7 +5382,7 @@ function paint_openBoxSheet(id){
     const p=b.parcel, sent=b.stage.key==='way'||b.stage.key==='done';
     const free=p&&p.shipFee===0;
     postage='<div class="bs-rc bs-rc-flat"><div><div class="bs-rc-id">🚚 Postage</div><div class="bs-rc-s">'+
-      (sent||free?'One fee for the whole box':'Charged once, when you send your box')+'</div></div><div class="bs-rc-r"><b>'+(sent||free?'FREE':'—')+'</b></div></div>';
+      (sent||free?'One fee for the whole box':'Charged once, when you send your box')+'</div></div><div class="bs-rc-r"><b>'+(sent||free?'free':'—')+'</b></div></div>';
   }
   const payIds=b.orders.filter(o=>OWNED_STATUSES.includes(o.status)).map(o=>o.id).concat(b.sh.filter(o=>OWNED_STATUSES.includes(o.status)).map(o=>o.id));
   const canShare=b.orders.some(o=>SHARE_STATUSES.includes(o.status));
@@ -5087,12 +5409,28 @@ function paint_openBoxSheet(id){
 /* Opens through the navigation stack, so the corner button goes BACK to
    wherever you came from instead of closing the whole panel. */
 function openBoxSheet(id){ cvGo(function(){ paint_openBoxSheet(id); }); }
+/* s33.11 (Bryan: "Request invoices" for all his orders said "we couldn’t send those"): each PDF takes seconds to
+   make, so asking for 8 in one call ran past the time limit even though some arrived. Now ONE order per call, in
+   order, with a progress line on the button; stops at once if we can't message them (or hit the hourly cap) and
+   shows the server's own words; failures are skipped and counted. */
 async function requestInvoices(ids, btn){
-  if(!ids||!ids.length) return;
-  await guard(btn, async()=>{
-    const r=await api('invoicePdf', ids.length===1?{orderId:ids[0]}:{orderIds:ids});
-    (tg&&tg.showAlert?tg.showAlert:alert)((r&&r.ok)?(r.message||'Sent to your Telegram 📄'):('Couldn\'t send those: '+((r&&(r.message||r.error))||'no response')));
-  });
+  if(!ids||!ids.length||(btn&&btn.disabled)) return;
+  const orig=btn?btn.innerHTML:'';
+  if(btn){ btn.disabled=true; btn.dataset.busy='1'; }
+  let ok=0, bad=0, stop=null;
+  try{
+    for(let i=0;i<ids.length;i++){
+      if(btn) btn.textContent='sending '+(i+1)+' of '+ids.length+' 📄';
+      let r=null; try{ r=await api('invoicePdf',{orderId:ids[i]}); }catch(e){ r=null; }
+      if(r&&r.ok){ ok++; continue; }
+      if(r&&(r.error==='dm_blocked'||r.error==='rate_limited')){ stop=r; break; }
+      bad++;
+    }
+  } finally { if(btn){ btn.disabled=false; btn.dataset.busy=''; btn.innerHTML=orig; } }
+  const n=k=>k+' invoice'+(k===1?'':'s');
+  if(stop){ (tg&&tg.showAlert?tg.showAlert:alert)((ok?'📄 sent '+n(ok)+' first.\n\n':'')+buyerErr(stop, stop.error==='dm_blocked'?'🥺 we couldn’t message you. open the bot chat, press Start, then try again 🐾':'that’s a lot of invoices. try again in a while 🐾','invoicePdf')); return; }
+  if(!ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🥺 we couldn’t make '+(ids.length===1?'that invoice':'those invoices')+' just now. give it another try in a moment, or ask us in Support 🐾'); return; }
+  (tg&&tg.showAlert?tg.showAlert:alert)('📄 sent '+n(ok)+' to your Telegram'+(bad?' · '+bad+' couldn’t be made — ask us in Support':'')+' 🐾');
 }
 
 /* ---------- Order history (top-right button) ----------
@@ -6129,18 +6467,10 @@ function saveHaul(){
 
 /* The reliable one inside Telegram: the bot sends them the photo, and from
    there it's a normal Telegram picture they can save or forward anywhere. */
-/* "nonjson" on its own says nothing useful. api() already keeps the HTTP status
-   and the first 400 characters of whatever came back instead of JSON — which is
-   almost always an HTML error page from the Worker or from Apps Script — so put
-   it on screen rather than hiding the one clue there is. */
+/* api() keeps the HTTP status and the first 400 characters of a non-JSON reply. That
+   clue goes to the console (buyerErr), never on a buyer's screen (UX review, 10 Oct). */
 function haulSendError(r){
-  if(!r) return 'Couldn’t send that — try again in a sec.';
-  if(r.error === 'nonjson'){
-    const raw = String(r.raw || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0,170);
-    return 'The server didn’t reply with JSON (HTTP ' + (r.status || '?') + ').' +
-           (raw ? '\n\n' + raw : '\n\nEmpty response.');
-  }
-  return r.message || r.error || 'Couldn’t send that — try again in a sec.';
+  return buyerErr(r, '🥺 we couldn’t send your picture just now. give it another try in a moment 🐾', 'haulImage');
 }
 async function sendHaulToTelegram(btn){
   if(!HAUL || !HAUL.jpeg) return;
@@ -6504,7 +6834,7 @@ function paint_viewInvoice(id){
         '<div class="rnm">'+esc(it.name)+'</div>'+
         '<div class="rsub">'+(void_
           ? ('↩️ Refunded'+(it.refundMethod?' · '+esc(it.refundMethod):''))
-          : [esc(it.number||''),esc(rarityLabel(it))].filter(Boolean).join(' · '))+'</div>'+
+          : [esc(it.number||''),esc(rarAbbr(it.rarity||it.tier,it.number))].filter(Boolean).join(' · '))+'</div>'+
       '</div>'+
       '<div class="ramt">'+money(it.price)+'</div>'+
     '</div>'+
@@ -6613,7 +6943,7 @@ async function getPdf(id,btn){
   await guard(btn, async()=>{
     const r=await api('invoicePdf',{orderId:id});
     const m=(r&&r.ok)?(r.message||'Sent to your Telegram 📄')                     
-      :('Couldn\'t send that: '+((r&&(r.message||r.error))||'no response'));
+      :buyerErr(r,'🥺 we couldn’t send that just now. give it another try in a moment 🐾','invoicePdf');
     (tg&&tg.showAlert?tg.showAlert:alert)(m);
   });
 }
@@ -6823,19 +7153,17 @@ function gateHaptics(){
 }
 /* ============ GUIDES ============ */
 const GUIDES={
+  /* First visit: 3 short steps (UX review, 10 Oct; was 6). The rest lives in the other guides + Help. */
   start:{title:'Welcome to FloofMart',steps:[
-    {ic:'🐑',t:'Hello!',b:'FloofMart is a Pokémon card shop that lives inside Telegram. Browsing, paying and tracking all happen right here — there is no other website to visit.'},
-    {ic:'🧺',t:'We keep a box for you',b:'Every card you buy goes into your box and waits there. You pay postage <b>once</b>, whenever you decide to send it — not once per order.'},
-    {ic:'🎯',t:'Drops',b:'We post cards in the channel and the first person to comment <b>claim</b> wins it. Press Start on the bot first, or we can’t send you the invoice.'},
-    {ic:'💳',t:'You earn credit',b:'{{RC}} back for every {{RT}} you pay. It comes off your total automatically at checkout — nothing to remember.'},
-    {ic:'🎁',t:'Bring a friend, both win',b:'When they spend {{REFMIN}}+, <b>you each get {{REFC}} credit</b>. Your own link is<br><b>{{REF}}</b><br><button class="wsug" style="margin-top:10px" onclick="shareInvite()">🔗 Share my link</button> <button class="wsug" style="margin-top:10px" onclick="copyInvite(this)">Copy</button>'},
-    {ic:'🆘',t:'Stuck at any point?',b:'Help &amp; Support is in the menu. A real person reads it.'}
+    {ic:'🧺',t:'We keep a box for you',b:'Every card you buy waits in your box. You pay postage <b>once</b>, whenever you decide to send it, or collect it for free.'},
+    {ic:'🎯',t:'Drops in the channel',b:'Comment <b>claim</b> under a card to get it. Press Start on the bot first, so your invoice can reach you.'},
+    {ic:'🎁',t:'Credit for you and a friend',b:'{{RC}} back for every {{RT}} you pay. When a friend spends {{REFMIN}}+, <b>you each get {{REFC}}</b>.<br><button class="wsug" style="margin-top:10px" onclick="shareInvite()">🔗 Share my link</button><br><span style="font-size:12px;color:var(--hint)">Stuck? Help &amp; Support is in the menu 🐾</span>'}
   ]},
   buy:{title:'How buying works',steps:[
     {ic:'🛒',t:'Add to cart',b:'Tapping <b>+</b> doesn’t hold a card for you — checking out does. If someone beats you to it, we’ll tell you before you pay.'},
     {ic:'💳',t:'Pay for the cards',b:'Scan the PayNow QR, then send us the screenshot. You get 10 minutes. <b>No postage is charged here.</b>'},
-    {ic:'✅',t:'We check it',b:'Once your payment is confirmed, your cards move into your box 🧺 — it’s in the Orders tab.'},
-    {ic:'🧺',t:'Keep shopping',b:'Anything else you buy joins the same box. That’s the point — one postage fee however many times you shop.'},
+    {ic:'✅',t:'We check it',b:'Paid cards go into your box 🧺 (Orders tab).'},
+    {ic:'🧺',t:'Keep shopping',b:'One box, one postage, however often you shop.'},
     {ic:'🚚',t:'Send it when you’re ready',b:'Choose 🚚 delivery or 🤝 collect it yourself for free. Spend enough in one box and delivery is free too.'},
     {ic:'↩️',t:'Changed your mind?',b:'Help &amp; Support, with your order number and which cards. We handle refunds by hand.'}
   ]},
@@ -6884,6 +7212,7 @@ function gdSync(){
   document.querySelectorAll('#gdDots .gd-dot').forEach((d,k)=>d.classList.toggle('on',k===GD.i));
   const b=document.getElementById('gdNext');
   if(b) b.textContent=(GD.i>=GD.n-1)?'Got it 🐾':'Next';
+  const sk=document.getElementById('gdSkip'); if(sk) sk.style.visibility=(GD.i>=GD.n-1)?'hidden':'';
 }
 function guideNext(){
   const t=document.getElementById('gdTrack'); if(!t) return;
@@ -6896,7 +7225,15 @@ function closeGuide(){
 }
 // First visit only — never nags anyone twice.
 function maybeFirstRun(){
-  try{ if(!localStorage.getItem('fm_guide_start')) setTimeout(()=>openGuide('start'),900); }catch(e){}
+  // Never on top of something they've already opened (cart, a card, an invoice): wait until
+  // the screen is clear, and give up quietly after a minute (they'll get it next visit).
+  let tries=0;
+  const tryOpen=()=>{
+    try{ if(localStorage.getItem('fm_guide_start')) return; }catch(e){ return; }
+    if(document.querySelector('.sheet.show, .cardview.show, .scrim.show')){ if(++tries<30) setTimeout(tryOpen,2000); return; }
+    openGuide('start');
+  };
+  setTimeout(tryOpen,900);
 }
 /* ============ PC MODE (18b) ============ */
 /* tdesktop and macos are the NATIVE desktop apps -- they cannot be a phone, so
@@ -7112,6 +7449,8 @@ function zoomReset(){ ZM.scale=1; ZM.x=0; ZM.y=0; zoomApply(); }
 function openZoom(src){
   if(!src) return;
   const w=document.getElementById('zoomWrap'), img=document.getElementById('zoomImg');
+  img.dataset.retried=''; img.dataset.keep='1'; img.dataset.w='1600'; img.classList.remove('img-ph');
+  img.setAttribute('onerror','thumbRetry(this)');
   img.src=src; zoomReset(); w.classList.add('show');
   if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 }
@@ -7495,7 +7834,7 @@ function adIn(html){
   const el=document.getElementById('ad-in'); if(!el) return;
   // Consignment has two parts: people & requests, and the rate tables.
   if(AD_TAB==='consign'&&!AD.cur) html=ptTabs([['people','People & requests'],['rates','Rates']],AD.csub,'adCsub')+html;
-  if(AD_TAB==='shelf') html=ptTabs([['health','Stock health'],['lots','📍 Lots']],AD.ssub,'adSsub')+html;
+  if(AD_TAB==='shelf') html=ptTabs([['health','Stock health'],['lots','🗄 Box Shelf']],AD.ssub,'adSsub')+html;
   el.innerHTML=html;
 }
 function adCsub(t){ AD.csub=t; AD.cur=null; adLoad(); }
@@ -7642,7 +7981,7 @@ function adBoxHtml(b){
   const to=b.delivery==='ship'?`<b>${esc(b.name||'—')}</b><div>${esc(b.address||'(no address)')}</div>${b.phone?'<div>📞 '+esc(b.phone)+'</div>':''}`:b.delivery==='pickup'?esc(b.pickupNote||'Self-pickup'):'';
   h+=adFacts([['Buyer',buyer],['Ship to',b.delivery==='ship'?to:''],['Pickup',b.delivery==='pickup'?to:''],['Postage',post],['Age',b.days+' day'+(b.days===1?'':'s')],['Value',adMoney(b.value)]]);
   h+=adBoxActions(b);
-  if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">📍 Pull from</div>`+lotSortLines(b.picks).map(x=>`<div style="font-size:13px;padding:2px 0;display:flex;gap:8px;align-items:center">${adThumb(x.card,30)}<span><b>${x.lot?esc(x.lot):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</span></div>`).join('');
+  if(b.picks&&b.picks.some(x=>x.lot)) h+=`<div class="pt-h">Pull from</div>`+lotSortLines(b.picks).map(x=>`<div style="font-size:13px;padding:2px 0;display:flex;gap:8px;align-items:center">${adThumb(x.card,30)}<span><b>${x.lot?esc(adPlace(x.lot)):'<span class="pt-neg">no lot</span>'}</b> · ${x.n>1?'<b>'+x.n+'×</b> ':''}${adLotCard(x.card)}</span></div>`).join('');
   h+=`<div class="pt-h">Pack list · ${b.cards} card${b.cards===1?'':'s'} · $${Number(b.value||0).toFixed(2)}</div>`;
   // every card gets a sleeve; only cards over $3 their own toploader (a bundle's price is split over its cards)
   let units=0, top=0;
@@ -7671,7 +8010,7 @@ function adPackSupplies(cards,delivery,top){
 function adPackWhere(ps){
   if(!ps||!ps.length) return '';
   const lots=ps.filter(x=>x.lot), none=ps.filter(x=>!x.lot).reduce((s,x)=>s+x.n,0), many=ps.reduce((s,x)=>s+x.n,0)>1;
-  return `<div class="ad-where">${lots.map(x=>`📍 <b>${esc(x.lot)}</b>${many?' ×'+x.n:''}`).join(' · ')}${none?`${lots.length?' · ':''}<span class="pt-neg">❓ ${many?none+'× ':''}not in a lot</span>`:''}</div>`;
+  return `<div class="ad-where">${lots.map(x=>`<b>${esc(adPlace(x.lot))}</b>${many?' ×'+x.n:''}`).join(' · ')}${none?`${lots.length?' · ':''}<span class="pt-neg">❓ ${many?none+'× ':''}not in a lot</span>`:''}</div>`;
 }
 /* The box's own buttons. Same server code as Telegram's /ship and /collected;
    the server re-checks everything, these only hide buttons that can't work. */
@@ -8083,11 +8422,24 @@ function adMoneyHtml(m){
 async function adLedgerToggle(){
   AD.ledOpen=!AD.ledOpen;
   if(!adXSet('ad-ledger',AD.ledOpen,adLedgerHtml(AD.led))) adPaintMoney();
-  if(AD.ledOpen){ const r=await api('adminLedger',{}).catch(e=>({ok:false,error:String(e&&e.message||e)})); AD.led=r; if(AD.ledOpen&&!adXSet('ad-ledger',true,adLedgerHtml(r))) adPaintMoney(); }
+  if(AD.ledOpen){ const r=await adLedgerFetch(); if(AD.ledOpen&&!adXSet('ad-ledger',true,adLedgerHtml(r))) adPaintMoney(); }
 }
+/* s33.10: one Ledger read for the Mini App and the Desk. Never throws, never hangs:
+   an error or 45 s without an answer comes back as {ok:false} (shown with Try again).
+   A read already on its way is shared, not sent twice. */
+const AD_LED_WAIT=45000;   // AD.ledWait overrides it (tests)
+function adLedgerFetch(){
+  if(AD.ledP) return AD.ledP;
+  let to;
+  const late=new Promise(res=>{ to=setTimeout(()=>res({ok:false,error:'timeout',message:'No answer after 45 s. Try again.'}),AD.ledWait||AD_LED_WAIT); });
+  const ask=Promise.resolve().then(()=>api('adminLedger',{})).then(r=>(r&&typeof r==='object')?r:{ok:false,error:'empty'},e=>({ok:false,error:'network',message:String(e&&e.message||e||'')||undefined}));
+  AD.ledP=Promise.race([ask,late]).then(r=>{ clearTimeout(to); AD.ledP=null; AD.led=r; return r; });
+  return AD.ledP;
+}
+function adLedgerRetry(){ AD.led=null; if(!adXSet('ad-ledger',true,adLedgerHtml(null))) adPaintMoney(); adLedgerFetch().then(r=>{ if(AD.ledOpen&&!adXSet('ad-ledger',true,adLedgerHtml(r))) adPaintMoney(); }); }
 function adLedgerHtml(r){
   if(!r) return '<p class="note" style="text-align:left">Loading the Ledger…</p>';
-  if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p>`;
+  if(!r.ok) return `<p class="pt-err">${esc(ptErr(r))}</p><button class="pt-mini" type="button" onclick="adLedgerRetry()">Try again</button>`;
   const S=r.sales||{}, row=(t,s,v,neg)=>`<div class="pt-row"><div class="l"><div class="t">${t}</div>${s?`<div class="s">${s}</div>`:''}</div><div class="r ${neg?'pt-neg':''}">${v}</div></div>`;
   // v13.48 accounting review: stock bought is inventory until it sells (cost of cards sold), not a cost
   const acc=r.netProfit!=null, I=r.inventory||{};
@@ -8095,6 +8447,10 @@ function adLedgerHtml(r){
   if(acc){ h+=row('Cost of cards sold','what the cards you sold cost you','−'+adMoneyStr(S.cogs||0),true);
     h+=row('Gross profit',S.net>0?Math.round((S.grossProfit||0)/S.net*100)+'% of net sales':'',adMoneyStr(S.grossProfit||0)); }
   if(r.income) h+=row('Other income (Ledger)','',adMoneyStr(r.income));
+  if(!(r.rows||[]).length){   // s33.10: an empty Ledger tab = a short line, not a wall of $0
+    h+=`<p class="note" style="text-align:left">No Ledger lines yet ${adQ('Add costs as lines in the Ledger tab of the Sheet. They show here.')}</p>`;
+    return h;
+  }
   const types=(r.byType||[]).filter(x=>!acc||x.k!=='Inventory');
   h+=row(acc?'Costs (Ledger, not stock)':'Costs (Ledger)',types.map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · ')+(!acc&&S.buybacks?` · buybacks ${adMoneyStr(S.buybacks)}`:''),'−'+adMoneyStr(acc?r.expenses:r.costs+(S.buybacks||0)),true);
   const PK=r.packing;   // v13.50.3: what parcels actually used (PackLog), part of the costs above
@@ -8105,13 +8461,14 @@ function adLedgerHtml(r){
     h+=row('💵 Cash so far',C?`in ${adMoneyStr(C.in)} (cards ${adMoneyStr(C.sales)}${C.fees?' · delivery fees '+adMoneyStr(C.fees):''}${C.income?' · other '+adMoneyStr(C.income):''}) · out ${adMoneyStr(C.out)} (Ledger ${adMoneyStr(C.ledger)}${C.buybacks?' · cash buybacks '+adMoneyStr(C.buybacks):''}${C.consignors?' · consignors '+adMoneyStr(C.consignors):''}${C.postage?' · postage '+adMoneyStr(C.postage)+(C.postageEst?' ('+C.postageEst+' estimated)':''):''})`:`in ${adMoneyStr(S.cashIn||0)} · out ${adMoneyStr(r.costs+(S.buybacks||0))}`,adMoneyStr(r.net),r.net<0); }
   else h+=row(r.net>=0?'✅ Net profit':'❌ Net so far','Net sales + other income − costs',adMoneyStr(r.net),r.net<0);
   if((r.byWho||[]).length) h+=row('Paid by',(r.byWho||[]).map(x=>esc(x.k)+' '+adMoneyStr(x.amount)).join(' · '),'');
-  h+=`<p class="note" style="text-align:left;margin:8px 0 4px">By category</p>`+(r.byCat||[]).map(x=>row(esc(x.k),'',adMoneyStr(x.amount),true)).join('');
-  h+=`<p class="note" style="text-align:left;margin:8px 0 4px">Every Ledger line (${(r.rows||[]).length})</p>`+(r.rows||[]).map(x=>row(
+  // s33.2: the two long lists open from a chip (no split by where the cards came from any more)
+  h+=`<details class="pt-det" style="margin-top:8px"><summary><span class="pt-chip">📂 By category ›</span></summary>`+(r.byCat||[]).map(x=>row(esc(x.k),'',adMoneyStr(x.amount),true)).join('')+`</details>`;
+  h+=`<details class="pt-det"><summary><span class="pt-chip">📒 Ledger · ${(r.rows||[]).length} line${(r.rows||[]).length===1?'':'s'} ›</span></summary>`+(r.rows||[]).map(x=>row(
       esc(x.notes||x.category||x.type),
       [esc(x.type)+(x.category?' · '+esc(x.category):''), x.date?new Date(x.date).toLocaleDateString([], {day:'numeric',month:'short',year:'numeric'}):'no date',
        (x.who||[]).map(w=>esc(w.name)+' '+adMoneyStr(w.amount)).join(', '), x.resources?esc(x.resources):'', x.splitOff?'⚠️ split doesn’t add up':''].filter(Boolean).join(' · '),
-      (x.income?'':'−')+adMoneyStr(x.amount),!x.income)).join('');
-  if(r.undated) h+=`<p class="note" style="text-align:left">${r.undated} line${r.undated>1?'s have':' has'} no date, so ${r.undated>1?'they only count':'it only counts'} here and in the all-time /pnl (not in a month).</p>`;
+      (x.income?'':'−')+adMoneyStr(x.amount),!x.income)).join('')+`</details>`;
+  if(r.undated) h+=`<p class="note" style="text-align:left">${r.undated} line${r.undated>1?'s':''} with no date ${adQ('A line with no date only counts here and in the all-time /pnl, not in a month.')}</p>`;
   return h;
 }
 /* v13.49.1 🏷 Prices: your stock against its break-even, as a whole (bundles count as one
@@ -8145,7 +8502,7 @@ function adPhSub(){
   const r=AD.ph; if(!r) return 'Checking…';
   const T=r.totals, n=(r.look||[]).length+(r.more||0);
   const np=(r.needPrice||[]).length;
-  return (T.cushion>=0?`<b>$${T.cushion.toFixed(2)}</b> above break-even`:`<b class="pt-neg">$${Math.abs(T.cushion).toFixed(2)} below break-even</b>`)+(n?` · <span class="pt-neg">${n} to look at</span>`:' · all fine')+(np?` · <span class="pt-neg">${np} new card${np===1?' needs':'s need'} a price</span>`:'');
+  return (T.cushion>=0?`<b>${adSgd(T.cushion)}</b> above break-even`:`<b class="pt-neg">${adSgd(Math.abs(T.cushion))} below break-even</b>`)+(n?` · <span class="pt-neg">${n} to look at</span>`:' · all fine')+(np?` · <span class="pt-neg">${np} new card${np===1?' needs':'s need'} a price</span>`:'');
 }
 function adPhRowHtml(){
   if(!AD.ph) setTimeout(()=>adPhLoad(),0);
@@ -8155,22 +8512,30 @@ function adPhToggle(){ AD.phOpen=!AD.phOpen; adXSet('ad-ph',AD.phOpen,adPhHtml()
 function adPhHtml(){
   const r=AD.ph; if(!r) return '<p class="note" style="text-align:left">Checking prices…</p>';
   const T=r.totals, m=v=>'$'+Number(v).toFixed(2), pc=v=>Math.round(v*100)+'%', P=t=>`<p class="note" style="text-align:left;margin:0 0 6px">${t}</p>`;
-  let h=P(`Everything you own that’s for sale (${T.cards} cards${T.bundles?' + '+T.bundles+' bundle'+(T.bundles===1?'':'s'):''}) is listed at <b>${m(T.listed)}</b>. To cover what it cost plus running costs and losses it needs <b>${m(T.breakEven)}</b>. The difference is your cushion: <b>${T.cushion>=0?m(T.cushion)+' to spare':m(-T.cushion)+' short'}</b>.`);
-  h+=P(`Markup ${pc(T.markup)} over cost · break-even needs ${pc(T.markupNeedBE)} · paying your time too needs ${pc(T.markupNeedWorth)}.`);
+  const L=r.look||[], nLook=L.length+(r.more||0);
+  // s33.2: the bar answers "am I OK?" at a glance; the words sit behind the "?"
+  let h=`<div class="pt-ph-h"><span class="t">🏷 Prices · ${T.cards} card${T.cards===1?'':'s'}${T.bundles?', '+T.bundles+' bundle'+(T.bundles===1?'':'s'):''}</span>${nLook?`<span class="pt-tag warn">${nLook} to look at</span>`:'<span class="pt-tag ok">✓ All fine</span>'}</div>`;
+  const over=T.cushion>=0, whole=Math.max(Number(T.listed)||0,Number(T.breakEven)||0)||1, w=v=>Math.max(0,Math.min(100,Math.round(Number(v)/whole*1000)/10));
+  h+=`<div class="pt-big">Listed for <b>${adSgd(T.listed)}</b></div>`;
+  h+=`<div class="pt-cush" role="img" aria-label="Break-even ${adSgd(T.breakEven)}, ${over?'cushion '+adSgd(T.cushion):'short '+adSgd(-T.cushion)}"><i style="width:${w(over?T.breakEven:T.listed)}%"></i><i class="${over?'c':'s'}" style="width:${w(Math.abs(T.cushion))}%"></i></div>`;
+  h+=`<div class="pt-cushlg"><span><i></i>Needed to break even <b>${adSgd(T.breakEven)}</b></span><span class="${over?'c':'s'}"><i></i>${over?'Cushion':'Short'} <b>${adSgd(Math.abs(T.cushion))}</b></span>${adQ('Everything you own that’s for sale, at your prices, against what it needs to cover its cost plus running costs and losses. The difference is your cushion.')}</div>`;
+  h+=`<div class="pt-tiles"><div class="pt-tile"><span>Markup</span><b>${pc(T.markup)}</b></div><div class="pt-tile"><span>Break-even needs</span><b>${pc(T.markupNeedBE)}</b></div><div class="pt-tile"><span>With your time</span><b>${pc(T.markupNeedWorth)}</b></div></div>`;
   h+=adNpHtml(r);
-  if(T.cheapUnder) h+=P(`🧩 ${T.cheapUnder} cheap card${T.cheapUnder===1?' is':'s are'} priced under break-even. That’s fine: they sell best as extras in a lot (<a href="#" onclick="adTab('bundles');return false">📦 Bundles</a>) and the cushion covers them.`);
-  const L=r.look||[];
-  if(!L.length) h+=P('✅ Nothing to look at.');
-  else {
-    h+=`<div class="pt-h" style="margin-top:8px">To look at <span class="pt-tag warn">${L.length+(r.more||0)}</span></div>`+P('Cards worth more than $'+Number(r.cheapMax||6)+' (and bundles) priced under break-even. Tap the price to raise it to break-even, or <b>Leave it</b> if it’s low on purpose: it stays hidden until its price changes.');
+  if(T.cheapUnder) h+=`<div><span class="pt-chip">🧩 ${T.cheapUnder} cheap card${T.cheapUnder===1?'':'s'} under break-even</span>${adQ('That’s fine: they sell best as extras in a lot (📦 Bundles) and the cushion covers them.')}</div>`;
+  if(L.length){
+    h+=`<div class="pt-h" style="margin-top:10px">To look at <span class="pt-tag warn">${nLook}</span>${adQ('Cards worth more than $'+Number(r.cheapMax||6)+' (and bundles) priced under break-even. Tap the price to raise it, or Leave it if it’s low on purpose: it stays hidden until its price changes.')}</div>`;
     h+=L.map(c=>`<div class="pt-row" data-k="${esc(c.id)}"><div class="l"><div class="t">${c.bundle?'📦 ':''}${esc(c.name)}${c.qty>1?' ×'+c.qty:''}</div><div class="s">now ${m(c.price)} · break-even ${m(c.breakEven)}${c.level==='abs'?' · <span class="pt-neg">under what it cost ('+m(c.absFloor)+')</span>':''}${c.status!=='available'?' · '+esc(c.status.replace('_hold','').replace('drop','in a drop').replace('auction','in an auction')):''}</div></div>`+
       `<div class="r" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="pt-mini pri" aria-label="Raise ${esc(c.name)} to ${m(c.raiseTo)}" onclick="adPhRaise(this,['${esc(c.id)}'])">${m(c.raiseTo)}</button><button class="pt-mini" onclick="adPhKeep(this,'${esc(c.id)}')">Leave it</button></div></div>`).join('');
-    if(r.more) h+=P(`…and ${r.more} more (/pricecheck in Telegram).`);
+    if(r.more) h+=P(`…and ${r.more} more (/pricecheck)`);
     if(L.length>1) h+=`<div class="ev-foot"><button class="pt-mini" onclick="adPhRaise(this,null)">Raise all ${L.length} to break-even</button></div>`;
   }
   h+=adHowHtml(r.how,true);
   return h;
 }
+/* s33.2: S$1,351 in headlines (cents only under S$100); a "?" that opens its note in place (Mini App + Desk alike) */
+function adSgd(v){ const n=Number(v)||0, a=Math.abs(n); return (n<0?'−':'')+'S$'+(a>=100?Math.round(a).toLocaleString('en-US'):a.toFixed(2)); }
+function adQ(t){ return `<button type="button" class="pt-q" aria-expanded="false" aria-label="What is this?" onclick="adQT(this)">?</button><span class="pt-qt" hidden>${esc(t)}</span>`; }
+function adQT(b){ const n=b.nextElementSibling; if(!n) return; n.hidden=!n.hidden; b.setAttribute('aria-expanded',String(!n.hidden)); }
 /* "How this works": ONE explanation of the cost / break-even maths, shared by 🏷 Prices and
    📦 Bundles so both screens say the same thing with the same live numbers. Folded by default. */
 function adHowHtml(w,hints){
@@ -8181,7 +8546,7 @@ function adHowHtml(w,hints){
     P(`<b>Break-even</b> = cost + ${pc(w.L)} running costs${man.L?' (set in Config)':' (software, fees and other costs in the Ledger)'} + ${pc(w.R)} losses (scams, write-offs) + packing${w.pack?` ($${Number(w.pack).toFixed(2)} a card: a sleeve and a share of the mailer, from what parcels really use; + a toploader for cards over $3)`:''}. Sell under it and the sale doesn’t pay its share of the shop’s costs. A bundle’s break-even is its cards added up, packing once.`)+
     P(`<b>Under what it cost</b> (red) = cost + packing only: you lose money on the card itself.`)+
     P(`<b>Your time</b> = $${Number(w.hourly||0).toFixed(0)}/hour × ${Number(w.minSingle||0)} min to sell a card alone${w.minFiller!=null?', '+w.minFiller+' min as a lot extra':''}. It decides which cards make good lot extras; it’s never added to prices.`)+
-    (hints?P(`The same check appears as a small note while a price is being set: an offer, a drop price, an auction starting bid (with few bidders it often sells at the starting bid) or a price edit. Cheap cards (worth $6 or less) and consigned cards never get a note. Nothing changes a price unless you tap it.`):'')+`</details>`;
+    (hints?`<p class="note" style="text-align:left;margin:0 0 6px">Hints while you set a price ${adQ('A small note appears while a price is being set: an offer, a drop price, an auction starting bid (with few bidders it often sells at the starting bid) or a price edit. Cheap cards (worth $6 or less) and consigned cards never get one. Nothing changes a price unless you tap it.')}</p>`:'')+`</details>`;
 }
 async function adPhRaise(btn,ids){
   const L=(AD.ph&&AD.ph.look)||[], go=L.filter(c=>!ids||ids.indexOf(c.id)>=0); if(!go.length) return;
@@ -8201,8 +8566,8 @@ async function adPhRaise(btn,ids){
 function adNpHtml(r){
   const L=r.needPrice||[]; if(!L.length) return '';
   const P=t=>`<p class="note" style="text-align:left;margin:0 0 6px">${t}</p>`;
-  return `<div class="pt-h" style="margin-top:8px">🔎 New cards that need a price <span class="pt-tag warn">${L.length}</span></div>`+
-    P('PriceCharting couldn’t match these for sure, so they’re off sale. Type a price to put one on sale, or fix its name / number / set in the Sheet and ask again.')+
+  return `<div class="pt-h" style="margin-top:8px">🔎 New cards need a price <span class="pt-tag warn">${L.length}</span></div>`+
+    `<div style="margin:0 0 6px"><span class="pt-chip">Off sale · no match</span>${adQ('PriceCharting couldn’t match these for sure. Type a price to put one on sale, or fix its name, number or set and ask again.')}</div>`+
     L.map(c=>`<div class="pt-row" data-k="np-${esc(c.id)}"><div class="l"><div class="t">${esc(c.name)}${c.qty>1?' ×'+c.qty:''}</div><div class="s">${esc([c.set,c.number,c.grade||c.condition].filter(Boolean).join(' · '))} · ${esc(c.why)}</div></div>`+
       `<div class="r" style="display:flex;gap:4px;align-items:center;justify-content:flex-end"><input inputmode="decimal" placeholder="$" aria-label="Price for ${esc(c.name)}" style="width:68px;min-width:0"><button class="pt-mini pri" onclick="adNpSet(this,'${esc(c.id)}')">Set</button></div></div>`).join('')+
     `<div class="ev-foot"><button class="pt-mini" onclick="adNpAgain(this)">Ask PriceCharting again</button></div>`;
@@ -8524,7 +8889,7 @@ function adHeldCard(c){
   const K=AD_HELD_K[c.kind]||['',''], id=esc(c.id), sell=c.kind==='reserved'&&AD.res.sell===c.id;
   const what=c.kind==='reserved'?(c.off?'🏪 set aside (off-platform)':'📌 set aside'):K[0]+' '+K[1].toLowerCase()+(c.ref?' · '+esc(c.ref):'');
   let h=`<div class="pt-row" style="padding:6px 0 6px 8px;gap:8px" data-k="hc:${esc(c.kind+':'+c.id+':'+(c.ref||''))}">${adThumb(c,26)}<div class="l" style="min-width:0;flex:1"><div class="t" style="font-size:13px">${esc(c.name)}${Number(c.qty)>1?' ×'+Number(c.qty):''}</div>`+
-    adMeta([what,c.price?dlMoney(c.price):'',c.lot!=null?(c.lot?'<b>📍 '+esc(c.lot)+'</b>':'<span class="pt-neg">📍 not in a lot</span>'):'',c.at?adAgo(c.at):'',c.note?'📝 '+esc(c.note):''])+`</div></div>`;   // v13.58.3: which lot to pull it from
+    adMeta([what,c.price?dlMoney(c.price):'',c.lot!=null?(c.lot?'<b>'+esc(adPlace(c.lot))+'</b>':'<span class="pt-neg">not in a lot</span>'):'',c.at?adAgo(c.at):'',c.note?'📝 '+esc(c.note):''])+`</div></div>`;   // v13.58.3: which lot to pull it from
   if(c.kind==='reserved'&&Number(c.qty)>1) h+=`<p class="pt-err" style="margin:0 0 4px 42px;text-align:left">All ${Number(c.qty)} copies are held. <button class="pt-mini" style="margin:0 0 0 4px" onclick="adResTrim(this,'${id}')">Hold just 1 · put ${Number(c.qty)-1} back on sale</button></p>`;
   if(c.kind==='reserved') h+=`<div class="cn-rev-btns" style="margin:0 0 6px 42px">${c.off?`<button class="pt-mini pri" onclick="adTab('deals')">🤝 Record in Deals</button>`:`<button class="pt-mini pri" onclick="adResSellOpen('${id}')">${sell?'Close':'🧾 Sell to them'}</button>`}<button class="pt-mini" onclick="adResRelease(this,'${id}')">↩️ Release</button></div>`+
     (sell?`<div class="pt-inl" style="margin:0 0 8px 42px"><input id="ad-res-price" inputmode="decimal" enterkeyhint="send" placeholder="Deal price $" aria-label="Deal price for ${esc(c.name)}"><button class="pt-mini pri" onclick="adResSell(this,'${id}')">Invoice</button></div>`:'');
@@ -9013,7 +9378,7 @@ function adBnContain(x,im,l,t,w,h){ const s=Math.min(w/im.width,h/im.height), dw
 function adBnDataImg(src){ return new Promise(res=>{ if(!src) return res(null); const im=new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src=src; }); }
 async function adBnCollage(b){
   const faces=[]; b.cards.forEach(c=>{ for(let i=0;i<Math.min(c.n||1,2);i++) faces.push(c); });
-  const n=faces.length, g=adBnGrid(n), CW=400, CH=Math.round(CW*88/63), GAP=28, PAD=44, FOOT=70;
+  const n=faces.length, g=adBnGrid(n), CW=400, CH=Math.round(CW*88/63), GAP=14, PAD=10, FOOT=46;   // s33.11 (Bryan: "crop the bundle picture"): tight to the cards, no wide margins
   const cv=document.createElement('canvas'); cv.width=PAD*2+g.cols*CW+(g.cols-1)*GAP; cv.height=PAD*2+g.rows*CH+(g.rows-1)*GAP+FOOT;
   const x=cv.getContext('2d');
   const bg=x.createLinearGradient(0,0,0,cv.height); bg.addColorStop(0,'#1d1b2e'); bg.addColorStop(1,'#0f0e18'); x.fillStyle=bg; x.fillRect(0,0,cv.width,cv.height);
@@ -9030,8 +9395,8 @@ async function adBnCollage(b){
     else { miss++; x.fillStyle='#2b2940'; rrect(x,l,t,CW,CH,14); x.fill(); x.shadowColor='transparent'; x.fillStyle='#cfcbe6'; x.font='600 28px system-ui,sans-serif'; x.textAlign='center'; x.fillText(String(c.name).slice(0,22),l+CW/2,t+CH/2); }
     x.restore();
   });
-  x.fillStyle='rgba(255,255,255,.82)'; x.font='600 30px system-ui,sans-serif'; x.textAlign='center';
-  x.fillText(n+' cards · FloofMart',cv.width/2,cv.height-PAD/2-FOOT/2+10);
+  x.fillStyle='rgba(255,255,255,.82)'; x.font='600 26px system-ui,sans-serif'; x.textAlign='center';
+  x.fillText(n+' cards · FloofMart',cv.width/2,cv.height-PAD-FOOT/2+12);
   const MAX=1600; let out=cv;
   if(cv.width>MAX||cv.height>MAX){ const s=MAX/Math.max(cv.width,cv.height); out=document.createElement('canvas'); out.width=Math.round(cv.width*s); out.height=Math.round(cv.height*s); out.getContext('2d').drawImage(cv,0,0,out.width,out.height); }
   return {jpeg:out.toDataURL('image/jpeg',0.85), miss, missNames, noPhoto:faces.filter(c=>!c.image).map(c=>c.name)};
@@ -9428,7 +9793,7 @@ function adFindHtml(){
   const m=adFindMatches();
   AD.det['stk:find']={ok:true,kind:'find',cards:m.map(c=>Object.assign({},c,{qty:c.qty}))};
   if(!m.length) return `<p class="note" style="text-align:left;margin:4px 0 0">No card on sale matches “${esc(AD.findQ)}”.</p>`;
-  return adPrAskHtml()+AD.det['stk:find'].cards.map(c=>`<div data-pk="${esc('find|'+c.id)}">`+adCardLine(c,'',adMeta([`<b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>`,c.market?'market $'+Number(c.market).toFixed(2):'','qty '+c.qty,c.lot?'📍 '+esc(c.lot):'',c.consignor?'lowest price checked on save':''])+adPrOneHtml('find',c)+'<div>'+adCountBtn(c.id)+'</div>')+'</div>').join('')+
+  return adPrAskHtml()+AD.det['stk:find'].cards.map(c=>`<div data-pk="${esc('find|'+c.id)}">`+adCardLine(c,'',adMeta([`<b class="adpr-cur">$${Number(c.price).toFixed(2)}</b>`,c.market?'market $'+Number(c.market).toFixed(2):'','qty '+c.qty,c.lot?esc(adPlace(c.lot)):'',c.consignor?'lowest price checked on save':''])+adPrOneHtml('find',c)+'<div>'+adCountBtn(c.id)+'</div>')+'</div>').join('')+
     (m.length===25?'<p class="note">Showing the first 25 — type more to narrow it down.</p>':'');
 }
 function adFindSearch(v){ AD.findQ=v; const x=document.getElementById('ad-findx'); if(x) x.hidden=!v; const r=document.getElementById('ad-find-res'); if(r) r.innerHTML=adFindHtml();
@@ -9682,7 +10047,7 @@ function adEvItemHtml(d,it,i){
     : `<input class="ev-num qty" data-f="qty" inputmode="numeric" enterkeyhint="done" value="${Number(it.qty||1)}" aria-label="Copies of ${esc(c.name)}" onchange="adEvSet(this,'${did}','qty')"> of ${Number(it.stock||0)} × $<input class="ev-num" data-f="price" inputmode="decimal" enterkeyhint="done" value="${Number(it.price||0).toFixed(2)}" aria-label="Price for ${esc(c.name)}" onchange="adEvSet(this,'${did}','price')"><span class="ev-free">${Number(it.price)<=0?' <span class="pt-tag warn">FREE</span>':''}</span>`;
   const fm=auc?'sb':'sale';
   return `<div class="ev-it" data-drop="${did}" data-card="${esc(c.id)}" data-p="${Number(it.price||0)}" data-m="${fm}">${adThumb(c)}<div style="flex:1;min-width:0"><div class="nm"><span class="ev-n">${i+1}</span>. ${adLotCard(c)}</div>`+
-    `<div class="sub">${lot?'📍 '+esc(lot)+' · ':''}${esc(c.id)}${c.consignor?' · '+esc(c.consignor)+'’s':''}${it.floor?' · <span class="pt-neg">floor '+adEvMoney(it.floor)+'</span>':''}<span class="ev-fl">${c.consignor?'':adFloorTag(c.id,Number(it.price||0),fm)}</span></div>`+
+    `<div class="sub">${lot?esc(adPlace(lot))+' · ':''}${esc(c.id)}${c.consignor?' · '+esc(c.consignor)+'’s':''}${it.floor?' · <span class="pt-neg">floor '+adEvMoney(it.floor)+'</span>':''}<span class="ev-fl">${c.consignor?'':adFloorTag(c.id,Number(it.price||0),fm)}</span></div>`+
     `<div class="ev-in">${inputs}</div></div><button class="ev-rm" data-card="${esc(c.id)}" data-name="${esc(c.name)}" aria-label="Reserve ${esc(c.name)} for a buyer" title="Reserve for a buyer" onclick="adResOpen(this)">📌</button><button class="ev-rm" aria-label="Take ${esc(c.name)} out" onclick="adEvRm(this,'${did}')">✕</button></div>`;
 }
 /* Bring the open builder in line with its data WITHOUT redrawing it: rows that went
@@ -9789,7 +10154,7 @@ function adEvLiveItem(d,it){
   // v13.25: pull this card out for a buyer. Auction lots only before any bids (the bids were public).
   if(live&&(!auc||!(it.bids&&it.bids.n))) body+=`<div class="evl-act"><button class="pt-mini" data-card="${esc(c.id)}" data-name="${esc(c.name)}" onclick="adResOpen(this)">📌 Reserve for a buyer</button></div>`;
   return `<div class="evl-it${auc?(it.bids&&it.bids.n?'':' none'):(adEvClaimsOf(it).taken?'':' none')}" data-k="lv:${did}">${adThumb(c)}<div style="flex:1;min-width:0">`+
-    `<div class="nm">${adLotCard(c)}</div><div class="sub">${lot?'📍 '+esc(lot)+' · ':''}${esc(it.dropId)}${c.consignor?' · '+esc(c.consignor)+'’s':''}</div>${body}</div></div>`;
+    `<div class="nm">${adLotCard(c)}</div><div class="sub">${lot?esc(adPlace(lot))+' · ':''}${esc(it.dropId)}${c.consignor?' · '+esc(c.consignor)+'’s':''}</div>${body}</div></div>`;
 }
 // The whole live view: three parts, each updated on its own (adSyncSec keeps unchanged lines).
 function adEvLiveInner(d){
@@ -10528,7 +10893,7 @@ function adEvPickList(){
   const L=adEvPickCards(); P.keys=L.map(c=>c.id);
   if(!L.length) el.innerHTML=`<p class="note" style="text-align:left;margin:8px 2px">${P.q?'No card on sale matches “'+esc(P.q)+'”.':'Nothing on sale that isn’t already in a drop or auction.'}</p>`;
   else el.innerHTML=L.slice(0,P.show).map((c,i)=>`<label class="ev-pick"${c.nophoto?' style="opacity:.55"':''}><input type="checkbox" ${P.tick[c.id]&&!c.nophoto?'checked':''}${c.nophoto?' disabled':''} onchange="adEvPickTick(${i},this)" aria-label="${esc(c.name)}${c.number?' #'+esc(c.number):''}, ${adEvMoney(c.price)}${c.nophoto?', no photo yet':''}">${adThumb(c)}`+
-      `<div style="flex:1;min-width:0"><div class="nm">${adLotCard(c)}</div><div class="sub">${adEvMoney(c.price)}${c.market?' · mkt '+adEvMoney(c.market):''} · ×${c.qty}${c.days!=null?' · '+c.days+'d':''}${c.lot?' · 📍 '+esc(c.lot):''}${c.consignor?' · '+esc(c.consignor)+'’s':''}${c.floor?' · <span class="pt-neg">floor '+adEvMoney(c.floor)+'</span>':''}${c.nophoto?' · <span class="pt-neg">📷 no photo yet: /photo '+esc(c.id)+'</span>':''}</div></div></label>`).join('')+
+      `<div style="flex:1;min-width:0"><div class="nm">${adLotCard(c)}</div><div class="sub">${adEvMoney(c.price)}${c.market?' · mkt '+adEvMoney(c.market):''} · ×${c.qty}${c.days!=null?' · '+c.days+'d':''}${c.lot?' · '+esc(adPlace(c.lot)):''}${c.consignor?' · '+esc(c.consignor)+'’s':''}${c.floor?' · <span class="pt-neg">floor '+adEvMoney(c.floor)+'</span>':''}${c.nophoto?' · <span class="pt-neg">📷 no photo yet: /photo '+esc(c.id)+'</span>':''}</div></div></label>`).join('')+
     (L.length>P.show?`<p class="note"><a href="#" onclick="AD.ev.pick.show+=200;adEvPickList();return false">Show more (${L.length-P.show})</a></p>`:'');
   adEvPickFoot();
 }
@@ -10577,7 +10942,12 @@ async function adEvPickAdd(btn){
     failed.slice(0,6).map(f=>'• '+(f.cardId&&byId[f.cardId]?byId[f.cardId].name+': ':'')+f.message).join('\n')+(failed.length>6?'\n…':''));
 }
 
-/* ---- 📍 Lots (chaos storage) ----
+/* s33 (Bryan, 11 Oct): only two place words, Box and Lot. A singles spot code L000n reads "Box Shelf · Lot n",
+   T000n (toploaded) "Box Toploaders · Lot n". Display only: the codes stay the keys (and are what you type). */
+function adPlace(code){ if(/,/.test(String(code||''))) return String(code).split(/\s*,\s*/).map(adPlace).join(', ');   // s33.2: a card in two lots
+  const c=String(code||''), m=/^([LT])0*(\d+)$/i.exec(c); if(!m) return c?'Box Shelf · '+c:''; return (m[1].toUpperCase()==='T'?'Box Toploaders':'Box Shelf')+' · Lot '+m[2]; }
+const adLotName=adPlace;   // s33.2 Desk pass used this name; one function
+/* ---- Box Shelf lots (chaos storage) ----
    Each Collectr import is one lot, filed unsorted behind a divider with its
    code. Here: every lot and what's in it, cards in stock that aren't in a lot
    yet (put them in one), and lots still listing cards that have gone. */
@@ -10694,12 +11064,12 @@ function adLotListSec(){
   return b+'<div class="panel" style="padding:4px 12px" data-sync>'+r.lots.map(l=>{
     const open=AD.lotOpen[l.lot];
     const when=l.created?new Date(l.created).toLocaleDateString([], {day:'numeric',month:'short',year:'2-digit'}):'';
-    return `<div data-k="lot:${esc(l.lot)}"><div class="pt-row" style="cursor:pointer" onclick="adLotOpen('${esc(l.lot)}')"><div class="l"><div class="t">📍 <b>${esc(l.lot)}</b></div><div class="s">${l.copies} card${l.copies===1?'':'s'} · ${l.cards} kind${l.cards===1?'':'s'}${when?' · '+when:''}${l.portfolio?' · '+esc(l.portfolio):''}${l.source&&l.source!=='import'?' · '+esc(l.source):''}</div></div><div class="r">${open?'▾':'▸'}</div></div>`+
+    return `<div data-k="lot:${esc(l.lot)}"><div class="pt-row" style="cursor:pointer" onclick="adLotOpen('${esc(l.lot)}')"><div class="l"><div class="t"><b>${esc(adPlace(l.lot))}</b> <span class="sub">${esc(l.lot)}</span></div><div class="s">${l.copies} card${l.copies===1?'':'s'} · ${l.cards} kind${l.cards===1?'':'s'}${when?' · '+when:''}${l.portfolio?' · '+esc(l.portfolio):''}${l.source&&l.source!=='import'?' · '+esc(l.source):''}</div></div><div class="r">${open?'▾':'▸'}</div></div>`+
       `<div class="ad-lotbody">${open?adLotBodyHtml(l.lot):''}</div></div>`;
   }).join('')+'</div>';
 }
 function adLotTotalsHtml(){ const t=(AD.lots&&AD.lots.totals)||{};
-  return `<b>📍 ${t.lots||0} lot${t.lots===1?'':'s'}</b> · ${t.located||0} shelved · <span class="${t.unlocated?'pt-neg':''}">${t.unlocated||0} not in a lot</span>${t.over?` · <span class="pt-neg">${t.over} to take out</span>`:''}`; }
+  return `<b>🗄 ${t.lots||0} lot${t.lots===1?'':'s'}</b> · ${t.located||0} in a lot · <span class="${t.unlocated?'pt-neg':''}">${t.unlocated||0} not in a lot</span>${t.over?` · <span class="pt-neg">${t.over} to take out</span>`:''}`; }
 function adRenderLots(){
   const r=AD.lots;
   if(!r||!r.ok){ adIn(`<div class="empty"><p>${esc(ptErr(r))}</p><button class="pt-mini" onclick="adLoad()">Try again</button></div>`); return; }
@@ -10781,7 +11151,7 @@ function adLotInfo(v){
   if(!c) return 'Type a lot code (any letters, numbers, dashes), or type a start like B and tap ＋ New lot for the next in that series.';
   if(!/^[A-Z0-9][A-Z0-9-]{0,11}$/.test(c)) return 'Lot codes are letters, numbers and dashes (up to 12).';
   const l=(r.lots||[]).find(x=>x.lot===c);
-  return l?`📍 ${c} is an existing lot · ${l.copies} card${l.copies===1?'':'s'} in it now — ticked cards are added to it.`:`✨ ${c} is a new lot — label a new divider ${c}.`;
+  return l?`${adPlace(c)} (${c}) is an existing lot · ${l.copies} card${l.copies===1?'':'s'} in it now — ticked cards are added to it.`:`✨ ${c} is a new lot — label a new divider ${c}.`;
 }
 function adLotNextSync(){ const i=document.getElementById('ad-lotinfo'); if(i) i.textContent=adLotInfo(ptVal('ad-lotto')); }
 /* v13.24: "＋ New lot" follows YOUR series, not always L. Type a start (B, BOX-,
@@ -10921,7 +11291,7 @@ function adPickHtml(r){
     if(i===0||l.lot!==last){
       last=l.lot;
       const grp=r.lines.filter(x=>x.lot===l.lot), gn=grp.reduce((s,x)=>s+x.n,0), gd=grp.every(x=>done[adPickLineKey(x)]);
-      h+=`<div class="pt-h" style="margin-top:8px">${l.lot?'📍 '+esc(l.lot):'❓ Not in a lot'} <span class="pt-tag${gd?' ok':''}">${gd?'✓ ':''}${gn}</span></div>`;
+      h+=`<div class="pt-h" style="margin-top:8px">${l.lot?esc(adPlace(l.lot)):'❓ Not in a lot'} <span class="pt-tag${gd?' ok':''}">${gd?'✓ ':''}${gn}</span></div>`;
     }
     const on=!!done[adPickLineKey(l)];
     h+=`<label class="pk-line${on?' done':''}"><input type="checkbox" ${on?'checked':''} onchange="adPickTick(${i},this)" aria-label="Pulled ${esc(l.card&&l.card.name)} for ${esc(l.box)}">${adThumb(l.card,30)}<span class="pk-t">${l.n>1?'<b>'+l.n+'×</b> ':''}${adLotCard(l.card)} → <b>${esc(l.box)}</b></span></label>`;
