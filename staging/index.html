@@ -7834,7 +7834,7 @@ function adIn(html){
   const el=document.getElementById('ad-in'); if(!el) return;
   // Consignment has two parts: people & requests, and the rate tables.
   if(AD_TAB==='consign'&&!AD.cur) html=ptTabs([['people','People & requests'],['rates','Rates']],AD.csub,'adCsub')+html;
-  if(AD_TAB==='shelf') html=ptTabs([['health','Stock health'],['lots','🗄 Box Shelf']],AD.ssub,'adSsub')+html;
+  if(AD_TAB==='shelf') html=ptTabs([['health','Stock health'],['lots','🗄 Shelf singles']],AD.ssub,'adSsub')+html;
   el.innerHTML=html;
 }
 function adCsub(t){ AD.csub=t; AD.cur=null; adLoad(); }
@@ -10952,12 +10952,12 @@ async function adEvPickAdd(btn){
     failed.slice(0,6).map(f=>'• '+(f.cardId&&byId[f.cardId]?byId[f.cardId].name+': ':'')+f.message).join('\n')+(failed.length>6?'\n…':''));
 }
 
-/* s33 (Bryan, 11 Oct): only two place words, Box and Lot. A singles spot code L000n reads "Box Shelf · Lot n",
+/* s33 (Bryan, 11 Oct): only two place words, Box and Lot. A singles spot code L000n reads "Shelf singles · Lot n",
    T000n (toploaded) "Box Toploaders · Lot n". Display only: the codes stay the keys (and are what you type). */
 function adPlace(code){ if(/,/.test(String(code||''))) return String(code).split(/\s*,\s*/).map(adPlace).join(', ');   // s33.2: a card in two lots
-  const c=String(code||''), m=/^([LT])0*(\d+)$/i.exec(c); if(!m) return c?'Box Shelf · '+c:''; return (m[1].toUpperCase()==='T'?'Box Toploaders':'Box Shelf')+' · Lot '+m[2]; }
+  const c=String(code||''), m=/^([LT])0*(\d+)$/i.exec(c); if(!m) return c?'Shelf singles · '+c:''; return (m[1].toUpperCase()==='T'?'Box Toploaders':'Shelf singles')+' · Lot '+m[2]; }
 const adLotName=adPlace;   // s33.2 Desk pass used this name; one function
-/* ---- Box Shelf lots (chaos storage) ----
+/* ---- Shelf singles lots (chaos storage) ----
    Each Collectr import is one lot, filed unsorted behind a divider with its
    code. Here: every lot and what's in it, cards in stock that aren't in a lot
    yet (put them in one), and lots still listing cards that have gone. */
