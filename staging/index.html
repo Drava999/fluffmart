@@ -9376,30 +9376,40 @@ function adBnGrid(n){ const cols=n<=3?n:n===4?2:n<=6?3:n<=8?4:n===9?3:4; return 
 function adBnContain(x,im,l,t,w,h){ const s=Math.min(w/im.width,h/im.height), dw=im.width*s, dh=im.height*s, dx=l+(w-dw)/2, dy=t+(h-dh)/2;
   x.save(); rrect(x,dx,dy,dw,dh,Math.max(6,dw*0.035)); x.clip(); x.drawImage(im,dx,dy,dw,dh); x.restore(); }
 function adBnDataImg(src){ return new Promise(res=>{ if(!src) return res(null); const im=new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src=src; }); }
+/* s33.22 (Bryan: "badly done" -- a wide strip of cards floating in a big box): the picture is CARD-SHAPED (63:88 portrait)
+   so it fills a card frame everywhere it shows. 1 card = whole; 2-3 = overlapped diagonally; 4 = 2x2; 5-9 = 3x3;
+   more = the first 9 + "+N more". The card count rides on a small pill, not a footer strip. */
+function adBnSlots(n,W,H){
+  const r=[];
+  if(n<=1){ r.push({l:0,t:0,w:W,h:H}); return r; }
+  if(n<=3){ const w=W*0.76,h=H*0.76,st=(W-w)/(n-1),sv=(H-h)/(n-1); for(let i=0;i<n;i++) r.push({l:i*st,t:i*sv,w,h}); return r; }
+  const g=n<=4?2:3, gap=Math.round(W*0.018), w=(W-gap*(g-1))/g, h=(H-gap*(g-1))/g;
+  for(let i=0;i<Math.min(n,g*g);i++) r.push({l:(i%g)*(w+gap),t:Math.floor(i/g)*(h+gap),w,h});
+  return r;
+}
 async function adBnCollage(b){
   const faces=[]; b.cards.forEach(c=>{ for(let i=0;i<Math.min(c.n||1,2);i++) faces.push(c); });
-  const n=faces.length, g=adBnGrid(n), CW=400, CH=Math.round(CW*88/63), GAP=14, PAD=10, FOOT=46;   // s33.11 (Bryan: "crop the bundle picture"): tight to the cards, no wide margins
-  const cv=document.createElement('canvas'); cv.width=PAD*2+g.cols*CW+(g.cols-1)*GAP; cv.height=PAD*2+g.rows*CH+(g.rows-1)*GAP+FOOT;
+  const n=faces.length, total=b.cards.reduce((a,c)=>a+(c.n||1),0), PAD=18, W=1200, H=Math.round(W*88/63);
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const x=cv.getContext('2d');
-  const bg=x.createLinearGradient(0,0,0,cv.height); bg.addColorStop(0,'#1d1b2e'); bg.addColorStop(1,'#0f0e18'); x.fillStyle=bg; x.fillRect(0,0,cv.width,cv.height);
+  const bg=x.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#1d1b2e'); bg.addColorStop(1,'#0f0e18'); x.fillStyle=bg; x.fillRect(0,0,W,H);
   // v13.54: the server hands over the card fronts (no image-host limits); anything it couldn't get is tried directly
   let srv=[]; try{ const r=await api('adminBundleFaces',{bundleId:b.id}); if(r&&r.ok) srv=r.faces||[]; }catch(e){}
-  const ims=[];
-  for(let i=0;i<faces.length;i++){ let im=await adBnDataImg(srv[i]&&srv[i].data); if(!im&&faces[i].image) im=await loadHaulArt(faces[i].image,800); ims.push(im); }
+  const slots=adBnSlots(n,W-PAD*2,H-PAD*2), shown=slots.length, ims=[];
+  for(let i=0;i<shown;i++){ let im=await adBnDataImg(srv[i]&&srv[i].data); if(!im&&faces[i].image) im=await loadHaulArt(faces[i].image,800); ims.push(im); }
   let miss=0; const missNames=[];
-  faces.forEach((c,i)=>{ if(!ims[i]&&missNames.indexOf(c.name)<0) missNames.push(c.name);
-    const r=Math.floor(i/g.cols), inRow=r===g.rows-1?n-r*g.cols:g.cols, off=(g.cols-inRow)*(CW+GAP)/2;
-    const l=PAD+off+(i%g.cols)*(CW+GAP), t=PAD+r*(CH+GAP);
-    x.save(); x.shadowColor='rgba(0,0,0,.45)'; x.shadowBlur=24; x.shadowOffsetY=8;
-    if(ims[i]){ adBnContain(x,ims[i],l,t,CW,CH); }
-    else { miss++; x.fillStyle='#2b2940'; rrect(x,l,t,CW,CH,14); x.fill(); x.shadowColor='transparent'; x.fillStyle='#cfcbe6'; x.font='600 28px system-ui,sans-serif'; x.textAlign='center'; x.fillText(String(c.name).slice(0,22),l+CW/2,t+CH/2); }
+  slots.forEach((sl,i)=>{ const c=faces[i]; if(!ims[i]&&missNames.indexOf(c.name)<0) missNames.push(c.name);
+    const l=PAD+sl.l, t=PAD+sl.t;
+    x.save(); x.shadowColor='rgba(0,0,0,.5)'; x.shadowBlur=26; x.shadowOffsetY=8;
+    if(ims[i]){ adBnContain(x,ims[i],l,t,sl.w,sl.h); }
+    else { miss++; x.fillStyle='#2b2940'; rrect(x,l,t,sl.w,sl.h,14); x.fill(); x.shadowColor='transparent'; x.fillStyle='#cfcbe6'; x.font='600 '+Math.round(sl.w/14)+'px system-ui,sans-serif'; x.textAlign='center'; x.fillText(String(c.name).slice(0,22),l+sl.w/2,t+sl.h/2); }
     x.restore();
   });
-  x.fillStyle='rgba(255,255,255,.82)'; x.font='600 26px system-ui,sans-serif'; x.textAlign='center';
-  x.fillText(n+' cards · FloofMart',cv.width/2,cv.height-PAD-FOOT/2+12);
-  const MAX=1600; let out=cv;
-  if(cv.width>MAX||cv.height>MAX){ const s=MAX/Math.max(cv.width,cv.height); out=document.createElement('canvas'); out.width=Math.round(cv.width*s); out.height=Math.round(cv.height*s); out.getContext('2d').drawImage(cv,0,0,out.width,out.height); }
-  return {jpeg:out.toDataURL('image/jpeg',0.85), miss, missNames, noPhoto:faces.filter(c=>!c.image).map(c=>c.name)};
+  const pill=(n>shown?'+'+(n-shown)+' more \u00b7 ':'')+total+' cards';
+  x.font='700 40px system-ui,sans-serif'; const pw=x.measureText(pill).width+44;
+  x.fillStyle='rgba(15,14,24,.82)'; rrect(x,W-PAD-pw-10,H-PAD-74,pw,60,30); x.fill();
+  x.fillStyle='#fff'; x.textAlign='center'; x.fillText(pill,W-PAD-10-pw/2,H-PAD-31);
+  return {jpeg:cv.toDataURL('image/jpeg',0.85), miss, missNames, noPhoto:faces.slice(0,shown).filter(c=>!c.image).map(c=>c.name)};
 }
 async function adBnPic(btn,id){
   const b=adBnFind(id); if(!b) return;
