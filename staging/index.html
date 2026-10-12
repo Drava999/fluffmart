@@ -2439,8 +2439,12 @@ const IS_STAGING = /\/staging\//.test(location.pathname) || /[?&]env=staging\b/.
 // Live and test shop share one origin (github.io), so their caches must not:
 // the test shop was painting the LIVE shop's cached admin/orders state.
 const FM_CK = IS_STAGING ? 'fmstg_' : 'fm_';
+/* v13.69.23: the STAGING Worker addresses live in staging.config.json (one place for every file). */
+/* STG-CONFIG-BEGIN:urls (written by node tools/stg-config.js from staging.config.json: edit THAT file, then run the tool) */
+const STG_URLS = { api: 'https://fluffmart-api-staging.shrimaniac.workers.dev/api', portal: 'https://fluffmart-portal-staging.shrimaniac.workers.dev/api', stock: 'https://floofmart-stock-staging.shrimaniac.workers.dev', web: 'https://staging.floofmarttcg.com', art: 'https://floofmart-art-staging.shrimaniac.workers.dev' };
+/* STG-CONFIG-END:urls */
 const API_URL = IS_STAGING
-  ? "https://fluffmart-api-staging.shrimaniac.workers.dev/api"
+  ? STG_URLS.api
   : "https://fluffmart-api.shrimaniac.workers.dev/api";
 if (IS_STAGING) {
   const addBar = () => document.body && document.body.insertAdjacentHTML('afterbegin',
@@ -2451,8 +2455,8 @@ if (IS_STAGING) {
    WEB_URL = what people are sent to (the website, the admin Desk) = floofmarttcg.com / staging.floofmarttcg.com;
    STOCK_API = where this app reads from (machine address; the old workers.dev address keeps working).
    Stock Worker. STOCK_API '' = the Sets screen and the scanned cards are hidden everywhere (live, for now). */
-const WEB_URL = IS_STAGING ? 'https://staging.floofmarttcg.com' : 'https://floofmarttcg.com';
-const STOCK_API = IS_STAGING ? 'https://floofmart-stock-staging.shrimaniac.workers.dev' : '';
+const WEB_URL = IS_STAGING ? STG_URLS.web : 'https://floofmarttcg.com';
+const STOCK_API = IS_STAGING ? STG_URLS.stock : '';
 /* s31.3 ONE LIST (one inventory Phase 1): the shop shows the scanned cards (stock Worker /api/list)
    in the SAME list as the Sheet cards, with the same card view, cart and rules. On only where the
    stock Worker is linked (staging); live keeps its old shop until STOCK_API is set there. */
@@ -3320,7 +3324,7 @@ function togglePolicy(){
    goes back to the shop Worker for the rest of the session. Every write, and
    every refresh right after one ({live:1}), still goes the usual way. */
 const PORTAL_API_URL = IS_STAGING
-  ? "https://fluffmart-portal-staging.shrimaniac.workers.dev/api"
+  ? STG_URLS.portal
   : "https://fluffmart-portal.shrimaniac.workers.dev/api";
 const PORTAL_READS = {consignMe:1};
 let PORTAL_DOWN=false;
@@ -6091,7 +6095,7 @@ const HAUL_THEMES = {
 // Card's world is staging-only until its backgrounds are right (no rays/lines). To turn it on
 // for live: deploy art-worker.live.toml, then set the live URL here:
 // 'https://floofmart-art.shrimaniac.workers.dev'
-const ART_API = IS_STAGING ? 'https://floofmart-art-staging.shrimaniac.workers.dev' : '';
+const ART_API = IS_STAGING ? STG_URLS.art : '';
 if(!ART_API) delete HAUL_THEMES.world;
 const HAUL_WORLD_T = {title:'#FFFFFF', sub:'rgba(255,255,255,.88)', head:'#FFFFFF', hand:'#FFE3F3', rule:'rgba(255,255,255,.32)', chip:'rgba(0,0,0,.38)'};
 const HAUL_WORLD_MISS = new Set();
