@@ -776,6 +776,21 @@ html{scroll-behavior:smooth}
 .hb-step > span{flex-shrink:0}
 .hb-step b{color:var(--fawn-deep)}
 
+/* ── s33.41 Help & support: the website Help pop-up's topics (HELP block), folded ── */
+.mhelp{display:grid;gap:8px;margin:0 0 14px}
+.mhelp-s{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0 13px}
+.mhelp-s>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:46px;font-weight:800;font-size:13.5px;color:var(--text)}
+.mhelp-s>summary::-webkit-details-marker{display:none}
+.mhelp-s>summary::after{content:"▾";margin-left:auto;color:var(--fawn-deep);font-size:12px}
+.mhelp-s[open]>summary::after{content:"▴"}
+.mhelp-s .mh-ic{font-size:19px;flex:none}
+.mhelp-b{padding:0 0 11px 29px;font-size:12.5px;line-height:1.5;color:var(--text)}
+.mhelp-b p{margin:0}
+.mhelp-b ul{margin:6px 0 0;padding-left:17px;color:var(--hint)}
+.mhelp-b li+li{margin-top:2px}
+.mhelp-go{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.mhelp-go button{border:1.5px solid var(--fawn);background:transparent;color:var(--fawn-deep);font-weight:800;font-size:12px;border-radius:11px;padding:7px 11px;min-height:34px}
+
 /* ── delivery segmented ── */
 .dlv-seg{display:flex;gap:7px;margin:10px 0}
 .dlv-b{flex:1;padding:11px 6px;border-radius:13px;font-weight:800;font-size:12.5px;background:var(--ruff);color:var(--text);border:1.5px solid transparent}
@@ -2130,6 +2145,7 @@ img.img-ph{object-fit:contain;background:#f6eee9}
   <!-- SUPPORT -->
   <div class="view hidden" id="v-support">
     <div class="section-t">Help &amp; support</div>
+    <div class="mhelp" id="sup-help" aria-label="How the shop works"></div>
     <div class="panel">
             <p class="note" style="text-align:left;margin:0 0 12px">A question about an order, a payment, or a card? Send us a message and we'll reply in Telegram.<br><br><b>Want a refund?</b> Give us your order number and which cards — we handle refunds by hand. Policies are at the bottom of this page.</p>
       <div class="field"><label>Order number (optional)</label><input id="sup-order" placeholder="e.g. EF1A2B3C"></div>
@@ -3132,6 +3148,87 @@ const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Ver
 const POKE_FACTS=["Pikachu was almost not the mascot — Clefairy was the original pick.","Rhydon was the very first Pokémon ever designed.","Wobbuffet's blue body is a decoy — its real target is the black tail.","Azurill can change gender when it evolves into Marill.","Slowpoke's tail regrows — and is considered a delicacy in the games.","A Magikarp can leap over mountains… and still be useless in battle.","Cubone wears the skull of its mother.","Ditto and Mew are the only Pokémon that can transform — fueling fan theories for decades.","Arcanine was originally meant to be Legendary.","Gengar might be Clefable's shadow — look at their silhouettes.","Poliwag's swirl is based on tadpole intestines, visible through their skin.","Charizard isn't a Dragon-type (until Mega X).","Eevee has the most evolutions of any Pokémon — 8 and counting.","Wailord is lighter than water — it would float like a balloon.","Alakazam's IQ is said to be over 5,000.","Farfetch'd is based on a Japanese saying about a duck bringing its own seasoning.","Snorlax weighs 460 kg — about the same as a grand piano and a half.","Jigglypuff's song works on any creature that can hear.","Vaporeon's cells are so water-like it can melt into water and vanish.","Meowth is one of the few Pokémon that learned to speak human language.","Spinda's spot pattern has over 4 billion possible combinations.","Shuckle can produce the strongest single attack in the games via Power Trick shenanigans.","Mimikyu wears its disguise because it wants to be loved like Pikachu.","Dragonite can fly around the globe in about 16 hours.","Magcargo's body temperature is hotter than the surface of the sun (18,000°F).","Absol doesn't cause disasters — it tries to warn people about them.","Metapod's Harden is its whole personality.","Umbreon's rings glow when it's excited or at night — moonlight powers it.","The first shiny most players ever saw was the Red Gyarados.","Togepi's shell is said to be stuffed with happiness."];
 function pokeFact(){ return POKE_FACTS[Math.floor(Math.random()*POKE_FACTS.length)]; }
 
+/* HELP-BEGIN (s33.41, Bryan 12 Oct: "theres no easy explanation access for how our shop functions").
+   The help topics, byte-identical in stock/site.html (the Help pop-up) and index.html (Help & support);
+   test_help.js checks. Plain text only: each page escapes it when it draws it. Every number comes from f =
+   what the page already knows (postage, free-postage line, box days, notice hours, pay time, card limit); a
+   number the page doesn't have is left out, never guessed. Voice: short, lowercase, one emoji. */
+function fmHelpNum(v) { return v !== null && v !== undefined && v !== '' && isFinite(Number(v)) ? Number(v) : null; }
+function fmHelpMoney(f, n) { const v = Math.round(Number(n) * 100) / 100; return (f.cur || 'S$') + (v % 1 ? v.toFixed(2) : String(v)); }
+function fmHelpMins(n) { n = Math.round(Number(n)); if (n % 60 === 0 && n >= 60) return n === 60 ? '1 hour' : (n / 60) + ' hours'; return n + ' minute' + (n === 1 ? '' : 's'); }
+const FM_HELP_KEYS = { buy: 'buy', how: 'buy', order: 'buy', pay: 'pay', paying: 'pay', paynow: 'pay', payment: 'pay', ship: 'shipping', shipping: 'shipping', postage: 'shipping',
+  pickup: 'shipping', delivery: 'shipping', box: 'box', hold: 'box', drops: 'drops', drop: 'drops', auctions: 'drops', auction: 'drops', claims: 'drops',
+  condition: 'condition', photos: 'condition', returns: 'returns', refunds: 'returns', refund: 'returns', contact: 'contact', support: 'contact', telegram: 'contact' };
+function fmHelpKey(k) { return FM_HELP_KEYS[String(k || '').toLowerCase().replace(/[^a-z]/g, '')] || ''; }
+function fmHelp(f) {
+  f = f || {};
+  const fee = fmHelpNum(f.fee), free = fmHelpNum(f.freeMin), days = fmHelpNum(f.holdDays), grace = fmHelpNum(f.graceH),
+    pay = fmHelpNum(f.payMins), per = fmHelpNum(f.perCard), perDays = fmHelpNum(f.perDays);
+  const post = fee === null ? 'one postage for your whole box' : fee > 0 ? 'postage is ' + fmHelpMoney(f, fee) + ' for your whole box' : 'postage is free';
+  return [
+    { k: 'buy', ic: '🛒', t: 'How to buy', kw: 'order checkout cart add shop buy sign in limit how',
+      lines: ['find a card, add it to your cart and check out.', 'pay by PayNow, send your screenshot, and we pack it 📦'],
+      more: ['placing an order holds your cards for you.'].concat(per ? ['up to ' + per + ' of the same card' + (perDays ? ' every ' + perDays + ' days' : '') + ', so everyone gets a turn.'] : []) },
+    { k: 'pay', ic: '💌', t: 'Paying', kw: 'paynow qr reference screenshot deadline unpaid cancel time pay payment',
+      lines: ['scan the PayNow QR and use the reference on your invoice.', pay > 0 ? '⏰ you have ' + fmHelpMins(pay) + ' to pay; the time is on your invoice.' : '⏰ pay before the time on your invoice.'],
+      more: ['then send us a screenshot of the payment so we can check it.', 'not paid in time? the order cancels itself and the cards go back on the shelf. any store credit you used comes back.',
+        'changed your mind? cancel an unpaid order free in My orders.'] },
+    { k: 'shipping', ic: '📦', t: 'Shipping & pickup', kw: 'postage mail delivery post tracking collect pickup self-pickup fee free ship send',
+      lines: [post + (fee !== 0 && free > 0 ? ', free over ' + fmHelpMoney(f, free) + '.' : '.'), 'or collect it yourself for free 🤝'],
+      more: ['ready? press 🚚 Ship to me in My orders. we pack it once any postage is paid.', 'self-pickup: we message you to arrange a time and place.',
+        fee !== 0 && !(free > 0) ? 'free postage over a set amount: your box shows how close you are.' : '', 'tracking shows in My orders once your parcel has it.'].filter(Boolean) },
+    { k: 'box', ic: '🧺', t: 'Your box', kw: 'hold combine keep buying ship once days parcel box wait',
+      lines: [days > 0 ? 'paid cards wait in your box for up to ' + days + ' days.' : 'paid cards wait in your box.', 'keep shopping and pay one postage for everything ✨'],
+      more: ['ship or collect whenever you like; the countdown is in My orders.',
+        'when the time is up you get ' + (grace > 0 ? grace + ' hours’ ' : '') + 'notice, then we send it to you. your cards stay yours.'] },
+    { k: 'drops', ic: '🎯', t: 'Drops & auctions', kw: 'claim sb bid auction drop telegram channel comment live',
+      lines: ['they run only in our Telegram channel, never on this shop.', 'drop: comment “claim”. auction: comment “SB” for the start bid, or type your bid.'],
+      more: ['a claim or a bid is a purchase: only claim what you’ll pay for.', 'when it ends, your invoice comes by Telegram message 💌'] },
+    { k: 'condition', ic: '🏷️', t: 'Condition & photos', kw: 'nm lp nm-lp binder grade graded photo picture scan real condition',
+      lines: ['every card is NM-LP (binder condition) unless the listing says otherwise.', 'photos are real scans of the copies we have, front and back 📸'],
+      more: ['a card with no photo of its own yet says “catalogue picture”.', 'want more photos? just ask us.'] },
+    { k: 'returns', ic: '🔄', t: 'Returns & refunds', kw: 'refund return damaged missing fake genuine authentic cancel credit broken',
+      lines: ['every card is genuine, or your money back, any time.', 'a problem? message us within 48 hours of delivery, with photos.'],
+      more: ['missing or damaged in the post? we need an unbroken unboxing video.', 'normal mail isn’t tracked, so it travels at your risk. tracked postage is covered.',
+        'paid with store credit? it comes back as credit. PayNow comes back as credit (instant) or cash we send by hand.'] },
+    { k: 'contact', ic: '💬', t: 'Contact us', kw: 'message telegram chat support help question contact socials channel reply',
+      lines: ['message us on Telegram, we reply there 💛', 'new cards, drops and auctions go up on our channel.'],
+      more: ['about an order? tell us the order number and which cards.'] }
+  ];
+}
+function fmHelpText(s) { return [s.t, s.kw].concat(s.lines, s.more).join(' ').toLowerCase(); }
+/* HELP-END */
+/* s33.41 (Bryan, 12 Oct): Help & support used to be only the message form + refund policies. Now the
+   same topics as the website's Help pop-up, folded, with what the app already knows (postage, free-postage line,
+   box days, pay time); the message form and the policies stay below. */
+const FM_CHANNEL_URL='https://t.me/floofmartt';   // the website's CHANNEL_URL (drops + auctions)
+function miniHelpFacts(){
+  const c=STATE.config||{};
+  return {cur:'$', fee:cfgNum(c.shipFlat,cfgNum(STATE.shipFlat,3)), freeMin:cfgNum(c.freeShipMin,null), holdDays:holdDays(),
+    graceH:STATE.holdGraceHours, payMins:STATE.payInfo?STATE.payInfo.mins:null, perCard:PER_CARD_MAX, perDays:null};
+}
+function miniHelpGo(k){
+  const b=(act,t)=>'<button type="button" data-mhgo="'+act+'">'+esc(t)+'</button>';
+  return ({buy:b('store','Open the shop ›'), pay:b('orders','My orders ›'), shipping:b('orders','My orders ›'), box:b('orders','My box ›'),
+    drops:b('channel','📣 Telegram channel'), returns:b('policies','Our policies ›'),
+    contact:b('write','✍️ Write to us below')+b('channel','📣 Our channel')+b('web','🌐 Help on our website')})[k]||'';
+}
+function renderMiniHelp(){
+  const el=document.getElementById('sup-help'); if(!el) return;
+  const open={}; el.querySelectorAll('details[open]').forEach(d=>{open[d.getAttribute('data-hk')]=1;});
+  el.innerHTML=fmHelp(miniHelpFacts()).map(s=>'<details class="mhelp-s" data-hk="'+esc(s.k)+'"'+(open[s.k]?' open':'')+'><summary><span class="mh-ic" aria-hidden="true">'+s.ic+'</span><span>'+esc(s.t)+'</span></summary>'+
+    '<div class="mhelp-b">'+s.lines.map(l=>'<p>'+esc(l)+'</p>').join('')+(s.more.length?'<ul>'+s.more.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>':'')+
+    '<div class="mhelp-go">'+miniHelpGo(s.k)+'</div></div></details>').join('');
+}
+document.addEventListener('click',function(e){
+  const t=e.target.closest&&e.target.closest('[data-mhgo]'); if(!t) return;
+  const a=t.getAttribute('data-mhgo');
+  if(a==='store'||a==='orders') go(a);
+  else if(a==='channel'){ if(tg&&tg.openTelegramLink) tg.openTelegramLink(FM_CHANNEL_URL); else window.open(FM_CHANNEL_URL,'_blank','noopener'); }
+  else if(a==='web'){ const u=WEB_URL+'/#/help'; if(openExt(u)) window.open(u,'_blank','noopener'); }
+  else if(a==='policies'){ const b=document.getElementById('polBody'); if(b&&!b.classList.contains('open')) togglePolicy(); const h=document.querySelector('.howbuy-hd'); if(h) h.scrollIntoView({block:'start',behavior:'smooth'}); }
+  else if(a==='write'){ const m=document.getElementById('sup-msg'); if(m){ m.scrollIntoView({block:'center',behavior:'smooth'}); m.focus({preventScroll:true}); } }
+});
 function togglePolicy(){
   const b=document.getElementById('polBody'), c=document.getElementById('polChev');
   if(!b) return;
@@ -3256,6 +3353,7 @@ function go(tab,dir){
     else { renderStore(); renderActiveChips(); loadGroups(); }   // re-render: boot painted it while hidden
   }
   if(tab==='orders') loadOrders();
+  if(tab==='support') renderMiniHelp();
   if(tab==='profile') loadProfile();
   window.scrollTo(0,0);
 }
