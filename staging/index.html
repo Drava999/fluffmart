@@ -989,53 +989,54 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Disabled buttons still showed the press animation. */
 button:disabled:active{transform:none!important}
 /* ══ DARK ══════════════════════════════════════════════════════════════════
-   Same FloofMart identity — pink on plum instead of pink on cream. Driven by
-   data-theme on <html>; "auto" resolves to light or dark in applyPrefs(). */
+   "Night Market" (s33.57, Bryan 12 Oct): deep navy, warm amber accents and prices,
+   soft pink for JP. Driven by data-theme on <html>; "auto" resolves to light or
+   dark in applyPrefs(). Same colours as the website's dark theme (stock/site.html). */
 :root[data-theme="dark"]{
-  --bg:#1E1219;
-  --card:#2A1C25;
-  --ruff:#3A2632;
-  --text:#F3E4EE;
-  --hint:#B69AAC;            /* ~6.3:1 on --card */
-  --line:rgba(240,185,207,.18);
-  --fawn:#D98EC0;
-  --fawn-deep:#F0A8D2;       /* lighter than the light-mode value — on dark, accents go UP */
-  --berry:#D98EC0;
-  --berry-deep:#F0A8D2;
-  --rose:#C97FA8;
-  --link:#F0A8D2;
+  --bg:#141A2B;
+  --card:#1A2136;
+  --ruff:#242D48;
+  --text:#EEF1FA;
+  --hint:#A9B2CB;            /* ~7.4:1 on --card */
+  --line:rgba(169,178,203,.18);
+  --fawn:#E9A54F;
+  --fawn-deep:#F4B860;       /* amber: ~9:1 on --card; dark ink (#1A1406) on it */
+  --berry:#E9A54F;
+  --berry-deep:#F4B860;
+  --rose:#4A5578;
+  --link:#F4B860;
   color-scheme:dark;
 }
 
 /* Hardcoded light values that the tokens don't reach. */
 :root[data-theme="dark"] .pcard .img,
 :root[data-theme="dark"] .jimg,
-:root[data-theme="dark"] .cv-noimg{background:linear-gradient(135deg,#3A2632,#2A1C25)}
-:root[data-theme="dark"] .flip-back{background:linear-gradient(135deg,#3A2632,#241822)}
-:root[data-theme="dark"] .hero{background:linear-gradient(135deg,#8E4A74 0%,#A8548C 55%,#6D3358 100%);
+:root[data-theme="dark"] .cv-noimg{background:linear-gradient(135deg,#242D48,#1A2136)}
+:root[data-theme="dark"] .flip-back{background:linear-gradient(135deg,#242D48,#171D31)}
+:root[data-theme="dark"] .hero{background:linear-gradient(135deg,#1F2A4A 0%,#2D2350 100%);
   box-shadow:0 10px 28px rgba(0,0,0,.45)}
 :root[data-theme="dark"] .cv-top,
-:root[data-theme="dark"] .doc-hd{background:linear-gradient(160deg,#3A2632,#2A1C25)}
+:root[data-theme="dark"] .doc-hd{background:linear-gradient(160deg,#242D48,#1A2136)}
 :root[data-theme="dark"] .doc{background:var(--card)}
-:root[data-theme="dark"] .skelcard{background:linear-gradient(100deg,#2A1C25 30%,#3A2632 50%,#2A1C25 70%);
+:root[data-theme="dark"] .skelcard{background:linear-gradient(100deg,#1A2136 30%,#242D48 50%,#1A2136 70%);
   background-size:200% 100%}
-:root[data-theme="dark"] .parcel{background:linear-gradient(150deg,#2F1F29,#3A2632)}
-:root[data-theme="dark"] .order.dead{background:#241820}
+:root[data-theme="dark"] .parcel{background:linear-gradient(150deg,#1F2740,#242D48)}
+:root[data-theme="dark"] .order.dead{background:#171D2F}
 :root[data-theme="dark"] .pay-warn{background:#3D3316;color:#F5D97A}
-:root[data-theme="dark"] .unpaid-banner{background:linear-gradient(135deg,#3A1F28,#42232F);border-color:#8E4257}
+:root[data-theme="dark"] .unpaid-banner{background:linear-gradient(135deg,#3A2233,#3B2340);border-color:#8E4E78}
 :root[data-theme="dark"] .unpaid-banner .ub-t b,
 :root[data-theme="dark"] .unpaid-banner .ub-go{color:#FF9FB4}
 :root[data-theme="dark"] .parcel-save,
-:root[data-theme="dark"] .parcel-done{background:#1C3A2C;color:#8FE0B8}
-:root[data-theme="dark"] .b-ordered{background:#3D2F16;color:#F0C86A}
+:root[data-theme="dark"] .parcel-done{background:#17362C;color:#8FE0B8}
+:root[data-theme="dark"] .b-ordered{background:#3A2F17;color:#F0C86A}
 :root[data-theme="dark"] .b-packed,
-:root[data-theme="dark"] .b-shipped{background:#1E2C42;color:#9DC2F0}
-:root[data-theme="dark"] .b-transit{background:#3A2030;color:#F0A8D2}
-:root[data-theme="dark"] .b-delivered{background:#1C3A2C;color:#8FE0B8}
+:root[data-theme="dark"] .b-shipped{background:#1F2C4A;color:#9DC2F0}
+:root[data-theme="dark"] .b-transit{background:#3B2340;color:#FFB3D1}
+:root[data-theme="dark"] .b-delivered{background:#17362C;color:#8FE0B8}
 :root[data-theme="dark"] .b-cancelled{background:#3A2020;color:#F0A0A0}
-:root[data-theme="dark"] .sortsel{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23B69AAC' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>")}
+:root[data-theme="dark"] .sortsel{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A9B2CB' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>")}
 @media (min-width:600px){
-  :root[data-theme="dark"] body{background:#140C11}
+  :root[data-theme="dark"] body{background:#0E1220}
   :root[data-theme="dark"] #app{box-shadow:0 0 60px rgba(0,0,0,.6)}
 }
 /* These stay light on purpose: a QR needs the contrast, and a card scan wants a
@@ -1054,7 +1055,7 @@ button:disabled:active{transform:none!important}
 :root[data-theme="dark"] .doc-void .doc-tag,
 :root[data-theme="dark"] .cr-amt.neg{color:#FF8FA6}
 :root[data-theme="dark"] .cr-amt.pos{color:#8FE0B8}
-:root[data-theme="dark"] .inv-badge{background:#3D2F16;color:#F0C86A}
+:root[data-theme="dark"] .inv-badge{background:#3A2F17;color:#F0C86A}
 /* The QR box stays white, so its placeholder text has to stay dark. */
 :root[data-theme="dark"] .pn-qr-ph{color:#5A3A4E}
 /* ══ SETTINGS ═════════════════════════════════════════════════════════════ */
@@ -1067,7 +1068,7 @@ button:disabled:active{transform:none!important}
    whatever colour its slot already had in either theme; only the soft fill and
    the single accent need tokens, and only those flip for dark. */
 :root{--ic-soft:#FBE4F2;--ic-accent:#7FC9B0}
-:root[data-theme="dark"]{--ic-soft:rgba(216,142,192,.22);--ic-accent:#8FE0B8}
+:root[data-theme="dark"]{--ic-soft:rgba(244,184,96,.2);--ic-accent:#8FE0B8}
 .icg{display:inline-block;vertical-align:-.14em;overflow:visible}
 .seg3{display:flex;gap:6px;background:var(--ruff);padding:4px;border-radius:14px;margin-top:4px}
 .seg3-b{flex:1;padding:10px 4px;border-radius:11px;font-weight:800;font-size:12.5px;color:var(--hint);background:transparent;transition:.18s}
@@ -1648,7 +1649,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .rcpt-grand span:last-child{font-family:'Fraunces',Georgia,serif;font-size:25px;
   font-weight:700;letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
 .rcpt-ft{text-align:center;font-size:10.5px;color:var(--hint);line-height:1.7;margin-top:18px}
-:root[data-theme="dark"] .rcpt-hd{border-bottom-color:rgba(240,185,207,.25)}
+:root[data-theme="dark"] .rcpt-hd{border-bottom-color:rgba(169,178,203,.25)}
 :root[data-theme="dark"] .rthumb{background:#fff}
 
 /* ── parcel statement ──────────────────────────────────────────────────── */
@@ -1853,7 +1854,7 @@ body.pc #v-credit{max-width:640px}
 
 #pt-toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,12px);max-width:min(92vw,420px);padding:10px 14px;border-radius:12px;background:#2A1024;color:#fff;font-size:13px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity 180ms ease,transform 180ms cubic-bezier(.23,1,.32,1);z-index:9999;text-align:center}
 #pt-toast.show{opacity:1;transform:translate(-50%,0)}
-:root[data-theme="dark"] #pt-toast{background:#F6E1D6;color:#2A1024}
+:root[data-theme="dark"] #pt-toast{background:#F6ECD9;color:#1A1406}
 @media (prefers-reduced-motion:reduce){#pt-toast{transition:none}}
 
 .pt-form{margin-top:8px;padding:10px;border:1px dashed var(--line);border-radius:12px}
@@ -1903,7 +1904,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
 .pyrow-x:active{transform:scale(.97)}
 @media (hover:hover) and (pointer:fine){.pyrow-x:hover{color:#A8324F;border-color:rgba(168,50,79,.4)}}
 /* 13 · dark theme: accents go lighter there, so filled pink buttons get dark text */
-:root[data-theme="dark"] :is(.cta,.cta *,.add,.wtab.on,.pt-tabs .chip.on,.ostg.on .ostg-v,.ostg.on .ostg-l,.rate-b,.fchip.on,.chip.on,.loyal-refb){color:#2A1024!important}
+:root[data-theme="dark"] :is(.cta,.cta *,.add,.wtab.on,.pt-tabs .chip.on,.ostg.on .ostg-v,.ostg.on .ostg-l,.rate-b,.fchip.on,.chip.on,.loyal-refb){color:#1A1406!important}
 .fchip{background:var(--card)}
 :root[data-theme="dark"] .doc-close{background:var(--card)}
 .doc-close::after{content:"";position:absolute;inset:-7px}
@@ -1942,7 +1943,7 @@ span[style*="#c2405e"]{color:#A8324F!important}
 :root[data-theme="dark"] :is(.pt-ok,.pt-pos){color:#7FD8B5}
 /* 2 · admin primary buttons: white on light pink was 2.45:1 -- same fix the cleanup gave .cta */
 .pt-mini.pri{background:var(--fawn-deep);border-color:var(--fawn-deep)}
-:root[data-theme="dark"] .pt-mini.pri{color:#2A1024}          /* dark: --fawn-deep turns light, so dark text */
+:root[data-theme="dark"] .pt-mini.pri{color:#1A1406}          /* dark: --fawn-deep turns light, so dark text */
 /* 3 · red text on the dark background was 2.78:1 */
 :root[data-theme="dark"] :is(.pt-mini.danger,.pt-err){color:#FF9DB2}
 /* 4 · thumb-sized targets on phones (buttons were 29px, the tab chips 33px, ticks 20px,
@@ -1977,8 +1978,8 @@ img.img-ph{object-fit:contain;background:#f6eee9}
    s33.33 Option B2 tile (.ct) + Option D list row (.ct.ctr) + the Grid | List switch (.ct-sw). No frame: the card
    picture sits on the page at 63:88 with card corners. Colours from each page's own tokens. */
 :root{--ct-warn:#8C5A0E;--ct-jp-bg:#e7eefb;--ct-jp:#2a5aa5}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ct-warn:#F0C86A;--ct-jp-bg:#1E2C42;--ct-jp:#9DC2F0}}
-:root[data-theme="dark"]{--ct-warn:#F0C86A;--ct-jp-bg:#1E2C42;--ct-jp:#9DC2F0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ct-warn:#F0C86A;--ct-jp-bg:#3B2340;--ct-jp:#FFB3D1}}
+:root[data-theme="dark"]{--ct-warn:#F0C86A;--ct-jp-bg:#3B2340;--ct-jp:#FFB3D1}
 .ct-grid{column-gap:12px;row-gap:18px}
 .ct{display:flex;flex-direction:column;gap:3px;min-width:0;position:relative;color:var(--text)}
 .ct-pic{display:block;text-decoration:none;color:inherit;min-width:0;border-radius:4.5%/3.3%}
@@ -2035,8 +2036,8 @@ img.img-ph{object-fit:contain;background:#f6eee9}
 /* CARD-TILE-CSS-END */
 /* FM-DLG-CSS-BEGIN (byte-identical in stock/site.html and index.html) */
 :root{--fmd-acc:#9E4686;--fmd-on:#fff;--fmd-bad:#B3354F;--fmd-scrim:rgba(42,16,36,.5)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fmd-acc:#F0A8D2;--fmd-on:#2A1024;--fmd-bad:#FF8FA6;--fmd-scrim:rgba(0,0,0,.6)}}
-:root[data-theme="dark"]{--fmd-acc:#F0A8D2;--fmd-on:#2A1024;--fmd-bad:#FF8FA6;--fmd-scrim:rgba(0,0,0,.6)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fmd-acc:#F4B860;--fmd-on:#1A1406;--fmd-bad:#FF8FA6;--fmd-scrim:rgba(5,8,18,.62)}}
+:root[data-theme="dark"]{--fmd-acc:#F4B860;--fmd-on:#1A1406;--fmd-bad:#FF8FA6;--fmd-scrim:rgba(5,8,18,.62)}
 .fmdlg{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px}
 .fmdlg[hidden]{display:none}
 .fmdlg-scrim{position:absolute;inset:0;background:var(--fmd-scrim)}
@@ -2062,8 +2063,8 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
 /* FM-DLG-CSS-END */
 /* SELL-CSS-BEGIN (byte-identical in stock/site.html and index.html) */
 :root{--sl-acc:#9E4686;--sl-on:#fff;--sl-p1:#e7eefb;--sl-p1t:#2a5aa5;--sl-p2:#fdeede;--sl-p2t:#8C5A0E;--sl-p3:#e2f5ec;--sl-p3t:#1c7a52;--sl-p4:#f1e8ed;--sl-p4t:#6b4d60}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sl-acc:#F0A8D2;--sl-on:#2A1024;--sl-p1:#1E2C42;--sl-p1t:#9DC2F0;--sl-p2:#3D2F16;--sl-p2t:#F0C86A;--sl-p3:#1C3A2C;--sl-p3t:#8FE0B8;--sl-p4:#3A2632;--sl-p4t:#E3CBD8}}
-:root[data-theme="dark"]{--sl-acc:#F0A8D2;--sl-on:#2A1024;--sl-p1:#1E2C42;--sl-p1t:#9DC2F0;--sl-p2:#3D2F16;--sl-p2t:#F0C86A;--sl-p3:#1C3A2C;--sl-p3t:#8FE0B8;--sl-p4:#3A2632;--sl-p4t:#E3CBD8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sl-acc:#F4B860;--sl-on:#1A1406;--sl-p1:#1F2C4A;--sl-p1t:#9DC2F0;--sl-p2:#3A2F17;--sl-p2t:#F0C86A;--sl-p3:#17362C;--sl-p3t:#8FE0B8;--sl-p4:#2E3A5E;--sl-p4t:#D6DCEF}}
+:root[data-theme="dark"]{--sl-acc:#F4B860;--sl-on:#1A1406;--sl-p1:#1F2C4A;--sl-p1t:#9DC2F0;--sl-p2:#3A2F17;--sl-p2t:#F0C86A;--sl-p3:#17362C;--sl-p3t:#8FE0B8;--sl-p4:#2E3A5E;--sl-p4t:#D6DCEF}
 .sl-wrap{display:grid;gap:16px;margin:4px 0 24px}
 .sl-col,.sl-side{display:grid;gap:16px;align-content:start;min-width:0}
 @media (min-width:980px){.sl-wrap.sl-wide{grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr)}.sl-wrap.sl-wide .sl-side{position:sticky;top:calc(var(--hvis,72px) + 12px)}}
@@ -2140,6 +2141,41 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
 /* the Mini App's own: the store's Grid | List switch sits beside Filters and the sort */
 .toolrow .ct-sw{align-self:center}
 
+/* NIGHT-MARKET (s33.57, Bryan 12 Oct): the dark theme is "Night Market" (navy, amber, soft pink for JP).
+   Filled amber buttons and badges take dark ink; form hints use the muted text colour (the system grey is
+   under AA on navy); soft shadows go black instead of pink. */
+:root[data-theme="dark"] :is(.cartbar,.cartbar *,.cart-dot,.doc-track,.sv-add,.sv-btn,.tier.hi,.asellbtn,.cattab.on,.seg-b.on,.po-pay,.hc-s.on,.ofilt-b.on,.fopt.on,.pt-mini.pri){color:#1A1406}
+:root[data-theme="dark"] ::selection{background:var(--fawn-deep);color:#1A1406}
+:root[data-theme="dark"] :is(input,textarea)::placeholder{color:var(--hint);opacity:1}
+:root[data-theme="dark"] .cartbar{box-shadow:0 8px 24px rgba(0,0,0,.45)}
+:root[data-theme="dark"] :is(.seg-b.on,.ostg.on){box-shadow:0 3px 10px rgba(0,0,0,.35)}
+:root[data-theme="dark"] .fly{box-shadow:0 8px 20px rgba(0,0,0,.5)}
+:root[data-theme="dark"] .hero{background:linear-gradient(135deg,#1F2A4A 0%,#2D2350 100%)!important}
+:root[data-theme="dark"] .cta{box-shadow:0 6px 18px rgba(0,0,0,.35)}
+:root[data-theme="dark"] .ocard{background:linear-gradient(155deg,#2A3A66 0%,#2D2350 100%);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+:root[data-theme="dark"] .ocard .oc-b-inv{background:#F4B860;color:#1A1406}
+:root[data-theme="dark"] .oact-hd{background:linear-gradient(135deg,#2A3A66,#2D2350)}
+:root[data-theme="dark"] .oact-go{border-color:#4E9E7C}
+:root[data-theme="dark"] .oact-go .oact-hd{background:linear-gradient(135deg,#1F5A45,#17362C)}
+:root[data-theme="dark"] .oact-go .oact-b{color:#8FE0B8}
+:root[data-theme="dark"] .oact-2 .oact-b+.oact-b{border-left-color:var(--line)}
+:root[data-theme="dark"] .orow.dead{background:#171D2F}
+:root[data-theme="dark"] .fchip i{opacity:1}
+:root[data-theme="dark"] .htag.ok{background:#17362C;color:#8FE0B8}
+:root[data-theme="dark"] .htag.way{background:#1F2C4A;color:#9DC2F0}
+:root[data-theme="dark"] .htag.wait{background:#3A2F17;color:#F0C86A}
+:root[data-theme="dark"] .htag.ref{background:#3B2340;color:#FFB3D1}
+:root[data-theme="dark"] .htag.can,:root[data-theme="dark"] .hold-over{background:#242D48;color:var(--hint)}
+:root[data-theme="dark"] .hold-soon,:root[data-theme="dark"] .ocard .hold-soon{background:#3A2F17;color:#F0C86A}
+:root[data-theme="dark"] .hold-final,:root[data-theme="dark"] .ocard .hold-final{background:#3A2020;color:#F0A0A0}
+:root[data-theme="dark"] .bs-steps .oc-dot,:root[data-theme="dark"] .bs-steps .oc-bar{background:#2E3A5E}
+:root[data-theme="dark"] :is(.bsheet .bs-hd,.rcpt-hd,.rcpt-tot){border-color:rgba(169,178,203,.25)}
+:root[data-theme="dark"] .unpaid-banner .ub-t b,:root[data-theme="dark"] .unpaid-banner .ub-go{color:#FFB3D1}
+:root[data-theme="dark"] .cv-close{background:var(--ruff);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+:root[data-theme="dark"] .cv-zoom{background:rgba(20,26,43,.78)}
+:root[data-theme="dark"] .scrim{background:rgba(5,8,18,.6)}
+:root[data-theme="dark"] .cv-scrim{background:rgba(5,8,18,.8)}
+/* NIGHT-MARKET-END */
 </style>
 </head>
 <body>
@@ -7556,7 +7592,7 @@ function applyPrefs(){
   const osReduced=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
   root.setAttribute('data-motion',(PREFS.anim&&!osReduced)?'full':'reduced');
   applyIcons();
-  try{ if(tg&&tg.setHeaderColor) tg.setHeaderColor(t==='dark'?'#1E1219':'#C98B5E'); }catch(e){}
+  try{ if(tg&&tg.setHeaderColor) tg.setHeaderColor(t==='dark'?'#141A2B':'#C98B5E'); }catch(e){}
   applyMusic();
 }
 
