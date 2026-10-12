@@ -105,9 +105,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .hero h2{font-size:22px;font-weight:600}
 .hero p{margin:4px 0 0;font-size:13px;opacity:.92;max-width:80%}
 .stats{display:flex;gap:10px;margin-top:14px}
-.stat{flex:1;background:rgba(255,255,255,.18);border-radius:14px;padding:10px 12px}
+.stat{flex:1;background:rgba(42,16,36,.14);border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:10px 12px}   /* s33.51 was white .18 = white words at 3.7:1; a darker tile reads at 6:1 */
 .stat .n{font-family:'Plus Jakarta Sans';font-size:20px;font-weight:600}
-.stat .l{font-size:11px;opacity:.9}
+.stat .l{font-size:11px}
 
 .section-t{font-family:'Plus Jakarta Sans';font-size:15px;color:var(--fawn-deep);margin:20px 4px 10px}
 
@@ -547,7 +547,7 @@ html{scroll-behavior:smooth}
 .empty .e-ic{animation:floaty 3s ease-in-out infinite}
 .empty .e-img{width:76px;height:76px;object-fit:contain;margin:0 auto 10px;display:block;
   animation:floaty 3s ease-in-out infinite}
-.empty .e-tip{font-size:11px;color:var(--hint);opacity:.6;margin-top:14px;font-weight:600}
+.empty .e-tip{font-size:11px;color:var(--hint);margin-top:14px;font-weight:600}
 .empty{text-align:center;padding:40px 20px;color:var(--hint)}
 .empty .e-ic{font-size:44px;margin-bottom:10px}
 .empty p{font-size:13px}
@@ -1754,11 +1754,14 @@ body.pc .cartbar{left:auto;right:16px;bottom:18px;width:auto;min-width:0;
   max-width:calc(100vw - var(--pc-rail) - 32px);transform:translateY(200%)}
 body.pc.pc-wide .cartbar{right:28px;bottom:26px;min-width:330px;max-width:420px}
 body.pc .cartbar.show{transform:translateY(0)}
+/* s33.51 (site QA) the hidden bar slid only 120% down from 78px up, so its top 4px + shadow peeked above the bottom tabs as a pink line; hidden = invisible (and out of the Tab order) once it has slid away */
+.cartbar:not(.show){visibility:hidden;transition:transform .3s cubic-bezier(.3,.8,.4,1),visibility 0s linear .3s}
 
 /* ── mouse and keyboard affordances ── */
 body.pc .grid>*{transition:transform .15s ease,box-shadow .15s ease}
 body.pc .grid>*:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(74,53,36,.16)}
-body.pc .feat:hover,body.pc .tbtn:hover,body.pc .stat-go:hover{background:var(--ruff)}
+body.pc .feat:hover,body.pc .tbtn:hover{background:var(--ruff)}
+body.pc .stat-go:hover{background:rgba(42,16,36,.28)}   /* s33.51 was the pale --ruff under white words (unreadable on hover) */
 body.pc button:focus-visible,body.pc input:focus-visible,
 body.pc select:focus-visible{outline:2px solid var(--berry);outline-offset:2px}
 /* Custom scrollbars removed (fix pack 19 S1). */
@@ -2024,7 +2027,8 @@ img.img-ph{object-fit:contain;background:#f6eee9}
 .ctr .ct-flip{display:none}
 /* the switch */
 .ct-sw{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:2px;gap:2px}
-.ct-swb{display:inline-flex;align-items:center;justify-content:center;width:34px;height:32px;border:0;border-radius:9px;background:none;color:var(--hint);cursor:pointer;padding:0}
+.ct-swb{display:inline-flex;align-items:center;justify-content:center;width:34px;height:32px;border:0;border-radius:9px;background:none;color:var(--hint);cursor:pointer;padding:0;position:relative}
+.ct-swb:after{content:"";position:absolute;left:0;right:0;top:-4px;bottom:-4px}
 .ct-swb[aria-pressed="true"]{background:var(--ruff);color:var(--fawn-deep)}
 .ct-swb:focus-visible{outline:3px solid var(--fawn-deep);outline-offset:1px}
 @media (prefers-reduced-motion:no-preference){.ct .ct-add{transition:transform .12s}.ct .ct-add:active{transform:scale(.92)}}
