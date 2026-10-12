@@ -2376,7 +2376,11 @@ if (IS_STAGING) {
     '<div style="position:sticky;top:0;z-index:99999;background:#FFD400;color:#000;font:700 13px/1.2 system-ui,sans-serif;text-align:center;padding:6px 8px">🧪 TEST SHOP — nothing here is real</div>');
   if (document.body) addBar(); else document.addEventListener('DOMContentLoaded', addBar);
 }
-/* Stock Worker. '' = the Sets screen and the scanned cards are hidden everywhere (live, for now). */
+/* v13.69.18 (Bryan, 12 Oct): the shop's own domain. ONE place for the stock Worker's addresses:
+   WEB_URL = what people are sent to (the website, the admin Desk) = floofmarttcg.com / staging.floofmarttcg.com;
+   STOCK_API = where this app reads from (machine address; the old workers.dev address keeps working).
+   Stock Worker. STOCK_API '' = the Sets screen and the scanned cards are hidden everywhere (live, for now). */
+const WEB_URL = IS_STAGING ? 'https://staging.floofmarttcg.com' : 'https://floofmarttcg.com';
 const STOCK_API = IS_STAGING ? 'https://floofmart-stock-staging.shrimaniac.workers.dev' : '';
 /* s31.3 ONE LIST (one inventory Phase 1): the shop shows the scanned cards (stock Worker /api/list)
    in the SAME list as the Sheet cards, with the same card view, cart and rules. On only where the
@@ -7618,7 +7622,7 @@ function czShelfShow(){
   if(nc) nc.classList.toggle('hidden',!on); if(cb) cb.classList.toggle('hidden',!on);
 }
 /* Admin is on the website (the Stock Desk); staging opens the staging one. */
-const ADMIN_WEB_URL = IS_STAGING ? 'https://floofmart-stock-staging.shrimaniac.workers.dev/desk' : 'https://floofmart-stock.shrimaniac.workers.dev/desk';
+const ADMIN_WEB_URL = WEB_URL + '/desk';   // v13.69.18: the shop's own domain (WEB_URL), not workers.dev
 function openAdminWeb(){ try{ if(tg&&tg.openLink){ tg.openLink(ADMIN_WEB_URL); return; } }catch(e){} window.open(ADMIN_WEB_URL,'_blank','noopener'); }
 /* v13.17.1: a short confirmation that fades by itself, bottom of the screen. */
 function ptToast(msg){
