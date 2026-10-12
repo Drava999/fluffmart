@@ -2033,6 +2033,101 @@ img.img-ph{object-fit:contain;background:#f6eee9}
 .ct-swb:focus-visible{outline:3px solid var(--fawn-deep);outline-offset:1px}
 @media (prefers-reduced-motion:no-preference){.ct .ct-add{transition:transform .12s}.ct .ct-add:active{transform:scale(.92)}}
 /* CARD-TILE-CSS-END */
+/* FM-DLG-CSS-BEGIN (byte-identical in stock/site.html and index.html) */
+:root{--fmd-acc:#9E4686;--fmd-on:#fff;--fmd-bad:#B3354F;--fmd-scrim:rgba(42,16,36,.5)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fmd-acc:#F0A8D2;--fmd-on:#2A1024;--fmd-bad:#FF8FA6;--fmd-scrim:rgba(0,0,0,.6)}}
+:root[data-theme="dark"]{--fmd-acc:#F0A8D2;--fmd-on:#2A1024;--fmd-bad:#FF8FA6;--fmd-scrim:rgba(0,0,0,.6)}
+.fmdlg{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px}
+.fmdlg[hidden]{display:none}
+.fmdlg-scrim{position:absolute;inset:0;background:var(--fmd-scrim)}
+.fmdlg-box{position:relative;width:100%;max-width:420px;max-height:calc(100vh - 32px);overflow:auto;background:var(--card,#fff);color:var(--text,#5A3A4E);
+  border:1px solid var(--line,rgba(178,92,147,.16));border-radius:20px;padding:20px 20px 16px;box-shadow:0 18px 48px rgba(42,16,36,.32);outline:none}
+.fmdlg-t{font-size:18px;line-height:1.3;margin:0 0 8px;font-weight:700;color:var(--text,#5A3A4E)}
+.fmdlg-m{font-size:15px;line-height:1.55;color:var(--text,#5A3A4E);overflow-wrap:anywhere}
+.fmdlg-m p{margin:0 0 10px}
+.fmdlg-b{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+.fmdlg-btn{min-height:44px;min-width:96px;padding:10px 18px;border-radius:999px;border:0;font:inherit;font-weight:700;font-size:15px;cursor:pointer;
+  background:var(--fmd-acc);color:var(--fmd-on)}
+.fmdlg-btn.alt{background:transparent;color:var(--text,#5A3A4E);border:1.5px solid var(--line,rgba(178,92,147,.3))}
+.fmdlg-btn.danger{background:var(--fmd-bad);color:var(--fmd-on)}
+.fmdlg-btn:focus-visible{outline:3px solid var(--fmd-acc);outline-offset:2px}
+html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
+@media (max-width:599px){
+  .fmdlg{align-items:flex-end;padding:0}
+  .fmdlg-box{max-width:none;border-radius:20px 20px 0 0;max-height:85vh;padding:20px 16px calc(16px + env(safe-area-inset-bottom))}
+  .fmdlg-b{flex-direction:column-reverse}
+  .fmdlg-btn{width:100%}
+}
+@media (prefers-reduced-motion:no-preference){.fmdlg-box{animation:fmdlgIn .16s ease-out}@keyframes fmdlgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}}
+/* FM-DLG-CSS-END */
+/* SELL-CSS-BEGIN (byte-identical in stock/site.html and index.html) */
+:root{--sl-acc:#9E4686;--sl-on:#fff;--sl-p1:#e7eefb;--sl-p1t:#2a5aa5;--sl-p2:#fdeede;--sl-p2t:#8C5A0E;--sl-p3:#e2f5ec;--sl-p3t:#1c7a52;--sl-p4:#f1e8ed;--sl-p4t:#6b4d60}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sl-acc:#F0A8D2;--sl-on:#2A1024;--sl-p1:#1E2C42;--sl-p1t:#9DC2F0;--sl-p2:#3D2F16;--sl-p2t:#F0C86A;--sl-p3:#1C3A2C;--sl-p3t:#8FE0B8;--sl-p4:#3A2632;--sl-p4t:#E3CBD8}}
+:root[data-theme="dark"]{--sl-acc:#F0A8D2;--sl-on:#2A1024;--sl-p1:#1E2C42;--sl-p1t:#9DC2F0;--sl-p2:#3D2F16;--sl-p2t:#F0C86A;--sl-p3:#1C3A2C;--sl-p3t:#8FE0B8;--sl-p4:#3A2632;--sl-p4t:#E3CBD8}
+.sl-wrap{display:grid;gap:16px;margin:4px 0 24px}
+.sl-col,.sl-side{display:grid;gap:16px;align-content:start;min-width:0}
+@media (min-width:980px){.sl-wrap.sl-wide{grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr)}.sl-wrap.sl-wide .sl-side{position:sticky;top:calc(var(--hvis,72px) + 12px)}}
+.sl-card{margin:0;background:var(--card,#fff);border:1px solid var(--line,rgba(178,92,147,.16));border-radius:var(--radius,16px);padding:18px 16px;min-width:0}
+.sl-main{border-width:2px;border-color:var(--rose,#F0B9CF)}
+.sl-few{background:transparent}
+.sl-h{font-size:22px;line-height:1.25;margin:0 0 6px;color:var(--text,#5A3A4E)}
+.sl-h2s{font-size:17px;line-height:1.3;margin:0 0 6px;color:var(--text,#5A3A4E)}
+.sl-h3{display:block;font-size:14px;font-weight:700;margin:14px 0 6px;color:var(--text,#5A3A4E);padding:0}
+.sl-p{margin:0 0 8px;font-size:15px;line-height:1.55;color:var(--text,#5A3A4E)}
+.sl-small{margin:4px 0 0;font-size:13px;line-height:1.5;color:var(--hint,#765970)}
+.sl-ul{margin:0 0 4px;padding-left:20px;font-size:14px;line-height:1.55;color:var(--text,#5A3A4E)}
+.sl-ul li{margin:2px 0}
+.sl-rows{display:grid;gap:8px}
+.sl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sl-k{display:flex;flex-direction:column;font-size:15px;font-weight:600;color:var(--text,#5A3A4E);min-width:0}
+.sl-r{font-size:12px;font-weight:500;color:var(--hint,#765970)}
+.sl-step{display:flex;align-items:center;border:1.5px solid var(--line,rgba(178,92,147,.3));border-radius:12px;overflow:hidden;background:var(--card,#fff)}
+.sl-pm{width:44px;height:44px;border:0;background:transparent;color:var(--text,#5A3A4E);font-size:20px;font-weight:700;cursor:pointer}
+.sl-pm:hover{background:var(--ruff,#F6E1D6)}
+.sl-n{width:84px;height:44px;border:0;border-left:1px solid var(--line,rgba(178,92,147,.2));border-right:1px solid var(--line,rgba(178,92,147,.2));text-align:center;font:inherit;font-size:16px;font-weight:700;background:transparent;color:var(--text,#5A3A4E);-moz-appearance:textfield;appearance:textfield}
+.sl-n::-webkit-outer-spin-button,.sl-n::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.sl-pay{border:0;margin:0;padding:0;min-width:0}
+.sl-seg{display:flex;flex-wrap:wrap;gap:8px}
+.sl-opt{position:relative;display:inline-flex}
+.sl-opt input{position:absolute;opacity:0;width:1px;height:1px}
+.sl-opt span{display:inline-flex;align-items:center;min-height:44px;padding:8px 14px;border-radius:999px;border:1.5px solid var(--line,rgba(178,92,147,.3));font-size:14px;font-weight:600;color:var(--text,#5A3A4E);cursor:pointer}
+.sl-opt input:checked + span{background:var(--sl-acc);border-color:var(--sl-acc);color:var(--sl-on)}
+.sl-opt input:focus-visible + span{outline:3px solid var(--sl-acc);outline-offset:2px}
+.sl-est{margin:16px 0 4px;padding:14px;border-radius:14px;background:var(--ruff,#F6E1D6);color:var(--text,#5A3A4E)}
+.sl-est p{margin:0}
+.sl-est-k{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--hint,#765970)}
+.sl-est-v{font-size:22px;font-weight:800;line-height:1.25;margin:2px 0!important}
+.sl-est-n{font-size:15px;font-weight:600}
+.sl-ph{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.sl-thumb{position:relative;width:72px;height:72px;border-radius:12px;overflow:hidden;border:1px solid var(--line,rgba(178,92,147,.2))}
+.sl-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.sl-x{position:absolute;top:2px;right:2px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(42,16,36,.75);color:#fff;font-size:18px;line-height:1;cursor:pointer}
+.sl-add{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;border-radius:12px;border:1.5px dashed var(--sl-acc);color:var(--text,#5A3A4E);font-size:14px;font-weight:700;cursor:pointer}
+.sl-add:focus-within{outline:3px solid var(--sl-acc);outline-offset:2px}
+.sl-ta,.sl-in{width:100%;box-sizing:border-box;border:1.5px solid var(--line,rgba(178,92,147,.3));border-radius:12px;padding:10px 12px;font:inherit;font-size:16px;background:var(--card,#fff);color:var(--text,#5A3A4E);min-height:44px}
+.sl-ta{resize:vertical}
+.sl-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:400px){.sl-two{grid-template-columns:1fr}}
+.sl-go{display:inline-flex;align-items:center;justify-content:center;min-height:48px;width:100%;margin-top:16px;padding:10px 18px;border-radius:999px;border:0;font:inherit;font-size:16px;font-weight:800;background:var(--sl-acc);color:var(--sl-on);cursor:pointer}
+.sl-go.alt{background:transparent;color:var(--text,#5A3A4E);border:1.5px solid var(--sl-acc)}
+.sl-go:disabled{opacity:.6;cursor:default}
+.sl-go:focus-visible,.sl-pm:focus-visible,.sl-x:focus-visible{outline:3px solid var(--sl-acc);outline-offset:2px}
+.sl-signin{margin-top:16px}
+.sl-steps{margin:0;padding-left:22px;font-size:14px;line-height:1.6;color:var(--text,#5A3A4E)}
+.sl-steps li{margin:4px 0}
+.sl-reqs{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.sl-req{border:1px solid var(--line,rgba(178,92,147,.2));border-radius:14px;padding:12px}
+.sl-req-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sl-req-id{font-size:12px;color:var(--hint,#765970)}
+.sl-req-s{margin:6px 0 0;font-size:14px;line-height:1.45;color:var(--text,#5A3A4E);overflow-wrap:anywhere}
+.sl-offer-l{margin:6px 0 0;font-size:15px;color:var(--text,#5A3A4E)}
+.sl-req-b{display:flex;gap:8px}
+.sl-req-b .sl-go{margin-top:10px;min-height:44px;font-size:15px}
+.sl-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:var(--sl-p1);color:var(--sl-p1t)}
+.sl-pill.sl-offer,.sl-pill.sl-accepted{background:var(--sl-p2);color:var(--sl-p2t)}
+.sl-pill.sl-paid{background:var(--sl-p3);color:var(--sl-p3t)}
+.sl-pill.sl-declined,.sl-pill.sl-withdrawn{background:var(--sl-p4);color:var(--sl-p4t)}
+/* SELL-CSS-END */
 /* s33.42 💬 Help on Home: one wide pill in the accent colour, under the welcome card */
 .mhelp-cta{display:flex;align-items:center;gap:12px;width:100%;margin:12px 0 2px;padding:12px 16px;border:0;border-radius:18px;background:var(--fawn-deep);color:var(--card);text-align:left;cursor:pointer;
   box-shadow:0 6px 18px rgba(168,78,142,.32);font:inherit}
@@ -2075,7 +2170,7 @@ img.img-ph{object-fit:contain;background:#f6eee9}
     <div id="ov-justin"></div>
     <div class="section-t">What you can do</div>
     <button class="feat" onclick="go('store')">
-      <div class="ic" data-ic="store">🛍️</div><div><h3>Browse the store</h3><p>Cards, sealed &amp; merch — claim them now</p></div>
+      <div class="ic" data-ic="store">🛍️</div><div><h3>Browse the store</h3><p>Cards, sealed &amp; merch. claim them now</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('orders')">
@@ -2083,7 +2178,7 @@ img.img-ph{object-fit:contain;background:#f6eee9}
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('buyback')">
-            <div class="ic" data-ic="sell">💰</div><div><h3>Sell cards to us</h3><p id="ov-rates">~85% cash · ~90% store credit (est.)</p></div>
+            <div class="ic" data-ic="sell">💰</div><div><h3>Sell to us</h3><p id="ov-rates">Your bulk and jank, for cash or store credit</p></div>
       <span class="chev">›</span>
     </button>
     <button class="feat" onclick="go('support')">
@@ -2152,23 +2247,11 @@ img.img-ph{object-fit:contain;background:#f6eee9}
     <div id="oseg-binder" class="hidden"><div id="binderWrap"></div></div>
   </div>
 
-  <!-- BUYBACK -->
+  <!-- SELL TO US (v13.70: the website's form, SELL block) -->
   <div class="view hidden" id="v-buyback">
-    <div id="sell-bb">
-    <div class="section-t">Sell your cards to us</div>
-    <div class="rates">
-      <div class="rate"><div class="rate-cap">~ est.</div><div class="rate-n" id="rate-credit">85%</div><div class="rate-l">store credit</div><div class="rate-b">best value</div></div>
-      <div class="rate"><div class="rate-cap">~ est.</div><div class="rate-n" id="rate-cash">80%</div><div class="rate-l">cash</div></div>
-    </div>    <p class="note" style="text-align:left;margin:2px 4px 14px">These are <b>estimates</b>. The real offer depends on condition and what the card is going for right now. Tell us what you've got and we'll message you back — no commitment either way.</p>
-    <div class="panel">
-      <div class="field">
-        <label>What are you selling?</label>
-        <textarea id="bb-msg" rows="5" placeholder="Tell us what you have or what you're after — e.g. 'Umbreon VMAX alt art 215/203, Near Mint, looking to sell for store credit' or 'a stack of ~30 SV holos, want a bulk cash offer'. The more detail, the faster we can quote you."></textarea>
-      </div>
-      <button class="cta" id="bb-submit" onclick="guard(this,submitBuyback)">Send &amp; talk to us</button>
-      <p class="note">This starts a chat — no commitment. We'll reply in Telegram to sort out a price.</p>
-    </div>
-    </div>
+    <div class="section-t">Sell to us</div>
+    <p class="note" style="text-align:left;margin:2px 4px 12px">turn your bulk into cash or store credit 🐾</p>
+    <div id="sell-bb"></div>
   </div>
 
   <!-- PROFILE -->
@@ -2206,7 +2289,7 @@ img.img-ph{object-fit:contain;background:#f6eee9}
     <div class="section-t">Help &amp; support</div>
     <div class="mhelp" id="sup-help" aria-label="How the shop works"></div>
     <div class="panel">
-            <p class="note" style="text-align:left;margin:0 0 12px">A question about an order, a payment, or a card? Send us a message and we'll reply in Telegram.<br><br><b>Want a refund?</b> Give us your order number and which cards — we handle refunds by hand. Policies are at the bottom of this page.</p>
+            <p class="note" style="text-align:left;margin:0 0 12px">A question about an order, a payment, or a card? Send us a message and we'll reply in Telegram.<br><br><b>Want a refund?</b> Give us your order number and which cards. we handle refunds by hand. Policies are at the bottom of this page.</p>
       <div class="field"><label>Order number (optional)</label><input id="sup-order" placeholder="e.g. EF1A2B3C"></div>
       <div class="field"><label>Your message</label><textarea id="sup-msg" rows="5" placeholder="Tell us how we can help…"></textarea></div>
       <button class="cta" id="sup-send" onclick="sendSupport(this)">Send message</button>
@@ -2215,14 +2298,14 @@ img.img-ph{object-fit:contain;background:#f6eee9}
     <div class="howbuy" style="margin-top:14px">
       <button class="howbuy-hd" onclick="togglePolicy()"><span>📋 Our policies</span><span id="polChev">▾</span></button>
       <div class="howbuy-b" id="polBody">
-        <div class="hb-step"><span>🛡️</span><div><b>Authenticity, forever.</b> Every card is genuine. If one is ever shown not to be, you get a full refund whenever you find out — no time limit.</div></div>
+        <div class="hb-step"><span>🛡️</span><div><b>Authenticity, forever.</b> Every card is genuine. If one is ever shown not to be, you get a full refund whenever you find out. no time limit.</div></div>
         <div class="hb-step"><span>🎥</span><div><b>Film the opening.</b> For anything missing from a packet or damaged in transit, we need an unbroken unboxing video. It protects both of us.</div></div>
         <div class="hb-step"><span>📸</span><div><b>48 hours.</b> Message us with photos or videos within 48 hours of delivery and we'll refund or replace it.</div></div>
         <div class="hb-step"><span>📮</span><div><b>Normal mail travels at your risk.</b> It's cheaper but it isn't tracked, so we can't cover it if it goes astray. Tracked postage is covered.</div></div>
         <div class="hb-step"><span>🔄</span><div><b>Changed your mind?</b> Free to cancel before you pay. Excessive or fraudulent refunds will result in warnings or a ban.</div></div>
         <div class="hb-step"><span>4️⃣</span><div><b>Max 4 of the same card per person every 30 days.</b> Four is a full playset, so players can always build a deck, and the limit helps the community by stopping resellers from buying out the shelf.</div></div>
         <div class="hb-step"><span>🏆</span><div><b>All cards are NM-LP (binder condition) unless the listing says otherwise.</b> We can send as many photos as you need on request, but we can't refund a grade you didn't like.</div></div>
-        <div class="hb-step"><span>💳</span><div><b>How refunds come back.</b> Whatever you paid with credit returns as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
+        <div class="hb-step"><span>💳</span><div><b>How refunds come back.</b> Whatever you paid with credit returns as credit. Whatever you paid by PayNow can come back either way: credit lands instantly, cash we send by hand.</div></div>
       </div>
     </div>
   </div>
@@ -2297,9 +2380,9 @@ img.img-ph{object-fit:contain;background:#f6eee9}
     <button class="feat" style="margin:16px 0 8px" onclick="openGuide('credit')"><div class="ic">💡</div><div><h3>How store credit works</h3><p>Four quick cards</p></div><span class="chev">›</span></button>
     <div class="section-t hidden" style="margin:16px 4px 8px">How store credit works</div>
     <div class="hb-body" style="padding:0 4px">
-      <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> <span data-cfg="RC">$3</span> back for every <span data-cfg="RT">$100</span> you pay. Refer a friend and you BOTH get <span data-cfg="REFC">$3</span> once they spend <span data-cfg="REFMIN">$15</span>+. Sell us cards and take credit instead of cash — we pay a better rate for credit.</div></div>
+      <div class="hb-step"><span>🎁</span><div><b>How you earn it.</b> <span data-cfg="RC">$3</span> back for every <span data-cfg="RT">$100</span> you pay. Refer a friend and you BOTH get <span data-cfg="REFC">$3</span> once they spend <span data-cfg="REFMIN">$15</span>+. Sell us cards and take credit instead of cash. we pay a better rate for credit.</div></div>
       <div class="hb-step"><span>🛒</span><div><b>How you spend it.</b> Toggle "Use store credit" at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6. If it covers everything, there's nothing to pay at all.</div></div>
-      <div class="hb-step"><span>↩️</span><div><b>Refunds.</b> Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.</div></div>
+      <div class="hb-step"><span>↩️</span><div><b>Refunds.</b> Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way: credit lands instantly, cash we send by hand.</div></div>
       <div class="hb-step"><span>ℹ️</span><div><b>Good to know.</b> Credit never expires, but it can't be cashed out. If an order is cancelled or times out, any credit you used comes straight back.</div></div>
     </div>
   
@@ -2356,7 +2439,7 @@ img.img-ph{object-fit:contain;background:#f6eee9}
     <div class="field"><label>Your offer (S$)</label>
       <input id="offerInput" type="number" inputmode="decimal" placeholder="0.00"></div>
     <button class="cta" id="offerSend" onclick="guard(this,sendOffer)">Send offer</button>
-    <p class="note">We'll get your offer and message you back to discuss. No payment yet — just a chat.</p>
+    <p class="note">We'll get your offer and message you back to discuss. No payment yet, just a chat.</p>
   </div>
 </div>
 
@@ -2380,14 +2463,14 @@ img.img-ph{object-fit:contain;background:#f6eee9}
     <div class="field"><label>Mailing address</label><input id="pa-addr" placeholder="Block, street, unit, postal code"></div>
     <div class="field"><label>Phone (optional)</label><input id="pa-phone" placeholder="For delivery issues"></div>
     <button class="cta" onclick="saveAddrEdit()">Save address</button>
-    <p class="note">Used to pre-fill checkout — you can still change it per order.</p>
+    <p class="note">Used to pre-fill checkout. you can still change it per order.</p>
   </div>
 </div>
 
 <div class="scrim" id="wishScrim" onclick="closeWishlist()"></div><div class="sheet" id="wishSheet">
   <div class="sh-hd"><h2>🔔 My wishlist</h2><button class="rm" aria-label="Close" onclick="closeWishlist()">✕</button></div>
   <div class="body" style="padding-bottom:20px">
-    <p class="note" style="text-align:left;margin:0 0 12px">Watch a Pokémon or a set — we'll DM you the moment matching cards are back in stock.</p>
+    <p class="note" style="text-align:left;margin:0 0 12px">Watch a Pokémon or a set and we'll DM you the moment matching cards are back in stock.</p>
     <div class="wish-add">
       <div class="wtabs">
         <button class="wtab on" id="wtab-name" onclick="wishKind('name')">Pokémon</button>
@@ -2452,7 +2535,7 @@ const API_URL = IS_STAGING
   : "https://fluffmart-api.shrimaniac.workers.dev/api";
 if (IS_STAGING) {
   const addBar = () => document.body && document.body.insertAdjacentHTML('afterbegin',
-    '<div style="position:sticky;top:0;z-index:99999;background:#FFD400;color:#000;font:700 13px/1.2 system-ui,sans-serif;text-align:center;padding:6px 8px">🧪 TEST SHOP — nothing here is real</div>');
+    '<div style="position:sticky;top:0;z-index:99999;background:#FFD400;color:#000;font:700 13px/1.2 system-ui,sans-serif;text-align:center;padding:6px 8px">🧪 test shop · nothing here is real</div>');
   if (document.body) addBar(); else document.addEventListener('DOMContentLoaded', addBar);
 }
 /* v13.69.18 (Bryan, 12 Oct): the shop's own domain. ONE place for the stock Worker's addresses:
@@ -2757,7 +2840,7 @@ function fmtStamp(s){
 function cleanUpdate(txt){
   const s=String(txt||''); const i=s.lastIndexOf(' · ');
   if(i<0) return s;
-  const head=s.slice(0,i), rest=s.slice(i+3), d=rest.indexOf(' — ');
+  const head=s.slice(0,i), rest=s.slice(i+3), d=rest.indexOf(' '+String.fromCharCode(8212)+' ');
   const tail=d>=0?rest.slice(d):'';          // tracking detail, e.g. " — Arrived at hub"
   const p=parseStamp(d>=0?rest.slice(0,d):rest);
   return (p ? head+' · '+fmtStamp(p) : head)+tail;
@@ -2799,7 +2882,7 @@ function renderPayQR(inv, isRetry){
   if(!mobile){ box.innerHTML='<div class="pn-qr-ph">Set PayNow<br><span>in Config</span></div>'; return; }
   // If the CDN script didn't load (flaky network inside the Telegram webview), pull it again once.
   if(typeof QRCode==='undefined'){
-    if(isRetry){ box.innerHTML='<div class="pn-qr-ph">QR unavailable —<br><span>pay to the number below</span></div>'; return; }
+    if(isRetry){ box.innerHTML='<div class="pn-qr-ph">QR unavailable.<br><span>pay to the number below</span></div>'; return; }
     const s=document.createElement('script');    s.src='qrcode.min.js';
     s.onload=()=>renderPayQR(inv,true);
     s.onerror=()=>renderPayQR(inv,true);
@@ -2815,7 +2898,7 @@ function renderPayQR(inv, isRetry){
     // Last resort: let the library draw it, but big and at level M, so a
     // screenshot still has a chance.
     else new QRCode(box,{text:payload,width:760,height:760,correctLevel:QRCode.CorrectLevel.M});
-  } catch(e){ box.innerHTML='<div class="pn-qr-ph">QR unavailable —<br><span>pay to the number below</span></div>'; }
+  } catch(e){ box.innerHTML='<div class="pn-qr-ph">QR unavailable.<br><span>pay to the number below</span></div>'; }
 }
   /* ── PayNow QR, drawn module by module ────────────────────────────────────────
    Why this isn't left to qrcodejs: the library sizes its canvas in CSS pixels
@@ -3136,6 +3219,277 @@ function ctSwitch(view) {
     b('list', 'List', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="4.5" width="4" height="5" rx="1"></rect><rect x="3.5" y="14.5" width="4" height="5" rx="1"></rect><path d="M11 6h9.5M11 9h6M11 16h9.5M11 19h6"></path></svg>') + '</div>';
 }
 /* CARD-TILE-END */
+/* FM-DLG-BEGIN (byte-identical in stock/site.html and index.html; test_buyback_web.js checks) */
+/* s33.55 / v13.70 (Bryan, 12 Oct): the shop's own pop-up instead of the browser's alert / confirm boxes.
+   fmDlg({title, msg, html, ok, cancel, danger}) -> Promise<true|false>: role dialog, modal; focus moves in
+   (the main button), Tab stays inside, Esc / the backdrop = cancel, focus goes back to where it was.
+   A bottom sheet on a phone (< 600 px), a centred card on a computer; colours from the page's tokens
+   (light + dark). msg is plain text (escaped here); html is the caller's own, already-escaped markup. */
+const FMDLG = { q: [], open: null };
+function fmDlgEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function fmDlg(o) {
+  o = o || {};
+  return new Promise(res => { FMDLG.q.push({ o: o, res: res }); if (!FMDLG.open) fmDlgNext(); });
+}
+function fmDlgNext() {
+  const it = FMDLG.q.shift(); if (!it) { FMDLG.open = null; return; }
+  const o = it.o, back = document.activeElement;
+  let root = document.getElementById('fmDlg');
+  if (!root) { root = document.createElement('div'); root.id = 'fmDlg'; root.className = 'fmdlg'; document.body.appendChild(root); }
+  const lines = String(o.msg == null ? '' : o.msg).split(/\n{2,}/).map(p => '<p>' + fmDlgEsc(p).replace(/\n/g, '<br>') + '</p>').join('');
+  root.innerHTML = '<div class="fmdlg-scrim" data-fmdlg="no"></div><div class="fmdlg-box" role="' + (o.cancel ? 'alertdialog' : 'dialog') + '" aria-modal="true" aria-labelledby="fmDlgT" aria-describedby="fmDlgM" tabindex="-1">' +
+    '<h2 class="fmdlg-t" id="fmDlgT">' + fmDlgEsc(o.title || (o.cancel ? 'Are you sure?' : 'FloofMart 🐾')) + '</h2>' +
+    '<div class="fmdlg-m" id="fmDlgM">' + (o.msg != null && o.msg !== '' ? lines : '') + (o.html || '') + '</div>' +
+    '<div class="fmdlg-b">' + (o.cancel ? '<button type="button" class="fmdlg-btn alt" data-fmdlg="no">' + fmDlgEsc(o.cancel) + '</button>' : '') +
+    (o.ok === false ? '' : '<button type="button" class="fmdlg-btn' + (o.danger ? ' danger' : '') + '" data-fmdlg="yes">' + fmDlgEsc(o.ok || 'OK') + '</button>') + '</div></div>';
+  root.hidden = false; document.documentElement.classList.add('fmdlg-on');
+  const box = root.querySelector('.fmdlg-box');
+  const done = v => {
+    if (FMDLG.open !== it) return;
+    root.hidden = true; root.innerHTML = ''; document.documentElement.classList.remove('fmdlg-on');
+    document.removeEventListener('keydown', key, true);
+    FMDLG.open = null;
+    try { if (back && back.focus && document.contains(back)) back.focus({ preventScroll: true }); } catch (e) { /* gone */ }
+    it.res(v); fmDlgNext();
+  };
+  const tabbables = () => Array.from(box.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,iframe,[tabindex]:not([tabindex="-1"])')).filter(x => x.getClientRects().length);
+  const key = e => {
+    if (FMDLG.open !== it) return;
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); return; }
+    if (e.key === 'Tab') {
+      const f = tabbables(); if (!f.length) { e.preventDefault(); box.focus(); return; }
+      const a = f[0], z = f[f.length - 1];
+      if (e.shiftKey && (document.activeElement === a || !box.contains(document.activeElement))) { e.preventDefault(); z.focus(); }
+      else if (!e.shiftKey && (document.activeElement === z || !box.contains(document.activeElement))) { e.preventDefault(); a.focus(); }
+    }
+  };
+  root.onclick = e => { const b = e.target.closest('[data-fmdlg]'); if (b) done(b.getAttribute('data-fmdlg') === 'yes'); };
+  document.addEventListener('keydown', key, true);
+  FMDLG.open = it;
+  if (typeof o.onShow === 'function') { try { o.onShow(box); } catch (e) { /* the pop-up still works */ } }
+  setTimeout(() => { if (FMDLG.open !== it) return; const y = box.querySelector('[data-fmdlg="yes"]') || box.querySelector('[data-fmdlg="no"]'); (y || box).focus({ preventScroll: true }); }, 30);
+}
+/* FM-DLG-END */
+/* v13.70: the Mini App's two prompts. Inside Telegram (6.2+) Telegram's own pop-ups, as before (they are
+   the native look there); anywhere else (a browser preview, old Telegram apps that throw) the shop's pop-up
+   above, never the browser's alert / confirm. Both take plain text or {title, msg, ok, cancel, danger}. */
+function fmTgOk(){ try{ return !!(tg&&tg.showAlert&&tg.showConfirm&&(!tg.isVersionAtLeast||tg.isVersionAtLeast('6.2'))); }catch(e){ return false; } }
+function fmTgText(o){ return (o.title?o.title+'\n\n':'')+String(o.msg==null?'':o.msg); }
+function fmTell(m){
+  const o=(typeof m==='object'&&m)?m:{msg:m};
+  if(fmTgOk()&&!o.html) return new Promise(res=>{ try{ tg.showAlert(fmTgText(o),()=>res(true)); }catch(e){ fmDlg(o).then(res); } });
+  return fmDlg(o);
+}
+function fmAsk(m){
+  const o=Object.assign({ok:'OK',cancel:'Cancel'},(typeof m==='object'&&m)?m:{msg:m});
+  if(fmTgOk()&&!o.html) return new Promise(res=>{ try{ tg.showConfirm(fmTgText(o),ok=>res(!!ok)); }catch(e){ fmDlg(o).then(res); } });
+  return fmDlg(o);
+}
+/* SELL-BEGIN (byte-identical in stock/site.html and index.html; test_buyback_web.js checks) */
+/* s33.55 / v13.70 "Sell to us" (Bryan, 12 Oct: "mainly for jank and a small section for singles").
+   The same form on the website (#/sell) and in the Mini App (Sell cards to us). Each page brings its own
+   slApi(act, params) (website: /api/me; Mini App: its api), slInfo() (the bulk rates), slSignedIn(),
+   slSignInHtml(why) and fmTell / fmAsk. The server works out the estimate again and never trusts ours. */
+const SL = { info: null, counts: {}, pay: 'credit', photos: [], reqs: null, busy: false };
+const SL_KINDS = [['c', 'Commons'], ['u', 'Uncommons'], ['r', 'Reverse holos'], ['h', 'Holo rares'], ['v', 'V, ex and GX']];
+const SL_MAX_PHOTOS = 6, SL_PHOTO_PX = 1600;
+function slE(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function slMoney(cents) { const n = Math.round(Number(cents) || 0); return 'S$' + (n / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function slRate(k) { const r = SL.info && SL.info.rates; return r && r[k] > 0 ? r[k] : 0; }
+function slRateTxt(v) { return v >= 0.995 ? 'S$' + v.toFixed(2) : Math.round(v * 100 * 10) / 10 + '¢'; }
+/* The same sums as bbEstimate (code.gs): whole cents, store credit = cash × the shop's credit bonus. */
+function slEstimate() {
+  let cents = 0, any = false, partial = false, total = 0;
+  SL_KINDS.forEach(k => { const n = Math.floor(Number(SL.counts[k[0]]) || 0); if (n <= 0) return; total += n; const r = slRate(k[0]); if (r) { cents += Math.round(n * r * 100); any = true; } else partial = true; });
+  const b = SL.info && SL.info.bonusPct > 0 ? SL.info.bonusPct : 0, f = SL.info && SL.info.creditFactor > 1 && SL.info.creditFactor <= 2 ? SL.info.creditFactor : 1 + b / 100;
+  return { total, any, partial, cash: cents, credit: any ? Math.floor(cents * f) : 0, bonus: b };
+}
+function slEstMain(e) {
+  if (SL.pay === 'cash' || !e.bonus) return slMoney(e.cash) + (SL.pay === 'credit' ? ' store credit' : ' cash');
+  return SL.pay === 'credit' ? slMoney(e.credit) + ' store credit' : slMoney(e.cash) + ' cash or ' + slMoney(e.credit) + ' store credit';
+}
+function slHasRates() { return !!(SL.info && SL.info.rates && Object.keys(SL.info.rates).length); }
+function slBulkHtml() {
+  const rows = SL_KINDS.map(k => {
+    const r = slRate(k[0]);
+    return '<div class="sl-row"><label class="sl-k" for="sl-n-' + k[0] + '">' + slE(k[1]) + '<span class="sl-r">' + (r ? slRateTxt(r) + ' each' : (slHasRates() ? 'ask us' : '')) + '</span></label>' +
+      '<div class="sl-step"><button type="button" class="sl-pm" data-sl-step="' + k[0] + '" data-d="-50" aria-label="50 fewer ' + slE(k[1].toLowerCase()) + '">−</button>' +
+      '<input id="sl-n-' + k[0] + '" class="sl-n" type="number" inputmode="numeric" min="0" max="200000" step="1" placeholder="0" data-sl-n="' + k[0] + '" value="' + (SL.counts[k[0]] > 0 ? SL.counts[k[0]] : '') + '">' +
+      '<button type="button" class="sl-pm" data-sl-step="' + k[0] + '" data-d="50" aria-label="50 more ' + slE(k[1].toLowerCase()) + '">+</button></div></div>';
+  }).join('');
+  const b = SL.info && SL.info.bonusPct > 0 ? SL.info.bonusPct : 0;
+  const pay = [['credit', 'Store credit' + (b ? ' (+' + b + '%)' : '')], ['cash', 'Cash (PayNow)'], ['either', 'Either is fine']];
+  return '<section class="sl-card sl-main" aria-labelledby="slBulkT"><h2 id="slBulkT" class="sl-h">Sell us your bulk 📦</h2>' +
+    '<p class="sl-p">got a pile of jank you\'re done with? commons, uncommons, reverse holos, holos, V and ex: we take them off your hands. English or Japanese, just tell us roughly how many.</p>' +
+    '<ul class="sl-ul"><li>a rough count is fine, we count again when we get them.</li><li>played is ok for bulk. tell us about anything bent, creased or water damaged.</li>' +
+    '<li>we\'ll sort out the hand-over with you on Telegram (meet-up or post, in Singapore).</li><li>paid in store credit straight away, or cash by PayNow.</li></ul>' +
+    '<h3 class="sl-h3">How many have you got?</h3><div class="sl-rows">' + rows + '</div>' +
+    '<fieldset class="sl-pay"><legend class="sl-h3">How would you like to be paid?</legend><div class="sl-seg">' +
+      pay.map(p => '<label class="sl-opt"><input type="radio" name="sl-pay" value="' + p[0] + '"' + (SL.pay === p[0] ? ' checked' : '') + '><span>' + slE(p[1]) + '</span></label>').join('') + '</div></fieldset>' +
+    '<div class="sl-est" id="sl-est" role="status" aria-live="polite">' + slEstHtml() + '</div>' +
+    '<h3 class="sl-h3">Photos (optional)</h3><p class="sl-small">up to ' + SL_MAX_PHOTOS + ' photos of the pile help us reply faster.</p>' +
+    '<div class="sl-ph" id="sl-ph">' + slPhotosHtml() + '</div>' +
+    '<label class="sl-h3" for="sl-note">Anything else? (optional)</label><textarea id="sl-note" class="sl-ta" rows="3" maxlength="1000" placeholder="e.g. mostly Scarlet & Violet, some Japanese 151"></textarea>' +
+    (slSignedIn() ? '<button type="button" class="sl-go" data-sl-send="bulk">Send my bulk request</button><p class="sl-small">no commitment. we reply on Telegram with an offer.</p>'
+      : '<div class="sl-signin">' + slSignInHtml('sign in with Telegram so we can message you an offer 🐾') + '</div>') + '</section>';
+}
+function slEstHtml() {
+  const e = slEstimate();
+  if (!e.total) return '<p class="sl-est-n">add your counts above to see a rough estimate</p>';
+  if (!slHasRates()) return '<p class="sl-est-n">' + e.total.toLocaleString('en-US') + ' cards · rates on request</p><p class="sl-small">send it in and we\'ll message you an offer 🐾</p>';
+  if (!e.any) return '<p class="sl-est-n">' + e.total.toLocaleString('en-US') + ' cards · we\'ll quote these by hand</p>';
+  return '<p class="sl-est-k">rough estimate</p><p class="sl-est-v">about ' + slEstMain(e) + '</p><p class="sl-small">for ' + e.total.toLocaleString('en-US') + ' cards' +
+    (e.partial ? ', plus the kinds we quote by hand' : '') + '. the real offer comes after we see them.</p>';
+}
+function slPhotosHtml() {
+  return SL.photos.map((p, i) => '<span class="sl-thumb"><img src="' + slE(p) + '" alt="Photo ' + (i + 1) + '"><button type="button" class="sl-x" data-sl-rm="' + i + '" aria-label="Remove photo ' + (i + 1) + '">×</button></span>').join('') +
+    (SL.photos.length < SL_MAX_PHOTOS ? '<label class="sl-add"><input type="file" accept="image/jpeg,image/png,image/webp" multiple data-sl-file hidden><span aria-hidden="true">📷</span> Add photos</label>' : '');
+}
+function slSinglesHtml() {
+  return '<section class="sl-card sl-few" aria-labelledby="slFewT"><h2 id="slFewT" class="sl-h2s">Got a few singles?</h2>' +
+    '<p class="sl-small">not our main focus right now, but we\'re happy to take a look.</p>' +
+    '<label class="sl-h3" for="sl-list">Which cards?</label><textarea id="sl-list" class="sl-ta" rows="4" maxlength="3000" placeholder="one card per line, e.g. Umbreon VMAX 215/203"></textarea>' +
+    '<div class="sl-two"><div><label class="sl-h3" for="sl-cond">Condition</label><select id="sl-cond" class="sl-in"><option value="">Not sure</option><option value="NM">Near mint</option><option value="LP">Lightly played</option><option value="MP">Moderately played</option><option value="HP">Heavily played</option><option value="DMG">Damaged</option><option value="mixed">A mix</option></select></div>' +
+    '<div><label class="sl-h3" for="sl-ask">Asking price (optional)</label><input id="sl-ask" class="sl-in" inputmode="decimal" maxlength="12" placeholder="S$"></div></div>' +
+    (slSignedIn() ? '<button type="button" class="sl-go alt" data-sl-send="singles">Ask about my singles</button>' : '<p class="sl-small">sign in above to send this too.</p>') + '</section>';
+}
+const SL_STATE = { waiting: ['Waiting for us', 'we\'ll look and message you'], offer: ['Offer for you', ''], accepted: ['Deal 🎉', 'we\'ll message you to arrange the hand-over'],
+  paid: ['Paid 💛', 'thank you!'], declined: ['Not this time', 'thank you for asking us'], withdrawn: ['You said no thanks', ''] };
+function slReqsHtml() {
+  const L = SL.reqs;
+  if (!slSignedIn()) return '';
+  if (!L) return '<p class="sl-small">loading your sell requests…</p>';
+  if (!L.length) return '<p class="sl-small">nothing yet. your requests show up here.</p>';
+  return '<ul class="sl-reqs">' + L.map(q => {
+    const st = SL_STATE[q.state] || SL_STATE.waiting;
+    const offer = q.state === 'offer' || q.state === 'accepted' ? '<p class="sl-offer-l">our offer: <b>' + slMoney(Math.round((q.offer || 0) * 100)) + '</b> ' + (q.offerPay === 'cash' ? 'cash (PayNow)' : 'store credit') + '</p>' : '';
+    return '<li class="sl-req" data-k="' + slE(q.id) + '"><div class="sl-req-hd"><span class="sl-pill sl-' + slE(q.state) + '">' + slE(st[0]) + '</span><span class="sl-req-id">' + slE(q.id) + ' · ' + slE(q.created) + '</span></div>' +
+      '<p class="sl-req-s">' + slE(q.summary) + '</p>' + offer + (st[1] ? '<p class="sl-small">' + slE(st[1]) + '</p>' : '') +
+      (q.state === 'offer' ? '<div class="sl-req-b"><button type="button" class="sl-go" data-sl-ans="yes" data-id="' + slE(q.id) + '">Yes, deal</button><button type="button" class="sl-go alt" data-sl-ans="no" data-id="' + slE(q.id) + '">No thanks</button></div>' : '') + '</li>';
+  }).join('') + '</ul>';
+}
+function slPageHtml(wide) {
+  return '<div class="sl-wrap' + (wide ? ' sl-wide' : '') + '"><div class="sl-col">' + slBulkHtml() + slSinglesHtml() + '</div>' +
+    '<aside class="sl-side"><section class="sl-card" aria-labelledby="slHowT"><h2 id="slHowT" class="sl-h2s">How it works</h2><ol class="sl-steps">' +
+    '<li><b>count roughly</b> and send us your request</li><li><b>we reply on Telegram</b> with an offer</li><li><b>hand-over</b>: meet-up or post, we sort it out together</li><li><b>get paid</b>: store credit straight away, or cash by PayNow</li></ol></section>' +
+    '<section class="sl-card" aria-labelledby="slMineT"><h2 id="slMineT" class="sl-h2s">Your sell requests</h2><div id="sl-reqs">' + (slSignedIn() ? slReqsHtml() : '<p class="sl-small">sign in to see them here.</p>') + '</div></section></aside></div>';
+}
+async function slLoad() {
+  try { const i = await slInfo(); if (i && i.ok) SL.info = i; } catch (e) { /* rates on request */ }
+  const r = document.querySelector('.sl-main'); if (r) { const est = document.getElementById('sl-est'); if (est) est.innerHTML = slEstHtml(); slRepaintRates(); }
+  if (slSignedIn()) slLoadReqs();
+}
+function slRepaintRates() {
+  SL_KINDS.forEach(k => { const lab = document.querySelector('label[for="sl-n-' + k[0] + '"] .sl-r'); if (lab) { const r = slRate(k[0]); lab.textContent = r ? slRateTxt(r) + ' each' : (slHasRates() ? 'ask us' : ''); } });
+  const b = SL.info && SL.info.bonusPct > 0 ? SL.info.bonusPct : 0, o = document.querySelector('input[name="sl-pay"][value="credit"] + span');
+  if (o) o.textContent = 'Store credit' + (b ? ' (+' + b + '%)' : '');
+}
+async function slLoadReqs() {
+  let r = null; try { r = await slApi('mySellRequests', {}); } catch (e) { r = null; }
+  SL.reqs = r && r.ok ? (r.requests || []) : (SL.reqs || []);
+  const el = document.getElementById('sl-reqs'); if (el) el.innerHTML = slReqsHtml();
+}
+function slSetCount(k, v) {
+  const n = Math.max(0, Math.min(200000, Math.floor(Number(v) || 0)));
+  if (n) SL.counts[k] = n; else delete SL.counts[k];
+  const est = document.getElementById('sl-est'); if (est) est.innerHTML = slEstHtml();
+  return n;
+}
+/* A photo is shrunk to a JPEG of at most 1600 px a side in the browser (6 photos stay well under the 6 MB a request may carry). */
+function slShrink(file) {
+  return new Promise(res => {
+    if (!file || !/^image\/(jpeg|png|webp)$/i.test(file.type || '')) { res({ err: 'type' }); return; }
+    if (file.size > 25 * 1024 * 1024) { res({ err: 'big' }); return; }
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      try {
+        const s = Math.min(1, SL_PHOTO_PX / Math.max(im.naturalWidth || 1, im.naturalHeight || 1));
+        const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.naturalWidth * s)); c.height = Math.max(1, Math.round(im.naturalHeight * s));
+        const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+        res({ data: c.toDataURL('image/jpeg', 0.82) });
+      } catch (e) { res({ err: 'type' }); } finally { URL.revokeObjectURL(url); }
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); res({ err: 'type' }); };
+    im.src = url;
+  });
+}
+async function slAddFiles(files) {
+  let bad = 0;
+  for (const f of Array.from(files || [])) {
+    if (SL.photos.length >= SL_MAX_PHOTOS) { fmTell('up to ' + SL_MAX_PHOTOS + ' photos please 🐾'); break; }
+    const r = await slShrink(f);
+    if (r.data) SL.photos.push(r.data); else bad++;
+  }
+  if (bad) fmTell('🥺 we can\'t read ' + (bad === 1 ? 'that file' : bad + ' of those files') + '. please choose JPEG, PNG or WebP photos.');
+  const el = document.getElementById('sl-ph'); if (el) el.innerHTML = slPhotosHtml();
+}
+async function slSend(kind, btn) {
+  if (SL.busy) return;
+  if (!slSignedIn()) { fmTell('sign in with Telegram first, so we know who to message back 🐾'); return; }
+  const v = id => { const e = document.getElementById(id); return e ? String(e.value || '').trim() : ''; };
+  let p;
+  if (kind === 'bulk') {
+    const e = slEstimate();
+    if (!e.total) { fmTell('tell us roughly how many cards first 🐾 (a guess is fine)'); const f = document.getElementById('sl-n-c'); if (f) f.focus(); return; }
+    p = { kind: 'bulk', counts: Object.assign({}, SL.counts), pay: SL.pay, note: v('sl-note'), photos: SL.photos.slice() };
+    const ok = await fmAsk({ title: 'Send your bulk request?', msg: e.total.toLocaleString('en-US') + ' cards' + (e.any && slHasRates() ? ', about ' + slEstMain(e) : '') +
+      (SL.photos.length ? ' · ' + SL.photos.length + ' photo' + (SL.photos.length === 1 ? '' : 's') : '') + '.\n\nno commitment. we reply on Telegram with an offer.', ok: 'Send it', cancel: 'Not yet' });
+    if (!ok) return;
+  } else {
+    if (!v('sl-list')) { fmTell('list the cards you\'d like to sell first 🐾 (one per line is perfect)'); const f = document.getElementById('sl-list'); if (f) f.focus(); return; }
+    p = { kind: 'singles', list: v('sl-list'), cond: v('sl-cond'), ask: v('sl-ask'), pay: SL.pay };
+  }
+  SL.busy = true; if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
+  let r = null; try { r = await slApi('sellRequest', p); } catch (e) { r = null; }
+  SL.busy = false; if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); }
+  if (r && r.ok) {
+    if (kind === 'bulk') { SL.counts = {}; SL.photos = []; }
+    const host = document.querySelector('.sl-col'); if (host) host.innerHTML = slBulkHtml() + slSinglesHtml();
+    if (typeof slAfterDraw === 'function') slAfterDraw();
+    await fmTell({ title: 'Sent! 🐾', msg: r.message || 'we\'ll message you on Telegram with an offer.' });
+    slLoadReqs();
+  } else fmTell((r && r.message) || '🥺 that didn\'t go through. give it another try in a moment 🐾');
+}
+async function slAnswer(id, yes, btn) {
+  const q = (SL.reqs || []).find(x => x.id === id); if (!q) return;
+  const amt = slMoney(Math.round((q.offer || 0) * 100)) + ' ' + (q.offerPay === 'cash' ? 'cash' : 'store credit');
+  const ok = await fmAsk(yes ? { title: 'Say yes to ' + amt + '?', msg: 'we\'ll message you on Telegram to arrange the hand-over.', ok: 'Yes, deal', cancel: 'Not yet' }
+    : { title: 'Say no thanks?', msg: 'the offer of ' + amt + ' closes. you can always send a new request later.', ok: 'No thanks', cancel: 'Keep the offer', danger: true });
+  if (!ok) return;
+  if (btn) btn.disabled = true;
+  let r = null; try { r = await slApi('sellAnswer', { id: id, take: !!yes }); } catch (e) { r = null; }
+  if (btn) btn.disabled = false;
+  fmTell((r && r.message) || '🥺 that didn\'t go through. give it another try in a moment 🐾');
+  slLoadReqs();
+}
+/* One listener for the form (no ids or text in onclick attributes). */
+function slBind(root) {
+  if (!root || root.dataset.slb) return; root.dataset.slb = '1';
+  root.addEventListener('click', e => {
+    const s = e.target.closest('[data-sl-step]');
+    if (s) { const k = s.getAttribute('data-sl-step'), inp = document.getElementById('sl-n-' + k); const n = slSetCount(k, (Number(inp && inp.value) || 0) + Number(s.getAttribute('data-d'))); if (inp) inp.value = n || ''; return; }
+    const rm = e.target.closest('[data-sl-rm]');
+    if (rm) { SL.photos.splice(Number(rm.getAttribute('data-sl-rm')), 1); const el = document.getElementById('sl-ph'); if (el) el.innerHTML = slPhotosHtml(); return; }
+    const go = e.target.closest('[data-sl-send]'); if (go) { slSend(go.getAttribute('data-sl-send'), go); return; }
+    const an = e.target.closest('[data-sl-ans]'); if (an) slAnswer(an.getAttribute('data-id'), an.getAttribute('data-sl-ans') === 'yes', an);
+  });
+  root.addEventListener('input', e => { const k = e.target.getAttribute && e.target.getAttribute('data-sl-n'); if (k) slSetCount(k, e.target.value); });
+  root.addEventListener('change', e => {
+    if (e.target.name === 'sl-pay') { SL.pay = e.target.value; const est = document.getElementById('sl-est'); if (est) est.innerHTML = slEstHtml(); }
+    if (e.target.hasAttribute && e.target.hasAttribute('data-sl-file')) { slAddFiles(e.target.files); }
+  });
+}
+/* SELL-END */
+/* The Mini App's side of Sell to us (same form as the website's #/sell; always signed in here). */
+function slApi(act,p){ return api(act,p||{}); }
+function slInfo(){ return api('sellInfo',{}); }
+function slSignedIn(){ return true; }
+function slSignInHtml(){ return ''; }
+function slAfterDraw(){}
+function openSell(){
+  const el=document.getElementById('sell-bb'); if(!el) return;
+  el.innerHTML=slPageHtml(false); slBind(el); slLoad();
+}
 function rarityRank(c){
   const p = RARITY_POS[rarityLabel(c).toLowerCase()];
   return p === undefined ? 999 : p;
@@ -3147,12 +3501,12 @@ function rarityRank(c){
    the grid tile keeps the short code "NM-LP" so it fits. */
 const COND_POLICY='All cards are NM-LP (binder condition) unless the listing says otherwise 🐾';
 const CONDITIONS = [
-  {c:'GEM', full:'Gem Mint',          re:/^(gem[\s_-]*mint|gem|gm)$/i,  blurb:'flawless — perfectly centred, razor corners'},
-  {c:'M',   full:'Mint',              re:/^(mint|m)$/i,                  blurb:'as it left the pack — no wear at all'},
-  {c:'NM-LP', full:'NM-LP (binder condition)', re:/^(near[\s_-]*mint|nm|nm[\s_-]*m|n\/m|nm[\s_\-\/]*(to[\s_-]*)?lp|binder([\s_-]*cond(ition)?)?|nm[\s_\-\/]*lp[\s_-]*\(?binder[\s_-]*condition\)?)$/i, blurb:'kept in a binder — light handling at most, no creases or bends'},
+  {c:'GEM', full:'Gem Mint',          re:/^(gem[\s_-]*mint|gem|gm)$/i,  blurb:'flawless, perfectly centred, razor corners'},
+  {c:'M',   full:'Mint',              re:/^(mint|m)$/i,                  blurb:'as it left the pack, no wear at all'},
+  {c:'NM-LP', full:'NM-LP (binder condition)', re:/^(near[\s_-]*mint|nm|nm[\s_-]*m|n\/m|nm[\s_\-\/]*(to[\s_-]*)?lp|binder([\s_-]*cond(ition)?)?|nm[\s_\-\/]*lp[\s_-]*\(?binder[\s_-]*condition\)?)$/i, blurb:'kept in a binder, light handling at most, no creases or bends'},
   {c:'EX',  full:'Excellent',         re:/^(excellent|exc|nm[\s_-]*ex)$/i, blurb:'very light handling, still displays beautifully'},
-  {c:'LP',  full:'Lightly Played',    re:/^(lightly[\s_-]*played|light[\s_-]*play|slightly[\s_-]*played|lp|sp)$/i, blurb:'minor edge or surface wear — no creases, no bends'},
-  {c:'MP',  full:'Moderately Played', re:/^(moderately[\s_-]*played|moderate[\s_-]*play|played|mp|pl)$/i, blurb:'visible whitening or a light scratch — sleeves up fine'},
+  {c:'LP',  full:'Lightly Played',    re:/^(lightly[\s_-]*played|light[\s_-]*play|slightly[\s_-]*played|lp|sp)$/i, blurb:'minor edge or surface wear, no creases, no bends'},
+  {c:'MP',  full:'Moderately Played', re:/^(moderately[\s_-]*played|moderate[\s_-]*play|played|mp|pl)$/i, blurb:'visible whitening or a light scratch, sleeves up fine'},
   {c:'HP',  full:'Heavily Played',    re:/^(heavily[\s_-]*played|heavy[\s_-]*play|hp)$/i, blurb:'heavy whitening and scuffs, possibly a small crease'},
   {c:'DMG', full:'Damaged',           re:/^(damaged|damage|dmg|dm|poor|pr)$/i, blurb:'creased, torn, water-marked or otherwise damaged'},
   {c:'',    full:'Sealed · brand new',re:/^(sealed|factory[\s_-]*sealed|new|brand[\s_-]*new|bnib|bn)$/i, blurb:'never opened'}
@@ -3210,7 +3564,7 @@ const DEMO_ORDERS = [
 const STEPS = ['Ordered','Verified','Packed','Shipped','Delivered'];
 const STATUS_STEP = {'Awaiting Payment':0,'Awaiting Verification':0,'Payment Verified':1,'Packed':2,'Shipped':3,'In Transit':3,'Delivered':4,'Cancelled':-1};
 
-const POKE_FACTS=["Pikachu was almost not the mascot — Clefairy was the original pick.","Rhydon was the very first Pokémon ever designed.","Wobbuffet's blue body is a decoy — its real target is the black tail.","Azurill can change gender when it evolves into Marill.","Slowpoke's tail regrows — and is considered a delicacy in the games.","A Magikarp can leap over mountains… and still be useless in battle.","Cubone wears the skull of its mother.","Ditto and Mew are the only Pokémon that can transform — fueling fan theories for decades.","Arcanine was originally meant to be Legendary.","Gengar might be Clefable's shadow — look at their silhouettes.","Poliwag's swirl is based on tadpole intestines, visible through their skin.","Charizard isn't a Dragon-type (until Mega X).","Eevee has the most evolutions of any Pokémon — 8 and counting.","Wailord is lighter than water — it would float like a balloon.","Alakazam's IQ is said to be over 5,000.","Farfetch'd is based on a Japanese saying about a duck bringing its own seasoning.","Snorlax weighs 460 kg — about the same as a grand piano and a half.","Jigglypuff's song works on any creature that can hear.","Vaporeon's cells are so water-like it can melt into water and vanish.","Meowth is one of the few Pokémon that learned to speak human language.","Spinda's spot pattern has over 4 billion possible combinations.","Shuckle can produce the strongest single attack in the games via Power Trick shenanigans.","Mimikyu wears its disguise because it wants to be loved like Pikachu.","Dragonite can fly around the globe in about 16 hours.","Magcargo's body temperature is hotter than the surface of the sun (18,000°F).","Absol doesn't cause disasters — it tries to warn people about them.","Metapod's Harden is its whole personality.","Umbreon's rings glow when it's excited or at night — moonlight powers it.","The first shiny most players ever saw was the Red Gyarados.","Togepi's shell is said to be stuffed with happiness."];
+const POKE_FACTS=["Pikachu was almost not the mascot. Clefairy was the original pick.","Rhydon was the very first Pokémon ever designed.","Wobbuffet's blue body is a decoy. its real target is the black tail.","Azurill can change gender when it evolves into Marill.","Slowpoke's tail regrows, and is considered a delicacy in the games.","A Magikarp can leap over mountains… and still be useless in battle.","Cubone wears the skull of its mother.","Ditto and Mew are the only Pokémon that can transform, fueling fan theories for decades.","Arcanine was originally meant to be Legendary.","Gengar might be Clefable's shadow. look at their silhouettes.","Poliwag's swirl is based on tadpole intestines, visible through their skin.","Charizard isn't a Dragon-type (until Mega X).","Eevee has the most evolutions of any Pokémon: 8 and counting.","Wailord is lighter than water. it would float like a balloon.","Alakazam's IQ is said to be over 5,000.","Farfetch'd is based on a Japanese saying about a duck bringing its own seasoning.","Snorlax weighs 460 kg, about the same as a grand piano and a half.","Jigglypuff's song works on any creature that can hear.","Vaporeon's cells are so water-like it can melt into water and vanish.","Meowth is one of the few Pokémon that learned to speak human language.","Spinda's spot pattern has over 4 billion possible combinations.","Shuckle can produce the strongest single attack in the games via Power Trick shenanigans.","Mimikyu wears its disguise because it wants to be loved like Pikachu.","Dragonite can fly around the globe in about 16 hours.","Magcargo's body temperature is hotter than the surface of the sun (18,000°F).","Absol doesn't cause disasters. it tries to warn people about them.","Metapod's Harden is its whole personality.","Umbreon's rings glow when it's excited or at night. moonlight powers it.","The first shiny most players ever saw was the Red Gyarados.","Togepi's shell is said to be stuffed with happiness."];
 function pokeFact(){ return POKE_FACTS[Math.floor(Math.random()*POKE_FACTS.length)]; }
 
 /* HELP-BEGIN (s33.41, Bryan 12 Oct: "theres no easy explanation access for how our shop functions").
@@ -3370,22 +3724,22 @@ let AUTH_WARNED=false;
 /* The server now says WHY it couldn't sign you in. "Session expired" was shown
    for every reason, including the ones reopening can't fix. */
 const AUTH_MSGS={
-  expired:'Your session expired — close the shop and reopen it from the bot to refresh it. Nothing was lost 🐾',
+  expired:'Your session expired. close the shop and reopen it from the bot to refresh it. Nothing was lost 🐾',
   wrong_bot: IS_STAGING
-    ? 'This test shop was opened from a different bot. Open it from the TEST bot\'s menu button — the live bot\'s sign-in doesn\'t work here.'
+    ? 'This test shop was opened from a different bot. Open it from the TEST bot\'s menu button. the live bot\'s sign-in doesn\'t work here.'
     : 'This shop was opened from a different bot than it belongs to. Open it from @FloofMartBot\'s menu button.',
-  no_initdata:'We couldn\'t sign you in — open the shop from the bot\'s menu button (links opened in a browser, or from a keyboard button, can\'t sign you in).',
-  server_token:'The shop\'s server isn\'t set up (BOT_TOKEN missing) — tell the admin.'
+  no_initdata:'We couldn\'t sign you in. open the shop from the bot\'s menu button (links opened in a browser, or from a keyboard button, can\'t sign you in).',
+  server_token:'The shop\'s server isn\'t set up (BOT_TOKEN missing). tell the admin.'
 };
 function onAuthExpired(why){
   if(AUTH_WARNED) return; AUTH_WARNED=true;
   const m=AUTH_MSGS[why]||AUTH_MSGS.expired;
   // v13.15: tg.showAlert THROWS on older Telegram apps, which cancelled the request
   // this warning was about. ptAlert falls back to the browser's own dialog.
-  try{ ptAlert(m); }catch(e){ try{ alert(m); }catch(x){} }
+  try{ ptAlert(m); }catch(e){ fmDlg({msg:m}); }
 }
 function mock(action,p){
-  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:40,shipFlat:3,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping — free over S$40',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FloofMartBot?start=ref_1',openParcel:null,unpaidOrders:0};
+  if(action==='overview') return {ok:true,credit:12.50,ordersInTransit:1,cashRate:.80,creditRate:.85,freeShipThreshold:5,freeShipMin:40,shipFlat:3,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping, free over S$40',spend:64,rewardThreshold:100,rewardCredit:3,referralMinSpend:15,referralCredit:3,referralLink:'https://t.me/FloofMartBot?start=ref_1',openParcel:null,unpaidOrders:0};
   if(action==='inventory') return {ok:true,items:DEMO_INV};
   if(action==='orders') return {ok:true,orders:DEMO_ORDERS};
   if(action==='boot'){ return {ok:true,overview:mock('overview'),inventory:mock('inventory')}; }
@@ -3404,9 +3758,13 @@ function mock(action,p){
       paynowMobile:'+6598755180',paynowName:'FloofMart TCG',paymentWindowMins:10}; }
   if(action==='submitPayment') return {ok:true};
   if(action==='makeOffer') return {ok:true,message:'Offer sent! (demo)'};
-  if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review — we\'ll confirm your offer in chat shortly.'};
+  if(action==='sellInfo') return {ok:true,rates:{c:0.01,u:0.02,r:0.05,h:0.1,v:0.3},bonusPct:6,creditFactor:1.0625};
+  if(action==='mySellRequests') return {ok:true,requests:[]};
+  if(action==='sellRequest') return {ok:true,buybackId:'BB-DEMO',message:'🐾 got it! your sell request is in. (demo)'};
+  if(action==='sellAnswer') return {ok:true,message:'done (demo)'};
+  if(action==='submitBuyback') return {ok:true,buybackId:'BB'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Submitted for review. we\'ll confirm your offer in chat shortly.'};
   if(action==='requestPictures') return {ok:true,requestId:'PR'+Math.random().toString(36).slice(2,7).toUpperCase(),message:'Photo request sent! (demo)'};
-  if(action==='storeInfo') return {ok:true,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping — free over S$40'};
+  if(action==='storeInfo') return {ok:true,holdPolicy:'Purchases can be held for up to 3 weeks',shippingPolicy:'Flat S$3 shipping, free over S$40'};
   if(action==='wishlist') return {ok:true,wishes:[{kind:'name',target:'Umbreon',label:'Umbreon'}],nameSuggestions:['Umbreon','Charizard','Pikachu','Mimikyu','Gardevoir','Sylveon','Snorlax'],setSuggestions:['Evolving Skies','Prismatic','Obsidian Flames','Paldea Evolved']};
   if(action==='wishlistAdd') return {ok:true,message:'Added to your wishlist! (demo)'};
   if(action==='wishlistRemove') return {ok:true};
@@ -3438,6 +3796,7 @@ function go(tab,dir){
     else { renderStore(); renderActiveChips(); loadGroups(); }   // re-render: boot painted it while hidden
   }
   if(tab==='orders') loadOrders();
+  if(tab==='buyback') openSell();   // v13.70 Sell to us
   if(tab==='support') renderMiniHelp();
   if(tab==='profile') loadProfile();
   window.scrollTo(0,0);
@@ -3696,15 +4055,15 @@ function shareReferral(link){
   try{
     if(tg&&tg.openTelegramLink){ tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent('Come collect Pokémon cards at FloofMart TCG! 🐑')); return; }
   }catch(e){}
-  try{ navigator.clipboard.writeText(link); (tg&&tg.showAlert?tg.showAlert:alert)('Referral link copied! Share it with a friend 🐾'); }
-  catch(e){ (tg&&tg.showAlert?tg.showAlert:alert)(link); }
+  try{ navigator.clipboard.writeText(link); fmTell('Referral link copied! Share it with a friend 🐾'); }
+  catch(e){ fmTell(link); }
 }
 
 /* ============ STORE ============ */
 
-const SORTS=[{v:'rarity',l:'Rarity — rarest first'},{v:'price-desc',l:'Price — high to low'},
-             {v:'price-asc',l:'Price — low to high'},{v:'name',l:'Name — A to Z'},
-             {v:'set',l:'Set — A to Z'}];
+const SORTS=[{v:'rarity',l:'Rarity: rarest first'},{v:'price-desc',l:'Price: high to low'},
+             {v:'price-asc',l:'Price: low to high'},{v:'name',l:'Name: A to Z'},
+             {v:'set',l:'Set: A to Z'}];
 const CATS=[{c:'single',l:'Cards'},{c:'sealed',l:'Sealed'},
             {c:'bundle',l:'Bundles'},{c:'merch',l:'Merch'}];
 const PRICE_PRESETS=[{l:'Under $10',min:null,max:10},{l:'$10–$25',min:10,max:25},
@@ -3859,7 +4218,7 @@ function pickSort(v){
   STATE.sort=v;
   const l=document.getElementById('sortLabel');
   const s=SORTS.filter(x=>x.v===v)[0];
-  if(l&&s) l.textContent=s.l.split(' — ')[0];
+  if(l&&s) l.textContent=s.l.split(': ')[0];
   closeSort(); renderStore();
 }
 
@@ -4043,9 +4402,9 @@ function storeWatchMore(){
 async function askPics(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
   const r = await api('requestPictures',{cardId:c.id,cardName:c.name,set:c.set});
-  if(r&&r.error==='rate_limited'){ (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Already requested — photos are on the way! 🐾'); return; }
+  if(r&&r.error==='rate_limited'){ fmTell(r.message||'Already asked. photos are on the way! 🐾'); return; }
   const msg = r.ok ? (r.message||'Photo request sent!') : 'Couldn\'t send request, try again.';
-  tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+  fmTell(msg);
 }
 function openCardView(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return;
@@ -4084,7 +4443,7 @@ function openCardView(id){
         </div>
         ${c.grade?'':(condBlurb(c.condition||'NM')?`<div class="cv-hint" style="margin-top:0">${esc(condBlurb(c.condition||'NM'))}</div>`:'')}
         <div class="cv-hint cv-policy" style="margin-top:0">${esc(COND_POLICY)}</div>
-        ${c.bulk?'':`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups — we'll send them in chat</span><span class="ap-go">Ask ›</span></button>`}
+        ${c.bulk?'':`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups, we'll send them in chat</span><span class="ap-go">Ask ›</span></button>`}
         <div class="cv-price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="cv-was">$${c.marketPrice.toFixed(2)}</span>`:''}</div>
         ${c.bulk?'':`<button class="cta-alt" onclick="makeOfferById('${c.id}')">💬 Make an offer</button>`}
         ${cvOthersHtml(c)}
@@ -4156,7 +4515,7 @@ try{
 let OFFER_CARD=null;
 function makeOffer(id,name,listed){
   if(STATE.cart.find(x=>x.id===id)){
-    (tg&&tg.showAlert?tg.showAlert:alert)('That card\'s already in your cart — just check out to buy it, or remove it first to make an offer.');
+    fmTell('That card\'s already in your cart. just check out to buy it, or remove it first to make an offer.');
     return;
   }
   OFFER_CARD={id,name,listed};
@@ -4186,11 +4545,11 @@ function closeOffer(){ document.getElementById('offerScrim').classList.remove('s
 async function sendOffer(){
   if(!OFFER_CARD) return;
   const offer=parseFloat(document.getElementById('offerInput').value);
-  if(!offer||offer<=0){ (tg&&tg.showAlert?tg.showAlert:alert)('Enter a valid amount.'); return; }
+  if(!offer||offer<=0){ fmTell('Enter a valid amount.'); return; }
   const r=await api('makeOffer',{cardId:OFFER_CARD.id,offer});
   closeOffer(); closeCardView();
   const msg=r.ok?(r.message||'Offer sent!'):(r.message||'Couldn\'t send offer, try again.');  // fp26: show the server's reason (sold, banned, too many)
-  tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+  fmTell(msg);
 }
 
 /* ============ SETS & BULK (stock Worker) ============
@@ -4559,7 +4918,7 @@ function renderCart(){
   }
   const subtotal=STATE.cart.reduce((s,c)=>s+c.price,0);
  const nudge = STATE.openParcel
-    ? `<div class="nudge">🧺 These join the box we're already holding for you — no extra postage.</div>`
+    ? `<div class="nudge">🧺 These join the box we're already holding for you. no extra postage.</div>`
     : `<div class="nudge">🧺 This starts your box. Pay for the cards now, choose delivery whenever you're ready.</div>`;
   body.innerHTML = cartErrHtml() + STATE.cart.map((c,i)=>
     `<div class="crow"><div class="ci">${c.image?`<img src="${esc(imgUrl(c.image,200))}" alt=""${c.bulk?' onerror="stockImgFail(this)"':` data-w="200" data-emo="${esc(EMOJI[c.tier]||'🃏')}" onerror="thumbRetry(this)"`}>`:(EMOJI[c.tier]||'🃏')}</div>
@@ -4583,11 +4942,10 @@ ${boxPicHtml(STATE.cart.length,cfgNum(STATE.shipFlat,3),'$')}<p class="bp-note">
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
-    if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('Order cancelled — the cards are back in the shop'+(r.creditRefunded>0?' and your $'+r.creditRefunded.toFixed(2)+' credit was refunded':'')+'.'); ORDERS_CACHE=null; loadOrders(true); loadOverview(); loadStore(); }
-    else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Couldn\'t cancel that order.');
+    if(r.ok){ fmTell('order cancelled. the cards are back in the shop'+(r.creditRefunded>0?' and your $'+r.creditRefunded.toFixed(2)+' credit was refunded':'')+'.'); ORDERS_CACHE=null; loadOrders(true); loadOverview(); loadStore(); }
+    else fmTell(r.message||'Couldn\'t cancel that order.');
   });
-  if(tg&&tg.showConfirm) tg.showConfirm('Cancel this order? The cards go back on sale.',ok=>{ if(ok) go(); });
-  else if(confirm('Cancel this order? The cards go back on sale.')) go();
+  if(await fmAsk({title:'Cancel this order?',msg:'the cards go back on sale. nothing has been charged.',ok:'Cancel order',cancel:'Keep it',danger:true})) go();
 }
 async function chooseDelivery(mode,pid){
   STATE.pendingParcel=pid||STATE.openParcelId;
@@ -4595,11 +4953,10 @@ async function chooseDelivery(mode,pid){
     const go=async()=>{
       document.querySelectorAll('.pc-b').forEach(b=>{b.disabled=true;});
       const r=await api('parcelDelivery',{mode:'pickup',parcelId:STATE.pendingParcel});
-      if(r.ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🤝 Self-pickup set! '+(r.pickupNote||'We\'ll message you to arrange a time and place.')); ORDERS_CACHE=null; loadOrders(true); }
-      else (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Could not set pickup.');
+      if(r.ok){ fmTell('🤝 Self-pickup set! '+(r.pickupNote||'We\'ll message you to arrange a time and place.')); ORDERS_CACHE=null; loadOrders(true); }
+      else fmTell(r.message||'Could not set pickup.');
     };
-    if(tg&&tg.showConfirm) tg.showConfirm('Collect your parcel yourself (free)? We\'ll message you with details.',ok=>{if(ok)go();});
-    else if(confirm('Self-pickup (free)?')) go();
+    if(await fmAsk({title:'Collect it yourself?',msg:'self-pickup is free. we\'ll message you on Telegram with the time and place.',ok:'Self-pickup',cancel:'Not now'})) go();
     return;
   }
   // Ship: need a delivery address. Reuse saved ship details or prompt.
@@ -4617,23 +4974,23 @@ async function confirmShip(){
   const name=document.getElementById('sa-name').value.trim();
   const addr=document.getElementById('sa-addr').value.trim();
   const phone=document.getElementById('sa-phone').value.trim();
-  if(!name||!addr){ (tg&&tg.showAlert?tg.showAlert:alert)('Please add a name and address.'); return; }
+  if(!name||!addr){ fmTell('Please add a name and address.'); return; }
   STATE.ship={name,address:addr,phone}; persistShip();
   const r=await api('parcelDelivery',{mode:'ship',parcelId:STATE.pendingParcel,shipName:name,shipAddress:addr,shipPhone:phone});
   closeShipAddr();
   if(r.ok&&r.freeShipping){
     ORDERS_CACHE=null; await loadOrders(true);
-    (tg&&tg.showAlert?tg.showAlert:alert)('🎉 Free shipping! Your parcel is over the threshold, so there\'s nothing to pay. We\'re packing it now — tracking follows.');
+    fmTell('🎉 Free shipping! Your parcel is over the threshold, so there\'s nothing to pay. We\'re packing it now, tracking follows.');
   }  else if(r.ok&&r.shipOrderId){
     ORDERS_CACHE=null; loadOrders(true);   // refresh underneath, don't wait on it
     showInvoice({ orderId:r.shipOrderId,
-      items:[{name:'Shipping — parcel '+(STATE.pendingParcel||''),tier:'',price:Number(r.fee||0)}],
+      items:[{name:'Shipping · parcel '+(STATE.pendingParcel||''),tier:'',price:Number(r.fee||0)}],
       subtotal:Number(r.fee||0), shipping:0, creditUsed:0, total:Number(r.fee||0),
       paynowMobile:r.paynowMobile||(STATE.payInfo&&STATE.payInfo.mobile)||'',
       paynowName:r.paynowName||(STATE.payInfo&&STATE.payInfo.name)||'FloofMart TCG',
       paymentWindowMins:Number(r.paymentWindowMins||10) });
   }
-  else (tg&&tg.showAlert?tg.showAlert:alert)(buyerErr(r,'🥺 we couldn’t set up delivery just now. give it another try in a moment 🐾','parcelDelivery'));
+  else fmTell(buyerErr(r,'🥺 we couldn’t set up delivery just now. give it another try in a moment 🐾','parcelDelivery'));
 }
 function toggleCredit(){ STATE.useCredit=!STATE.useCredit; renderCart(); }
 /* s33.11 ALLOW MESSAGES (Bryan, 11 Oct): invoices and parcel updates come by Telegram DM, which Telegram allows only
@@ -4683,7 +5040,7 @@ async function checkout(){
      Awaiting Payment. Hence the cart closing itself and the bogus message. */
   if(STATE.placing){
     if(INVOICE && INVOICE._pending) reopenPendingInvoice();
-    else (tg&&tg.showAlert?tg.showAlert:alert)('Your order is still going through — one moment 🐾');
+    else fmTell('Your order is still going through. one moment 🐾');
     return;
   }
   STATE.placing=true; STATE.cartErr=null;
@@ -4719,7 +5076,7 @@ async function checkout(){
   catch(e){ r = null; }
   if(!r){
     closeInvoice();
-    (tg&&tg.showAlert?tg.showAlert:alert)('We lost the connection before we heard back. Check Orders in a moment — if it isn\'t there, nothing was charged and you can try again 🐾');
+    fmTell('We lost the connection before we heard back. Check Orders in a moment. if it isn\'t there, nothing was charged and you can try again 🐾');
     ORDERS_CACHE=null; loadOrders(true);
     return;
   }
@@ -4736,8 +5093,8 @@ async function checkout(){
                            // set meant the NEXT checkout still quoted a spent
                            // reservation number, which the idempotency check
                            // downstream could then mistake for a retry.
-      const msg='\ud83c\udf89 Order '+r.orderId+' is fully covered by your store credit \u2014 nothing to pay! Once we verify, your cards go into your parcel \ud83e\uddf7';
-      tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+      const msg='\ud83c\udf89 Order '+r.orderId+' is fully covered by your store credit, nothing to pay! Once we verify, your cards go into your parcel \ud83e\uddf7';
+      fmTell(msg);
       loadOverview(); loadStore();
     } else {
       STATE.resvId=null;                        // consumed
@@ -4756,7 +5113,7 @@ async function checkout(){
       } else if(INVOICE && INVOICE._pending && String(INVOICE.orderId)===String(r.orderId) && !wasClosed){
         const wasAmt=Number(INVOICE.total||0);
         showInvoice(r);
-        (tg&&tg.showAlert?tg.showAlert:alert)('Heads up — your total is $'+Number(r.total||0).toFixed(2)+', not $'+wasAmt.toFixed(2)+' (a price or your credit changed while the cart was open). The QR has been updated — please pay this one 🐾');
+        fmTell('heads up: your total is $'+Number(r.total||0).toFixed(2)+', not $'+wasAmt.toFixed(2)+' (a price or your credit changed while the cart was open). The QR has been updated, please pay this one 🐾');
       } else if(!wasClosed){
         showInvoice(r);
       }
@@ -4764,8 +5121,8 @@ async function checkout(){
         // They chose to shut the QR. Don't force it back up — say where the
         // order went, and let the unpaid banner carry it from here.
         const mins=Number((INVOICE&&INVOICE.paymentWindowMins)||0);
-        (tg&&tg.showAlert?tg.showAlert:alert)('🧺 Order '+r.orderId+' is holding your cards'+
-          (mins>0?' — about '+mins+' minutes to pay':'')+'. It\'s waiting in Orders whenever you\'re ready.');
+        fmTell('🧺 Order '+r.orderId+' is holding your cards'+
+          (mins>0?' · about '+mins+' minutes to pay':'')+'. It\'s waiting in Orders whenever you\'re ready.');
         loadOrders(true);
       }
       // Let the QR paint first. The buyer is on the invoice, not the shop —
@@ -4787,14 +5144,14 @@ async function checkout(){
     let note='';
     if(goneNames.length) note=named+' just got claimed'+(left?' by someone else, so we took '+(goneNames.length>1?'them':'it')+' out.':' and that was your last item, so your cart is empty now.');
     else if(!bulkGone) note='A card just got claimed'+(left?' by someone else, so we took it out.':' and that was your last item, so your cart is empty now.');
-    if(bulkGone) note=(note?note+' ':'')+'Some cards just sold \u2014 removed from your cart.';
+    if(bulkGone) note=(note?note+' ':'')+'Some cards just sold, so we took them out of your cart.';
     if(left){
-      const msg=note+' The rest of your cart is ready \u2014 tap checkout again. \ud83d\udc3e';
-      tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+      const msg=note+' The rest of your cart is ready. tap checkout again. \ud83d\udc3e';
+      fmTell(msg);
       renderCart();
     } else {
       const msg=note+' Back to the shop! \ud83d\udc3e';
-      tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+      fmTell(msg);
       closeCart(); go('store');
     }
   } else if(r.error==='price_changed' && (r.cards||[]).some(k=>String(k).indexOf('BK:')===0)){
@@ -4817,14 +5174,14 @@ async function checkout(){
     });
     updateCartDot();
     const parts=[];
-    if(changed) parts.push('Price updated for '+changed+' card'+(changed===1?'':'s')+' \u2014 please check and pay again.');
+    if(changed) parts.push('Price updated for '+changed+' card'+(changed===1?'':'s')+'. please check and pay again.');
     if(dropped) parts.push(dropped+' cop'+(dropped===1?'y is':'ies are')+' no longer in stock, so '+(dropped===1?'it was':'they were')+' taken out.');
-    if(!parts.length) parts.push(failed ? 'We couldn\'t check the new prices just now. Try again in a moment.' : 'Those prices are up to date now \u2014 tap checkout again.');
+    if(!parts.length) parts.push(failed ? 'We couldn\'t check the new prices just now. Try again in a moment.' : 'Those prices are up to date now. tap checkout again.');
     const msg=parts.join(' ')+' \ud83d\udc3e';
-    tg&&tg.showAlert?tg.showAlert(msg):alert(msg);
+    fmTell(msg);
     renderCart();
   } else if(r.error==='cart_too_big'){
-    (tg&&tg.showAlert?tg.showAlert:alert)('That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');
+    fmTell('That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');
   } else if(r.error==='per_card_limit'){
     STATE.cartErr={kind:'limit', msg:buyerErr(r,'🐾 to keep cards fair for everyone, it’s max '+PER_CARD_MAX+' of the same card per person every 30 days\n\ntake the extra copies out of your cart and you’re good to go 💛','checkout')};
   } else if(r.error==='too_many_unpaid'){
@@ -4855,7 +5212,7 @@ function showInvoiceSkeleton(){
       <div class="inv-row inv-total"><span>Total to pay</span><span>$${tot.toFixed(2)}</span></div>
     </div>
     <div class="paynow">
-      <div class="pn-bank"><b>🏦 Scan with your banking app (PayNow) — a normal camera shows only text</b><small>DBS/POSB, OCBC, UOB, PayLah!… · amount filled in</small></div>
+      <div class="pn-bank"><b>🏦 Scan with your banking app (PayNow). a normal camera shows only text</b><small>DBS/POSB, OCBC, UOB, PayLah!… · amount filled in</small></div>
       <div class="pn-qr"><div class="pn-qr-ph">Holding your cards<br><span>your QR code lands here</span></div></div>
     </div>
     <div class="skelcard" style="height:52px"></div>`;
@@ -4881,7 +5238,7 @@ function showInvoice(inv){
   b.innerHTML=`
     <div class="inv-head"><div class="inv-oid">${inv.groupCount?'Paying for '+inv.groupCount+' orders':'Invoice · '+inv.orderId}</div><div class="inv-badge" id="payTimer">${noDeadline?'🧺 Held':(inv._resumeSecs!=null?fmtLeft(inv._resumeSecs):fmtLeft(mins*60))}</div></div>
     ${noDeadline
-      ?`<div class="pay-warn" style="background:#e2f5ec;color:#1c7a52">🧺 <b>No deadline</b> — this card is held for you. Pay whenever you're ready.</div>`
+      ?`<div class="pay-warn" style="background:#e2f5ec;color:#1c7a52">🧺 <b>No deadline</b>. this card is held for you. Pay whenever you're ready.</div>`
       :`<div class="pay-warn">⏱ Please pay within <b>${long?Math.round(mins/60)+' hours':mins+' minutes'}</b> or your cards will be released.</div>`}
     ${inv._pending?`<div class="pay-warn" id="resvNote" style="background:#e8f0fb;color:#2a5aa5">🔒 Reserving your cards…</div>`:''}
     <div class="inv-items">
@@ -4894,7 +5251,7 @@ function showInvoice(inv){
       <div class="inv-row inv-total"><span>Total to pay</span><span>$${inv.total.toFixed(2)}</span></div>
     </div>
     <div class="paynow">
-      <div class="pn-bank"><b>🏦 Scan with your banking app (PayNow) — a normal camera shows only text</b><small>DBS/POSB, OCBC, UOB, PayLah!… · amount filled in</small></div>
+      <div class="pn-bank"><b>🏦 Scan with your banking app (PayNow). a normal camera shows only text</b><small>DBS/POSB, OCBC, UOB, PayLah!… · amount filled in</small></div>
       <div class="pn-qr" id="pnQr"></div>
       ${payStepsHtml(inv,'$',noDeadline?0:Date.now()+(inv._resumeSecs!=null?inv._resumeSecs:mins*60)*1000)}
       <div class="pn-num">Paying: <b>${esc(inv.paynowName||'FloofMart TCG')}</b><br>
@@ -4927,7 +5284,7 @@ function showInvoice(inv){
     el.textContent=fmtLeft(left);
     if(left<=60) el.style.background='#e74c3c';
     if(left<=0){ clearInterval(PAY_TIMER); closeInvoice();
-      (tg&&tg.showAlert?tg.showAlert:alert)('Payment time expired — your cards have been released. You can re-order anytime.');
+      fmTell('Payment time expired, so your cards have been released. You can re-order anytime.');
       loadStore(); }
   },1000);
   document.getElementById('invScrim').classList.add('show');
@@ -5030,7 +5387,7 @@ function onProof(e){
 async function submitProof(){
   if(!PAYPROOF||!INVOICE) return;
   if(INVOICE._pending){
-    (tg&&tg.showAlert?tg.showAlert:alert)('One moment — still reserving your cards. Try again in a second.');
+    fmTell('One moment, still reserving your cards. Try again in a second.');
     return;
   }
   const r=await api('submitPayment', INVOICE.orderIds
@@ -5042,7 +5399,7 @@ async function submitProof(){
     sfx('chime');
     ORDERS_CACHE=null; loadOverview();
     showPaidHaul(INVOICE);          // owns the orders refresh, then draws the haul
-  } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Upload failed, try again.'); }
+  } else { fmTell(r.message||'Upload failed, try again.'); }
 }
 
 /* ============ ORDERS ============ */
@@ -5149,7 +5506,7 @@ function statusLabel(o){
   if(o&&o.cancelled)               return '\u2715 Cancelled';
   if(isRefunded(o))                return '\u21A9\uFE0F Refunded';
   if(o&&refundInfo(o).some)        return '\u21A9\uFE0F Partly refunded';
-  if(s==='Awaiting Payment')       return payExpired(o)?'⌛ Timed out':(payLate(o)?'⏰ Pay now — last chance':'💳 Unpaid');
+  if(s==='Awaiting Payment')       return payExpired(o)?'⌛ Timed out':(payLate(o)?'⏰ Pay now · last chance':'💳 Unpaid');
   if(s==='Awaiting Verification')  return '⏳ Checking';
   if(s==='Payment Verified')       return '✓ Paid';
   if(s==='Packed')                 return '📦 Packed';
@@ -5183,7 +5540,7 @@ const isSHo=o=>String((o&&o.id)||'').indexOf('SH')===0;
 function dateShort(ms){ return ms?new Date(ms).toLocaleDateString('en-SG',{day:'numeric',month:'short'}):''; }
 function stampMs(txt){
   const s=String(txt||''), i=s.lastIndexOf(' · ');
-  const part=(i>=0?s.slice(i+3):s).split(' — ')[0];
+  const part=(i>=0?s.slice(i+3):s).split(' '+String.fromCharCode(8212)+' ')[0];
   const p=parseStamp(part);
   return p?new Date(p.y,p.mo,p.d,p.h,p.mi).getTime():0;
 }
@@ -5329,9 +5686,9 @@ function holdLineHtml(b){
       return '<div class="hold-line hold-final">\u23F0 We\u2019re sending this box in about '+
         h.finalHours+' hour'+(h.finalHours===1?'':'s')+
         '<small>Your '+h.total+'-day hold is up. Choose \uD83D\uDE9A Ship or \uD83E\uDD1D Self-pickup now ' +
-        'and it goes your way \u2014 otherwise we post it to your saved address. Nothing is cancelled.</small></div>';
+        'and it goes your way. otherwise we post it to your saved address. Nothing is cancelled.</small></div>';
     }
-    return '<div class="hold-line hold-final">\uD83D\uDE9A Going out now \u2014 held '+h.age+' days'+
+    return '<div class="hold-line hold-final">\uD83D\uDE9A Going out now · held '+h.age+' days'+
       '<small>Your hold is up, so we\u2019re sending it. Need it changed? Message us before it\u2019s packed.</small></div>';
   }
   if(h.soon){
@@ -5345,9 +5702,9 @@ function holdLineHtml(b){
 function boxStatusLine(b){
   if(b.stage.key==='way'||b.stage.key==='done') return boxLatestUpdate(b.orders);
   const checking=b.orders.filter(o=>o.status==='Awaiting Verification').length;
-  if(checking) return '⏳ Checking '+(checking===1?'a payment':checking+' payments')+' — usually within the hour';
+  if(checking) return '⏳ Checking '+(checking===1?'a payment':checking+' payments')+' · usually within the hour';
   if(b.parcel&&b.parcel.feeVerifying) return '⏳ Checking your postage payment';
-  if(b.parcel&&b.parcel.status==='shipping_paid') return '📦 We\'re packing it — tracking follows';
+  if(b.parcel&&b.parcel.status==='shipping_paid') return '📦 We\'re packing it, tracking follows';
   if(b.parcel&&b.parcel.status==='pickup_ready') return '🤝 '+(STATE.pickupNote||'We\'ll message you to arrange pickup');
   return '';
 }
@@ -5429,7 +5786,7 @@ function actionsHtml(m){
 }
 function stageStripHtml(m, cur){
   const btn=(k,val,label)=>'<button class="ostg'+(k===cur?' on':'')+(val?'':' empty')+'" aria-pressed="'+(k===cur)+'" onclick="pickStage(\''+k+'\')">'+
-    '<span class="ostg-v">'+(val||'—')+'</span><span class="ostg-l">'+label+'</span></button>';
+    '<span class="ostg-v">'+(val||'–')+'</span><span class="ostg-l">'+label+'</span></button>';
   return '<div class="ostages" role="tablist">'+
     btn('pay', m.payTotal>0?'$'+priceLabel(m.payTotal).slice(1):'', 'To pay')+
     btn('box', m.boxCards?m.boxCards+' card'+(m.boxCards===1?'':'s'):'', 'In your box')+
@@ -5453,7 +5810,7 @@ function stageBodyHtml(m, cur){
     const post=m.postage.map(x=>'<div class="pyrow"><div class="pyrow-m"><div class="pyrow-n">🚚 Postage</div><div class="pyrow-s">One fee for your whole box</div>'+
       '<div class="pyrow-id">#'+esc(x.id)+'</div></div><div class="pyrow-a">$'+x.fee.toFixed(2)+'</div></div>').join('');
     const dead=m.expired.map(o=>'<div class="pyrow pyrow-dead"><div class="pyrow-m"><div class="pyrow-n">'+liveItems(o.items).map(i=>esc(i.name)).slice(0,2).join(', ')+'</div>'+
-      '<div class="pyrow-s">⌛ Timed out — the cards went back on sale</div></div><div class="pyrow-a"><button class="pyrow-x" onclick="guard(this,()=>cancelUnpaid(\''+o.id+'\'))">Clear</button></div></div>').join('');
+      '<div class="pyrow-s">⌛ Timed out. the cards went back on sale</div></div><div class="pyrow-a"><button class="pyrow-x" onclick="guard(this,()=>cancelUnpaid(\''+o.id+'\'))">Clear</button></div></div>').join('');
     if(!rows&&!post&&!dead) return '<div class="oempty">🎉 Nothing to pay.</div>';
     return '<div class="opanel">'+rows+post+dead+
       ((m.unpaid.length+m.postage.length)>0?'<div class="pytot"><span>Total</span><span>$'+m.payTotal.toFixed(2)+'</span></div>':'')+'</div>';
@@ -5513,7 +5870,7 @@ function paint_openBoxSheet(id){
     const p=b.parcel, sent=b.stage.key==='way'||b.stage.key==='done';
     const free=p&&p.shipFee===0;
     postage='<div class="bs-rc bs-rc-flat"><div><div class="bs-rc-id">🚚 Postage</div><div class="bs-rc-s">'+
-      (sent||free?'One fee for the whole box':'Charged once, when you send your box')+'</div></div><div class="bs-rc-r"><b>'+(sent||free?'free':'—')+'</b></div></div>';
+      (sent||free?'One fee for the whole box':'Charged once, when you send your box')+'</div></div><div class="bs-rc-r"><b>'+(sent||free?'free':'–')+'</b></div></div>';
   }
   const payIds=b.orders.filter(o=>OWNED_STATUSES.includes(o.status)).map(o=>o.id).concat(b.sh.filter(o=>OWNED_STATUSES.includes(o.status)).map(o=>o.id));
   const canShare=b.orders.some(o=>SHARE_STATUSES.includes(o.status));
@@ -5533,7 +5890,7 @@ function paint_openBoxSheet(id){
         receipts+postage+
         '<div class="rcpt-grand"><span>Box total</span><span>'+money(b.total)+'</span></div>'+
         (canShare?'<button class="pics" style="margin-top:12px" onclick="openHaulSheet(\''+boxShareId(b)+'\')">📸 Share this box</button>':'')+
-        '<div class="rcpt-ft">Questions about this box? Help &amp; Support — quote any receipt number above.</div>'+
+        '<div class="rcpt-ft">Questions about this box? Help &amp; Support and quote any receipt number above.</div>'+
       '</div>'+
     '</div>';
 }
@@ -5559,9 +5916,9 @@ async function requestInvoices(ids, btn){
     }
   } finally { if(btn){ btn.disabled=false; btn.dataset.busy=''; btn.innerHTML=orig; } }
   const n=k=>k+' invoice'+(k===1?'':'s');
-  if(stop){ (tg&&tg.showAlert?tg.showAlert:alert)((ok?'📄 sent '+n(ok)+' first.\n\n':'')+buyerErr(stop, stop.error==='dm_blocked'?'🥺 we couldn’t message you. open the bot chat, press Start, then try again 🐾':'that’s a lot of invoices. try again in a while 🐾','invoicePdf')); return; }
-  if(!ok){ (tg&&tg.showAlert?tg.showAlert:alert)('🥺 we couldn’t make '+(ids.length===1?'that invoice':'those invoices')+' just now. give it another try in a moment, or ask us in Support 🐾'); return; }
-  (tg&&tg.showAlert?tg.showAlert:alert)('📄 sent '+n(ok)+' to your Telegram'+(bad?' · '+bad+' couldn’t be made — ask us in Support':'')+' 🐾');
+  if(stop){ fmTell((ok?'📄 sent '+n(ok)+' first.\n\n':'')+buyerErr(stop, stop.error==='dm_blocked'?'🥺 we couldn’t message you. open the bot chat, press Start, then try again 🐾':'that’s a lot of invoices. try again in a while 🐾','invoicePdf')); return; }
+  if(!ok){ fmTell('🥺 we couldn’t make '+(ids.length===1?'that invoice':'those invoices')+' just now. give it another try in a moment, or ask us in Support 🐾'); return; }
+  fmTell('📄 sent '+n(ok)+' to your Telegram'+(bad?' · '+bad+' couldn’t be made, ask us in Support':'')+' 🐾');
 }
 
 /* ---------- Order history (top-right button) ----------
@@ -5591,7 +5948,7 @@ function histTag(o){
   if(s==='Packed')                        return ['ok','Packed'];
   if(s==='Shipped'||s==='In Transit')     return ['way','On the way'];
   if(s==='Delivered')                     return ['ok','Delivered'];
-  return ['can', s||'—'];
+  return ['can', s||'–'];
 }
 var HIST_STAGE_TAG={done:'ok', way:'way', box:'wait'};
 function histFaces(items){
@@ -6021,7 +6378,7 @@ const cfgMoney=v=>'$'+(Number(v)%1?Number(v).toFixed(2):Number(v).toFixed(0));
 function cfgText(s){ return String(s).replace(/\{\{(RC|RT|REFC|REFMIN)\}\}/g,(m,k)=>cfgMoney(CFGV[k])); }
 function cfgPaint(){ document.querySelectorAll('[data-cfg]').forEach(el=>{ const k=el.getAttribute('data-cfg'); if(CFGV[k]!=null) el.textContent=cfgMoney(CFGV[k]); }); }
 function haulInviteText(){
-  return 'Come join me on FloofMart TCG 🐑 — Pokémon singles, drops and claims in Singapore';
+  return 'Come join me on FloofMart TCG 🐑 Pokémon singles, drops and claims in Singapore';
 }
 function inviteLink(){ return STATE.refLink || ''; }
 function shopHandle(){
@@ -6113,7 +6470,7 @@ function haulWorld(f){
     const u = ART_API + '/world/' + encodeURIComponent(id) + '.jpg?v=' + HAUL_WORLD_V;
     const have = await loadCors(u, 8000);
     if(have) return have;
-    ptToast('Painting your card\u2019s world \u2014 about 10 seconds the first time \uD83C\uDFA8');
+    ptToast('Painting your card\u2019s world, about 10 seconds the first time \uD83C\uDFA8');
     // art Worker a5: painting needs the Mini App sign-in (a header, which an <img> can't send)
     const tgI = (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) || '';
     const ac = (typeof AbortController === 'function') ? new AbortController() : null;
@@ -6533,7 +6890,7 @@ function shareHaulNow(){
 function shareInvite(){
   const link = inviteLink();
   if(!link){
-    (tg && tg.showAlert ? tg.showAlert : alert)('Your link is still loading — give it a second and try again 🐾');
+    fmTell('Your link is still loading. give it a second and try again 🐾');
     return;
   }
   try {
@@ -6555,13 +6912,13 @@ function copyInvite(btn){
   const ok = () => {
     if(btn){ const o = btn.textContent; btn.textContent = 'Copied ✓';
              setTimeout(() => { btn.textContent = o; }, 1600); }
-    else (tg && tg.showAlert ? tg.showAlert : alert)('Link copied 🐾');
+    else fmTell('Link copied 🐾');
     sfx('ok');
   };
   // writeText REJECTS when clipboard permission is denied, which plenty of
   // webviews do. Saying "Copied ✓" before it settles is how you get someone
   // pasting nothing, so wait for it and offer the link itself if it fails.
-  const fail = () => (tg && tg.showAlert ? tg.showAlert : alert)(payload);
+  const fail = () => fmTell(payload);
   try {
     const pr = navigator.clipboard && navigator.clipboard.writeText(payload);
     if(pr && pr.then) pr.then(ok).catch(fail); else ok();
@@ -6592,7 +6949,7 @@ function saveHaul(){
     setTimeout(() => URL.revokeObjectURL(url), 5000);
     sfx('ok');
   } catch(e){
-    (tg && tg.showAlert ? tg.showAlert : alert)('Press and hold the picture to save it 🐾');
+    fmTell('Press and hold the picture to save it 🐾');
   }
 }
 
@@ -6676,7 +7033,7 @@ function showPaidHaul(inv){
       <div class="pk-ic">🎉</div>
       <div class="pk-t">Payment sent for ${inv.orderId}</div>
       <div class="pk-s">${isShip
-        ? 'We’re checking it now — your box goes out once it’s confirmed, and tracking follows here.'
+        ? 'We’re checking it now. your box goes out once it’s confirmed, and tracking follows here.'
         : `We’re checking it now. Once it’s confirmed your ${n} card${n===1?'':'s'} go${n===1?'es':''} into your box 🧺`}</div>
     </div>
     ${isShip ? '' : `<div class="haul-prev" id="haulPrev"></div><div id="haulActions"></div>`}
@@ -6851,7 +7208,7 @@ function wishSuggest(v){
 function pickWish(v){ document.getElementById('wishInput').value=v; document.getElementById('wishSug').innerHTML=''; }
 async function addWish(){
   const val=document.getElementById('wishInput').value.trim();
-  if(!val){ (tg&&tg.showAlert?tg.showAlert:alert)('Type a Pokémon or set name first.'); return; }
+  if(!val){ fmTell('Type a Pokémon or set name first.'); return; }
   const r=await api('wishlistAdd',{kind:WISH.kind,target:val,label:val});
   if(r.ok){
     document.getElementById('wishInput').value=''; document.getElementById('wishSug').innerHTML='';
@@ -6859,7 +7216,7 @@ async function addWish(){
     if(!r.already) STATE.wishes.push({kind:WISH.kind,target:val,label:val});
     renderWishlist();
     if(r.message&&(tg&&tg.showAlert)) tg.showAlert(r.message);
-  } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Couldn\'t add that, try again.'); }
+  } else { fmTell(r.message||'Couldn\'t add that, try again.'); }
 }
 async function removeWish(kind,target){
   await api('wishlistRemove',{kind,target});
@@ -6873,41 +7230,23 @@ function removeWishAt(i){
 function renderWishlist(){
   const el=document.getElementById('wishList');
   const sub=document.getElementById('p-wish-sub');
-  if(sub) sub.textContent=STATE.wishes.length?`Watching ${STATE.wishes.length} — we'll ping you`:'Get pinged when cards restock';
+  if(sub) sub.textContent=STATE.wishes.length?`Watching ${STATE.wishes.length} · we'll ping you`:'Get pinged when cards restock';
   if(!STATE.wishes.length){ el.innerHTML=`<div class="empty" style="padding:24px"><div class="e-ic">🔔</div><p>Nothing on your wishlist yet.<br>Add a Pokémon or set above 🐾</p></div>`; return; }
     el.innerHTML=STATE.wishes.map((w,i)=>
     `<div class="wrow"><span class="wk">${w.kind==='set'?'📚':'⭐'}</span>
       <div class="wn">${esc(w.label||w.target)}<div class="ws">${w.kind==='set'?'Set':'Pokémon'}</div></div>
       <button class="rm" aria-label="Close" onclick="guard(this,()=>removeWishAt(${i}))">✕</button></div>`).join('');
 }
-/* ============ BUYBACK / SELL REQUEST ============ */
-function updateRateLabels(){
-  const rc=document.getElementById('rate-credit'), rk=document.getElementById('rate-cash');
-  const ovr=document.getElementById('ov-rates');
-  if(ovr) ovr.textContent='~'+Math.round(STATE.config.cashRate*100)+'% cash · ~'
-    +Math.round(STATE.config.creditRate*100)+'% store credit (est.)';
-  if(rc) rc.textContent=Math.round(STATE.config.creditRate*100)+'%';
-  if(rk) rk.textContent=Math.round(STATE.config.cashRate*100)+'%';
-}
-async function submitBuyback(){
-  const msg=document.getElementById('bb-msg').value.trim();
-  if(!msg){ (tg&&tg.showAlert?tg.showAlert:alert)('Tell us what you\'d like to sell first.'); return; }
-  const r=await api('submitBuyback',{message:msg});
-  if(r.ok){
-    document.getElementById('bb-msg').value='';
-    const m=r.message||'Sent! We\'ll message you back shortly.';
-    tg&&tg.showAlert?tg.showAlert(m):alert(m);
-  } else { (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Couldn\'t send, try again.'); }
-}
-
+/* ============ SELL TO US ============ (v13.70: the form is the SELL block, shared with the website) */
+function updateRateLabels(){}   // the home tile no longer shows the old single-card % (bulk rates live on the Sell screen)
 async function sendSupport(btn){
   await guard(btn, async()=>{
     const msg=document.getElementById('sup-msg').value.trim();
-    if(!msg){ (tg&&tg.showAlert?tg.showAlert:alert)('Type a message first.'); return; }
+    if(!msg){ fmTell('Type a message first.'); return; }
     const r=await api('contactSupport',{message:msg,orderId:document.getElementById('sup-order').value.trim()});
     if(r.ok){ document.getElementById('sup-msg').value=''; document.getElementById('sup-order').value='';
-      (tg&&tg.showAlert?tg.showAlert:alert)(r.message||'Sent!'); go('overview'); }
-    else { (tg&&tg.showAlert?tg.showAlert:alert)('Could not send, try again.'); }
+      fmTell(r.message||'Sent!'); go('overview'); }
+    else { fmTell('Could not send, try again.'); }
   });
 }
 
@@ -6920,7 +7259,7 @@ function resumePayment(id){
   const elapsed=o.createdMs?Math.floor((Date.now()-o.createdMs)/1000):0;
   const remain=(mins<=0)?Infinity:Math.max(0, mins*60 - elapsed);
   if(remain<=0){
-    (tg&&tg.showAlert?tg.showAlert:alert)('This order\'s payment window expired, so the cards went back on sale. Nothing was charged — order again any time.');
+    fmTell('This order\'s payment window expired, so the cards went back on sale. Nothing was charged. order again any time.');
     ORDERS_CACHE=null; loadOrders(true); loadStore(); return;
   }
   const items=(o.items||[]).filter(i=>!i.refunded);
@@ -6997,7 +7336,7 @@ function paint_viewInvoice(id){
           (refunded>0?'<div class="rrow" style="color:#c2405e"><span>Refunded</span><span>−'+money(refunded)+'</span></div>':'')+
           (o.creditUsed>0?'<div class="rrow" style="color:#1c7a52"><span>Store credit</span><span>−'+money(o.creditUsed)+'</span></div>':'')+
           '<div class="rrow"><span>'+(o.shipping?'Shipping':'Postage')+'</span><span>'+
-            (o.shipping?money(o.shipping):(String(o.id).indexOf('SH')===0?'—':'on despatch'))+'</span></div>'+
+            (o.shipping?money(o.shipping):(String(o.id).indexOf('SH')===0?'–':'on despatch'))+'</span></div>'+
         '</div>'+
         '<div class="rcpt-grand"><span>'+(cancelled?'Charged':'Total')+'</span><span>'+money(cancelled?0:o.total)+'</span></div>'+
         (o.note?'<div class="doc-note">📝 '+esc(o.note)+'</div>':'')+
@@ -7061,7 +7400,7 @@ function paint_viewStatement(pid){
           (credit>0?'<div class="rrow" style="color:#1c7a52"><span>Store credit applied</span><span>−'+money(credit)+'</span></div>':'')+
         '</div>'+
         '<div class="rcpt-grand"><span>Box total</span><span>'+money(grand)+'</span></div>'+
-        '<div class="rcpt-ft">Each order keeps its own invoice — tap any one above.<br>'+
+        '<div class="rcpt-ft">Each order keeps its own invoice. tap any one above.<br>'+
           'Questions? Help &amp; Support, quoting the box number.</div>'+
       '</div>'+
     '</div>';
@@ -7075,7 +7414,7 @@ async function getPdf(id,btn){
     const r=await api('invoicePdf',{orderId:id});
     const m=(r&&r.ok)?(r.message||'Sent to your Telegram 📄')                     
       :buyerErr(r,'🥺 we couldn’t send that just now. give it another try in a moment 🐾','invoicePdf');
-    (tg&&tg.showAlert?tg.showAlert:alert)(m);
+    fmTell(m);
   });
 }
 async function loadProfile(){
@@ -7090,7 +7429,7 @@ async function loadProfile(){
   set('p-orders',alive.length);
   set('p-transit',alive.filter(o=>['Payment Verified','Packed','Shipped','In Transit'].indexOf(o.status)>=0).length);
   const nt=alive.filter(o=>o.lastUpdate).slice(0,5).map(o=>
-    '<div class="notif"><span class="nt-ic">🔔</span><div><b>#'+esc(o.id)+'</b> — '+
+    '<div class="notif"><span class="nt-ic">🔔</span><div><b>#'+esc(o.id)+'</b> · '+
     esc(statusLabel(o))+'<div class="nt-sub">'+esc(cleanUpdate(o.lastUpdate))+'</div></div></div>').join('');
   const box=document.getElementById('prof-notifs');
   if(box) box.innerHTML = nt ? '<div class="section-t">Recent updates</div>'+nt : '';
@@ -7291,7 +7630,7 @@ const GUIDES={
     {ic:'🎁',t:'Credit for you and a friend',b:'{{RC}} back for every {{RT}} you pay. When a friend spends {{REFMIN}}+, <b>you each get {{REFC}}</b>.<br><button class="wsug" style="margin-top:10px" onclick="shareInvite()">🔗 Share my link</button><br><span style="font-size:12px;color:var(--hint)">Stuck? Help &amp; Support is in the menu 🐾</span>'}
   ]},
   buy:{title:'How buying works',steps:[
-    {ic:'🛒',t:'Add to cart',b:'Tapping <b>+</b> doesn’t hold a card for you — checking out does. If someone beats you to it, we’ll tell you before you pay.'},
+    {ic:'🛒',t:'Add to cart',b:'Tapping <b>+</b> doesn’t hold a card for you. checking out does. If someone beats you to it, we’ll tell you before you pay.'},
     {ic:'💳',t:'Pay for the cards',b:'Scan the PayNow QR, then send us the screenshot. You get 10 minutes. <b>No postage is charged here.</b>'},
     {ic:'✅',t:'We check it',b:'Paid cards go into your box 🧺 (Orders tab).'},
     {ic:'🧺',t:'Keep shopping',b:'One box, one postage, however often you shop.'},
@@ -7299,16 +7638,16 @@ const GUIDES={
     {ic:'↩️',t:'Changed your mind?',b:'Help &amp; Support, with your order number and which cards. We handle refunds by hand.'}
   ]},
   claim:{title:'How drops work',steps:[
-    {ic:'🎯',t:'What a drop is',b:'We post a card in the claims channel with a set price. First person to claim it gets it — no bidding, no waiting.'},
+    {ic:'🎯',t:'What a drop is',b:'We post a card in the claims channel with a set price. First person to claim it gets it. no bidding, no waiting.'},
     {ic:'▶️',t:'Press Start first',b:'Telegram won’t let a bot message you until you’ve messaged it once. <b>Press Start on the bot before you claim</b>, or your invoice can’t reach you.'},
-    {ic:'💬',t:'Comment “claim”',b:'Just the word, in the comments under the card. We’ll reply to confirm you’re in — and tell you if you’re in the queue behind someone.'},
+    {ic:'💬',t:'Comment “claim”',b:'Just the word, in the comments under the card. We’ll reply to confirm you’re in, and tell you if you’re in the queue behind someone.'},
     {ic:'🧾',t:'Your invoice arrives',b:'When the drop closes we send it straight to your Telegram. Tap it to pay in the app, same as any order.'},
-    {ic:'⏰',t:'Pay within the window',b:'Claim wins have a deadline on them. Miss it and the card passes to the next person in the queue — so pay when you see it.'}
+    {ic:'⏰',t:'Pay within the window',b:'Claim wins have a deadline on them. Miss it and the card passes to the next person in the queue, so pay when you see it.'}
   ]},
   credit:{title:'Store credit',steps:[
-    {ic:'🎁',t:'How you earn it',b:'{{RC}} back for every {{RT}} you pay. Refer a friend and you BOTH get {{REFC}} once they spend {{REFMIN}}+. Sell us cards and take credit instead of cash — we pay a better rate for credit.'},
+    {ic:'🎁',t:'How you earn it',b:'{{RC}} back for every {{RT}} you pay. Refer a friend and you BOTH get {{REFC}} once they spend {{REFMIN}}+. Sell us cards and take credit instead of cash. we pay a better rate for credit.'},
     {ic:'🛒',t:'How you spend it',b:'Toggle <b>Use store credit</b> at checkout and it comes off before you PayNow. Partial is fine: $4 of credit on a $10 order means you pay $6.'},
-    {ic:'↩️',t:'Refunds',b:'Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way — credit lands instantly, cash we send by hand.'},
+    {ic:'↩️',t:'Refunds',b:'Whatever you paid with credit comes back as credit. Whatever you paid by PayNow can come back either way: credit lands instantly, cash we send by hand.'},
     {ic:'ℹ️',t:'Good to know',b:'Credit never expires, but it can’t be cashed out. If an order is cancelled or times out, any credit you used comes straight back.'}
   ]}
 };
@@ -7406,9 +7745,9 @@ function pcToggleFullscreen(){
   try{
     if(tg&&tg.isFullscreen&&typeof tg.exitFullscreen==='function'){ tg.exitFullscreen(); return; }
   }catch(e){}
-  if(!pcGoFullscreen()) pcAlert('Your Telegram doesn’t support full screen for mini apps.\n\nDrag the window wider instead — the layout grows with it.');
+  if(!pcGoFullscreen()) pcAlert('Your Telegram doesn’t support full screen for mini apps.\n\nDrag the window wider instead. the layout grows with it.');
 }
-function pcAlert(m){ try{ (tg&&tg.showAlert)?tg.showAlert(m):alert(m); }catch(e){ alert(m); } }
+function pcAlert(m){ fmTell(m); }
 
 /* In fullscreen Telegram draws its own close button OVER the page, so the rail
    needs to start below it or the logo sits under it. */
@@ -7423,7 +7762,7 @@ function pcDiagnostic(){
   let v='?'; try{ v=String((tg&&tg.version)||'?'); }catch(e){}
   pcAlert(
     'FloofMart PC mode\n\n'+
-    'platform: '+(pcPlatform()||'(none — not in Telegram)')+'\n'+
+    'platform: '+(pcPlatform()||'(none, not in Telegram)')+'\n'+
     'Bot API: '+v+'\n'+
     'window: '+window.innerWidth+' × '+window.innerHeight+'\n'+
     'pc mode: '+(PC_ON?'ON':'off')+(PC_ON?(PC_WIDE?' (wide)':' (narrow rail)'):'')+'\n'+
@@ -7626,27 +7965,27 @@ function closeZoom(){ document.getElementById('zoomWrap').classList.remove('show
    "WebAppMethodUnsupported" -- which made every Admin confirm silently do
    nothing there. Use them only where they exist; the browser's otherwise. */
 const ptTgDialogs=()=>!!(tg&&tg.showAlert&&tg.showConfirm&&(!tg.isVersionAtLeast||tg.isVersionAtLeast('6.2')));
-const ptAlert=m=>{ const s=String(m||''); try{ if(ptTgDialogs()){ tg.showAlert(s); return; } }catch(e){} alert(s); };
-const ptConfirm=m=>new Promise(res=>{ try{ if(ptTgDialogs()){ tg.showConfirm(String(m),ok=>res(!!ok)); return; } }catch(e){} res(confirm(m)); });
+const ptAlert=m=>{ fmTell(String(m||'')); };   // v13.70: Telegram's pop-up inside Telegram, the shop's pop-up elsewhere (never the browser's)
+const ptConfirm=m=>fmAsk(String(m));
 const ptDate=ms=>ms?new Date(ms).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'2-digit'}):'';
 /* Say WHAT went wrong. "Something went wrong" on every failure made a missing
    server file look the same as a bad connection. */
-const PT_ERRS={not_admin:'Admins only — your Telegram id isn\'t in ADMIN_IDS on this server.',
+const PT_ERRS={not_admin:'Admins only. your Telegram id isn\'t in ADMIN_IDS on this server.',
   not_consignor:'You\'re not set up as a consignor.',
-  rate_limited:'Too many tries — give it a little while.',
+  rate_limited:'Too many tries. give it a little while.',
   consign_closed:'We\'re not taking new consignments right now 🐾',
   unknown_action:'The server is running older code. In Apps Script: add portal.gs, paste the new code.gs and consign.gs, run portalSetup() once, then Deploy → Manage deployments → Edit → New version.',
-  nonjson:'The server sent back a web page instead of data — usually the Apps Script deployment needs access set to "Anyone", or a new version deployed.',
-  gas_empty_response:'The server gave an empty answer — try again in a moment.',
+  nonjson:'The server sent back a web page instead of data. usually the Apps Script deployment needs access set to "Anyone", or a new version deployed.',
+  gas_empty_response:'The server gave an empty answer. try again in a moment.',
   not_verified:'Open the shop from Telegram to use this.',
-  auth_failed:'You\'re not signed in — close the shop and reopen it from the bot.'};
+  auth_failed:'You\'re not signed in. close the shop and reopen it from the bot.'};
 const ptErr=r=>{
   if(r&&r.message) return r.message;
   const e=r&&r.error;
   if(e==='auth_failed'&&r.why&&typeof AUTH_MSGS!=='undefined'&&AUTH_MSGS[r.why]) return AUTH_MSGS[r.why];
   if(e&&PT_ERRS[e]) return PT_ERRS[e];
   if(e) return 'Server error: '+String(e).slice(0,200);
-  return 'Couldn\'t reach the server — check your connection and try again.';
+  return 'Couldn\'t reach the server. check your connection and try again.';
 };
 const ptVal=id=>{ const el=document.getElementById(id); return el?String(el.value||'').trim():''; };
 const ptNum=id=>{ const v=ptVal(id).replace(/[$,\s]/g,''); return v===''?null:Number(v); };
@@ -7734,7 +8073,7 @@ async function openConsign(){
   const r=await ptFetch('consignMe');
   ptUpd('cz-upd',false);
   if((r&&r.ok) || !(CZ&&CZ.ok)){ CZ=r; renderConsign(); }
-  else { const el=document.getElementById('cz-upd'); if(el) el.textContent='Couldn\'t refresh — showing your last saved copy.'; }
+  else { const el=document.getElementById('cz-upd'); if(el) el.textContent='Couldn\'t refresh. showing your last saved copy.'; }
   if(CZ&&CZ.isConsignor) czLoadPending();
 }
 function czTab(t){ CZ_TAB=t; renderConsign(); }
@@ -7756,7 +8095,7 @@ function renderConsign(){
       <div class="pstat"><div class="pn">$${Number(r.paid||0).toFixed(0)}</div><div class="pl">Paid out</div></div></div>
     ${CZ_PEND&&CZ_PEND.cards?`<div class="cz-pend">🕒 <b>${CZ_PEND.cards} sold, on the way</b> · <b>$${Number(CZ_PEND.toYou).toFixed(2)}</b> to you<br><span>It's added to your balance as soon as each box is shipped or collected.</span></div>`:''}
     ${payBtn}
-    <div class="pt-row" style="margin-top:6px"><div class="l"><div class="t">PayNow</div><div class="s">${r.paynow?esc(r.paynow):'Not set — we need this to pay you'}</div></div>
+    <div class="pt-row" style="margin-top:6px"><div class="l"><div class="t">PayNow</div><div class="s">${r.paynow?esc(r.paynow):'Not set yet. we need this to pay you'}</div></div>
       <button class="pt-mini" onclick="czPaynowForm()">${r.paynow?'Change':'Add'}</button></div>
     <div id="cz-paynow"></div>`;
   h+=ptTabs([['shelf','On the shelf'],['sales','Sales'],['payouts','Payouts'],['rates','My rates'],['requests','Requests']],CZ_TAB,'czTab');
@@ -7771,7 +8110,7 @@ function renderConsign(){
         <span class="pt-tag ${PT_STATE_TAG[c.state]||''}">${esc(c.state)}</span>${c.bundle?`<span class="pt-tag">${esc(c.bundle)}</span>`:''}
       </div></div>`; }).join('')
       : '<div class="empty" style="padding:24px"><p>Nothing on the shelf right now.</p></div>';
-  } else if(CZ_TAB==='sales') h+=(CZ_PEND&&CZ_PEND.lines&&CZ_PEND.lines.length?'<div class="pt-h" style="margin-top:0">Sold — on the way</div>'+CZ_PEND.lines.map(l=>`<div class="pt-row"><div class="l"><div class="t">${esc(l.name)}</div><div class="s">${esc(l.status)} · sold $${Number(l.price).toFixed(2)} · added when it's handed over</div></div><div class="r" style="color:var(--hint)">+$${Number(l.net).toFixed(2)}</div></div>`).join('')+'<div class="pt-h">Paid into your balance</div>':'')+ptSalesHtml(r.sales);
+  } else if(CZ_TAB==='sales') h+=(CZ_PEND&&CZ_PEND.lines&&CZ_PEND.lines.length?'<div class="pt-h" style="margin-top:0">Sold · on the way</div>'+CZ_PEND.lines.map(l=>`<div class="pt-row"><div class="l"><div class="t">${esc(l.name)}</div><div class="s">${esc(l.status)} · sold $${Number(l.price).toFixed(2)} · added when it's handed over</div></div><div class="r" style="color:var(--hint)">+$${Number(l.net).toFixed(2)}</div></div>`).join('')+'<div class="pt-h">Paid into your balance</div>':'')+ptSalesHtml(r.sales);
   else if(CZ_TAB==='payouts') h+=ptPayoutsHtml(r.payouts);
   else if(CZ_TAB==='rates') h+=`<p class="note" style="text-align:left;margin:0 0 6px">These are the rates you signed up on${r.rates&&r.rates.ver?' ('+esc(r.rates.ver)+')':''}. The % is set by what each card sells for.</p>`+ptRatesHtml(r.rates&&r.rates.tables)+CN_FAKE_POLICY;
   else if(CZ_TAB==='requests') h+=ptReqsHtml(r.requests);
