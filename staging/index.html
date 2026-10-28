@@ -4457,7 +4457,7 @@ function openCardView(id){
         <div class="cv-hint cv-policy" style="margin-top:0">${esc(COND_POLICY)}</div>
         ${c.bulk?'':`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups, we'll send them in chat</span><span class="ap-go">Ask ›</span></button>`}
         <div class="cv-price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="cv-was">$${c.marketPrice.toFixed(2)}</span>`:''}</div>
-        ${c.bulk?'':`<button class="cta-alt" onclick="makeOfferById('${c.id}')">💬 Make an offer</button>`}
+        <button class="cta-alt" onclick="makeOfferById('${esc(c.id)}')">💬 Make an offer</button>
         ${cvOthersHtml(c)}
       </div>
       <div class="cv-buybar">
