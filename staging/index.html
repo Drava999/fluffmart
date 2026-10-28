@@ -4099,7 +4099,7 @@ function poolExcept(facet){
       if(STATE.priceMin!=null && p<STATE.priceMin) return false;
       if(STATE.priceMax!=null && p>STATE.priceMax) return false;
     }
-    if(q && (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().indexOf(q)<0) return false;
+    if(q && (c.name+' '+(c.name_ja||'')+' '+c.set+' '+(c.number||'')).toLowerCase().indexOf(q)<0) return false;
     return Number(c.qty)>0;
   });
 }
@@ -4251,7 +4251,7 @@ async function loadStore(){
 var GROUPS={list:[], at:0, busy:null};
 function groupCard(it){
   const key=String(it.key||''), body=key.slice(2), v=String(it.variant||'normal');
-  return {id:'BK:'+body, key:key, bulk:true, card_id:String(it.card_id||''), name:String(it.name||''), set:String(it.set_name||''),
+  return {id:'BK:'+body, key:key, bulk:true, card_id:String(it.card_id||''), name:String(it.label||it.name_en||it.name||''), name_ja:it.lang==='ja'?String(it.name||''):'', set:String(it.set_en||it.set_name||''),
     number:String(it.local_id||''), rarity:String(it.rarity||''), lang:String(it.lang||''), tier:'', category:'single', price:Number(it.price)||0, qty:parseInt(it.qty,10)||0,
     image:String(it.photo||''), imageBack:String(it.back||''), condition:String(it.condition_label||it.condition||''), variance:v==='normal'?'':String(it.variant_label||v),
     grade:'', marketPrice:0, status:'available', ids:['BK:'+body]};
@@ -4290,7 +4290,7 @@ function visibleCards(){
     const p=Number(c.price||0);
     if(STATE.priceMin!=null && p<STATE.priceMin) return false;
     if(STATE.priceMax!=null && p>STATE.priceMax) return false;
-    if(q && (c.name+' '+c.set+' '+(c.number||'')).toLowerCase().indexOf(q)<0) return false;
+    if(q && (c.name+' '+(c.name_ja||'')+' '+c.set+' '+(c.number||'')).toLowerCase().indexOf(q)<0) return false;
     if(!faceList(c).length) return false;
     return true;
   });
