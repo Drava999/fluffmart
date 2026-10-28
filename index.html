@@ -2141,6 +2141,7 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
 /* the Mini App's own: the store's Grid | List switch sits beside Filters and the sort */
 .toolrow .ct-sw{align-self:center}
 
+.cart-clear-row{display:flex;justify-content:flex-end;margin:0 0 6px}.cart-clear{background:none;border:1px solid var(--line,#ddd);border-radius:10px;padding:5px 12px;font:inherit;font-size:13px;font-weight:700;color:var(--hint,#888);cursor:pointer}
 </style>
 </head>
 <body>
@@ -2543,12 +2544,14 @@ if (IS_STAGING) {
 /* v13.69.18 (Bryan, 12 Oct): the shop's own domain. ONE place for the stock Worker's addresses:
    WEB_URL = what people are sent to (the website, the admin Desk) = floofmarttcg.com / staging.floofmarttcg.com;
    STOCK_API = where this app reads from (machine address; the old workers.dev address keeps working).
-   Stock Worker. STOCK_API '' = the Sets screen and the scanned cards are hidden everywhere (live, for now). */
+   Stock Worker. STOCK_API '' = the Sets screen and the scanned cards are hidden everywhere.
+   28 Oct (Bryan: "i thought the inventory didnt differentiate between old and new cards anymore"): live is on
+   too, so the Telegram shop shows every scanned card like the website (it showed only the 2 Sheet bundles). */
 const WEB_URL = IS_STAGING ? STG_URLS.web : 'https://floofmarttcg.com';
-const STOCK_API = IS_STAGING ? STG_URLS.stock : '';
+const STOCK_API = IS_STAGING ? STG_URLS.stock : 'https://floofmarttcg.com';
 /* s31.3 ONE LIST (one inventory Phase 1): the shop shows the scanned cards (stock Worker /api/list)
-   in the SAME list as the Sheet cards, with the same card view, cart and rules. On only where the
-   stock Worker is linked (staging); live keeps its old shop until STOCK_API is set there. */
+   in the SAME list as the Sheet cards, with the same card view, cart and rules. On wherever the
+   stock Worker is linked (staging, and live since 28 Oct). */
 const ONE_LIST = !!STOCK_API;
 (function(){ const b=document.getElementById('setsBtn'); if(b && STOCK_API) b.classList.remove('hidden'); })();
 /* ================================ */
@@ -4568,7 +4571,7 @@ async function sendOffer(){
    Every entry point stays hidden while STOCK_API is '' (live, for now). */
 async function stockReq(path, opts){
   if(!STOCK_API) return {ok:false, error:'off'};
-  const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),15000);
+  const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),30000);   // 28 Oct: the full card list is ~1.7 MB (gzip ~100 KB); slow phones need longer than 15 s
   try{
     const r=await fetch(STOCK_API+path, Object.assign({signal:ctl.signal}, opts||{}));
     let out; try{ out=JSON.parse(await r.text()); }catch(e){ return {ok:false, error:'bad_response', status:r.status}; }
@@ -4854,6 +4857,12 @@ function addToCart(id){
   });
   return true;
 }
+// s34.12 (Bryan 24 Oct): empty the whole cart in one go (asks first)
+async function clearCart(){
+  const n=STATE.cart.length; if(!n) return;
+  if(!(await fmAsk({title:'clear your cart?',msg:n+(n===1?' card comes':' cards come')+' out of your cart. you can add them again any time 🐾',ok:'Clear cart',cancel:'Keep them',danger:true}))) return;
+  STATE.cart=[]; STATE.cartErr=null; updateCartDot(); renderCart(); renderStore();
+}
 function removeFromCart(idx){ STATE.cart.splice(idx,1); STATE.cartErr=null; updateCartDot(); renderCart(); renderStore(); }
 function updateCartDot(){
   const d=document.getElementById('cartDot'); d.textContent=STATE.cart.length;
@@ -4940,7 +4949,7 @@ function renderCart(){
  const nudge = STATE.openParcel
     ? `<div class="nudge">🧺 These join the box we're already holding for you. no extra postage.</div>`
     : `<div class="nudge">🧺 This starts your box. Pay for the cards now, choose delivery whenever you're ready.</div>`;
-  body.innerHTML = cartErrHtml() + STATE.cart.map((c,i)=>
+  body.innerHTML = cartErrHtml() + `<div class="cart-clear-row"><button class="cart-clear" type="button" onclick="clearCart()">Clear cart</button></div>` + STATE.cart.map((c,i)=>
     `<div class="crow"><div class="ci">${c.image?`<img src="${esc(imgUrl(c.image,200))}" alt=""${c.bulk?' onerror="stockImgFail(this)"':` data-w="200" data-emo="${esc(EMOJI[c.tier]||'🃏')}" onerror="thumbRetry(this)"`}>`:(EMOJI[c.tier]||'🃏')}</div>
       <div class="cn">${esc(c.name)}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.bulk
         ? esc([c.set,c.number?'#'+c.number:'',c.cond||''].filter(Boolean).join(' · '))
@@ -5212,6 +5221,9 @@ async function checkout(){
     fmTell('That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');
   } else if(r.error==='per_card_limit'){
     STATE.cartErr={kind:'limit', msg:buyerErr(r,'🐾 to keep cards fair for everyone, it’s max '+PER_CARD_MAX+' of the same card per person every 30 days\n\ntake the extra copies out of your cart and you’re good to go 💛','checkout')};
+  } else if(r.error==='stock_busy'){
+    // the stock list didn't answer (bulk.gs bulkHoldForOrder_): nothing was taken, the cart stays as it is
+    STATE.cartErr={kind:'retry', msg:buyerErr(r,'🐾 oops, our stock list didn’t answer just now. nothing was taken and your cart is still here: please try again in a moment 💛','checkout')};
   } else if(r.error==='too_many_unpaid'){
     STATE.cartErr={kind:'unpaid', msg:buyerErr(r,'🐾 you already have orders waiting for payment\n\npay or cancel one of them in Orders first, then this cart is all yours 💌','checkout')};
   } else {
