@@ -3424,8 +3424,7 @@ function ctSub(t) {
 /* v13.74 (Bryan 19 Oct): the market price is shown beside ours ONLY when ours is under it (share-priced cards).
    A floor-priced card (ours at or over market) shows its price alone. cur = '$' or 'S$'. Returns '' or e.g. 'S$4.00'. */
 function ctMkt(price, market, cur) {
-  const p = Number(price), m = Number(market);
-  return (p > 0 && m > 0 && Math.round(p * 100) < Math.round(m * 100)) ? (cur || 'S$') + m.toFixed(2) : '';
+  return '';   // Bryan 1 Nov: no market price on buyer screens (PriceCharting data is licensed for internal use)
 }
 function ctTags(t) {
   const p = [];
@@ -3463,7 +3462,7 @@ function ctParts(t) {
     pic: t.href ? '<a class="ct-pic" href="' + esc(t.href) + '" aria-label="' + esc(name + ' details') + '">' + ph + '</a>' : '<span class="ct-pic">' + ph + '</span>',
     nm: '<div class="ct-nm" title="' + esc(name) + '">' + (t.href ? '<a href="' + esc(t.href) + '">' + esc(name) + '</a>' : esc(name)) + '</div>',
     sub: sub ? '<div class="ct-sub" title="' + esc(sub) + '">' + esc(sub) + '</div>' : '',
-    money: (t.priceText ? '<span class="ct-money">' + esc(t.priceText) + '</span>' : '') + (t.priceText && t.wasText ? '<s class="ct-was">' + esc(t.wasText) + '</s>' : '') + (t.priceText && t.mktText ? '<span class="ct-mkt" title="PriceCharting market price">mkt ' + esc(t.mktText) + '</span>' : ''),
+    money: (t.priceText ? '<span class="ct-money">' + esc(t.priceText) + '</span>' : '') + (t.priceText && t.wasText ? '<s class="ct-was">' + esc(t.wasText) + '</s>' : '') + (t.priceText && t.mktText ? '<span class="ct-mkt" title="Market price">mkt ' + esc(t.mktText) + '</span>' : ''),
     add: t.actions != null ? '' : '<button type="button" class="add ct-add"' + (t.addAttrs || '') + (t.soldOut ? ' disabled' : '') + ' aria-label="' + esc('Add ' + name + ' to cart') + '" title="Add to cart">+</button>'
   };
 }
