@@ -1534,7 +1534,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .bs-steps .oc-dot.on,.bs-steps .oc-bar.on{background:#6fcf9f}
 .bs-steps .oc-lbls{color:var(--hint);opacity:.6}.bs-steps .oc-lbls .on{color:var(--fawn-deep);opacity:1}
 .bs-line{font-size:12px;color:var(--text);margin-top:10px}
-.bs-track{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--fawn-deep)}
+.bs-track{display:inline-block;margin:8px 10px 0 0;font-size:12px;font-weight:700;color:var(--fawn-deep)}
 .bs-card{display:flex;align-items:center;gap:11px;padding:6px 0}
 .bs-bundle{padding:6px 0 4px}
 .bs-bundle+.bs-card,.bs-card+.bs-bundle,.bs-bundle+.bs-bundle{border-top:1px dashed var(--line)}
@@ -5748,6 +5748,16 @@ function boxStatusLine(b){
   if(b.parcel&&b.parcel.status==='pickup_ready') return '🤝 '+(STATE.pickupNote||'We\'ll message you to arrange pickup');
   return '';
 }
+/* v13.83.4 / s34.70 (Bryan 1 Nov: one order shipped in two parcels): a box's tracking may hold several numbers ("A, B");
+   one Track link per number. kind btn = box card button, bs = box sheet line, doc = receipt button. */
+function trackNos(t){ var seen={}, out=[]; String(t==null?'':t).split(/[\s,;]+/).forEach(function(x){ x=x.trim(); if(x&&!seen[x.toUpperCase()]){ seen[x.toUpperCase()]=1; out.push(x); } }); return out; }
+function trackLinks(t, kind){
+  var l=trackNos(t), many=l.length>1, u=function(x){ return 'https://www.singpost.com/track-items?trackingid='+encodeURIComponent(x); };
+  return l.map(function(x,i){
+    if(kind==='btn') return '<a class="oc-b oc-b-alt bx-link" href="'+u(x)+'" target="_blank" rel="noopener">🚚 Track'+(many?' '+(i+1):'')+'</a>';
+    return '<a class="'+(kind==='doc'?'doc-track':'bs-track')+'" href="'+u(x)+'" target="_blank" rel="noopener">🚚 Track '+(many?(i+1)+' of '+l.length+' · ':'')+esc(x)+' ↗</a>';
+  }).join(kind==='bs'?' ':'');
+}
 function boxCardHtml(b){
   const t=boxTitle(b), line=boxStatusLine(b);
   const tracking=(b.orders.find(o=>o.tracking)||{}).tracking||'';
@@ -5762,7 +5772,7 @@ function boxCardHtml(b){
     faceStripHtml(b.items,200,12)+
     '<div class="oc-foot"><span>'+b.cards+' card'+(b.cards===1?'':'s')+(bundles?' · '+bundles+' bundle'+(bundles===1?'':'s'):'')+'</span><span class="oc-tot">$'+b.total.toFixed(2)+'</span></div>'+
     '<div class="oc-acts" onclick="event.stopPropagation()">'+
-      (tracking?'<a class="oc-b oc-b-alt bx-link" href="https://www.singpost.com/track-items?trackingid='+encodeURIComponent(tracking)+'" target="_blank" rel="noopener">🚚 Track</a>':'')+
+      (tracking?trackLinks(tracking,'btn'):'')+
       invBtnHtml(b)+
       '<button class="oc-b oc-b-alt" onclick="openBoxSheet(\''+b.id+'\')">Receipts</button>'+
       (canShare?'<button class="oc-b oc-b-alt" onclick="openHaulSheet(\''+boxShareId(b)+'\')">📸 Share</button>':'')+
@@ -5921,7 +5931,7 @@ function paint_openBoxSheet(id){
         '<span class="bs-pill">'+b.stage.ic+' '+esc(b.stage.l)+'</span>'+
         '<div class="bs-steps">'+boxStepsHtml(b.stage.step)+'</div>'+
         (line?'<div class="bs-line">'+esc(line)+'</div>':'')+
-        (tracking?'<a class="bs-track" href="https://www.singpost.com/track-items?trackingid='+encodeURIComponent(tracking)+'" target="_blank" rel="noopener">🚚 Track '+esc(tracking)+' ↗</a>':'')+
+        (tracking?trackLinks(tracking,'bs'):'')+
       '</div>'+
       '<div class="rcpt-body">'+
         holdLineHtml(b)+
@@ -7383,7 +7393,7 @@ function paint_viewInvoice(id){
         (o.note?'<div class="doc-note">📝 '+esc(o.note)+'</div>':'')+
         (trail?'<div class="rcpt-sec">Handled by</div><div class="doc-trail">'+trail+'</div>':'')+
         (o.shipAddress?'<div class="rcpt-sec">Ship to</div><div class="doc-trail">'+esc(o.shipName||'')+'<br>'+esc(o.shipAddress)+'</div>':'')+
-        (o.tracking?'<a class="doc-track" href="https://www.singpost.com/track-items?trackingid='+encodeURIComponent(o.tracking)+'" target="_blank" rel="noopener">🚚 Track '+esc(o.tracking)+' ↗</a>':'')+
+        (o.tracking?trackLinks(o.tracking,'doc'):'')+
         '<button class="pics" style="margin-top:12px" onclick="getPdf(\''+o.id+'\',this)">📄 Send me a PDF</button>'+
         ((!tg||!tg.platform||/^(tdesktop|web|weba|webk|macos)$/.test(tg.platform))?'<button class="pics" style="margin-top:6px" onclick="window.print()">🖨️ Print / Save as PDF</button>':'')+
         '<div class="rcpt-ft">Paid by PayNow · quote '+esc(o.id)+' in Help &amp; Support</div>'+
