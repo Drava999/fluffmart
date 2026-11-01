@@ -2142,6 +2142,25 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
 .toolrow .ct-sw{align-self:center}
 
 .cart-clear-row{display:flex;justify-content:flex-end;margin:0 0 6px}.cart-clear{background:none;border:1px solid var(--line,#ddd);border-radius:10px;padding:5px 12px;font:inherit;font-size:13px;font-weight:700;color:var(--hint,#888);cursor:pointer}
+/* ADDR-CSS-BEGIN (v13.85) the fixed delivery address boxes; byte-identical in stock/site.html and index.html */
+.af-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 10px}
+.af-row.a{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+.af-row>.field{min-width:0}
+.af-row label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.af-f input{font-size:16px}
+.af-err{display:block;font-size:12.5px;line-height:1.35;font-weight:600;color:var(--bad,#b3264a);margin-top:4px}
+.af-err:empty{display:none}
+.af-f input[aria-invalid="true"]{border-color:var(--bad,#b3264a)}
+.af-old{border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin:0 0 12px}
+.af-old b{display:block;font-size:12.5px;color:var(--hint);margin-bottom:4px}
+.af-old p{margin:0 0 8px;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.af-old .af-btns{display:flex;gap:8px;flex-wrap:wrap}
+.af-old button{min-height:44px;padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer}
+.af-old button.af-use{background:var(--text,#5A3A4E);border-color:transparent;color:var(--bg,#fff)}
+.af-old .af-hint{font-size:12.5px;color:var(--hint);margin:8px 0 0}
+:root[data-theme="dark"] .af-err{color:var(--bad,#FF8FA6)}
+:root[data-theme="dark"] .af-f input[aria-invalid="true"]{border-color:var(--bad,#FF8FA6)}
+/* ADDR-CSS-END */
 </style>
 </head>
 <body>
@@ -2451,9 +2470,7 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
   <div class="sh-hd"><h2>🚚 Ship my parcel</h2><button class="rm" aria-label="Close" onclick="closeShipAddr()">✕</button></div>
   <div class="body" style="padding-bottom:20px">
     <p class="note" style="margin:0 0 10px">Where should we send it? If your parcel qualifies for free shipping there'll be nothing to pay.</p>
-    <div class="field"><label>Name for delivery</label><input id="sa-name" placeholder="Full name"></div>
-    <div class="field"><label>Mailing address</label><input id="sa-addr" placeholder="Block, street, unit, postal code"></div>
-    <div class="field"><label>Phone (optional)</label><input id="sa-phone" placeholder="For delivery issues"></div>
+    <div id="sa-fields"></div>
     <button class="cta" onclick="guard(this,confirmShip)">Continue →</button>
   </div>
 </div>
@@ -2462,9 +2479,7 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
 <div class="sheet" id="addrSheet">
   <div class="sh-hd"><h2>📦 Delivery address</h2><button class="rm" aria-label="Close" onclick="closeAddrEdit()">✕</button></div>
   <div class="body" style="padding-bottom:20px">
-    <div class="field"><label>Name for delivery</label><input id="pa-name" placeholder="Full name"></div>
-    <div class="field"><label>Mailing address</label><input id="pa-addr" placeholder="Block, street, unit, postal code"></div>
-    <div class="field"><label>Phone (optional)</label><input id="pa-phone" placeholder="For delivery issues"></div>
+    <div id="pa-fields"></div>
     <button class="cta" onclick="saveAddrEdit()">Save address</button>
     <p class="note">Used to pre-fill checkout. you can still change it per order.</p>
   </div>
@@ -2983,23 +2998,266 @@ function _load(key,cb){
     }
   }catch(e){}
 }
+/* ADDR-RULE-BEGIN (v13.85, Bryan 1 Nov: "i need their postal code etc all in the same format every time")
+   ONE Singapore delivery address rule. Byte-identical in code.gs, stock/site.html and index.html
+   (test_address_fields.js checks): the pages check as the buyer types, Apps Script checks again
+   (never trusts a page). Plain ES5 so it runs in all three places.
+   Fields: name · phone · block (optional) · street · unit (optional) · building (optional) · postal.
+   Stored: ship_name, ship_phone "+65 9123 4567", ship_address
+   "123 Tampines St 81, #04-22, Building, Singapore 520123" (Bryan 1 Nov: "just make block optional":
+   no block = "Jalan Kembangan, Singapore 419123"; the word "Blk" is never added, one format for all). */
+var FM_ADDR_MSG = {
+  name: 'we need the full name for the parcel',
+  phone: 'a Singapore phone number please: 8 digits starting with 3, 6, 8 or 9',
+  block: 'a block or house number looks like 123 or 12A (or leave it empty)',
+  street: 'the street name please, like Tampines St 81',
+  street_mixed: 'just the street name here: the block, unit and postal code have their own boxes',
+  unit: 'a unit number looks like #04-22 (the floor, then the unit)',
+  building: 'that building name is a bit long: under 60 letters please',
+  postal: 'a postal code is 6 numbers, like 520123'
+};
+var FM_ADDR_ORDER = ['name', 'phone', 'block', 'street', 'unit', 'building', 'postal'];
+function fmAddrClean(s, max) {
+  var t = String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f\u2028\u2029]+/g, ' ').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+  return max ? t.slice(0, max) : t;
+}
+/* All small or ALL CAPS -> Title Case ("tampines st 81" -> "Tampines St 81", "JANE TAN" -> "Jane Tan"); a mix stays as typed. */
+function fmAddrTitle(s) {
+  if (s !== s.toLowerCase() && s !== s.toUpperCase()) return s;
+  return s.toLowerCase().replace(/(^|[\s\-\/(.])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
+}
+/* "+65 9123 4567" / "91234567" / "6591234567" / "+65-9123-4567" -> "+65 9123 4567"; anything else ''. */
+function fmAddrPhone(s) {
+  var d = fmAddrClean(s).replace(/[\s\-().]/g, '');
+  if (/^\+65/.test(d)) d = d.slice(3); else if (/^0065/.test(d)) d = d.slice(4); else if (/^65\d{8}$/.test(d)) d = d.slice(2);
+  return /^[3689]\d{7}$/.test(d) ? '+65 ' + d.slice(0, 4) + ' ' + d.slice(4) : '';
+}
+/* "520123" / "S520123" / "S(520123)" / "Singapore 520 123" -> "520123"; anything else ''. */
+function fmAddrPostal(s) {
+  var t = fmAddrClean(s).toUpperCase().replace(/SINGAPORE/g, '').replace(/[\s()\-.]/g, '').replace(/^SG?/, '');
+  if (!/^\d{6}$/.test(t)) return '';
+  var sec = Number(t.slice(0, 2));
+  return sec >= 1 && sec <= 82 ? t : '';
+}
+/* "Blk 123" / "block 12a" / "123A" -> "123" / "12A"; anything else ''. */
+function fmAddrBlock(s) {
+  var t = fmAddrClean(s).replace(/^(blk|block|bk|house|no)\.?\s*/i, '').toUpperCase().replace(/\s+/g, '');
+  return /^\d{1,4}[A-Z]?$/.test(t) ? t : '';
+}
+/* "#04-22" / "04-22" / "4-22" / "#4/22" / "unit 4 22" / "b1-05" -> "#04-22" / "#B1-05"; blank = ''; not a unit = null. */
+function fmAddrUnit(s) {
+  var t = fmAddrClean(s).toUpperCase().replace(/[\u2010-\u2015]/g, '-').replace(/^UNIT\s*/, '');
+  if (!t) return '';
+  var m = /^#?\s*(B?)(\d{1,3})\s*[-\/ ]\s*(\d{1,5})\s*([A-Z]?)$/.exec(t);
+  if (!m) return null;
+  var fl = m[1] ? 'B' + Number(m[2]) : (m[2].length < 2 ? '0' + m[2] : m[2]);
+  var un = m[3].length < 2 ? '0' + m[3] : m[3];
+  return '#' + fl + '-' + un + m[4];
+}
+/* An old free-text address (or a whole line typed into Street) -> its parts, best effort. */
+function fmAddrSplit(s) {
+  var t = ' ' + fmAddrClean(s, 300) + ' ', out = { block: '', street: '', unit: '', building: '', postal: '' }, m;
+  t = t.replace(/(\bsingapore\s*|\bS\s*\(?\s*)(\d{3})\s(\d{3})(?!\d)/ig, '$1$2$3');
+  var re = /(?:\bsingapore\s*|\bS\s*\(?\s*|\b)(\d{6})\)?(?!\d)/ig, best = null;
+  while ((m = re.exec(t))) if (fmAddrPostal(m[1])) best = m;
+  if (best) { out.postal = best[1]; t = t.slice(0, best.index) + ' ' + t.slice(best.index + best[0].length); }
+  t = t.replace(/[\s,]*\bsingapore\b[\s,]*/ig, ' ');
+  m = /(?:#|\bunit\s*#?)\s*(B?\d{1,3}\s*[-\/]\s*\d{1,5}\s*[A-Z]?)\b/i.exec(t);
+  if (m && fmAddrUnit(m[1])) { out.unit = fmAddrUnit(m[1]); t = t.slice(0, m.index) + ' ' + t.slice(m.index + m[0].length); }
+  m = /^[\s,]*(?:(?:blk|block|bk)\.?\s*)?(\d{1,4}[A-Z]?)\b[\s,]+(?=[A-Za-z])/i.exec(t);
+  if (m) { out.block = m[1].toUpperCase(); t = t.slice(m[0].length); }
+  var bits = t.split(',').map(function (x) { return fmAddrClean(x); }).filter(function (x) { return x; });
+  out.street = bits.shift() || '';
+  out.building = bits.join(', ');
+  return out;
+}
+function fmAddrFormat(parts) {
+  var p = parts || {};
+  return (p.block ? p.block + ' ' : '') + p.street + (p.unit ? ', ' + p.unit : '') +
+    (p.building ? ', ' + p.building : '') + ', Singapore ' + p.postal;
+}
+/* The one check. f = {name, phone, block, street, unit, building, postal} as typed.
+   -> {ok, errs:{field: code}, first, message, name, phone, parts:{block, street, unit, building, postal}, address} */
+function fmAddrCheck(f) {
+  f = f || {};
+  var errs = {}, name = fmAddrTitle(fmAddrClean(f.name, 80)), rawStreet = fmAddrClean(f.street, 120);
+  var phone = fmAddrPhone(f.phone), block = fmAddrBlock(f.block), unit = fmAddrUnit(f.unit);
+  var building = fmAddrTitle(fmAddrClean(f.building, 80)), postal = fmAddrPostal(f.postal), street = rawStreet;
+  // a whole line typed into Street ("123 Tampines St 81 #04-22 520123", the browser's autofill): take out what fits
+  if (/\d/.test(street)) {
+    var sp = fmAddrSplit(street);
+    var fits = (!sp.block || !block || sp.block === block) && (!sp.unit || unit === '' || sp.unit === unit) && (!sp.postal || !postal || sp.postal === postal);
+    if (fits && (sp.block || sp.unit || sp.postal)) {
+      if (!fmAddrClean(f.block) && sp.block) block = sp.block;
+      if (unit === '' && sp.unit) unit = sp.unit;
+      if (!fmAddrClean(f.postal) && sp.postal) postal = sp.postal;
+      if (!building && sp.building) building = fmAddrTitle(sp.building);
+      street = sp.street;
+    }
+  }
+  street = fmAddrTitle(fmAddrClean(street, 80));
+  if (!/[A-Za-z\u00c0-\u024f\u0400-\u04ff\u0e00-\u0e7f\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af].*[A-Za-z\u00c0-\u024f\u0400-\u04ff\u0e00-\u0e7f\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(name)) errs.name = 'name';
+  if (!phone) errs.phone = 'phone';
+  if (!block && fmAddrClean(f.block)) errs.block = 'block';   // optional: only a wrong one is refused
+  if (!/[A-Za-z]{2}/.test(street)) errs.street = 'street';
+  else if (/#\s*\d|\b\d{6}\b/.test(street)) errs.street = 'street_mixed';
+  if (unit === null) { errs.unit = 'unit'; unit = ''; }
+  if (building.length > 60) errs.building = 'building';
+  if (!postal) errs.postal = 'postal';
+  var first = '';
+  for (var i = 0; i < FM_ADDR_ORDER.length; i++) if (errs[FM_ADDR_ORDER[i]]) { first = FM_ADDR_ORDER[i]; break; }
+  var parts = { block: block, street: street, unit: unit, building: building, postal: postal };
+  return { ok: !first, errs: errs, first: first, message: first ? '🐾 ' + FM_ADDR_MSG[errs[first]] : '',
+    name: name, phone: phone, parts: parts, address: first ? '' : fmAddrFormat(parts) };
+}
+/* ADDR-RULE-END */
+/* ADDR-FORM-BEGIN (v13.85) the fixed delivery address boxes. Byte-identical in stock/site.html and index.html
+   (test_address_fields.js checks). fmAddrMount(pfx, onUse) draws them once into #<pfx>-fields; fmAddrFill(pfx, ship)
+   fills them (an address saved before v13.85 is one line: it is shown as it is, with Use this / Update, and the
+   boxes are filled from it as well as we can); fmAddrValidate(pfx) = fmAddrCheck on the boxes + a friendly line under
+   each box that needs a look. Messages are set with textContent (never as html). */
+var FM_ADDR_BOXES = {
+  // field: [label, type, autocomplete, inputmode, placeholder, maxlength]
+  name: ['Full name', 'text', 'name', '', 'e.g. Jane Tan', 80],
+  phone: ['Phone', 'tel', 'tel', 'tel', 'e.g. 9123 4567', 20],
+  block: ['Block / house no. (optional)', 'text', 'off', '', 'e.g. 123 or 12A', 10],
+  street: ['Street name', 'text', 'address-line1', '', 'e.g. Tampines St 81', 120],
+  unit: ['Unit no. (optional)', 'text', 'address-line2', '', 'e.g. #04-22', 14],
+  postal: ['Postal code', 'text', 'postal-code', 'numeric', 'e.g. 520123', 16],
+  building: ['Building name (optional)', 'text', 'address-line3', '', 'e.g. Tampines Court', 60]
+};
+var FM_ADDR_USE = {};
+function fmAddrEl(pfx, k) { return document.getElementById(pfx + '-' + k); }
+function fmAddrBoxHtml(pfx, k) {
+  var b = FM_ADDR_BOXES[k], id = pfx + '-' + k;
+  return '<div class="field af-f" data-af="' + k + '"><label for="' + id + '">' + b[0] + '</label>' +
+    '<input id="' + id + '" type="' + b[1] + '" autocomplete="' + b[2] + '"' + (b[3] ? ' inputmode="' + b[3] + '"' : '') +
+    ' maxlength="' + b[5] + '" placeholder="' + b[4] + '" aria-describedby="' + id + '-err"' +
+    (k === 'unit' || k === 'building' ? '' : ' required') + ' spellcheck="false">' +
+    '<small class="af-err" id="' + id + '-err" aria-live="polite"></small></div>';
+}
+function fmAddrMount(pfx, onUse) {
+  if (onUse) FM_ADDR_USE[pfx] = onUse;
+  var box = document.getElementById(pfx + '-fields');
+  if (!box || box.getAttribute('data-afon')) return;
+  var h = function (k) { return fmAddrBoxHtml(pfx, k); };
+  box.innerHTML =
+    '<div class="af-old" id="' + pfx + '-old" hidden><b>Your saved address</b><p id="' + pfx + '-oldtxt"></p>' +
+      '<div class="af-btns"><button type="button" class="af-use" data-afuse="1">Use this</button>' +
+      '<button type="button" data-afupd="1">Update</button></div><p class="af-hint" id="' + pfx + '-oldhint" hidden></p></div>' +
+    h('name') + h('phone') +
+    '<div class="af-row a">' + h('block') + h('street') + '</div>' +
+    '<div class="af-row">' + h('unit') + h('postal') + '</div>' + h('building');
+  box.setAttribute('data-afon', '1');
+  box.addEventListener('focusout', function (e) {
+    var f = e.target && e.target.closest ? e.target.closest('[data-af]') : null;
+    if (!f) return;
+    var k = f.getAttribute('data-af'), el = fmAddrEl(pfx, k);
+    if (el && (el.value.trim() || box.getAttribute('data-aftried'))) fmAddrValidate(pfx, k);
+  });
+  box.addEventListener('input', function (e) {
+    var f = e.target && e.target.closest ? e.target.closest('[data-af]') : null;
+    if (f) fmAddrPaint(pfx, f.getAttribute('data-af'), '');
+  });
+  box.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest ? e.target.closest('[data-afuse],[data-afupd]') : null;
+    if (!t) return;
+    var hint = document.getElementById(pfx + '-oldhint');
+    if (t.hasAttribute('data-afuse')) {
+      var chk = fmAddrValidate(pfx);
+      if (chk.ok) { document.getElementById(pfx + '-old').hidden = true; if (FM_ADDR_USE[pfx]) FM_ADDR_USE[pfx](chk); return; }
+      if (hint) { hint.textContent = 'nearly there! a box below needs a look 🐾'; hint.hidden = false; }
+      var bad = fmAddrEl(pfx, chk.first); if (bad) bad.focus();
+      return;
+    }
+    document.getElementById(pfx + '-old').hidden = true;
+    var keys = Object.keys(FM_ADDR_BOXES);
+    for (var i = 0; i < keys.length; i++) { var el = fmAddrEl(pfx, keys[i]); if (el && !el.value.trim() && keys[i] !== 'unit' && keys[i] !== 'building') { el.focus(); return; } }
+    var n = fmAddrEl(pfx, 'block'); if (n) n.focus();
+  });
+}
+function fmAddrRead(pfx) {
+  var f = {};
+  Object.keys(FM_ADDR_BOXES).forEach(function (k) { var el = fmAddrEl(pfx, k); f[k] = el ? el.value : ''; });
+  return f;
+}
+function fmAddrPaint(pfx, k, msg) {
+  var el = fmAddrEl(pfx, k), er = document.getElementById(pfx + '-' + k + '-err');
+  if (er) er.textContent = msg || '';
+  if (el) { if (msg) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid'); }
+}
+/* What the check made of a box, written back so the buyer sees the one format (#04-22, 520123, +65 9123 4567). */
+function fmAddrPut(pfx, chk, only) {
+  var v = { name: chk.name, phone: chk.phone, block: chk.parts.block, street: chk.parts.street, unit: chk.parts.unit,
+    building: chk.parts.building, postal: chk.parts.postal };
+  Object.keys(v).forEach(function (k) {
+    var el = fmAddrEl(pfx, k); if (!el || chk.errs[k]) return;
+    if (!only || k === only || (!el.value.trim() && v[k])) el.value = v[k];
+  });
+}
+/* field = one box (on leaving it) or none (the whole form, on Continue / Save). */
+function fmAddrValidate(pfx, field) {
+  var chk = fmAddrCheck(fmAddrRead(pfx)), box = document.getElementById(pfx + '-fields');
+  if (!field && box) box.setAttribute('data-aftried', '1');
+  (field ? [field] : Object.keys(FM_ADDR_BOXES)).forEach(function (k) {
+    fmAddrPaint(pfx, k, chk.errs[k] ? FM_ADDR_MSG[chk.errs[k]] : '');
+  });
+  fmAddrPut(pfx, chk, field);
+  return chk;
+}
+/* The server said no (it checks again): its {fields: {box: code}} under the boxes. */
+function fmAddrShowServer(pfx, r) {
+  var fs = (r && r.fields) || {}, first = '';
+  Object.keys(fs).forEach(function (k) { if (FM_ADDR_BOXES[k] && FM_ADDR_MSG[fs[k]]) { fmAddrPaint(pfx, k, FM_ADDR_MSG[fs[k]]); if (!first) first = k; } });
+  var el = first ? fmAddrEl(pfx, first) : null; if (el) el.focus();
+  return !!first;
+}
+function fmAddrFill(pfx, ship) {
+  var s = ship || {}, p = s.parts || null, old = document.getElementById(pfx + '-old'), hint = document.getElementById(pfx + '-oldhint');
+  if (!p && s.address) p = fmAddrSplit(s.address);
+  var v = { name: s.name || '', phone: s.phone || '', block: '', street: '', unit: '', building: '', postal: '' };
+  if (p) ['block', 'street', 'unit', 'building', 'postal'].forEach(function (k) { v[k] = p[k] || ''; });
+  Object.keys(v).forEach(function (k) { var el = fmAddrEl(pfx, k); if (el) el.value = v[k]; fmAddrPaint(pfx, k, ''); });
+  var box = document.getElementById(pfx + '-fields'); if (box) box.removeAttribute('data-aftried');
+  if (hint) { hint.hidden = true; hint.textContent = ''; }
+  if (old) {
+    var isOld = !!(s.address && !s.parts);
+    old.hidden = !isOld;
+    if (isOld) document.getElementById(pfx + '-oldtxt').textContent = [s.name, s.address, s.phone].filter(function (x) { return x; }).join(' · ');
+  }
+}
+/* What we keep on this device: the one format, plus the boxes. */
+function fmAddrShip(chk) { return { name: chk.name, phone: chk.phone, address: chk.address, parts: chk.parts }; }
+function fmAddrShipLoad(s) {
+  if (!s || typeof s !== 'object') return { name: '', address: '', phone: '', parts: null };
+  var p = s.parts && typeof s.parts === 'object' ? s.parts : null, parts = null;
+  if (p) { parts = {}; ['block', 'street', 'unit', 'building', 'postal'].forEach(function (k) { parts[k] = String(p[k] || ''); }); }
+  return { name: String(s.name || ''), address: String(s.address || ''), phone: String(s.phone || ''), parts: parts };
+}
+/* The fields a page sends with parcelDelivery (Apps Script checks them again). */
+function fmAddrSend(chk) {
+  return { shipName: chk.name, shipPhone: chk.phone, shipAddress: chk.address, shipBlock: chk.parts.block,
+    shipStreet: chk.parts.street, shipUnit: chk.parts.unit, shipBuilding: chk.parts.building, shipPostal: chk.parts.postal };
+}
+/* ADDR-FORM-END */
 function persistShip(){ _store('fm_ship',JSON.stringify(STATE.ship)); }
 function openAddrEdit(){
-  document.getElementById('pa-name').value=STATE.ship.name||'';
-  document.getElementById('pa-addr').value=STATE.ship.address||'';
-  document.getElementById('pa-phone').value=STATE.ship.phone||'';
+  fmAddrMount('pa', ()=>saveAddrEdit());   // v13.85 the fixed boxes
+  fmAddrFill('pa', STATE.ship);
   document.getElementById('addrScrim').classList.add('show');
   document.getElementById('addrSheet').classList.add('show');
 }
 function closeAddrEdit(){ document.getElementById('addrScrim').classList.remove('show'); document.getElementById('addrSheet').classList.remove('show'); }
 function saveAddrEdit(){
-  STATE.ship={name:document.getElementById('pa-name').value.trim(),address:document.getElementById('pa-addr').value.trim(),phone:document.getElementById('pa-phone').value.trim()};
+  const f=fmAddrRead('pa');
+  if(!Object.keys(f).some(k=>String(f[k]).trim())) STATE.ship={name:'',address:'',phone:'',parts:null};   // every box empty = forget it
+  else { const chk=fmAddrValidate('pa'); if(!chk.ok){ const el=document.getElementById('pa-'+chk.first); if(el) el.focus(); return; } STATE.ship=fmAddrShip(chk); }
   persistShip(); closeAddrEdit();
   const sub=document.getElementById('p-addr-sub'); if(sub) sub.textContent=STATE.ship.address?STATE.ship.address.slice(0,36)+(STATE.ship.address.length>36?'…':''):'Saved for faster checkout';
   (tg&&tg.HapticFeedback)&&tg.HapticFeedback.notificationOccurred('success');
 }
 function restorePersisted(){
-  _load('fm_ship',v=>{ try{ const s=JSON.parse(v); if(s&&typeof s==='object'){ STATE.ship={name:s.name||'',address:s.address||'',phone:s.phone||''}; if(document.getElementById('cartSheet')&&document.getElementById('cartSheet').classList.contains('show')) renderCart(); } }catch(e){} });
+  _load('fm_ship',v=>{ try{ const s=JSON.parse(v); if(s&&typeof s==='object'){ STATE.ship=fmAddrShipLoad(s); if(document.getElementById('cartSheet')&&document.getElementById('cartSheet').classList.contains('show')) renderCart(); } }catch(e){} });
 }
 // Prevents double-taps AND shows the user it's working.
 async function guard(btn, fn){
@@ -5000,20 +5258,18 @@ async function chooseDelivery(mode,pid){
   openShipAddr();
 }
 function openShipAddr(){
-  document.getElementById('sa-name').value=STATE.ship.name||'';
-  document.getElementById('sa-addr').value=STATE.ship.address||'';
-  document.getElementById('sa-phone').value=STATE.ship.phone||'';
+  fmAddrMount('sa', ()=>{ const b=document.querySelector('#shipAddrSheet .cta'); guard(b,confirmShip); });   // v13.85 the fixed boxes
+  fmAddrFill('sa', STATE.ship);
   document.getElementById('shipAddrScrim').classList.add('show');
   document.getElementById('shipAddrSheet').classList.add('show');
 }
 function closeShipAddr(){ document.getElementById('shipAddrScrim').classList.remove('show'); document.getElementById('shipAddrSheet').classList.remove('show'); }
 async function confirmShip(){
-  const name=document.getElementById('sa-name').value.trim();
-  const addr=document.getElementById('sa-addr').value.trim();
-  const phone=document.getElementById('sa-phone').value.trim();
-  if(!name||!addr){ fmTell('Please add a name and address.'); return; }
-  STATE.ship={name,address:addr,phone}; persistShip();
-  const r=await api('parcelDelivery',{mode:'ship',parcelId:STATE.pendingParcel,shipName:name,shipAddress:addr,shipPhone:phone});
+  const chk=fmAddrValidate('sa');   // v13.85: every box checked here, and again by Apps Script
+  if(!chk.ok){ const el=document.getElementById('sa-'+chk.first); if(el) el.focus(); return; }
+  STATE.ship=fmAddrShip(chk); persistShip();
+  const r=await api('parcelDelivery',Object.assign({mode:'ship',parcelId:STATE.pendingParcel},fmAddrSend(chk)));
+  if(r&&!r.ok&&r.error==='address_bad'&&fmAddrShowServer('sa',r)) return;   // the server's check: the sheet stays open
   closeShipAddr();
   if(r.ok&&r.freeShipping){
     ORDERS_CACHE=null; await loadOrders(true);
