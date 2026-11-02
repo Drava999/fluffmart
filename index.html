@@ -2161,6 +2161,37 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
 :root[data-theme="dark"] .af-err{color:var(--bad,#FF8FA6)}
 :root[data-theme="dark"] .af-f input[aria-invalid="true"]{border-color:var(--bad,#FF8FA6)}
 /* ADDR-CSS-END */
+/* v13.86.1 📦 Packs in the Telegram shop (Bryan 2 Nov: "sure. add it"): a strip above the Store's cards, a Home rail,
+   and a small pick sheet (the shop's own pop-up) for the artist / set / card. */
+.pk-sec{margin:4px 0 6px}
+.pk-hd{margin:6px 4px 8px;gap:8px;flex-wrap:wrap}
+.pk-hd .pk-sub{font-size:12px;font-weight:600;color:var(--hint)}
+.pk-strip{display:flex;gap:10px;overflow-x:auto;padding:2px 4px 10px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pk-strip::-webkit-scrollbar{display:none}
+.pk-strip .ct{flex:0 0 calc((100% - 20px) / 2.25);max-width:190px;scroll-snap-align:start;cursor:pointer}
+.pk-strip .ct-row{min-height:38px}   /* a tile without + keeps the same height as one with it */
+.pk-surp{position:absolute;left:6px;bottom:6px;z-index:2;font-size:11px;font-weight:800;line-height:1;padding:5px 8px;border-radius:999px;background:rgba(42,16,36,.72);color:#fff}
+.pk-pick{margin-top:4px;min-height:40px;width:100%;border:0;border-radius:12px;background:var(--fawn-deep);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer;padding:8px 10px}
+.pk-pick:focus-visible,.pk-ch-b:focus-visible{outline:3px solid var(--fawn-deep);outline-offset:2px}
+.pk-hero{display:flex;gap:12px;align-items:flex-start;margin:2px 0 12px}
+.pk-hero img,.pk-hero .pk-noimg{flex:0 0 76px;width:76px;aspect-ratio:63/88;object-fit:cover;border-radius:8px;background:var(--ruff);display:flex;align-items:center;justify-content:center;font-size:30px}
+.pk-hero-t{min-width:0}
+.pk-hero-t b{display:block;font-size:15px;line-height:1.3}
+.pk-hero-t span{display:block;font-size:13px;font-weight:700;color:var(--fawn-deep);margin-top:2px}
+.pk-hero-t p{margin:6px 0 0;font-size:13.5px;line-height:1.45;color:var(--text)}
+.pk-wait{font-size:14px;color:var(--hint);margin:6px 0}
+.pk-find{width:100%;box-sizing:border-box;min-height:44px;border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;font:inherit;font-size:15px;background:var(--card);color:var(--text);margin:0 0 8px}
+.pk-chl{display:flex;flex-direction:column;gap:6px}
+.pk-ch{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.pk-ch[hidden]{display:none}
+.pk-ch-t{min-width:0;display:flex;flex-direction:column}
+.pk-ch-t b{font-size:14.5px;line-height:1.3;overflow-wrap:anywhere}
+.pk-ch-t span{font-size:12.5px;font-weight:600;color:var(--hint)}
+.pk-ch-t .ct-pill{align-self:flex-start;margin-top:2px}
+.pk-ch-b{flex:none;min-height:44px;min-width:96px;border:0;border-radius:999px;background:var(--fawn-deep);color:#fff;font:inherit;font-size:14px;font-weight:800;cursor:pointer;padding:8px 14px}
+.pk-ch-b[disabled]{opacity:.5;cursor:default}
+.pk-left{font-size:13px;font-weight:700;color:var(--hint);margin:0}
+#ov-packs .jpr small{font-weight:700;color:var(--hint)}
 </style>
 </head>
 <body>
@@ -2189,6 +2220,7 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
     <!-- s33.42 (Bryan: "make sure its visually unmissable"): Help & support straight from Home, in the accent colour -->
     <button type="button" class="mhelp-cta" id="ov-help" onclick="go('support')" aria-label="Help: how the shop works, or message us"><span class="mh-i" aria-hidden="true">💬</span><span class="mh-t"><b>Help</b><small>how the shop works · message us</small></span><span class="mh-c" aria-hidden="true">›</span></button>
     <div id="ov-justin"></div>
+    <div id="ov-packs"></div>
     <div class="section-t">What you can do</div>
     <button class="feat" onclick="go('store')">
       <div class="ic" data-ic="store">🛍️</div><div><h3>Browse the store</h3><p>Cards, sealed &amp; merch. claim them now</p></div>
@@ -2246,6 +2278,7 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
       </div>
       <div class="chips" id="activeFilters"></div>
     </div>
+    <div id="storePacks"></div>
     <div id="storeGrid"></div>
   </div>
 
@@ -2576,6 +2609,7 @@ const ONE_LIST = !!STOCK_API;
    retry (thumbRetry). Any other URL is passed through unchanged. */
 function imgUrl(u,w){
   if(!u) return u; u=String(u).split('|')[0].split('~')[0].trim();
+  if(/^\/photo\/[A-Za-z0-9._\/-]+$/.test(u) && typeof STOCK_API!=="undefined" && STOCK_API) return STOCK_API+u;   // v13.86.1 a pack photo the stock Worker keeps (order lines saved as /photo/packs/…)
   const m=/^https:\/\/(drive\.google\.com\/(thumbnail|open|uc|file)|lh3\.googleusercontent\.com\/d\/)/.test(u) && (u.match(/[?&]id=([\w-]{10,})/)||u.match(/\/d\/([\w-]{10,})/));
   return m ? 'https://lh3.googleusercontent.com/d/'+m[1]+'=w'+w : u;
 }
@@ -2768,7 +2802,10 @@ function itemCards(it){
   return [{name:bname, number:'', f:String(it.image||''), b:'', bundle:bname}];
 }
 function liveItems(items){ return (items||[]).filter(i=>!i.refunded); }
-function cardCount(items){ return liveItems(items).reduce((n,it)=>n+itemCards(it).length,0); }
+/* v13.86.1 📦 a pack is ONE order line for the buyer ("Jank pack · 25 cards", the server's pkGroupLines_): it shows as one
+   picture (its pack photo; a mystery pack never shows its cards) but counts all its cards. */
+function packItemN(it){ if(!it||String(it.tier||'')!=='Pack') return 0; const m=/\u00B7 (\d{1,3}) cards?$/.exec(String(it.name||'')); return m?Number(m[1]):0; }
+function cardCount(items){ return liveItems(items).reduce((n,it)=>n+(packItemN(it)||itemCards(it).length),0); }
 
 // "4 cards · 1 bundle" rather than "2 items". Cards are what a buyer counts.
 function itemsLabel(items){
@@ -3279,7 +3316,7 @@ const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit',
 let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, tab:'overview', cart:[], inventory:[], invTs:0, orders:[], credit:0, cats:[], rarities:[], sets:[], priceMin:null, priceMax:null, sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
 
 const TIERS = ['All'];   // legacy, no longer rendered
-const EMOJI = {Sealed:'📦',Merch:'🎁',Bundle:'📚'};   // placeholder only, for cards with no photo
+const EMOJI = {Sealed:'📦',Merch:'🎁',Bundle:'📚',Pack:'🎁'};   // placeholder only, for cards with no photo
 const TIER_NAME = {Sealed:'Sealed Product',Merch:'Merch',Bundle:'Bundle',All:'All cards'};
 
 /* DISPLAY ORDER ONLY. Not a mapping: nothing here renames a card, merges two
@@ -4499,6 +4536,7 @@ async function loadStore(){
   STATE.invTs = Date.now();
   renderStore(); renderActiveChips();
   loadGroups();
+  loadPacks();
 }
 /* ---------- s31.3 ONE LIST: the scanned cards in the same shop list ----------
    One card per version + condition (the stock Worker's listing), shaped like a Sheet card:
@@ -4611,6 +4649,7 @@ document.addEventListener('click',function(e){
 });
 function renderStore(){
   const grid=document.getElementById('storeGrid'); if(!grid) return;
+  renderPacks();   // v13.86.1 📦 the Packs strip above the cards (hidden while a filter is on)
   const list=visibleCards();
 
   if(!list.length){
@@ -5079,6 +5118,152 @@ function addBulkToCart(L, quiet){
   return true;
 }
 
+/* ============ 📦 PACKS (v13.86.1, Bryan 2 Nov: "sure. add it") ============
+   The same recipes the website sells, from the same stock Worker read (GET /api/search?sets=x:packs = the website's
+   Packs row; a pack's choices = GET /api/card?key=PK:<recipe>, the website's pack page). Nothing is set aside here: the
+   cards stay on sale as singles until checkout, where submitOrder_ hands the PK:<recipe>:<choice> line to the stock Worker
+   (the same hold as the website, all or nothing). Jank pack = + adds it straight away; art / set filler / playset = a
+   small pick sheet listing only the choices that can make a pack right now, each with "N left". A mystery pack only ever
+   shows its pack photo and what it guarantees. */
+var PACKS={list:[], at:0, busy:null};
+var PK_CH={};
+const PK_LINE_RE=/^PK:[a-z0-9-]{1,24}:(en|ja):[A-Za-z0-9._-]{1,60}$/, PK_PAGE_RE=/^PK:[a-z0-9-]{1,24}$/;
+function pkAbs(u){ u=String(u||'').trim(); if(/^\/photo\/[A-Za-z0-9._\/-]+$/.test(u)) return STOCK_API?STOCK_API+u:''; return /^https:\/\//.test(u)?u:''; }
+function pkWord(kind){ return kind==='art'?'artist':kind==='set'?'set':kind==='playset'?'card':'language'; }
+function pkFrom(it){
+  const key=String(it.key||''), choose=!!it.choose;
+  if(!(choose?PK_PAGE_RE.test(key):PK_LINE_RE.test(key))) return null;
+  const name=String(it.name||'Pack');
+  return {key:key, kind:String(it.pack||''), choose:choose, mystery:!!it.mystery, name:name, title:name.split(' · ')[0],
+    image:pkAbs(it.image), price:Number(it.price)||0, left:parseInt(it.qty,10)||0, size:parseInt(it.parts_n,10)||0,
+    note:String(it.description||''), lang:String(it.lang||'')};
+}
+async function loadPacks(force){
+  if(!ONE_LIST) return;
+  if(PACKS.busy) return PACKS.busy;
+  if(!force && PACKS.at && Date.now()-PACKS.at<60000) return;
+  PACKS.busy=(async()=>{
+    const j=await stockGet('/api/search?sets='+encodeURIComponent('x:packs')+'&limit=24');
+    if(j&&j.ok&&Array.isArray(j.items)){
+      PACKS.list=j.items.filter(it=>it&&it.pack&&Number(it.price)>0&&Number(it.qty)>0).map(pkFrom).filter(p=>p&&p.image);
+      PACKS.at=Date.now();
+      renderPacks();
+    }
+  })().finally(()=>{ PACKS.busy=null; });
+  return PACKS.busy;
+}
+function pkInCart(key){ return STATE.cart.filter(x=>x.id===key).length; }
+function pkVisible(){
+  if(typeof filterCount==='function' && filterCount()) return [];
+  const qEl=document.getElementById('q'), q=((qEl&&qEl.value)||'').toLowerCase().trim();
+  return PACKS.list.filter(p=>!q || q.split(/\s+/).every(w=>(p.name+' '+p.note+' pack packs').toLowerCase().indexOf(w)>=0));
+}
+function pkPicHtml(p, w){ return p.image?'<img src="'+esc(p.image)+'" alt="" loading="lazy" decoding="async" width="'+(w||300)+'" onerror="pkImgFail(this)">':'<span class="ct-emo" aria-hidden="true">🎁</span>'; }
+function pkImgFail(el){ try{ const s=document.createElement('span'); s.className='ct-emo'; s.setAttribute('aria-hidden','true'); s.textContent='🎁'; el.replaceWith(s); }catch(e){} }
+/* One pack as the shared card tile's fields (CARD-TILE block, unchanged): "25 cards · 7 left" under the name. */
+function pkTileT(p){
+  const full=!p.choose && pkInCart(p.key)>=Math.min(p.left,PER_CARD_MAX);
+  return {name:p.title, set:(p.size?p.size+' cards':''), number:p.left+' left', lang:p.lang==='ja'?'ja':p.lang==='mixed'?'mixed':'', langLabel:p.lang==='mixed'?'EN+JP':'',
+    rarity:'', version:'', cond:'', grade:'', qty:0, priceText:priceLabel(p.price), wasText:'', pic:pkPicHtml(p,300), bundle:false, n:0, flip:false,
+    over:p.mystery?'<span class="pk-surp">✨ surprise</span>':'', soldOut:full, cls:'pk-t',
+    attrs:' data-pkopen="'+esc(p.key)+'"', addAttrs:' data-pkadd="'+esc(p.key)+'"',
+    actions:p.choose?'<button type="button" class="pk-pick" data-pkopen="'+esc(p.key)+'">Pick your '+esc(pkWord(p.kind))+' ›</button>':undefined};
+}
+function renderPacks(){
+  const el=document.getElementById('storePacks');
+  if(el){
+    const l=pkVisible();
+    el.innerHTML=l.length?'<section class="pk-sec" aria-labelledby="pkSecT"><div class="jrail-hd pk-hd"><span class="jt" id="pkSecT">🎁 Packs</span>'+
+      '<span class="pk-sub">picked from the shelf when you buy</span></div><div class="pk-strip">'+l.map(p=>ctTile(pkTileT(p))).join('')+'</div></section>':'';
+  }
+  const h=document.getElementById('ov-packs');
+  if(h){
+    h.innerHTML=PACKS.list.length?'<div class="jrail-hd"><span class="jt">🎁 Packs</span><button class="ja" type="button" onclick="pkSeeAll()">See all ›</button></div>'+
+      '<div class="jrail">'+PACKS.list.map(p=>'<button type="button" class="jcard" data-pkopen="'+esc(p.key)+'"><div class="jimg">'+pkPicHtml(p,200)+'</div>'+
+        '<div class="jnm">'+esc(p.title)+'</div><div class="jpr">'+esc(priceLabel(p.price))+' <small>· '+esc(p.left+' left')+'</small></div></button>').join('')+'</div>':'';
+  }
+}
+function pkSeeAll(){
+  go('store');
+  setTimeout(()=>{ const el=document.getElementById('storePacks'); if(el&&el.firstChild) el.scrollIntoView({behavior:'smooth',block:'start'}); },60);
+}
+/* One pack into the same cart as the cards. L = {key, name, price, left, image, size, mystery}. Up to N left, and at
+   most PER_CARD_MAX of one pack in a cart (the website's rule). */
+function pkCartAdd(L){
+  if(!L || !PK_LINE_RE.test(String(L.key||''))) return false;
+  if(!(Number(L.price)>0)){ ptToast('that pack has no price yet 🐾'); return false; }
+  const have=pkInCart(L.key), left=Number(L.left)||0;
+  if(!left){ ptToast('🥺 that pack just sold out'); return false; }
+  if(have>=Math.min(left,PER_CARD_MAX)){ ptToast(have>=PER_CARD_MAX?'max '+PER_CARD_MAX+' of one pack in a cart 🐾':'that’s every one we can make right now, and they’re all in your cart 🐾'); return false; }
+  STATE.cart.push({id:String(L.key), name:String(L.name||'Pack'), tier:'Pack', price:Number(L.price), number:'', image:String(L.image||''), bulk:true, pack:true,
+    packN:Number(L.size)||0, set:'', cond:(L.size?L.size+' cards':'')+(L.mystery?' · a surprise':'')});
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+  sfx('add');
+  updateCartDot();
+  ['cartDot','cartBar'].forEach(id=>{ const el=document.getElementById(id); if(!el) return; el.classList.remove('kick'); void el.offsetWidth; el.classList.add('kick'); });
+  ptToast('🎁 '+String(L.name||'Pack')+' is in your cart');
+  renderPacks();
+  return true;
+}
+function pkAddKey(key){
+  const p=PACKS.list.find(x=>x.key===key); if(!p) return false;
+  if(p.choose){ pkOpen(key); return false; }
+  return pkCartAdd({key:p.key, name:p.name, price:p.price, left:p.left, image:p.image, size:p.size, mystery:p.mystery});
+}
+function pkHero(p, bare){
+  return '<div class="pk-hero">'+(p.image?'<img src="'+esc(p.image)+'" alt="" onerror="pkImgFail(this)">':'<span class="pk-noimg" aria-hidden="true">🎁</span>')+
+    '<div class="pk-hero-t">'+(bare?'':'<b>'+esc(p.title)+'</b>')+'<span>'+esc((p.size?p.size+' cards · ':'')+priceLabel(p.price))+'</span>'+(p.note?'<p>'+esc(p.note)+'</p>':'')+'</div></div>';
+}
+function pkOpen(key){
+  const p=PACKS.list.find(x=>x.key===key); if(!p) return;
+  if(!p.choose){
+    const full=pkInCart(p.key)>=Math.min(p.left,PER_CARD_MAX);
+    fmDlg({title:p.name, html:pkHero(p, true)+'<p class="pk-left">'+esc(p.left+' left')+(full?' · '+esc('the most you can take is in your cart'):'')+'</p>',
+      ok:full?false:'Add to cart · '+priceLabel(p.price), cancel:full?'Close':'Not now'}).then(yes=>{ if(yes) pkAddKey(p.key); });
+    return;
+  }
+  const word=pkWord(p.kind);
+  fmDlg({title:p.title+': pick your '+word, html:pkHero(p)+'<div class="pk-chs" id="pkChs" aria-live="polite"><p class="pk-wait">finding what can be made right now… 🐾</p></div>',
+    ok:false, cancel:'Close', onShow:box=>{
+      box.addEventListener('click',ev=>{
+        const b=ev.target&&ev.target.closest&&ev.target.closest('[data-pkchoice]'); if(!b) return;
+        const L=PK_CH[b.getAttribute('data-pkchoice')];
+        if(L&&pkCartAdd(L)){ const c=box.querySelector('[data-fmdlg="no"]'); if(c) c.click(); }
+      });
+      box.addEventListener('input',ev=>{
+        if(!ev.target||!ev.target.classList||!ev.target.classList.contains('pk-find')) return;
+        const q=String(ev.target.value||'').toLowerCase().trim();
+        box.querySelectorAll('.pk-ch').forEach(r=>{ r.hidden=!!q && !q.split(/\s+/).every(w=>String(r.getAttribute('data-pkq')||'').indexOf(w)>=0); });
+      });
+      pkLoadChoices(p, box);
+    }});
+}
+async function pkLoadChoices(p, box){
+  const j=await stockGet('/api/card?key='+encodeURIComponent(p.key));
+  const el=box.querySelector('#pkChs'); if(!el||!document.body.contains(el)) return;
+  if(!j||!j.ok){ el.innerHTML='<p class="pk-wait">🥺 we couldn’t load the choices just now. close this and try again in a moment 🐾</p>'; return; }
+  const ls=(j.listings||[]).filter(l=>l&&PK_LINE_RE.test(String(l.key||''))&&Number(l.qty)>0&&Number(l.price)>0);
+  if(!ls.length){ el.innerHTML='<p class="pk-wait">🥺 none can be made right now (the cards found other homes). check back soon 🐾</p>'; loadPacks(true); return; }
+  PK_CH={};
+  const word=pkWord(p.kind);
+  const rows=ls.map((l,i)=>{
+    const L={key:String(l.key), name:String(l.name||l.label||p.title), choice:String(l.choice||l.label||''), price:Number(l.price), left:parseInt(l.qty,10)||0,
+      image:pkAbs(l.image)||p.image, size:parseInt(l.parts_n,10)||p.size, mystery:p.mystery, lang:String(l.lang||'')};
+    PK_CH[i]=L;
+    const full=pkInCart(L.key)>=Math.min(L.left,PER_CARD_MAX);
+    return '<div class="pk-ch" data-pkq="'+esc((L.choice+' '+L.name).toLowerCase())+'"><div class="pk-ch-t"><b>'+esc(L.choice||L.name)+'</b>'+
+      (L.lang==='ja'?'<span class="ct-pill ct-p-jp" title="Japanese cards">JP</span>':'')+'<span>'+esc(L.left+' left'+(full?' · in your cart':''))+'</span></div>'+
+      '<button type="button" class="pk-ch-b" data-pkchoice="'+i+'"'+(full?' disabled':'')+' aria-label="'+esc('Add '+L.name+' to cart, '+priceLabel(L.price))+'">Add · '+esc(priceLabel(L.price))+'</button></div>';
+  }).join('');
+  el.innerHTML=(ls.length>8?'<input type="search" class="pk-find" placeholder="Find your '+esc(word)+'" aria-label="'+esc('Find your '+word)+'">':'')+'<div class="pk-chl">'+rows+'</div>';
+}
+document.addEventListener('click',function(e){
+  const t=e.target; if(!t||!t.closest) return;
+  if(t.closest('#fmDlg')) return;   // the pick sheet handles its own buttons
+  const a=t.closest('[data-pkadd]'); if(a){ e.stopPropagation(); pkAddKey(a.getAttribute('data-pkadd')); return; }
+  const o=t.closest('[data-pkopen]'); if(o){ pkOpen(o.getAttribute('data-pkopen')); }
+});
+
 /* ============ CART ============ */
 /* Per-card limit (server: perCardLimitHit_, Config max_per_card, default 4 every 30 days). The cart
    stops at 4 of the same card (same name + number before the slash, like the server) so a
@@ -5196,6 +5381,8 @@ function cartShipHint(sub){
   if(fm>0) return '🎉 delivery is free on this box';
   return '';
 }
+/* v13.86.1 a pack line counts all its cards (a jank pack = 25) */
+function cartCardN(){ return STATE.cart.reduce((n,c)=>n+(c.pack&&c.packN?c.packN:1),0); }
 function renderCart(){
   const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
   if(!STATE.cart.length){
@@ -5220,12 +5407,12 @@ function renderCart(){
     const creditApplied = STATE.useCredit ? Math.min(STATE.credit,subtotal) : 0;
   const total = subtotal - creditApplied;
   const fsMin=(STATE.config&&STATE.config.freeShipMin)||0;
-  foot.innerHTML = `<div class="totline"><span>Subtotal (${STATE.cart.length} card${STATE.cart.length>1?'s':''})</span><span>$${subtotal.toFixed(2)}</span></div>
+  foot.innerHTML = `<div class="totline"><span>Subtotal (${cartCardN()} card${cartCardN()>1?'s':''})</span><span>$${subtotal.toFixed(2)}</span></div>
     ${creditApplied>0?`<div class="totline" style="color:var(--mint)"><span>Credit</span><span>−$${creditApplied.toFixed(2)}</span></div>`:''}
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
     ${cartShipHint(subtotal)?`<p class="bp-note cart-ship" id="cartShipHint">${esc(cartShipHint(subtotal))}</p>`:''}
     <button class="cta" ${STATE.placing?'disabled':''} onclick="guard(this,checkout)">${STATE.placing?'Placing your order…':'Place order · $'+total.toFixed(2)}</button>
-${boxPicHtml(STATE.cart.length,cfgNum(STATE.shipFlat,3),'$')}<p class="bp-note">✨ keep shopping, one postage for all${fsMin?' · free over $'+fsMin.toFixed(0):''} · collecting is free</p>`;
+${boxPicHtml(cartCardN(),cfgNum(STATE.shipFlat,3),'$')}<p class="bp-note">✨ keep shopping, one postage for all${fsMin?' · free over $'+fsMin.toFixed(0):''} · collecting is free</p>`;
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
@@ -5426,8 +5613,11 @@ async function checkout(){
     const isGone=c=>gone.includes(String(c.id));
     // Bulk lines (BK: keys) that sold are just taken out. They never get the
     // "claimed by someone else" wording, which is for Sheet cards.
-    const bulkGone=STATE.cart.some(c=>c.bulk&&isGone(c));
+    const bulkGone=STATE.cart.some(c=>c.bulk&&!c.pack&&isGone(c));
     const goneNames=STATE.cart.filter(c=>!c.bulk&&isGone(c)).map(c=>c.name);
+    // v13.86.1 📦 a pack whose cards sold meanwhile: the server's own words ("🐾 sorry, <pack> just sold out … nothing was taken")
+    const packGone=STATE.cart.filter(c=>c.pack&&isGone(c));
+    const packNote=packGone.length?String(r.message||('🐾 sorry, '+(packGone.length===1?packGone[0].name:'that pack')+' just sold out (its cards found other homes). nothing was taken from you 💛')):'';
     STATE.cart=STATE.cart.filter(c=>!isGone(c));
     updateCartDot();
     loadStore();
@@ -5437,19 +5627,20 @@ async function checkout(){
     if(goneNames.length) note=named+' just got claimed'+(left?' by someone else, so we took '+(goneNames.length>1?'them':'it')+' out.':' and that was your last item, so your cart is empty now.');
     else if(!bulkGone) note='A card just got claimed'+(left?' by someone else, so we took it out.':' and that was your last item, so your cart is empty now.');
     if(bulkGone) note=(note?note+' ':'')+'Some cards just sold, so we took them out of your cart.';
+    if(packNote){ note=packNote+(note&&(goneNames.length||bulkGone)?'\n\n'+note:''); loadPacks(true); }
     if(left){
-      const msg=note+' The rest of your cart is ready. tap checkout again. \ud83d\udc3e';
+      const msg=note+(packNote?'\n\n':' ')+'The rest of your cart is ready. tap checkout again. \ud83d\udc3e';
       fmTell(msg);
       renderCart();
     } else {
-      const msg=note+' Back to the shop! \ud83d\udc3e';
+      const msg=note+(packNote?'\n\n':' ')+'Back to the shop! \ud83d\udc3e';
       fmTell(msg);
       closeCart(); go('store');
     }
-  } else if(r.error==='price_changed' && (r.cards||[]).some(k=>String(k).indexOf('BK:')===0)){
+  } else if(r.error==='price_changed' && (r.cards||[]).some(k=>/^(BK|PK):/.test(String(k)))){
     // A bulk price moved after the cart was priced. Fetch those listings again and
     // put the new price into the cart. The buyer checks it and pays again.
-    const keys=[...new Set((r.cards||[]).map(String).filter(k=>k.indexOf('BK:')===0))];
+    const keys=[...new Set((r.cards||[]).map(String).filter(k=>/^(BK|PK):/.test(k)))];   // v13.86.1 a pack's price too (/api/listing answers PK: lines)
     const fresh=await Promise.all(keys.map(k=>stockGet('/api/listing?key='+encodeURIComponent(k))));
     let changed=0, dropped=0, failed=0;
     keys.forEach((k,i)=>{
@@ -5473,7 +5664,7 @@ async function checkout(){
     fmTell(msg);
     renderCart();
   } else if(r.error==='cart_too_big'){
-    fmTell('That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');
+    fmTell(r.message||'That\'s a big cart! Please check out in smaller batches (up to 60 cards each).');   // v13.86.1 the server's words (a pack counts all its cards)
   } else if(r.error==='per_card_limit'){
     STATE.cartErr={kind:'limit', msg:buyerErr(r,'🐾 to keep cards fair for everyone, it’s max '+PER_CARD_MAX+' of the same card per person every 30 days\n\ntake the extra copies out of your cart and you’re good to go 💛','checkout')};
   } else if(r.error==='stock_busy'){
@@ -6275,7 +6466,7 @@ function histOrderRow(o){
   /* cardCount() counts only LIVE cards, so a fully refunded order read
      "0 cards" and a partly refunded one under-reported. History is a record
      of what was ordered: count every card, then say how many came back. */
-  var n=(all.length?all:[]).reduce(function(s,it){ return s+itemCards(it).length; },0);
+  var n=(all.length?all:[]).reduce(function(s,it){ return s+(packItemN(it)||itemCards(it).length); },0);
   return '<div class="orow'+(gone?' dead':'')+'">'+
     '<button class="orow-hd" onclick="viewInvoice(\''+o.id+'\')">'+
       histFaces(liveItems(all).concat(back))+
