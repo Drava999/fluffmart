@@ -302,6 +302,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   font-size:16px;padding:14px;border-radius:14px;margin-top:4px}
 .cta:disabled{opacity:.5}
 .note{font-size:12px;color:var(--hint);text-align:center;margin-top:10px;line-height:1.5}
+.cv-deck{white-space:pre-line;font-size:13.5px;line-height:1.5;margin:10px 0 2px;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.09);overflow-wrap:anywhere}
 
 /* bottom nav */
 .nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);
@@ -2184,7 +2185,9 @@ html.fmdlg-on,html.fmdlg-on body{overflow:hidden}
 .pk-chl{display:flex;flex-direction:column;gap:6px}
 .pk-ch{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
 .pk-ch[hidden]{display:none}
-.pk-ch-t{min-width:0;display:flex;flex-direction:column}
+.pk-ch-t{min-width:0;display:flex;flex-direction:column;flex:1 1 auto}
+.pk-ch-th{flex:none;width:34px;height:48px;border-radius:6px;overflow:hidden;background:var(--line)}
+.pk-ch-th img{width:100%;height:100%;object-fit:cover;display:block}
 .pk-ch-t b{font-size:14.5px;line-height:1.3;overflow-wrap:anywhere}
 .pk-ch-t span{font-size:12.5px;font-weight:600;color:var(--hint)}
 .pk-ch-t .ct-pill{align-self:flex-start;margin-top:2px}
@@ -3455,6 +3458,7 @@ function ctCond(c, grade) {
   return String(c).trim();
 }
 function ctSub(t) {
+  if (t.bundle && t.deck) return t.n ? t.n + '-card deck' : 'Deck';   // v13.89 🃏 a deck bundle
   if (t.bundle) return t.n ? t.n + ' cards' : 'Bundle';
   return [t.set, t.number].map(x => String(x == null ? '' : x).trim()).filter(Boolean).join(' · ');
 }
@@ -3468,6 +3472,7 @@ function ctTags(t) {
   if (t.lang === 'ja') p.push('<span class="ct-pill ct-p-jp" title="Japanese card">JP</span>');
   else if (t.lang === 'mixed') p.push('<span class="ct-pill ct-p-jp" title="' + esc(t.langLabel === 'EN+JP' ? 'English and Japanese cards' : 'Cards in more than one language') + '">' + esc(t.langLabel === 'EN+JP' ? 'EN+JP' : 'Mixed') + '</span>');   // s33.44 a bundle of both
   else if (t.lang === 'other' && t.langLabel) p.push('<span class="ct-pill ct-p-jp" title="' + esc(t.langLabel + ' card') + '">' + esc(t.langLabel) + '</span>');
+  if (t.deck) p.push('<span class="ct-pill ct-p-v" title="A ready-to-play deck">Deck</span>');
   if (!t.bundle) {
     const r = rarAbbr(t.rarity, t.number), rf = rarFull(t.rarity) || (r === 'TG' ? 'Trainer Gallery' : r === 'GG' ? 'Galarian Gallery' : '') || r;
     if (r) p.push('<span class="ct-pill ct-p-r" title="' + esc(rf) + '" aria-label="' + esc(rf) + '">' + esc(r) + '</span>');
@@ -4637,7 +4642,7 @@ function appCardT(c){
     (soldOut?'<div class="soldout">Claimed</div>':'')+((window.FM_isNew&&FM_isNew(c))?'<span class="jnew">NEW</span>':'');
   return {name:nameNoLang(c.name), set:c.set||'', number:c.number||'', lang:appCardLang(c), langLabel:appCardLang(c)==='mixed'?'EN+JP':'', rarity:c.rarity||c.tier||'',
     version:c.variance||'', cond:c.condition||'', grade:c.grade||'', qty:c.qty, priceText:priceLabel(c.price), wasText:'', mktText:bdl?'':ctMkt(c.price,c.marketPrice,'$'),
-    pic:pic, bundle:bdl, n:bdl?faces.length:0, flip:!!backOf(c), over:over, soldOut:soldOut,
+    pic:pic, bundle:bdl, deck:bdl&&(/^deck$/i.test(String(c.tier||''))||!!c.deck), n:bdl?(/^deck$/i.test(String(c.tier||''))||c.deck?0:faces.length):0, flip:!!backOf(c), over:over, soldOut:soldOut,
     attrs:' data-id="'+esc(c.id)+'" onclick="openCardView(\''+esc(c.id)+'\')"',
     addAttrs:' onclick="event.stopPropagation();addToCart(\''+esc(c.id)+'\')"'};
 }
@@ -4753,6 +4758,7 @@ function openCardView(id){
         <div class="cv-hint cv-policy" style="margin-top:0">${esc(COND_POLICY)}</div>
         ${c.bulk?'':`<button class="ask-pics" onclick="askPics('${c.id}');closeCardView()"><span class="ap-ic">📷</span><span class="ap-t"><b>Want more photos?</b><br>Extra angles, edges or close-ups, we'll send them in chat</span><span class="ap-go">Ask ›</span></button>`}
         <div class="cv-price">$${c.price.toFixed(2)}${c.marketPrice&&c.marketPrice>c.price?`<span class="cv-was">$${c.marketPrice.toFixed(2)}</span>`:''}</div>
+        ${isBundle(c)?`<div class="cv-deck" id="cvDeck"${cvDeckText(c)?'':' hidden'}>${esc(cvDeckText(c))}</div>`:''}
         <button class="cta-alt" onclick="makeOfferById('${esc(c.id)}')">💬 Make an offer</button>
         ${cvOthersHtml(c)}
       </div>
@@ -4773,6 +4779,24 @@ function cvOthersHtml(c){
   const o=sameCardOthers(c).slice(0,8); if(!o.length) return '';
   return '<div class="cv-hint" style="margin-top:10px;font-weight:800">Also in stock</div><div class="cv-tags" style="margin-top:4px">'+
     o.map(x=>'<button class="cv-tag" style="cursor:pointer;border:0" onclick="openCardView(\''+esc(x.id)+'\')">'+esc([x.variance||'Normal',x.grade?('Graded '+x.grade):condShort(x.condition)].join(' · ')+' · $'+Number(x.price).toFixed(2))+'</button>').join('')+'</div>';
+}
+/* v13.89 🃏 a deck bundle's explanation (what it is, how it plays, the Basic Energy that comes with it), as Bryan wrote it:
+   line breaks kept (white-space:pre-line), every word through esc() / textContent. From the shop list when it carries it
+   (about), else asked once from the stock Worker's card page (/api/card, the website's own read). */
+var CV_DECK={};
+function cvDeckText(c){
+  if(!c) return '';
+  if(c.about) return String(c.about);
+  if(CV_DECK[c.id]) return CV_DECK[c.id];
+  if(/^deck$/i.test(String(c.tier||''))&&c.description&&!/\s\+\s/.test(String(c.description))) return String(c.description);
+  if(ONE_LIST&&CV_DECK[c.id]===undefined){
+    CV_DECK[c.id]='';
+    stockGet('/api/card?key='+encodeURIComponent('L:'+c.id)).then(j=>{
+      const card=j&&j.ok&&j.card; CV_DECK[c.id]=card&&card.deck&&card.about?String(card.about):'';
+      const el=document.getElementById('cvDeck'); if(el&&CV_DECK[c.id]){ el.textContent=CV_DECK[c.id]; el.hidden=false; }
+    }).catch(()=>{ CV_DECK[c.id]=''; });
+  }
+  return '';
 }
 function closeCardView(){ CV_STACK=[]; cvSyncBack(); document.getElementById('cardViewScrim').classList.remove('show'); document.getElementById('cardView').classList.remove('show'); }
 
@@ -5251,7 +5275,8 @@ async function pkLoadChoices(p, box){
       image:pkAbs(l.image)||p.image, size:parseInt(l.parts_n,10)||p.size, mystery:p.mystery, lang:String(l.lang||'')};
     PK_CH[i]=L;
     const full=pkInCart(L.key)>=Math.min(L.left,PER_CARD_MAX);
-    return '<div class="pk-ch" data-pkq="'+esc((L.choice+' '+L.name).toLowerCase())+'"><div class="pk-ch-t"><b>'+esc(L.choice||L.name)+'</b>'+
+    const own=L.image&&L.image!==p.image?'<span class="pk-ch-th" aria-hidden="true"><img src="'+esc(L.image)+'" alt="" loading="lazy" onerror="this.parentNode.remove()"></span>':'';   // s34.93 a choice's own picture
+    return '<div class="pk-ch" data-pkq="'+esc((L.choice+' '+L.name).toLowerCase())+'">'+own+'<div class="pk-ch-t"><b>'+esc(L.choice||L.name)+'</b>'+
       (L.lang==='ja'?'<span class="ct-pill ct-p-jp" title="Japanese cards">JP</span>':'')+'<span>'+esc(L.left+' left'+(full?' · in your cart':''))+'</span></div>'+
       '<button type="button" class="pk-ch-b" data-pkchoice="'+i+'"'+(full?' disabled':'')+' aria-label="'+esc('Add '+L.name+' to cart, '+priceLabel(L.price))+'">Add · '+esc(priceLabel(L.price))+'</button></div>';
   }).join('');
@@ -5277,9 +5302,9 @@ function perCardKey(name,number){
 }
 function cartSameCard(name,number){
   const k=perCardKey(name,number); if(!k) return 0;
-  return STATE.cart.filter(x=>String(x.tier||'').toLowerCase()!=='bundle'&&perCardKey(x.name,x.number)===k).length;
+  return STATE.cart.filter(x=>!/^(bundle|deck)$/.test(String(x.tier||'').toLowerCase())&&perCardKey(x.name,x.number)===k).length;
 }
-function cartAtCap(name,number,tier){ return String(tier||'').toLowerCase()!=='bundle' && cartSameCard(name,number)>=PER_CARD_MAX; }
+function cartAtCap(name,number,tier){ return !/^(bundle|deck)$/.test(String(tier||'').toLowerCase()) && cartSameCard(name,number)>=PER_CARD_MAX; }
 function addToCart(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return false;
   if(!faceList(c).length) return false;   // v13.28: no photo, not for sale (hidden from buyers anyway)
