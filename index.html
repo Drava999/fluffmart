@@ -1990,17 +1990,18 @@ img.img-ph{object-fit:contain;background:#f6eee9}
 .ct-ph>img,.ct-ph>.ph>img{object-fit:cover;display:block;border-radius:0;width:100%;height:100%}
 .ct-ph>.ph:has(img){background:none;padding:0}
 .ct-bph{background:linear-gradient(160deg,var(--ruff),var(--card))}
+.ct-pph>img,.ct-pph>.ph>img{object-fit:contain}
 .ct-fan{position:absolute;inset:0;display:block;overflow:hidden;border-radius:inherit;contain:paint}
 .ct-fan img{position:absolute;object-fit:cover;border-radius:4.5%/3.3%;box-shadow:0 1px 4px rgba(40,25,20,.3);background:var(--card);max-width:none;margin:0}
 .ct-ph.ct-bph:has(img){background:linear-gradient(160deg,var(--ruff),var(--card))}
 .ct-fan-n{position:absolute;right:6px;bottom:6px;z-index:9;background:rgba(40,25,20,.78);color:#fff;font-weight:800;font-size:12px;line-height:1;padding:5px 7px;border-radius:999px}
 .ct-flip{position:absolute;right:6px;bottom:6px;z-index:8;background:rgba(40,25,20,.6);color:#fff;font-size:10px;font-weight:700;line-height:1;padding:4px 7px;border-radius:999px;pointer-events:none}
-.ct-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:3px;margin-bottom:-2px;min-width:0}
+.ct-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin-top:3px;margin-bottom:-2px;min-width:0}
 .ct-pr{display:flex;align-items:baseline;gap:5px;min-width:0;flex-wrap:wrap}
 .ct-money{font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:19px;line-height:1.1;color:var(--fawn-deep);font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
 .ct-was{font-size:11.5px;color:var(--hint);font-weight:600;white-space:nowrap}
 .ct-mkt{font-size:11.5px;color:var(--hint);font-weight:600;white-space:nowrap}
-.ct .ct-add{flex:none;width:38px;height:38px;border-radius:12px;font-size:21px;line-height:1;position:relative;padding:0}
+.ct .ct-add{flex:none;margin-left:auto;width:38px;height:38px;border-radius:12px;font-size:21px;line-height:1;position:relative;padding:0}
 .ct .ct-add:after{content:"";position:absolute;inset:-4px;border-radius:inherit}
 .ct .ct-add:focus-visible{outline:3px solid var(--fawn-deep);outline-offset:2px}
 .ct-nm{font-weight:700;font-size:13.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;min-width:0;min-height:2.5em}
@@ -2640,27 +2641,6 @@ function faceList(c){
   return cover?[{f:cover,b:''}]:[];
 }
 function backOf(c){ return isBundle(c)?'':String((c&&c.imageBack)||''); }
-
-/* Lay the faces out like a hand of cards: each one offset and tilted a little
-   further right, stacking front-to-back, so every card's left edge shows. Four
-   is the most that stays readable in a tile; the rest become a "+2". The sizes
-   are computed here rather than in CSS because they have to shrink as the fan
-   widens, or the outer cards run off the tile. */
-function fanHtml(faces,w){
-  const show=faces.slice(0,4), n=show.length, extra=faces.length-n;
-  const mid=(n-1)/2;
-  const step = n<=2 ? 40 : n===3 ? 30 : 26;   // % of a card's own width
-  const tilt = n<=2 ? 7  : n===3 ? 9  : 7;    // degrees
-  const h    = n<=2 ? 68 : n===3 ? 62 : 54;   // % of the tile's height
-  const cards=show.map((u,i)=>{
-    const off=i-mid;
-    const t=`translateX(${(off*step).toFixed(1)}%) rotate(${(off*tilt).toFixed(1)}deg)`;
-    const s=`translateX(${(off*step*1.3).toFixed(1)}%) rotate(${(off*tilt*1.2).toFixed(1)}deg)`;
-        return `<img src="${imgUrl(u.f,w)}" loading="lazy" alt="" data-w="${w}" data-keep="1" onerror="thumbRetry(this)" `+
-           `style="height:${h}%;transform:${t};--spread:${s};z-index:${i+1}">`;
-  }).join('');
-  return `<div class="bfan">${cards}</div>`+(extra>0?`<span class="bmore">+${extra}</span>`:'');
-}
 
 /* The card view keeps the full set, however many there are. Selecting one swaps
    BOTH faces of the big card, so each card in a bundle flips to its own back. */
@@ -3309,12 +3289,6 @@ async function guard(btn, fn){
   finally { btn.disabled = false; btn.dataset.busy = ''; btn.innerHTML = orig; }
 }
 // Disables a group of buttons for the duration (e.g. both delivery choices).
-async function guardGroup(selector, btn, fn){
-  const all=[...document.querySelectorAll(selector)];
-  all.forEach(b=>{ if(b!==btn) b.disabled=true; });
-  try { return await guard(btn, fn); }
-  finally { all.forEach(b=>{ b.disabled=false; }); }
-}
 const BADGE={'Awaiting Payment':'b-ordered','Awaiting Verification':'b-transit','Payment Verified':'b-packed','Packed':'b-packed','Shipped':'b-shipped','In Transit':'b-transit','Delivered':'b-delivered','Refunded':'b-cancelled'};
 let STATE = { config:{cashRate:.80,creditRate:.85,freeShip:5,shipFlat:3}, tab:'overview', cart:[], inventory:[], invTs:0, orders:[], credit:0, cats:[], rarities:[], sets:[], priceMin:null, priceMax:null, sort:'rarity', payout:'credit', useCredit:false, user:null, ship:{name:'',address:'',phone:''}, note:'', wishes:[], delivery:'ship' };
 
@@ -3493,12 +3467,12 @@ function ctFan(faces, n, alt, imgAttr) {
   // s33.44 (Bryan: the fan poked out of the tile): every card, shadow included, stays inside the 63:88 frame (5% margin)
   const size = k > 1 ? 70 : 90, step = k > 1 ? (90 - size) / (k - 1) : 0;
   return '<span class="ct-fan" data-n="' + k + '">' + f.map((u, i) => '<img src="' + esc(imgUrl(u, 400)) + '" alt="' + (i ? '' : esc(alt || '')) + '" loading="lazy" decoding="async" ' + (imgAttr || '') +
-    ' style="left:' + (5 + i * step).toFixed(2) + '%;top:' + (5 + i * step).toFixed(2) + '%;width:' + size + '%;height:' + size + '%;z-index:' + (i + 1) + '">').join('') +
+    ' style="left:' + (5 + (k - 1 - i) * step).toFixed(2) + '%;top:' + (5 + (k - 1 - i) * step).toFixed(2) + '%;width:' + size + '%;height:' + size + '%;z-index:' + (k - i) + '">').join('') +   // s35.14 the FIRST card (a deck's star) is on top, in front
     (n > k ? '<span class="ct-fan-n" aria-label="' + esc(n + ' cards') + '">×' + n + '</span>' : '') + '</span>';
 }
 function ctParts(t) {
   const name = String(t.name || ''), over = (t.flip ? '<span class="ct-flip" aria-hidden="true">⤾ flip</span>' : '') + (t.over || '');
-  const ph = '<span class="ct-ph' + (t.bundle ? ' ct-bph' : '') + '">' + (t.pic || '') + over + '</span>';
+  const ph = '<span class="ct-ph' + (t.bundle ? ' ct-bph' : '') + (t.pack ? ' ct-pph' : '') + '">' + (t.pic || '') + over + '</span>';
   const sub = ctSub(t);
   return {
     pic: t.href ? '<a class="ct-pic" href="' + esc(t.href) + '" aria-label="' + esc(name + ' details') + '">' + ph + '</a>' : '<span class="ct-pic">' + ph + '</span>',
@@ -3843,18 +3817,6 @@ function condKey(v){
   return (!s || (e && e.c === 'NM-LP')) ? 'nm-lp' : s.toLowerCase();
 }
 function condBlurb(v){ const e = condEntry(v); return e ? e.blurb : ''; }
-/* Which of the three visual bands this rarity sits in. Driven by position in
-   RARITY_ORDER, so reordering that list restyles the grid automatically.
-   0–2 Special Art / Secret / Mega Attack · 3–6 the Ultra→Art Rare band ·
-   7–9 ACE SPEC and Double Rare · everything below stays plain. */
-function rarityClass(c){
-  const p = RARITY_POS[rarityLabel(c).toLowerCase()];
-  if(p === undefined) return '';
-  if(p <= 2) return ' holo';
-  if(p <= 6) return ' hi';
-  if(p <= 9) return ' mid';
-  return '';
-}
 
 /* demo data so the app is previewable before the backend is wired */
 const DEMO_INV = [
@@ -3880,7 +3842,7 @@ function pokeFact(){ return POKE_FACTS[Math.floor(Math.random()*POKE_FACTS.lengt
 /* HELP-BEGIN (s33.41, Bryan 12 Oct: "theres no easy explanation access for how our shop functions").
    The help topics, byte-identical in stock/site.html (the Help pop-up) and index.html (Help & support);
    test_help.js checks. Plain text only: each page escapes it when it draws it. Every number comes from f =
-   what the page already knows (postage, free-postage line, box days, notice hours, pay time, card limit); a
+   what the page already knows (postage, small-box postage + its line, free-postage line, box days, notice hours, pay time, card limit); a
    number the page doesn't have is left out, never guessed. Voice: short, lowercase, one emoji. */
 function fmHelpNum(v) { return v !== null && v !== undefined && v !== '' && isFinite(Number(v)) ? Number(v) : null; }
 function fmHelpMoney(f, n) { const v = Math.round(Number(n) * 100) / 100; return (f.cur || 'S$') + (v % 1 ? v.toFixed(2) : String(v)); }
@@ -3893,7 +3855,10 @@ function fmHelp(f) {
   f = f || {};
   const fee = fmHelpNum(f.fee), free = fmHelpNum(f.freeMin), days = fmHelpNum(f.holdDays), grace = fmHelpNum(f.graceH),
     pay = fmHelpNum(f.payMins), per = fmHelpNum(f.perCard), perDays = fmHelpNum(f.perDays);
-  const post = fee === null ? 'one postage for your whole box' : fee > 0 ? 'postage is ' + fmHelpMoney(f, fee) + ' for your whole box' : 'postage is free';
+  /* s35.32: a shop box under the small-order line pays the small-box postage (f.small under f.smallUnder); unknown = the one-fee words */
+  const small = fmHelpNum(f.small), under = fmHelpNum(f.smallUnder), tier = fee > 0 && small > 0 && under > 0 && small !== fee && (free > under || !(free > 0));
+  const post = fee === null ? 'one postage for your whole box' : tier ? 'postage is ' + fmHelpMoney(f, small) + ' for a box under ' + fmHelpMoney(f, under) + ', ' + fmHelpMoney(f, fee) + ' from ' + fmHelpMoney(f, under)
+    : fee > 0 ? 'postage is ' + fmHelpMoney(f, fee) + ' for your whole box' : 'postage is free';
   return [
     { k: 'buy', ic: '🛒', t: 'How to buy', kw: 'order checkout cart add shop buy sign in limit how',
       lines: ['find a card, add it to your cart and check out.', 'pay by PayNow, send your screenshot, and we pack it 📦'],
@@ -3903,8 +3868,9 @@ function fmHelp(f) {
       more: ['then send us a screenshot of the payment so we can check it.', 'not paid in time? the order cancels itself and the cards go back on the shelf. any store credit you used comes back.',
         'changed your mind? cancel an unpaid order free in My orders.'] },
     { k: 'shipping', ic: '📦', t: 'Shipping & pickup', kw: 'postage mail delivery post tracking collect pickup self-pickup fee free ship send',
-      lines: [post + (fee !== 0 && free > 0 ? ', free over ' + fmHelpMoney(f, free) + '.' : '.'), 'or collect it yourself for free 🤝'],
+      lines: [post + (fee !== 0 && free > 0 ? (tier ? ', free from ' : ', free over ') + fmHelpMoney(f, free) + '.' : '.'), 'or collect it yourself for free 🤝'],
       more: ['ready? press 🚚 Ship to me in My orders. we pack it once any postage is paid.', 'self-pickup: we message you to arrange a time and place.',
+        tier ? 'postage is for your whole box, worked out when you send it. a box of only drop or auction wins pays ' + fmHelpMoney(f, fee) + '.' : '',
         fee !== 0 && !(free > 0) ? 'free postage over a set amount: your box shows how close you are.' : '', 'tracking shows in My orders once your parcel has it.'].filter(Boolean) },
     { k: 'box', ic: '🧺', t: 'Your box', kw: 'hold combine keep buying ship once days parcel box wait',
       lines: [days > 0 ? 'paid cards wait in your box for up to ' + days + ' days.' : 'paid cards wait in your box.', 'keep shopping and pay one postage for everything ✨'],
@@ -3933,7 +3899,7 @@ function fmHelpText(s) { return [s.t, s.kw].concat(s.lines, s.more).join(' ').to
 const FM_CHANNEL_URL='https://t.me/floofmartt';   // the website's CHANNEL_URL (drops + auctions)
 function miniHelpFacts(){
   const c=STATE.config||{};
-  return {cur:'$', fee:cfgNum(c.shipFlat,cfgNum(STATE.shipFlat,3)), freeMin:cfgNum(c.freeShipMin,null), holdDays:holdDays(),
+  return {cur:'$', fee:cfgNum(c.shipFlat,cfgNum(STATE.shipFlat,3)), freeMin:cfgNum(c.freeShipMin,null), small:cfgNum(c.shipSmall,cfgNum(STATE.shipSmall,null)), smallUnder:cfgNum(c.minMailOrder,null), holdDays:holdDays(),
     graceH:STATE.holdGraceHours, payMins:STATE.payInfo?STATE.payInfo.mins:null, perCard:PER_CARD_MAX, perDays:null};
 }
 function miniHelpGo(k){
@@ -4222,7 +4188,7 @@ async function loadOverview(){
 }
 function applyOverview(r){
   if(!r||!r.ok) return;
-  STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,freeShipMin:cfgNum(r.freeShipMin,cfgNum(r.freeShipThreshold,30)),minMailOrder:cfgNum(r.minMailOrder,null),shipFlat:r.shipFlat!=null?r.shipFlat:3};
+  STATE.config = {cashRate:r.cashRate,creditRate:r.creditRate,freeShip:r.freeShipThreshold,freeShipMin:cfgNum(r.freeShipMin,cfgNum(r.freeShipThreshold,50)),minMailOrder:cfgNum(r.minMailOrder,null),shipSmall:cfgNum(r.shipSmall,null),shipFlat:r.shipFlat!=null?r.shipFlat:3};
   STATE.credit = r.credit||0;
   STATE.isAdmin = !!r.isAdmin;
   STATE.isConsignor = !!r.isConsignor;
@@ -5389,7 +5355,7 @@ function cartFixLimit(){
 /* A server message is shown to a buyer only if it reads like a sentence: no JSON, HTML or HTTP codes. */
 function cleanMsg(m){
   m=String(m==null?'':m).trim();
-  return (m && m.length<600 && !/^[\[{<]|HTTP \d|\bat [\w.]+ \(|Exception|undefined|null\b|":/.test(m)) ? m : '';
+  return (m && m.length<600 && !/^[\[{<]|HTTP \d|\bat [\w.]+ \(|Exception|undefined|null\b|":|workers\.dev|script\.google|網址|网址/.test(m)) ? m : '';
 }
 function buyerErr(r, fallback, where){
   try{ console.warn('[FloofMart] '+(where||'request')+' failed', r); }catch(e){}
@@ -5397,10 +5363,16 @@ function buyerErr(r, fallback, where){
 }
 /* v13.74: what the cart says about posting. Post needs a minimum of cards (self-pickup has none); free delivery from a bigger amount.
    The box already held for the buyer counts too. Unknown numbers are left out, never guessed. Server checks again (requestParcelDelivery_). */
+function cartPostFee(sub){   // the postage the cart's box would pay now (shown as "postage later")
+  const c=STATE.config||{}, mm=c.minMailOrder, fm=c.freeShipMin, sm=cfgNum(c.shipSmall,cfgNum(STATE.shipSmall,null)), flat=cfgNum(c.shipFlat,cfgNum(STATE.shipFlat,3));
+  const have=sub+(((STATE.parcels||[]).find(p=>p.status==='open'||p.status==='ship_awaiting_fee')||{}).merchValue||0);
+  return (sm>0&&mm>0&&have<mm&&!(fm>0&&have>=fm))?sm:flat;
+}
 function cartShipHint(sub){
   const c=STATE.config||{}, mm=c.minMailOrder, fm=c.freeShipMin;
   const held=((STATE.parcels||[]).find(p=>p.status==='open'||p.status==='ship_awaiting_fee')||{}).merchValue||0;
-  const have=sub+held;
+  const have=sub+held, sm=cfgNum(c.shipSmall,cfgNum(STATE.shipSmall,null)), flat=cfgNum(c.shipFlat,cfgNum(STATE.shipFlat,3));
+  if(mm>0&&have<mm&&sm>0) return '📮 delivery is $'+Number(sm).toFixed(2)+' under $'+Number(mm).toFixed(2)+' of cards. add $'+(mm-have).toFixed(2)+' more and it is $'+Number(flat).toFixed(2)+', or choose self-pickup (free)';
   if(mm>0&&have<mm) return '📮 add $'+(mm-have).toFixed(2)+' more to post it, or choose self-pickup (free, no minimum)';
   if(fm>0&&have<fm) return '🚚 $'+(fm-have).toFixed(2)+' more for free delivery';
   if(fm>0) return '🎉 delivery is free on this box';
@@ -5437,7 +5409,7 @@ function renderCart(){
     <div class="tot"><span>Total</span><span>$${total.toFixed(2)}</span></div>
     ${cartShipHint(subtotal)?`<p class="bp-note cart-ship" id="cartShipHint">${esc(cartShipHint(subtotal))}</p>`:''}
     <button class="cta" ${STATE.placing?'disabled':''} onclick="guard(this,checkout)">${STATE.placing?'Placing your order…':'Place order · $'+total.toFixed(2)}</button>
-${boxPicHtml(cartCardN(),cfgNum(STATE.shipFlat,3),'$')}<p class="bp-note">✨ keep shopping, one postage for all${fsMin?' · free over $'+fsMin.toFixed(0):''} · collecting is free</p>`;
+${boxPicHtml(cartCardN(),cartPostFee(subtotal),'$')}<p class="bp-note">✨ keep shopping, one postage for all${fsMin?' · free over $'+fsMin.toFixed(0):''} · collecting is free</p>`;
 }
 async function cancelUnpaid(id){
   const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
@@ -5450,7 +5422,14 @@ function parcelPostShort(pid){
   const p=(STATE.parcels||[]).find(x=>String(x.id)===String(pid))||{};
   const mm=Number(p.minMailOrder), mv=Number(p.merchValue);
   const shop=(STATE.orders||[]).some(o=>o.parcelId===p.id&&String(o.id||'').indexOf('EF')===0&&!o.cancelled);
+  if(Number(p.shipSmall)>0) return 0;   // small-box postage on: posted for that fee, never refused
   return (shop&&mm>0&&isFinite(mv)&&mv<mm)?(mm-mv):0;
+}
+/* the box pays the small-box postage now: how much more brings it to the normal fee (0 = not in that tier) */
+function parcelSmallShort(pid){
+  const p=(STATE.parcels||[]).find(x=>String(x.id)===String(pid))||{};
+  const mm=Number(p.minMailOrder), mv=Number(p.merchValue), sm=Number(p.shipSmall);
+  return (sm>0&&mm>0&&isFinite(mv)&&mv<mm&&Number(p.shipFee)===sm)?(mm-mv):0;
 }
 async function chooseDelivery(mode,pid){
   STATE.pendingParcel=pid||STATE.openParcelId;
@@ -5927,7 +5906,7 @@ function applyOrdersPayload(r){
      says something else. */
   if(r.holdExpiryDays!=null) STATE.holdDays=Number(r.holdExpiryDays)||21;
   if(r.holdGraceHours!=null) STATE.holdGraceHours=Number(r.holdGraceHours);
-  STATE.shipInvoice=r.shipInvoice||null; STATE.pickupNote=r.pickupNote||''; STATE.shipFlat=cfgNum(r.shipFlat,3);
+  STATE.shipInvoice=r.shipInvoice||null; STATE.pickupNote=r.pickupNote||''; STATE.shipFlat=cfgNum(r.shipFlat,3); STATE.shipSmall=cfgNum(r.shipSmall,null);
   STATE.olderHidden=Number(r.olderHidden||0);
 }
 /* v13.24: claims still waiting for their drop to close. A claim only becomes an
@@ -6299,7 +6278,7 @@ function actionsHtml(m){
     const fee=(p.shipFee!=null?p.shipFee:cfgNum(STATE.shipFlat,3));
     const need=(p.freeShipMin||0)-(p.merchValue||0);
     acts.push('<div class="oact oact-go"><div class="oact-hd"><span class="oact-ic">📦</span><div><div class="oact-t">Your box is ready to send</div>'+
-      '<div class="oact-s">'+b.cards+' card'+(b.cards===1?'':'s')+' · '+(fee<=0?'postage is free on this one':(parcelPostShort(p.id)>0?'add $'+parcelPostShort(p.id).toFixed(2)+' more to post it, or choose self-pickup':(need>0&&need<=15?'add $'+need.toFixed(2)+' more for free postage':'one postage fee for the lot')))+'</div></div></div>'+
+      '<div class="oact-s">'+b.cards+' card'+(b.cards===1?'':'s')+' · '+(fee<=0?'postage is free on this one':(parcelPostShort(p.id)>0?'add $'+parcelPostShort(p.id).toFixed(2)+' more to post it, or choose self-pickup':parcelSmallShort(p.id)>0?'postage is $'+Number(fee).toFixed(2)+' for a small box · add $'+parcelSmallShort(p.id).toFixed(2)+' more and it is $'+Number(cfgNum(STATE.shipFlat,3)).toFixed(2):(need>0&&need<=15?'add $'+need.toFixed(2)+' more for free postage':'one postage fee for the lot')))+'</div></div></div>'+
       '<div class="oact-2"><button class="oact-b" onclick="guard(this,()=>chooseDelivery(\'ship\',\''+p.id+'\'))">🚚 Ship to me<small>'+(fee<=0?'free':'$'+Number(fee).toFixed(2))+'</small></button>'+
       '<button class="oact-b oact-b2" onclick="guard(this,()=>chooseDelivery(\'pickup\',\''+p.id+'\'))">🤝 Self-pickup<small>free</small></button></div></div>');
   });
@@ -6453,7 +6432,6 @@ async function requestInvoices(ids, btn){
    there is nothing left to expand. */
 var HIST_F='all';
 function openHistory(f){ if(f) HIST_F=f; cvGo(paint_openHistory); }
-function openAllReceipts(){ openHistory('all'); }   /* kept: older callers */
 
 /* Short status word for a row. statusLabel() is the long form used on the
    invoice; here it has to fit beside an order number on a 360px phone. */
@@ -6747,10 +6725,6 @@ const HAUL_IMG_PROXY = '';   // e.g. 'https://fluffmart-api.shrimaniac.workers.d
 // {orderId, items, dataUrl, blob, jpeg} — the finished picture, ready to hand over.
 let HAUL = null;
 
-function haulSrc(u, w){
-  const s = imgUrl(u, w);
-  return (HAUL_IMG_PROXY && s) ? HAUL_IMG_PROXY + encodeURIComponent(s) : s;
-}
 /* The Drive file id, from either URL shape the sheet might hold. */
 function driveId(u){
   const s = String(u || '');
@@ -6786,12 +6760,6 @@ function haulFaces(it){
     if(faces.length) return faces;
   }
   return pick(it && it.image);
-}
-// The face to draw in this item's slot: a real card scan, never the cover.
-function haulArtFor(it){ return haulFaces(it)[0] || ''; }
-// Cards, not line items. A bundle counts as everything inside it.
-function haulCardCount(items){
-  return (items || []).reduce((n, it) => n + Math.max(1, haulFaces(it).length), 0);
 }
 async function loadHaulArt(u, w){
   if(!u) return null;
@@ -7451,14 +7419,6 @@ function inviteLinkLabel(){
   if(!l) return 'loading…';
   return l.replace(/^https?:\/\//, '');
 }
-function inviteRowHtml(){
-  if(!inviteLink()) return '';
-  return `<div class="haul-invite">
-      <div class="hi-t">${esc(haulInviteText())}</div>
-      <a class="hi-l" href="${esc(inviteLink())}" onclick="event.preventDefault();shareInvite()">${esc(inviteLinkLabel())}</a>
-      <button class="hi-c" onclick="copyInvite(this)">Copy</button>
-    </div>`;
-}
 
 function saveHaul(){
   if(!HAUL || !HAUL.blob) return;
@@ -7927,9 +7887,6 @@ function paint_viewStatement(pid){
       '</div>'+
     '</div>';
 }
-/* Opens through the navigation stack, so the corner button goes BACK to
-   wherever you came from instead of closing the whole panel. */
-function viewStatement(pid){ cvGo(function(){ paint_viewStatement(pid); }); }
 
 async function getPdf(id,btn){
   await guard(btn, async()=>{
@@ -8502,11 +8459,13 @@ const PT_ERRS={not_admin:'Admins only. your Telegram id isn\'t in ADMIN_IDS on t
   not_verified:'Open the shop from Telegram to use this.',
   auth_failed:'You\'re not signed in. close the shop and reopen it from the bot.'};
 const ptErr=r=>{
-  if(r&&r.message) return r.message;
+  // v13.90.8: never raw server text (Google writes errors in the owner's language, with addresses in them)
+  const m=r&&cleanMsg(r.message);
+  if(m) return m;
   const e=r&&r.error;
   if(e==='auth_failed'&&r.why&&typeof AUTH_MSGS!=='undefined'&&AUTH_MSGS[r.why]) return AUTH_MSGS[r.why];
   if(e&&PT_ERRS[e]) return PT_ERRS[e];
-  if(e) return 'Server error: '+String(e).slice(0,200);
+  if(e){ try{ console.warn('[FloofMart] server error', r); }catch(x){} return 'Something went wrong, please try again.'; }
   return 'Couldn\'t reach the server. check your connection and try again.';
 };
 const ptVal=id=>{ const el=document.getElementById(id); return el?String(el.value||'').trim():''; };
