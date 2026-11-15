@@ -5411,11 +5411,28 @@ function renderCart(){
     <button class="cta" ${STATE.placing?'disabled':''} onclick="guard(this,checkout)">${STATE.placing?'Placing your order…':'Place order · $'+total.toFixed(2)}</button>
 ${boxPicHtml(cartCardN(),cartPostFee(subtotal),'$')}<p class="bp-note">✨ keep shopping, one postage for all${fsMin?' · free over $'+fsMin.toFixed(0):''} · collecting is free</p>`;
 }
+/* s35.85: the cancel shows at once, then the orders are read again until the server shows it (a few tries); a lost
+   answer is checked the same way before the buyer is told it didn't work. */
+const ORD_RECHECK=[0,1500,3000,6000];
+async function ordRecheck(id, done){
+  for(let i=0;i<ORD_RECHECK.length;i++){
+    if(ORD_RECHECK[i]) await new Promise(res=>setTimeout(res, window.__ordRecheckMs!=null?window.__ordRecheckMs:ORD_RECHECK[i]));
+    let r=null; try{ r=await loadOrders(true); }catch(e){}
+    if(r&&r.ok!==false&&Array.isArray(r.orders)){ const o=r.orders.find(x=>String(x.id)===String(id)); if(!o||done(o)) return o||{}; }
+  }
+  return null;
+}
 async function cancelUnpaid(id){
-  const go=()=>api('cancelOrder',{orderId:id}).then(r=>{
-    if(r.ok){ fmTell('order cancelled. the cards are back in the shop'+(r.creditRefunded>0?' and your $'+r.creditRefunded.toFixed(2)+' credit was refunded':'')+'.'); ORDERS_CACHE=null; loadOrders(true); loadOverview(); loadStore(); }
-    else fmTell(r.message||'Couldn\'t cancel that order.');
-  });
+  const okMsg=r=>'order cancelled. the cards are back in the shop'+(r&&r.creditRefunded>0?' and your $'+Number(r.creditRefunded).toFixed(2)+' credit was refunded':'')+'.';
+  const go=async()=>{
+    let r; try{ r=await api('cancelOrder',{orderId:id}); }catch(e){ r={ ok:false, error:'network' }; }
+    if(r&&r.ok){ ordLocalSet(id,{ status:'Cancelled (by buyer)', cancelled:true }); paintOrders(); fmTell(okMsg(r)); ordRecheck(id, o=>!!o.cancelled); loadOverview(); loadStore(); return; }
+    if(!r || (!r.message && /^(network|nonjson|unreachable|timeout)$/.test(String(r.error||r.err||'network')))){
+      const o=await ordRecheck(id, o=>!!o.cancelled||o.status!=='Awaiting Payment');
+      if(o&&o.cancelled){ fmTell(okMsg(null)); loadOverview(); loadStore(); return; }
+    }
+    fmTell((r&&r.message)||'Couldn\'t cancel that order.');
+  };
   if(await fmAsk({title:'Cancel this order?',msg:'the cards go back on sale. nothing has been charged.',ok:'Cancel order',cancel:'Keep it',danger:true})) go();
 }
 function parcelPostShort(pid){
@@ -5894,8 +5911,28 @@ async function submitProof(){
 
 /* ============ ORDERS ============ */
 let ORDERS_CACHE=null, ORDERS_TS=0;
-function applyOrdersPayload(r){
-  ORDERS_CACHE=r.orders||[]; STATE.orders=ORDERS_CACHE;
+/* s35.85 (Bryan 15 Nov, a cancelled order showed only after a reload; the website's fix, same here): an orders read
+   takes a number when it is ASKED and an answer older than one already shown (or than our own change) is not shown;
+   a change we made (ordLocalSet) is laid over answers that still show the order as before, for up to 2 minutes. */
+let ORD_SEQ=0, ORD_SHOWN=0;
+const ORD_LOCAL={}, ORD_LOCAL_MS=120000;
+function ordReadSeq(){ return ++ORD_SEQ; }
+function ordLocalSet(id, patch, from){
+  ORD_LOCAL[String(id)]=Object.assign({ from: from||'Awaiting Payment', until: Date.now()+ORD_LOCAL_MS }, patch);
+  ORD_SHOWN=++ORD_SEQ;
+  [...new Set([STATE.orders, ORDERS_CACHE])].forEach(list=>{ (list||[]).forEach(o=>{ if(String(o.id)===String(id)) ordLocalOn(o); }); });
+  try{ localStorage.removeItem(FM_CK+'orders'); }catch(e){}
+}
+function ordLocalOn(o){
+  const L=ORD_LOCAL[String(o&&o.id)]; if(!L) return o;
+  if(o.status===L.status) return o;   // already shows it (the server, or this list patched once already)
+  if(Date.now()>L.until || o.status!==L.from){ delete ORD_LOCAL[String(o.id)]; return o; }
+  o.status=L.status; if(L.cancelled!=null) o.cancelled=L.cancelled;
+  return o;
+}
+function applyOrdersPayload(r, seq){
+  if(seq!=null){ if(seq<ORD_SHOWN) return false; ORD_SHOWN=seq; }
+  ORDERS_CACHE=(r.orders||[]).map(ordLocalOn); STATE.orders=ORDERS_CACHE;
   STATE.parcels=r.parcels||[];
   STATE.payInfo={mobile:r.paynowMobile,name:r.paynowName,mins:r.paymentWindowMins||10,
                  grace:Number(r.paymentGraceMins==null?5:r.paymentGraceMins)};
@@ -5908,6 +5945,7 @@ function applyOrdersPayload(r){
   if(r.holdGraceHours!=null) STATE.holdGraceHours=Number(r.holdGraceHours);
   STATE.shipInvoice=r.shipInvoice||null; STATE.pickupNote=r.pickupNote||''; STATE.shipFlat=cfgNum(r.shipFlat,3); STATE.shipSmall=cfgNum(r.shipSmall,null);
   STATE.olderHidden=Number(r.olderHidden||0);
+  return true;
 }
 /* v13.24: claims still waiting for their drop to close. A claim only becomes an
    order (with an invoice) when the drop closes, so show them here meanwhile. */
@@ -5942,12 +5980,15 @@ async function loadOrders(force){
   const oops='<div class="empty"><div class="e-ic">🥺</div><p>your orders are taking a nap<br>give it another try in a moment 🐾</p>'+
     '<button class="cta-alt" style="max-width:220px;margin:12px auto 0" onclick="loadOrders(true)">Try again</button></div>';
   let r;
+  const seq=ordReadSeq();
   try { r = await api('orders', STATE.ordersAll?{all:1}:{}); }
   catch(e){ try{ console.warn('[FloofMart] orders failed', e); }catch(x){} if(!ORDERS_CACHE) list.innerHTML=oops; return; }
   if(!r || r.ok===false){ try{ console.warn('[FloofMart] orders failed', r); }catch(x){} if(!ORDERS_CACHE) list.innerHTML=oops; return; }
-  applyOrdersPayload(r); ORDERS_TS=Date.now();
+  if(!applyOrdersPayload(r, seq)) return r;   // s35.85 a newer read (or our own change) is already on screen
+  ORDERS_TS=Date.now();
   try{ localStorage.setItem(FM_CK+'orders',JSON.stringify(r)); }catch(e){}
   paintOrders();
+  return r;
 }
 const PARCEL_TITLE={open:'🧺 Your box',ship_awaiting_fee:'🧺 Your box',shipping_paid:'🚚 Packing your box',pickup_ready:'🤝 Pickup arranged'};
 /* The server sweeps expired unpaid orders on its own schedule, so between the
