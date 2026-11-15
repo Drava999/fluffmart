@@ -2036,6 +2036,36 @@ img.img-ph{object-fit:contain;background:#f6eee9}
 .ct-swb:focus-visible{outline:3px solid var(--fawn-deep);outline-offset:1px}
 @media (prefers-reduced-motion:no-preference){.ct .ct-add{transition:transform .12s}.ct .ct-add:active{transform:scale(.92)}}
 /* CARD-TILE-CSS-END */
+/* ✨ s36.17 card shines in the Telegram shop too (Bryan 15 Nov: "why is the holo sheen not live on phone"): the same four
+   looks as the website's tiles (stock/site.html "s36.7 a shine per rarity", gentler since s36.13), chosen by the shared
+   ctShine rule; tile = .holo + .sh-<look> (.holo.rev for a reverse / ball print). Over the PICTURE only, moved by
+   transform / opacity / background-position, each card at its own moment (--shd), off screen = still (html.shio/.shon,
+   appShineWatch), and still (each layer's resting pose) with reduced motion or Animations off in Settings. */
+.ct.holo .ct-ph{position:relative;overflow:hidden;isolation:isolate}
+.ct.holo .ct-ph::after{content:"";position:absolute;left:0;right:0;top:0;bottom:0;z-index:2;pointer-events:none}
+.ct.holo .ct-ph::before{position:absolute;z-index:3;pointer-events:none}
+.ct.holo .ct-ph>.soldout,.ct.holo .ct-ph>.stockflag,.ct.holo .ct-ph>.jnew,.ct.holo .ct-ph>.ct-flip{z-index:8}
+.ct.sh-holo .ct-ph::after{bottom:auto;height:62%;background:linear-gradient(180deg,transparent 0%,rgba(255,232,190,.14) 22%,rgba(255,246,226,.32) 42%,rgba(255,248,232,.36) 50%,rgba(255,246,226,.32) 58%,rgba(255,226,170,.14) 78%,transparent 100%);mix-blend-mode:screen;opacity:.55;transform:translateY(60%)}
+.ct.sh-exup .ct-ph::before{content:"";inset:0;z-index:1;background:linear-gradient(125deg,rgba(255,70,170,.75),rgba(255,200,60,.7) 20%,rgba(120,255,170,.6) 38%,rgba(60,210,255,.75) 55%,rgba(160,100,255,.75) 72%,rgba(255,70,170,.75) 90%);background-size:220% 220%;background-position:30% 30%;mix-blend-mode:soft-light;opacity:.65}
+.ct.sh-exup .ct-ph::after{left:-110%;right:auto;width:110%;top:-30%;bottom:-30%;background:linear-gradient(90deg,transparent 0%,rgba(255,60,170,.5) 14%,rgba(255,190,60,.6) 26%,rgba(255,255,200,.85) 38%,rgba(255,255,255,.95) 47%,rgba(255,255,255,.95) 51%,rgba(110,235,255,.7) 61%,rgba(120,130,255,.6) 72%,rgba(200,90,255,.45) 83%,transparent 96%);mix-blend-mode:screen;opacity:.6;transform:skewX(-20deg) translateX(85%)}
+.ct.sh-shiny .ct-ph::after{left:-110%;right:auto;width:110%;top:-30%;bottom:-30%;background:linear-gradient(90deg,transparent 10%,rgba(255,255,255,.3) 32%,rgba(255,255,255,.95) 50%,rgba(255,255,255,.3) 68%,transparent 90%);mix-blend-mode:screen;opacity:.55;transform:skewX(-32deg) translateX(85%)}
+.ct.holo.rev .ct-ph::after{top:0;bottom:0;height:auto;transform:none;opacity:.5;
+  background:repeating-linear-gradient(118deg,transparent 0 14px,rgba(255,255,255,.3) 24px,rgba(210,235,255,.24) 30px,transparent 40px);
+  background-size:220% 220%;background-position:0% 0%;mix-blend-mode:soft-light;
+  -webkit-mask:linear-gradient(#000,#000),linear-gradient(#000,#000);-webkit-mask-size:100% 100%,86% 41%;-webkit-mask-position:0 0,50% 18%;-webkit-mask-repeat:no-repeat;-webkit-mask-composite:xor;
+  mask:linear-gradient(#000,#000),linear-gradient(#000,#000);mask-size:100% 100%,86% 41%;mask-position:0 0,50% 18%;mask-repeat:no-repeat;mask-composite:exclude}
+@media (prefers-reduced-motion:no-preference){
+  :root:not([data-motion="reduced"]) .ct.sh-holo .ct-ph::after{animation:fmSheen 7.5s ease-in-out infinite;animation-delay:var(--shd,0s)}
+  :root:not([data-motion="reduced"]) .ct.sh-exup .ct-ph::before{animation:fmTint 8s ease-in-out infinite alternate;animation-delay:var(--shd,0s)}
+  :root:not([data-motion="reduced"]) .ct.sh-exup .ct-ph::after{animation:fmSweep 4.2s cubic-bezier(.4,0,.3,1) infinite;animation-delay:var(--shd,0s)}
+  :root:not([data-motion="reduced"]) .ct.sh-shiny .ct-ph::after{animation:fmGlare 4s cubic-bezier(.5,0,.3,1) infinite;animation-delay:var(--shd,0s)}
+  :root:not([data-motion="reduced"]) .ct.holo.rev .ct-ph::after{animation:fmGlint 8.5s ease-in-out infinite alternate;animation-delay:var(--shd,0s)}
+  :root.shio .ct.holo:not(.shon) .ct-ph::after,:root.shio .ct.holo:not(.shon) .ct-ph::before{animation:none}   /* after the looks: wins even over .holo.rev */
+  @keyframes fmSheen{0%{transform:translateY(-110%)}60%,100%{transform:translateY(230%)}}
+  @keyframes fmSweep{0%{transform:skewX(-20deg) translateX(0)}75%,100%{transform:skewX(-20deg) translateX(215%)}}
+  @keyframes fmGlare{0%{transform:skewX(-32deg) translateX(0)}60%,100%{transform:skewX(-32deg) translateX(215%)}}
+  @keyframes fmTint{0%{background-position:0% 0%}100%{background-position:100% 100%}}
+  @keyframes fmGlint{0%,15%{background-position:0% 0%;opacity:.3}50%{opacity:.5}85%,100%{background-position:100% 100%;opacity:.3}}}
 /* FM-DLG-CSS-BEGIN (byte-identical in stock/site.html and index.html) */
 :root{--fmd-acc:#9E4686;--fmd-on:#fff;--fmd-bad:#B3354F;--fmd-scrim:rgba(42,16,36,.5)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--fmd-acc:#F0A8D2;--fmd-on:#2A1024;--fmd-bad:#FF8FA6;--fmd-scrim:rgba(0,0,0,.6)}}
@@ -3502,6 +3532,27 @@ function ctSwitch(view) {
     b('grid', 'Grid', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"></rect><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"></rect><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"></rect><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"></rect></svg>') +
     b('list', 'List', '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="4.5" width="4" height="5" rx="1"></rect><rect x="3.5" y="14.5" width="4" height="5" rx="1"></rect><path d="M11 6h9.5M11 9h6M11 16h9.5M11 19h6"></path></svg>') + '</div>';
 }
+/* s36.7 ✨ which shine a card gets (Bryan 15 Nov: "every rarity of cards to have their own unique shine that keeps
+   showing, except C and UC"; then: four looks only). ONE rule for both pages; each page decides whether to draw it
+   (the website does). '' = none (Common, Uncommon, no rarity on a normal print, bundles, packs) · 'rev' = a reverse /
+   ball / pattern print (wins over the rarity) · 'shiny' = Shiny Rare / Shiny Super Rare / Shining · 'exup' = every card
+   ex and up (Double / Triple Rare, ex, V, GX, full art, SR / UR, AR, SAR, CHR / CSR, Hyper / gold / secret, ACE SPEC,
+   Radiant, Amazing, LV.X, Prime, BREAK…) · 'holo' = Rare / Holo Rare, or a holo print of a lower card. */
+const CT_SHINE_REV = /^(reverse|reverse holo|reverse holofoil|rev holo|pokeball|poke ball|poké ball|masterball|master ball|pc-ball|pc-energy)( reverse holo)?$/;
+const CT_SHINE_UP = /^(RR|RRR|LV\.X|PRM|BRK|LGD|PIKA|TR|SR|UR|MA|MUR|BWR|FR|AnR|Radiant|K|AR|CHR|TG|GG|SAR|CSR|A|HR|STAR|ACE)$/;
+const CT_SHINE_NAME = /\s(ex|EX|GX|V|VMAX|VSTAR|V-UNION)(\s|$)/;   // "Charizard ex", "Pikachu VMAX" (never the first word: "Vulpix", "V Boost")
+function ctShine(t) {
+  if (!t || t.bundle || t.pack) return '';
+  const v = String(t.version == null ? '' : t.version).trim().toLowerCase().replace(/[\s_]+/g, ' ');
+  if (CT_SHINE_REV.test(v)) return 'rev';
+  const raw = String(t.rarity == null ? '' : t.rarity).trim().toLowerCase(), code = rarAbbr(t.rarity, t.number);
+  if (/\bshin(y|ing)\b/.test(raw) || /^(S|SS|SSR)$/.test(code)) return 'shiny';
+  if (CT_SHINE_UP.test(code) || /\b(gold|secret|rainbow|hyper|prism|crystal|illustration|ultra|full art|ace spec)\b/.test(raw)) return 'exup';
+  let f = /^(R|PR|CC)$/.test(code) || (code !== 'C' && code !== 'U' && /\b(rare|holo)\b/.test(raw)) ? 'holo' : '';
+  if ((f === 'holo' || (!f && !raw)) && CT_SHINE_NAME.test(String(t.name || '').trim())) return 'exup';
+  if (!f && (v === 'holo' || /^pc-[a-z0-9-]+$/.test(v))) f = 'holo';   // a foil print of a Common / Uncommon (Cosmos Holo…)
+  return f;
+}
 /* CARD-TILE-END */
 /* FM-DLG-BEGIN (byte-identical in stock/site.html and index.html; test_buyback_web.js checks) */
 /* s33.55 / v13.70 (Bryan, 12 Oct): the shop's own pop-up instead of the browser's alert / confirm boxes.
@@ -4597,6 +4648,18 @@ function appCardLang(c){
   if(/^ja:/.test(String(c.card_id||'')) || /[(\[](jp|ja|jpn|japanese)[)\]]/i.test(t) || /[\u3040-\u30ff\u3400-\u9fff]/.test(t)) return 'ja';
   return '';
 }
+/* s36.17 ✨ shines in the Telegram shop (the website's shineDelay + shineWatch): each card starts its loop at its own
+   moment (the same for the same card), and only tiles on screen move (off screen = the still pose). */
+function appShineDelay(k){ let h=7; String(k||'').split('').forEach(ch=>{ h=(h*31+ch.charCodeAt(0))%99991; }); return ' style="--shd:-'+(h%900/100).toFixed(2)+'s"'; }
+function appShineWatch(){
+  if(!('IntersectionObserver' in window)||!('MutationObserver' in window)||!document.body) return;
+  const io=new IntersectionObserver(es=>es.forEach(e=>{ if(!e.target.isConnected){ io.unobserve(e.target); return; } e.target.classList.toggle('shon',e.isIntersecting); }),{rootMargin:'80px 0px'});
+  const look=n=>{ if(n.nodeType!==1) return; if(n.matches('.ct.holo')) io.observe(n); n.querySelectorAll('.ct.holo').forEach(x=>io.observe(x)); };
+  document.documentElement.classList.add('shio');
+  look(document.body);
+  new MutationObserver(ms=>ms.forEach(mu=>mu.addedNodes.forEach(look))).observe(document.body,{childList:true,subtree:true});
+}
+if(document.body) appShineWatch(); else document.addEventListener('DOMContentLoaded',appShineWatch);
 function appCardT(c){
   const inCart=STATE.cart.filter(x=>x.id===c.id).length;
   const soldOut=(c.qty-inCart)<=0, faces=faceList(c), bdl=isBundle(c), emo=EMOJI[c.tier]||'🃏';
@@ -4606,10 +4669,12 @@ function appCardT(c){
   const over=(c.imageType==='stock'?'<div class="stockflag">stock image</div>':'')+
     (faces.length?'':'<div class="stockflag" style="background:#c2405e">no photo</div>')+
     (soldOut?'<div class="soldout">Claimed</div>':'')+((window.FM_isNew&&FM_isNew(c))?'<span class="jnew">NEW</span>':'');
+  const sh=(bdl||soldOut||!faces.length)?'':ctShine({rarity:c.rarity||c.tier||'',number:c.number||'',version:c.variance||'',lang:appCardLang(c),name:nameNoLang(c.name)});
   return {name:nameNoLang(c.name), set:c.set||'', number:c.number||'', lang:appCardLang(c), langLabel:appCardLang(c)==='mixed'?'EN+JP':'', rarity:c.rarity||c.tier||'',
     version:c.variance||'', cond:c.condition||'', grade:c.grade||'', qty:c.qty, priceText:priceLabel(c.price), wasText:'', mktText:bdl?'':ctMkt(c.price,c.marketPrice,'$'),
     pic:pic, bundle:bdl, deck:bdl&&(/^deck$/i.test(String(c.tier||''))||!!c.deck), n:bdl?(/^deck$/i.test(String(c.tier||''))||c.deck?0:faces.length):0, flip:!!backOf(c), over:over, soldOut:soldOut,
-    attrs:' data-id="'+esc(c.id)+'" onclick="openCardView(\''+esc(c.id)+'\')"',
+    cls:sh==='rev'?'holo rev':sh?'holo sh-'+sh:'',   // s36.17 ✨ the website's shines (shared ctShine rule)
+    attrs:' data-id="'+esc(c.id)+'" onclick="openCardView(\''+esc(c.id)+'\')"'+(sh?appShineDelay(c.id):''),
     addAttrs:' onclick="event.stopPropagation();addToCart(\''+esc(c.id)+'\')"'};
 }
 document.addEventListener('click',function(e){
