@@ -4290,7 +4290,10 @@ function applyOverview(r){
   STATE.openOrders=r.openOrders||0; STATE.unpaidOrders=r.unpaidOrders||0; STATE.unpaidTotal=Number(r.unpaidTotal||0); STATE.openParcel=r.openParcel||null; STATE.holdDays=Number(r.holdExpiryDays||21); STATE.holdGraceHours=Number(r.holdGraceHours==null?24:r.holdGraceHours);
   STATE.refLink = r.referralLink || STATE.refLink || '';
   { const n=(v,d)=>{ const x=Number(v); return v!==''&&v!=null&&isFinite(x)&&x>=0?x:d; };
-    CFGV.RC=n(r.rewardCredit,CFGV.RC); CFGV.RT=n(r.rewardThreshold,CFGV.RT); CFGV.REFC=n(r.referralCredit,CFGV.REFC); CFGV.REFMIN=n(r.referralMinSpend,CFGV.REFMIN); cfgPaint(); }
+    CFGV.RC=n(r.rewardCredit,CFGV.RC); CFGV.RT=n(r.rewardThreshold,CFGV.RT); CFGV.REFC=n(r.referralCredit,CFGV.REFC); CFGV.REFMIN=n(r.referralMinSpend,CFGV.REFMIN);
+    CFGV.RV=r.rewardVoucher&&r.rewardVoucher.pct?r.rewardVoucher.pct+'% off your next order (up to $'+r.rewardVoucher.max+')':'';
+    CFGV.RF=r.referVoucher&&r.referVoucher.friendPct?'Refer a friend: they get '+r.referVoucher.friendPct+'% off their first order, you get '+r.referVoucher.sharerPct+'% off your next one':'';
+    cfgPaint(); }
   renderUnpaidBanner();
   renderLoyalty(r);
 }
@@ -4335,11 +4338,11 @@ function renderLoyalty(r){
   el.innerHTML=`
     <div class="loyal">
       <div class="loyal-hd">🎁 Rewards</div>
-      <div class="loyal-row">Pay $${toGo.toFixed(2)} more to earn <b>$${rc.toFixed(2)}</b> store credit</div>
+      <div class="loyal-row">${r.rewardVoucher&&r.rewardVoucher.pct?`Pay $${toGo.toFixed(2)} more to earn <b>${esc(String(r.rewardVoucher.pct))}% off</b> your next order (up to $${esc(String(r.rewardVoucher.max))})`:`Pay $${toGo.toFixed(2)} more to earn <b>$${rc.toFixed(2)}</b> store credit`}</div>
       <div class="loyal-bar"><div class="loyal-fill" style="width:${pct}%"></div></div>
       <div class="loyal-sub">$${spend.toFixed(2)} spent · reward every $${thr}</div>
       ${refLink?`<div class="loyal-ref">
-        <div class="loyal-reft">Refer a friend → you both win. Once they spend $${r.referralMinSpend||15}+, <b>you each</b> get $${(r.referralCredit||3).toFixed(2)} credit.</div>
+        <div class="loyal-reft">${r.referVoucher&&r.referVoucher.friendPct?`Refer a friend → you both win. They get <b>${esc(String(r.referVoucher.friendPct))}% off</b> their first order (up to $${esc(String(r.referVoucher.friendMax))}), you get <b>${esc(String(r.referVoucher.sharerPct))}% off</b> your next one once they've paid.`:`Refer a friend → you both win. Once they spend $${r.referralMinSpend||15}+, <b>you each</b> get $${(r.referralCredit||3).toFixed(2)} credit.`}</div>
         <button class="loyal-refb" onclick="shareReferral('${refLink.replace(/'/g,'')}')">🔗 Copy my referral link</button>
       </div>`:''}
     </div>`;
@@ -6968,9 +6971,10 @@ function paintSocials(r){
 }
 /* v13.19: reward & referral amounts come from Config (via overview), so
    changing them in Admin → Config changes every line that mentions them. */
-const CFGV={RC:3,RT:100,REFC:3,REFMIN:15};
+const CFGV={RC:3,RT:100,REFC:3,REFMIN:15,RV:'',RF:''};   // v14.0: RV = the loyalty voucher words, RF = the refer-a-friend words (from overview)
 const cfgMoney=v=>'$'+(Number(v)%1?Number(v).toFixed(2):Number(v).toFixed(0));
-function cfgText(s){ return String(s).replace(/\{\{(RC|RT|REFC|REFMIN)\}\}/g,(m,k)=>cfgMoney(CFGV[k])); }
+function cfgText(s){ s=String(s); if(CFGV.RV) s=s.replace(/\{\{RC\}\} back for every \{\{RT\}\} you pay/g,'{{RV}} for every {{RT}} you pay'); if(CFGV.RF) s=s.replace(/When a friend spends \{\{REFMIN\}\}\+, <b>you each get \{\{REFC\}\}<\/b>/g,'{{RF}}').replace(/Refer a friend and you BOTH get \{\{REFC\}\} once they spend \{\{REFMIN\}\}\+/g,'{{RF}}');
+  return s.replace(/\{\{(RC|RT|REFC|REFMIN|RV|RF)\}\}/g,(m,k)=>k==='RV'||k==='RF'?esc(CFGV[k]):cfgMoney(CFGV[k])); }
 function cfgPaint(){ document.querySelectorAll('[data-cfg]').forEach(el=>{ const k=el.getAttribute('data-cfg'); if(CFGV[k]!=null) el.textContent=cfgMoney(CFGV[k]); }); }
 function haulInviteText(){
   return 'Come join me on FloofMart TCG 🐑 Pokémon singles, drops and claims in Singapore';
