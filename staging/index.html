@@ -3905,7 +3905,7 @@ function fmHelpKey(k) { return FM_HELP_KEYS[String(k || '').toLowerCase().replac
 function fmHelp(f) {
   f = f || {};
   const fee = fmHelpNum(f.fee), free = fmHelpNum(f.freeMin), days = fmHelpNum(f.holdDays), grace = fmHelpNum(f.graceH),
-    pay = fmHelpNum(f.payMins), per = fmHelpNum(f.perCard), perDays = fmHelpNum(f.perDays);
+    pay = fmHelpNum(f.payMins), per = fmHelpNum(f.perCard), perM = fmHelpNum(f.perModern), perDays = fmHelpNum(f.perDays);
   /* s35.32: a shop box under the small-order line pays the small-box postage (f.small under f.smallUnder); unknown = the one-fee words */
   const small = fmHelpNum(f.small), under = fmHelpNum(f.smallUnder), tier = fee > 0 && small > 0 && under > 0 && small !== fee && (free > under || !(free > 0));
   const post = fee === null ? 'one postage for your whole box' : tier ? 'postage is ' + fmHelpMoney(f, small) + ' for a box under ' + fmHelpMoney(f, under) + ', ' + fmHelpMoney(f, fee) + ' from ' + fmHelpMoney(f, under)
@@ -3913,7 +3913,7 @@ function fmHelp(f) {
   return [
     { k: 'buy', ic: '🛒', t: 'How to buy', kw: 'order checkout cart add shop buy sign in limit how',
       lines: ['find a card, add it to your cart and check out.', 'pay by PayNow, send your screenshot, and we pack it 📦'],
-      more: ['placing an order holds your cards for you.'].concat(per ? ['up to ' + per + ' of the same card' + (perDays ? ' every ' + perDays + ' days' : '') + ', so everyone gets a turn.'] : []) },
+      more: ['placing an order holds your cards for you.'].concat(per ? ['up to ' + per + (perM ? ' (' + perM + ' for Scarlet & Violet and Mega Evolution cards)' : '') + ' of the same card' + (perDays ? ' every ' + perDays + ' days' : '') + ', so everyone gets a turn.'] : []) },
     { k: 'pay', ic: '💌', t: 'Paying', kw: 'paynow qr reference screenshot deadline unpaid cancel time pay payment',
       lines: ['scan the PayNow QR and use the reference on your invoice.', pay > 0 ? '⏰ you have ' + fmHelpMins(pay) + ' to pay; the time is on your invoice.' : '⏰ pay before the time on your invoice.'],
       more: ['then send us a screenshot of the payment so we can check it.', 'not paid in time? the order cancels itself and the cards go back on the shelf. any store credit you used comes back.',
@@ -3951,7 +3951,7 @@ const FM_CHANNEL_URL='https://t.me/floofmartt';   // the website's CHANNEL_URL (
 function miniHelpFacts(){
   const c=STATE.config||{};
   return {cur:'$', fee:cfgNum(c.shipFlat,cfgNum(STATE.shipFlat,3)), freeMin:cfgNum(c.freeShipMin,null), small:cfgNum(c.shipSmall,cfgNum(STATE.shipSmall,null)), smallUnder:cfgNum(c.minMailOrder,null), holdDays:holdDays(),
-    graceH:STATE.holdGraceHours, payMins:STATE.payInfo?STATE.payInfo.mins:null, perCard:PER_CARD_MAX, perDays:null};
+    graceH:STATE.holdGraceHours, payMins:STATE.payInfo?STATE.payInfo.mins:null, perCard:PER_CARD_MAX, perModern:PER_CARD_MODERN, perDays:null};
 }
 function miniHelpGo(k){
   const b=(act,t)=>'<button type="button" data-mhgo="'+act+'">'+esc(t)+'</button>';
@@ -4765,7 +4765,7 @@ function openCardView(id){
   const front = f0.f?cvImgHtml(f0.f,800,'',emo):`<div class="cv-noimg">${emo}<span>No photo yet</span></div>`;
   const hasBack = anyBack;
   const soldOut=(c.qty-STATE.cart.filter(x=>x.id===c.id).length)<=0;
-  const capped=!soldOut&&cartAtCap(c.name,c.number,c.tier);
+  const capped=!soldOut&&cartAtCap(c.name,c.number,c.tier,c);
   document.getElementById('cardViewBody').innerHTML = `
     <div class="cv-panel">
       <button class="cv-close" aria-label="Close" onclick="closeCardView()">✕</button>
@@ -4798,7 +4798,7 @@ function openCardView(id){
       </div>
       <div class="cv-buybar">
         <span class="cv-bb-p">S$${c.price.toFixed(2)}</span>
-        <button class="cta" ${soldOut||capped?'disabled':''} onclick="if(addToCart('${c.id}')!==false)closeCardView()">${soldOut?'In your cart':capped?PER_CARD_HINT:'Add to cart'}</button>
+        <button class="cta" ${soldOut||capped?'disabled':''} onclick="if(addToCart('${c.id}')!==false)closeCardView()">${soldOut?'In your cart':capped?perHint(c.name,c.number,c):'Add to cart'}</button>
       </div>
     </div>`;
   // A card opened from the shop starts a fresh trail - it is never "inside"
@@ -5050,7 +5050,7 @@ function setsPaintSet(){
 function setsTileHtml(c,i){
   const b=c.best;
   const inCart=b?STATE.cart.filter(x=>x.id===b.key).length:0;
-  const capped=!!b&&cartAtCap(b.name||c.name,b.number||c.number);
+  const capped=!!b&&cartAtCap(b.name||c.name,b.number||c.number,'',b);
   const full=!b||inCart>=b.qty||capped;
   const sub=[c.number?'#'+c.number:'', b?[b.variant&&b.variant!=='normal'?(b.vlabel||b.variant):'', b.condition?condShort(b.condition):''].filter(Boolean).join(' · '):'']
     .filter(Boolean).join(' · ');
@@ -5060,7 +5060,7 @@ function setsTileHtml(c,i){
     '<div class="sv-nm" title="'+esc(c.name_ja&&c.name_ja!==c.name?c.name+' · '+c.name_ja:c.name)+'">'+esc(c.name)+stockLangTag(c.lang)+'</div>'+
     '<div class="sv-sub">'+esc(sub)+'</div>'+
     (b
-      ? '<div class="sv-row"><span class="price">'+money(b.price)+(inCart?' <span class="sv-no">'+inCart+' in cart'+(capped?' · '+PER_CARD_HINT:'')+'</span>':'')+'</span>'+
+      ? '<div class="sv-row"><span class="price">'+money(b.price)+(inCart?' <span class="sv-no">'+inCart+' in cart'+(capped?' · '+perHint(b.name||c.name,b.number||c.number,b):'')+'</span>':'')+'</span>'+
         '<button class="sv-add" aria-label="Add '+esc(c.name)+' to cart"'+(full?' disabled':'')+' onclick="setsAddAt('+i+')">+</button></div>'
       : '<div class="sv-row"><span class="sv-no">not in stock</span></div>')+
     '</div>';
@@ -5162,7 +5162,7 @@ function addBulkToCart(L, quiet){
   if(L.price==null || !isFinite(Number(L.price))){ say('That card has no price yet.'); return false; }
   const have=STATE.cart.filter(x=>x.id===L.key).length;
   if(have>=Number(L.qty||0)){ say(have ? 'You already have all the copies in stock in your cart.' : 'Sold out.'); return false; }
-  if(cartAtCap(L.name,L.number)){ say(PER_CARD_HINT); return false; }
+  if(cartAtCap(L.name,L.number,'',L)){ say(perHint(L.name,L.number,L)); return false; }
   STATE.cart.push({id:String(L.key), name:String(L.name||'Card'), tier:'Card', price:Number(L.price),
     number:String(L.number||''), image:stockImg(L.image), bulk:true, set:String(L.set||''),
     cond:[L.variant&&L.variant!=='normal'?(L.vlabel||L.variant):'', L.condition?condShort(L.condition):''].filter(Boolean).join(' · ')});
@@ -5328,7 +5328,16 @@ document.addEventListener('click',function(e){
    stops at 4 of the same card (same name + number before the slash, like the server) so a
    buyer finds out while shopping, not at checkout. Bundles don't count. The server still
    has the final say (it also counts what they bought in the last 30 days). */
-const PER_CARD_MAX=4, PER_CARD_HINT='max 4 per person 🐾';
+const PER_CARD_MAX=4, PER_CARD_MODERN=8, PER_CARD_HINT='max 4 per person 🐾';
+/* PER-CARD-MODERN-BEGIN v14.2.6 (Bryan 21 Nov: "increase the limit for modern cards to 8 per copy"). Modern = Scarlet &
+   Violet + Mega Evolution: a scanned card by its card id (en sv… / me…, ja SV… / M1…), a shelf card by its set name.
+   Byte-identical in code.gs, stock/site.html and index.html. */
+function fmCardModern(key, set) {
+  var m = /^(?:BK|L):(en|ja):([A-Za-z0-9.]+)/.exec(String(key || ''));
+  if (m) return m[1] === 'en' ? /^(sv|me)/i.test(m[2]) : /^(sv|m\d)/i.test(m[2]);
+  return /scarlet|violet|mega evolution|^sv[\s:\d.]|\bsv\d/i.test(String(set || ''));
+}
+/* PER-CARD-MODERN-END */
 function perCardKey(name,number){
   const nm=String(name||'').toLowerCase().replace(/\s+/g,' ').trim();
   const num=String(number==null?'':number).split('/')[0].replace(/^0+(?=\d)/,'').trim().toLowerCase();
@@ -5338,13 +5347,20 @@ function cartSameCard(name,number){
   const k=perCardKey(name,number); if(!k) return 0;
   return STATE.cart.filter(x=>!/^(bundle|deck)$/.test(String(x.tier||'').toLowerCase())&&perCardKey(x.name,x.number)===k).length;
 }
-function cartAtCap(name,number,tier){ return !/^(bundle|deck)$/.test(String(tier||'').toLowerCase()) && cartSameCard(name,number)>=PER_CARD_MAX; }
+/* v14.2.6 the limit for one card: 8 when every copy of it in the cart (+ the card c) is Scarlet & Violet / Mega Evolution, else 4 */
+function cartCap(name,number,c){
+  const k=perCardKey(name,number);
+  const its=STATE.cart.filter(x=>k&&!/^(bundle|deck)$/.test(String(x.tier||'').toLowerCase())&&perCardKey(x.name,x.number)===k).concat(c?[c]:[]);
+  return its.length&&its.every(x=>fmCardModern(x.key||x.id,x.set))?PER_CARD_MODERN:PER_CARD_MAX;
+}
+function perHint(name,number,c){ return 'max '+cartCap(name,number,c)+' per person 🐾'; }
+function cartAtCap(name,number,tier,c){ return !/^(bundle|deck)$/.test(String(tier||'').toLowerCase()) && cartSameCard(name,number)>=cartCap(name,number,c); }
 function addToCart(id){
   const c = STATE.inventory.find(x=>x.id===id); if(!c) return false;
   if(!faceList(c).length) return false;   // v13.28: no photo, not for sale (hidden from buyers anyway)
   const inCart = STATE.cart.filter(x=>x.id===id).length;
   if(inCart>=c.qty) return false;
-  if(cartAtCap(c.name,c.number,c.tier)){ ptToast(PER_CARD_HINT); return false; }
+  if(cartAtCap(c.name,c.number,c.tier,c)){ ptToast(perHint(c.name,c.number,c)); return false; }
   STATE.cartErr=null;
   // s31.3: a scanned card (c.bulk) goes in like any card; checkout sends its price (the Worker holds a copy)
   STATE.cart.push(c.bulk?{id:c.id,name:c.name,tier:'Card',price:c.price,number:c.number||'',image:c.image||'',bulk:true,set:c.set||'',cond:[c.variance||'',condShort(c.condition)].filter(Boolean).join(' · ')}
@@ -5411,7 +5427,7 @@ function cartFixLimit(){
   const keep=STATE.cart.filter(c=>{
     if(String(c.tier||'').toLowerCase()==='bundle') return true;
     const nm=String(c.name||'').trim().toLowerCase();
-    const max=Object.prototype.hasOwnProperty.call(allow,nm)?allow[nm]:PER_CARD_MAX;
+    const max=Object.prototype.hasOwnProperty.call(allow,nm)?allow[nm]:cartCap(c.name,c.number);
     const k=perCardKey(c.name,c.number); seen[k]=(seen[k]||0)+1;
     if(seen[k]>max){ cut++; return false; }
     return true;
@@ -5462,7 +5478,7 @@ function renderCart(){
     `<div class="crow"><div class="ci">${c.image?`<img src="${esc(imgUrl(c.image,200))}" alt=""${c.bulk?' onerror="stockImgFail(this)"':` data-w="200" data-emo="${esc(EMOJI[c.tier]||'🃏')}" onerror="thumbRetry(this)"`}>`:(EMOJI[c.tier]||'🃏')}</div>
       <div class="cn">${esc(c.name)}<div style="font-size:11px;color:var(--hint);font-weight:600">${c.bulk
         ? esc([c.set,c.number?'#'+c.number:'',c.cond||''].filter(Boolean).join(' · '))
-        : (c.number?esc(c.number)+' · ':'')+esc(rarAbbr(c.rarity||c.tier,c.number))}</div>${cartAtCap(c.name,c.number,c.tier)?`<div class="ck-cap">${PER_CARD_HINT}</div>`:''}</div>
+        : (c.number?esc(c.number)+' · ':'')+esc(rarAbbr(c.rarity||c.tier,c.number))}</div>${cartAtCap(c.name,c.number,c.tier,c)?`<div class="ck-cap">${perHint(c.name,c.number,c)}</div>`:''}</div>
       <span class="cp">$${c.price.toFixed(2)}</span>
       <button class="rm" aria-label="Close" onclick="removeFromCart(${i})">✕</button></div>`).join('') + nudge +
     `<p class="hold-hint cond-policy">${esc(COND_POLICY)}</p>` +
